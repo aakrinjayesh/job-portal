@@ -159,7 +159,7 @@ cd frontend && npm run dev
 ```
 
 4. Open in browser: `http://localhost:5173`  
-   Frontend will communicate with backend APIs (`http://localhost:5000`).
+   Frontend will communicate with backend APIs (`http://localhost:3000`).
 
 ---
 
@@ -182,16 +182,3 @@ npx prisma studio
 - For authentication with GitHub or other services, make sure your `.env` contains required keys.
 
 ---
-
-## Optional: Docker Setup
-
-If you want to containerize:
-
-- Create a `docker-compose.yml` for **backend + PostgreSQL**
-- Run:
-
-```bash
-docker-compose up
-```
-
-- Then run frontend separately with `npm run dev`.
