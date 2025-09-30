@@ -44,7 +44,17 @@ npm install
 3. Create a `.env` file in backend:
 
 ```env
+# I have used neonDB to generate DataBase Url
 DATABASE_URL="postgresql://<username>:<password>@localhost:5432/<dbname>?schema=public"
+
+PORT=3000
+
+# Jwt SECRET KEY
+SECRETKEY = "CREATE YOUR OWN SECRET"
+
+
+# GEMINI API KEY
+GEMINI_API_KEY = "YOUR GEMINI API KEY"
 ```
 
 4. Prisma setup:
@@ -95,6 +105,18 @@ npm install
 
 ```bash
 npm run dev
+```
+
+4. Create a `.env` file in frontend:
+
+```env
+# Google Oauth2.0 crendentials
+VITE_GOOGLE_CLIENT_ID = "YOUR GOOGLE CLIENT_ID"
+
+
+# Linkedin Oauth crendentials
+VITE_LinkedIN_CLIENTID = 'YOUR LINKEDIN CLIENT_ID'
+VITE_REDIRECT_URI = 'http://localhost:5173/home'
 ```
 
 Frontend server runs at: `http://localhost:5173`

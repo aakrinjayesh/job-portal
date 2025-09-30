@@ -3,7 +3,11 @@ import { Button } from "antd";
 import { LinkedinOutlined } from "@ant-design/icons";
 
 function LinkedInAuthButton() {
-  const linkedinRedirectUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${"861d00ja6sphsr"}&redirect_uri=${"https://www.linkedin.com/developers/tools/oauth/redirect"}&scope=r_liteprofile,r_emailaddress`;
+  const linkedinRedirectUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
+    import.meta.env.VITE_LinkedIN_CLIENTID
+  }&redirect_uri=${
+    import.meta.env.VITE_REDIRECT_URI
+  }&scope=r_liteprofile,r_emailaddress`;
 
   return (
     <Button

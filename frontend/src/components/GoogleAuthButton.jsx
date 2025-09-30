@@ -2,13 +2,11 @@ import React, { useState } from "react";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { GoogleAuth } from "../api/api";
-import { message } from "antd";
 
 const GoogleAuthButton = ({ userType, messageAPI }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
-  const clientId =
-    "492712852711-8rm1osb55k831qd7395pusjlp07udq6f.apps.googleusercontent.com";
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const handleSuccess = async (credentialResponse) => {
     try {
