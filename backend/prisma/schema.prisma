@@ -34,17 +34,51 @@ model UserProfile {
   user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   profilePicture               String?
+  title                        String? // New: candidate role/title they are looking for
   preferredLocation            String[]
+  currentLocation              String?
   preferredJobType             JobType[]
   currentCTC                   String?
   expectedCTC                  String?
   joiningPeriod                String?
   totalExperience              String?
   relevantSalesforceExperience String?
-  skills                       String[]
-  certifications               String[]
-  workExperience               String[]
+
+  skillsJson      Json? // e.g. [{ name: "Apex", experience: 3, level: "primary" }]
+  primaryClouds   Json?
+  secondaryClouds Json?
+
+  certifications String[]
+  workExperience Json?
+  education      Json?
+
+  linkedInUrl  String? // New
+  trailheadUrl String? // New
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Skills {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  isVerified Boolean @default(false)
+}
+
+model Certification {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  isVerified Boolean @default(false)
+}
+
+model Location {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  isVerified Boolean @default(false)
+}
+
+model Cloud {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  isVerified Boolean @default(false)
 }

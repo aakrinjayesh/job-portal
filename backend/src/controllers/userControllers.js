@@ -5,6 +5,7 @@ import generateOtp from '../utils/generateOtp.js'
 import sendEmail from '../utils/sendEmail.js'
 import extractTextFromBase64 from '../utils/extractText.js'
 import { extractResumeSections } from '../utils/llmTextExtractor.js'
+import { success } from 'zod'
 
 
 // const userRegister = async (req, res) => {
@@ -139,14 +140,21 @@ const userProfiledetails = async (req, res) => {
       profilePicture,
       preferredLocation = [],
       preferredJobType = [],
+      currentLocation = null,
       currentCTC = null,
       expectedCTC = null,
       joiningPeriod = null,
       totalExperience = null,
       relevantSalesforceExperience = null,
-      skills = [],
+      skillsJson = [],
+      primaryClouds = [],
+      secondaryClouds = [],
       certifications = [],
-      workExperience = []
+      workExperience = [],
+      education = [],
+      linkedInUrl = null,
+      trailheadUrl = null,
+      title,
     } = req.body
 
     const upserted = await prisma.userProfile.upsert({
@@ -160,9 +168,16 @@ const userProfiledetails = async (req, res) => {
         joiningPeriod,
         totalExperience,
         relevantSalesforceExperience,
-        skills,
+        skillsJson,
+        primaryClouds,
+        secondaryClouds,
         certifications,
-        workExperience
+        workExperience,
+        linkedInUrl,
+        trailheadUrl,
+        education,
+        currentLocation,
+        title,
       },
       create: {
         userId: user.id,
@@ -174,9 +189,16 @@ const userProfiledetails = async (req, res) => {
         joiningPeriod,
         totalExperience,
         relevantSalesforceExperience,
-        skills,
+        skillsJson,
+        primaryClouds,
+        secondaryClouds,
         certifications,
-        workExperience
+        workExperience,
+        education,
+        currentLocation,
+        linkedInUrl,
+        trailheadUrl,
+        title,
       }
     })
 
@@ -266,6 +288,163 @@ const userOtpValidator = async (req,res) => {
   }
 }
 
+
+// Fetch all Skills
+const getAllSkills = async (req, res) => {
+  try {
+    const skills = await prisma.skills.findMany({
+      where: { isVerified: true },
+      orderBy: { name: 'asc' }
+    });
+    return res.status(200).json({ status: 'success', data: skills });
+  } catch (err) {
+    return res.status(500).json({ status: 'failed', message: err.message });
+  }
+};
+
+// Fetch all Certifications
+const getAllCertifications = async (req, res) => {
+  try {
+    const certifications = await prisma.certification.findMany({
+      where: { isVerified: true },
+      orderBy: { name: 'asc' }
+    });
+    res.status(200).json({ status: 'success', data: certifications });
+  } catch (err) {
+    res.status(500).json({ status: 'failed', message: err.message });
+  }
+};
+
+// Fetch all Locations
+const getAllLocations = async (req, res) => {
+  try {
+    const locations = await prisma.location.findMany({
+      where: { isVerified: true },
+      orderBy: { name: 'asc' }
+    });
+    res.status(200).json({ status: 'success', data: locations });
+  } catch (err) {
+    res.status(500).json({ status: 'failed', message: err.message });
+  }
+};
+
+const updateSkills = async (req, res) => {
+  const { name } = req.body;
+  if(!name){
+    return res.status(200).json({ status:'failed', message: "Skill name is required" });
+  }
+  try {
+    const check = await prisma.skills.findUnique({ where: { name } });
+    if(check){
+      return res.status(200).json({ status:'failed', message: "Skill already exists" });
+    }
+    const newSkill = await prisma.skills.create({
+      data: { name, isVerified: false },
+    });
+    return res.status(200).json({status:'success', id: newSkill.id });
+  } catch (error) {
+    res.status(200).json({success:'failed', message: "Skill already exists or something went wrong" });
+  }
+}
+
+const updateCertifications = async (req, res) => {
+  const { name } = req.body;
+  if(!name){
+   return res.status(200).json({ status:'failed', message: "Certification name is required" });
+  }
+  try {
+    const check = await prisma.certification.findUnique({ where: { name } });
+    if(check){
+      return res.status(200).json({ status:'failed', message: "Certification already exists" });
+    }
+    const newSkill = await prisma.certification.create({
+      data: { name, isVerified: false },
+    });
+    return res.status(200).json({status:'success', id: newSkill.id });
+  } catch (error) {
+    return res.status(200).json({status: 'failed', message: "Certification already exists or something went wrong" });
+  }
+}
+
+const updateLocation = async (req, res) => {
+  const { name } = req.body;
+  if(!name){
+    return res.status(200).json({ status:'failed', message: "Location name is required" });
+  }
+  try {
+    const check = await prisma.location.findUnique({ where: { name } });
+    if(check){
+      return res.status(200).json({ status:'failed', message: "Location already exists" });
+    }
+    const newSkill = await prisma.location.create({
+      data: { name, isVerified: false },
+    });
+    return res.status(200).json({status:'success', id: newSkill.id });
+  } catch (error) {
+    return res.status(200).json({status:'failed', message: "Location already exists or something went wrong" });
+  }
+}
+
+const getUserProfileDetails = async (req, res) => {
+  try {
+    // The JWT middleware puts user info here
+    const { id } = req.user;  
+
+    if (!id) {
+      return res.status(400).json({ message: "User ID missing in token" });
+    }
+
+    // Fetch user details from DB
+    const user = await prisma.userProfile.findUnique({
+      where: { userId: id }
+    });
+      console.log("useers data", user)
+    if (!user) {
+      return res.status(200).json({ status: "failed", message: "User not found" });
+    }
+
+    return res.status(200).json({ success: "true", user });
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    return res.status(200).json({status: "failed", message: "Internal server error" });
+  }
+};
+
+// Fetch all Clouds
+const getAllClouds = async (req, res) => {
+  try {
+    const clouds = await prisma.cloud.findMany({
+      where: { isVerified: true },
+      orderBy: { name: 'asc' },
+    });
+    return res.status(200).json({ status: 'success', data: clouds });
+  } catch (err) {
+    return res.status(500).json({ status: 'failed', message: err.message });
+  }
+};
+
+// Add a cloud
+const addCloud = async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(200).json({ status: 'failed', message: "Cloud name is required" });
+  }
+  try {
+    const check = await prisma.cloud.findUnique({ where: { name } });
+    if (check) {
+      return res.status(200).json({ status: 'failed', message: "Cloud already exists" });
+    }
+    const newCloud = await prisma.cloud.create({
+      data: { name, isVerified: false },
+    });
+    return res.status(200).json({ status: 'success', id: newCloud.id });
+  } catch (error) {
+    return res.status(200).json({ status: 'failed', message: "Cloud already exists or something went wrong" });
+  }
+};
+
+
+
 export { 
   // userRegister, userLogin, 
-  userUploadTicket, userProfiledetails,userOtpGenerate,userOtpValidator }
+  userUploadTicket, userProfiledetails,userOtpGenerate,userOtpValidator, getAllSkills, getAllCertifications, getAllLocations, updateSkills, updateCertifications, updateLocation, getUserProfileDetails,getAllClouds, addCloud }

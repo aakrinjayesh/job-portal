@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const authenticateToken = (req, res, next) => {
+  console.log("inside middleware")
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
   if (!token) {

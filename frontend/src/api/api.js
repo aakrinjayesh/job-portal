@@ -106,4 +106,136 @@ export async function ValidateOtp(payload) {
   }
 }
 
+export async function GetUserProfile() {
+  try {
+    const response = await axiosInstance.post("/profile/details", {}, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+export async function GetSkills() {
+  try {
+    
+    const response = await axiosInstance.get("/skills", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+export async function GetCertifications() {
+  try {
+    const response = await axiosInstance.get("/certifications",  {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+
+export async function GetLocations() {
+  try {
+    const response = await axiosInstance.get("/locations", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+export async function PostSkills(payload) {
+  try {
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/skills", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+export async function PostCertifications(payload) {
+  try {
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/certifications", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+
+export async function PostLocations(payload) {
+  try {
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/locations", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+
+export async function GetClouds() {
+  try {
+    const response = await axiosInstance.get("/clouds", {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching clouds:", error);
+    throw error;
+  }
+}
+
+export async function PostClouds(payload) {
+  try {
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/clouds", data, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error adding cloud:", error);
+    throw error;
+  }
+}
+
+
+
 

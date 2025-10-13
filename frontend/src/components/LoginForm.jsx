@@ -15,10 +15,14 @@ const LoginForm = ({ userType }) => {
 
   const freeEmailProviders = [
     "gmail.com",
-    "outlook.com",
     "yahoo.com",
+    "outlook.com",
     "hotmail.com",
     "protonmail.com",
+    "icloud.com",
+    "aol.com",
+    "zoho.com",
+    "yandex.com",
   ];
 
   const isValidEmail = (email, type) => {

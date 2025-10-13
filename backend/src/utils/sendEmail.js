@@ -7,10 +7,8 @@ const sendEmail = (options) => {
     host: 'smtp.gmail.com',
     port: 465,
     auth: {
-      // user: process.env.SENDEREMAIL,
-      // pass: process.env.SENDERPASS
-      user: "vsaijayesh94@gmail.com",
-      pass: "wuki sofc hsdr kmgq"
+      user: process.env.SENDEREMAIL,
+      pass: process.env.SENDERPASS
     },
     // tls: {
     //   rejectUnauthorized: false

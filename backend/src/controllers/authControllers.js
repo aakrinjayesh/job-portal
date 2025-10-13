@@ -48,7 +48,7 @@ const googleAuth = async (req, res) => {
   if(!email){
     return res.status(400).json({ status: "failed", message: "Email not found in Google payload" })
   }
-  console.log('2')
+  
   if (!isValidEmail(email,type)) {
    
     const mesg = getEmailErrorMessage(type)
@@ -59,7 +59,7 @@ const googleAuth = async (req, res) => {
 
   if(!user){
     const name = [given_name, family_name].filter(Boolean).join(' ').trim() || 'Google User'
-    console.log("5")
+   
     user = await prisma.users.create({
       data: {
         name,
