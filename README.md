@@ -1,4 +1,4 @@
-# Job Portal Full Stack Application
+# Job Portal Full Stack Application.
 
 This is a **full-stack job portal** project with:
 
