@@ -25,7 +25,7 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import MainLayout from "./layouts/MainLayout";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import UpdateUserProfile from "./components/UpdateUserProfile";
+import UpdateUserProfile from "./pages/UpdateUserProfile";
 import Settings from "./pages/Settings";
 import FAQ from "./pages/FAQ";
 

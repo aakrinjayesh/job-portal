@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Form, Button, message, Typography, Divider, Input, Space } from "antd";
 import { useNavigate } from "react-router-dom";
-import { GenerateOtp, ValidateOtp } from "../api/api";
+import { GenerateOtp, ValidateOtp } from "../../api/api";
 import { GithubOutlined } from "@ant-design/icons";
-import GoogleAuthButton from "../components/GoogleAuthButton";
-import LinkedInAuthButton from "../components/LinkedInAuthButton";
+import GoogleAuthButton from "./GoogleAuthButton";
+import LinkedInAuthButton from "./LinkedinAuthButton";
 
 const LoginForm = ({ userType }) => {
   const navigate = useNavigate();

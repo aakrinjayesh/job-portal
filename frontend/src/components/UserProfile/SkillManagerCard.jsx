@@ -415,7 +415,7 @@
 import React, { useState, useEffect } from "react";
 import { Button, Modal, Input, List, Card } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import ReusableSelect from "../components/ReusableSelect";
+import ReusableSelect from "./ReusableSelect";
 
 const SkillManagerCard = ({
   title,

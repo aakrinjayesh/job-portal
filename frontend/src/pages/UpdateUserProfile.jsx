@@ -26,11 +26,11 @@ import {
   GetClouds,
   PostClouds,
 } from "../api/api";
-import GenerateResume from "./GenerateResume";
-import ReusableSelect from "./ReusableSelect";
-import SkillManagerCard from "./SkillManagerCard";
-import EducationCard from "./UserProfile/EducationCard";
-import ExperienceCard from "./UserProfile/ExperienceCard";
+import GenerateResume from "../components/UserProfile/GenerateResume";
+import ReusableSelect from "../components/UserProfile/ReusableSelect";
+import SkillManagerCard from "../components/UserProfile/SkillManagerCard";
+import EducationCard from "../components/UserProfile/EducationCard";
+import ExperienceCard from "../components/UserProfile/ExperienceCard";
 
 const { Title } = Typography;
 const { Option } = Select;

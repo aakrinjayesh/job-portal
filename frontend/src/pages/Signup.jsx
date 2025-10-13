@@ -1,7 +1,5 @@
 import React from "react";
 import { Form, Button, Card, message, Space, Input } from "antd";
-// import CustomButton from "../components/CustomButton";
-import InputBox from "../components/InputBox";
 import { useNavigate } from "react-router-dom";
 import { GenerateOtp, ValidateOtp } from "../api/api";
 
@@ -75,7 +73,7 @@ const Signup = () => {
             name="username"
             rules={[{ required: true, message: "Please input your username!" }]}
           >
-            <InputBox placeholder={"Username"} />
+            <Input placeholder={"Username"} />
           </Form.Item>
           <Space.Compact>
             <Form.Item
@@ -83,7 +81,7 @@ const Signup = () => {
               name="email"
               rules={[{ required: true, message: "Please input your Email!" }]}
             >
-              <InputBox placeholder={"Email"} />
+              <Input placeholder={"Email"} />
             </Form.Item>
             <Button
               onClick={async () => {

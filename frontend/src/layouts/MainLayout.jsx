@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Layout, Drawer, Button, Dropdown, Space } from "antd";
 import { BellOutlined } from "@ant-design/icons";
-import ProfileCustomButton from "../components/ProfileCustomButton";
+import ProfileCustomButton from "../components/Layout/ProfileCustomButton";
 import { useNavigate } from "react-router-dom";
 
 const { Header, Content, Footer } = Layout;

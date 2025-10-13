@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { GoogleAuth } from "../api/api";
+import { GoogleAuth } from "../../api/api";
 
 const GoogleAuthButton = ({ userType, messageAPI }) => {
   const [isProcessing, setIsProcessing] = useState(false);

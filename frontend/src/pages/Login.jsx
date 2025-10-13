@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card, Tabs } from "antd";
-import Candidate from "../components/Candidate";
-import Company from "../components/Company";
+import Candidate from "../components/Login/Candidate";
+import Company from "../components/Login/Company";
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState("1");
