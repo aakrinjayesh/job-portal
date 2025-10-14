@@ -35,12 +35,12 @@ const getEmailErrorMessage = (type) => {
 
 
 const googleAuth = async (req, res) => {
-  const { credential, client_id, type } = req.body;
+  const { credential, clientId, type } = req.body;
  
   try {
     const ticket = await client.verifyIdToken({
     idToken: credential,
-    audience: client_id,
+    audience: clientId,
   });
   const payload = ticket.getPayload();
   const { email, given_name, family_name } = payload;

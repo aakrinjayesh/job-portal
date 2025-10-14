@@ -443,8 +443,38 @@ const addCloud = async (req, res) => {
   }
 };
 
+const getJobList = async () =>{
+  try {
+    const jobs = prisma.jobList.findMany({
+        select : {
+          id,          
+          title, 
+          company,
+          rating ,
+          reviews,
+          experience,
+          location,
+          description,
+          skills,
+          posted      
+        }
+    })
+    return res.status(200).json({
+      status:"success",
+      jobs
+    })
+    
+  } catch (error) {
+    console.error("joblist Route Error:", err);
+      return res.status(500).json({
+        status: "failed",
+        error: err.message || "Internal server error",
+      })
+  }
+}
+
 
 
 export { 
   // userRegister, userLogin, 
-  userUploadTicket, userProfiledetails,userOtpGenerate,userOtpValidator, getAllSkills, getAllCertifications, getAllLocations, updateSkills, updateCertifications, updateLocation, getUserProfileDetails,getAllClouds, addCloud }
+  userUploadTicket, userProfiledetails,userOtpGenerate,userOtpValidator, getAllSkills, getAllCertifications, getAllLocations, updateSkills, updateCertifications, updateLocation, getUserProfileDetails,getAllClouds, addCloud, getJobList }

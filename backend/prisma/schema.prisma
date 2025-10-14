@@ -82,3 +82,17 @@ model Cloud {
   name       String  @unique
   isVerified Boolean @default(false)
 }
+
+model JobList {
+  id          String   @id @default(uuid())
+  title       String
+  company     String
+  rating      Float?
+  reviews     Int?
+  experience  String?
+  location    String?
+  description String?
+  skills      String[] // Array of skills
+  posted      DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
