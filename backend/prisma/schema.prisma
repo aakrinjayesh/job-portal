@@ -18,8 +18,15 @@ model Users {
   id          String       @id @default(uuid())
   name        String
   email       String       @unique
+  role        Role         @default(candidate)
   createdAt   DateTime     @default(now())
   UserProfile UserProfile?
+}
+
+enum Role {
+  candidate
+  company
+  admin
 }
 
 enum JobType {

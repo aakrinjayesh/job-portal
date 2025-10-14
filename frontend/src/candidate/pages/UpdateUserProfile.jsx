@@ -172,6 +172,14 @@ const UpdateUserProfile = () => {
         form.setFieldsValue({ education: extracted?.education });
       }
 
+      if (
+        extracted?.workExperience &&
+        Array.isArray(extracted?.workExperience)
+      ) {
+        setExperienceList(extracted?.workExperience);
+        form.setFieldValue({ workExperience: extracted?.workExperience });
+      }
+
       // Populate other fields
       form.setFieldsValue({
         title: extracted?.title || form.getFieldValue("title"),

@@ -64,6 +64,7 @@ const googleAuth = async (req, res) => {
       data: {
         name,
         email,
+        role:type
       }
     })
   }
@@ -73,7 +74,8 @@ const googleAuth = async (req, res) => {
   return res.status(200).json({
     status: "success",
     message: "Authenticated with Google",
-    token
+    token,
+    role:user?.role
   })
  
   } catch (err) {

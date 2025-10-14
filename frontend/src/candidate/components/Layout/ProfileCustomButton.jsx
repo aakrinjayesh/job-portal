@@ -52,6 +52,7 @@ const ProfileCustomButton = () => {
             onClick={() => {
               navigate("/");
               localStorage.removeItem("token");
+              localStorage.removeItem("role");
               setDrawerVisible(false);
             }}
           >

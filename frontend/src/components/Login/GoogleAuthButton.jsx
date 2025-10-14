@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { GoogleAuth } from "../../api/api";
+import { GoogleAuth } from "../../candidate/api/api";
 
 const GoogleAuthButton = ({ userType, messageAPI }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -23,11 +23,13 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
         return;
       }
       // Store token if backend sends one
-      if (resp?.token) {
-        localStorage.setItem("token", resp.token);
+      if (resp?.status === "success") {
+        localStorage.setItem("token", resp?.token);
+        localStorage.setItem("role", resp?.role || "no role");
       }
-
-      navigate("/home");
+      setTimeout(() => {
+        navigate(resp?.role === "candidate" && "/home");
+      }, 500);
     } catch (error) {
       console.error("Google login error:", error);
       // setIsProcessing(false);

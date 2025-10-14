@@ -8,7 +8,8 @@ UploadResumeValidator,
 updateSkillsValidator,
 updateCertificationsValidator,
 updateLocationValidator,
-addCloudValidator} from '../validators/userValidators.js'
+addCloudValidator,
+OtpGenerateValidator} from '../validators/userValidators.js'
 import { 
   // userRegister, userLogin,
   userUploadTicket, userProfiledetails, userOtpGenerate,userOtpValidator, getAllSkills, getAllCertifications, getAllLocations, updateCertifications, updateLocation, updateSkills, getUserProfileDetails, getAllClouds, addCloud, getJobList
@@ -26,14 +27,16 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // user login and auth routes
 userRouter.post('/auth/google', validateInput(googleAuthValidator),googleAuth)
-userRouter.post('/otp', validateInput(OtpValidator), userOtpGenerate)
+userRouter.post('/otp', validateInput(OtpGenerateValidator), userOtpGenerate)
 userRouter.post('/otp/validate', validateInput(OtpValidator),userOtpValidator)
 
 
 
 // user profile routes
 userRouter.post('/upload', upload.single('file'), validateInput(UploadResumeValidator),authenticateToken,userUploadTicket)
-userRouter.post('/profile',validateInput(userProfileValidator), authenticateToken,userProfiledetails);
+userRouter.post('/profile',
+  // validateInput(userProfileValidator), 
+  authenticateToken,userProfiledetails);
 // for the below just pass {} as payload
 userRouter.post('/profile/details', authenticateToken, getUserProfileDetails);
 

@@ -123,6 +123,7 @@ const userUploadTicket = async (req, res) => {
 
 const userProfiledetails = async (req, res) => {
   try {
+    console.log('inisde user profile update')
     if(!req.body){
       return res.status(400).json({ message: "No body found" })
     }
@@ -201,7 +202,7 @@ const userProfiledetails = async (req, res) => {
         title,
       }
     })
-
+    console.log('upded db useeprofile',upserted)
     return res.status(200).json({ status: 'success', data: upserted.userId })
   } catch (err) {
     console.error('Error saving user profile:', err)
@@ -214,7 +215,7 @@ const otpStore = new Map();
 
 const userOtpGenerate = async (req,res)=>{
   try{
-    const { email } = req.body
+    const { email, role } = req.body
     let user = await prisma.users.findUnique({ where: { email } })
 
     if (!user) {
@@ -223,12 +224,14 @@ const userOtpGenerate = async (req,res)=>{
         data: {
           name,
           email,
+          role,
         }
       })
     }
 
     const GenerateOtp = generateOtp()
     otpStore.set(email, GenerateOtp);
+    console.log('otp store',otpStore)
 
     sendEmail({
       to: email,
@@ -245,7 +248,9 @@ const userOtpGenerate = async (req,res)=>{
 const userOtpValidator = async (req,res) => {
   try {
     const { email, otp } = req.body;
-    console.log('validate otp')
+    console.log('validate otp',req.body)
+    console.log('email',email)
+    console.log('otp',otp)
     if(!email || !otp){
       return res.status(401).json({
         status: "failed",
@@ -261,8 +266,9 @@ const userOtpValidator = async (req,res) => {
         message: "Something went Wrong",
       });
     }
-
+    console.log('store',otpStore)
     const savedOtp = otpStore.get(email);
+    console.log("savedotp store", savedOtp)
 
     if (!savedOtp) {
       return res.status(400).json({ status: 'failed', message: 'No OTP found. Please request again.' });
@@ -276,6 +282,7 @@ const userOtpValidator = async (req,res) => {
         status: 'success',
         message: 'Successfully logged in',
         token: accessToken,
+         role: user.role,
       });
     } else {
       return res.status(401).json({

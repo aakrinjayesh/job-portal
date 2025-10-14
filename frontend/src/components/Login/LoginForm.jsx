@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Form, Button, message, Typography, Divider, Input, Space } from "antd";
 import { useNavigate } from "react-router-dom";
-import { GenerateOtp, ValidateOtp } from "../../api/api";
+import { GenerateOtp, ValidateOtp } from "../../candidate/api/api";
 import { GithubOutlined } from "@ant-design/icons";
 import GoogleAuthButton from "./GoogleAuthButton";
 import LinkedInAuthButton from "./LinkedinAuthButton";
@@ -51,7 +51,7 @@ const LoginForm = ({ userType }) => {
         messageApi.error(getEmailErrorMessage(userType));
         return;
       }
-      const res = await GenerateOtp({ email });
+      const res = await GenerateOtp({ email, role: userType });
       if (res.status === "success") {
         messageApi.success("OTP sent to your email");
       } else {
@@ -67,22 +67,25 @@ const LoginForm = ({ userType }) => {
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
-      if (!isValidEmail(values.email, userType)) {
+      if (!isValidEmail(values?.email, userType)) {
         messageApi.error(getEmailErrorMessage(userType));
         return;
       }
 
       const response = await ValidateOtp({
-        email: values.email,
-        otp: values.otp,
+        email: values?.email,
+        otp: values?.otp,
       });
-
-      if (response.status === "success") {
-        localStorage.setItem("token", response.token);
+      console.log("response of validate otp", response);
+      if (response?.status === "success") {
+        localStorage.setItem("token", response?.token);
+        localStorage.setItem("role", response?.role);
         messageApi.success("Logged in successfully!");
-        navigate("/home");
+        setTimeout(() => {
+          navigate(response?.role === "candidate" ? "/home" : "/dashboard");
+        }, 500);
       } else {
-        messageApi.error(response.message || "Invalid OTP");
+        messageApi.error(response?.message || "Invalid OTP");
       }
     } catch (err) {
       console.log("validate otp error", err);
@@ -121,41 +124,43 @@ const LoginForm = ({ userType }) => {
       >
         Login/Register to your account
       </Typography.Title>
+      {userType === "candidate" && (
+        <>
+          <Typography.Text
+            type="secondary"
+            style={{
+              display: "block",
+              textAlign: "center",
+              marginBottom: "20px",
+              fontSize: "14px",
+            }}
+          >
+            Connect with:
+          </Typography.Text>
 
-      <Typography.Text
-        type="secondary"
-        style={{
-          display: "block",
-          textAlign: "center",
-          marginBottom: "20px",
-          fontSize: "14px",
-        }}
-      >
-        Connect with:
-      </Typography.Text>
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              marginBottom: "24px",
+              justifyContent: "center",
+            }}
+          >
+            <GoogleAuthButton userType={userType} messageAPI={messageAPI} />
+            <LinkedInAuthButton userType={userType} />
+            <Button
+              icon={<GithubOutlined />}
+              size="large"
+              style={{ flex: 1 }}
+              onClick={() => messageApi.info("Trailhead login coming soon!")}
+            >
+              Trailhead
+            </Button>
+          </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "12px",
-          marginBottom: "24px",
-          justifyContent: "center",
-        }}
-      >
-        <GoogleAuthButton userType={userType} messageAPI={messageAPI} />
-        <LinkedInAuthButton userType={userType} />
-        <Button
-          icon={<GithubOutlined />}
-          size="large"
-          style={{ flex: 1 }}
-          onClick={() => messageApi.info("Trailhead login coming soon!")}
-        >
-          Trailhead
-        </Button>
-      </div>
-
-      <Divider>or</Divider>
-
+          <Divider>or</Divider>
+        </>
+      )}
       <Form
         form={form}
         name="basic"
