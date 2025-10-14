@@ -25,6 +25,7 @@ import React from "react";
 import { Col, Row, Card } from "antd";
 import Seetings from "./Settings";
 import FiltersPanel from "../components/Home/FilterPanel";
+import JobList from "../components/Home/JobList";
 
 function Home() {
   const handleFiltersChange = (filters) => {
@@ -92,7 +93,7 @@ function Home() {
               padding: "16px 24px",
             }}
           >
-            <Seetings />
+            <JobList />
           </Card>
         </Col>
       </Row>

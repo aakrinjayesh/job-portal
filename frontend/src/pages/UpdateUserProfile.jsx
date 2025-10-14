@@ -233,6 +233,7 @@ const UpdateUserProfile = () => {
   };
 
   const handleEducationChange = (updatedEducationList) => {
+    console.log("education changes", updatedEducationList);
     setEducationList(updatedEducationList);
     form.setFieldsValue({ education: updatedEducationList });
   };
