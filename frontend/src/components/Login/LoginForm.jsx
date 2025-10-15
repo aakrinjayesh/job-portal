@@ -81,11 +81,12 @@ const LoginForm = ({ userType }) => {
         localStorage.setItem("token", response?.token);
         localStorage.setItem("role", response?.role);
         messageApi.success("Logged in successfully!");
-        setTimeout(() => {
-          navigate(response?.role === "candidate" ? "/home" : "/dashboard");
-        }, 500);
-      } else {
-        messageApi.error(response?.message || "Invalid OTP");
+        if (response?.role === "candidate") {
+          navigate("/home");
+        } else {
+          navigate("/dashboard");
+          console.log("company dashboard");
+        }
       }
     } catch (err) {
       console.log("validate otp error", err);

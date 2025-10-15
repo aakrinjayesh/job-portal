@@ -22,7 +22,7 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./candidate/layouts/MainLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Login from "./pages/Login";
 import Home from "./candidate/pages/Home";
 import UpdateUserProfile from "./candidate/pages/UpdateUserProfile";
@@ -116,9 +116,6 @@ function App() {
             />
           </>
         )}
-
-        {/* Catch-all fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
