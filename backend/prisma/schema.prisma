@@ -21,6 +21,7 @@ model Users {
   role        Role         @default(candidate)
   createdAt   DateTime     @default(now())
   UserProfile UserProfile?
+  Job         Job[]        @relation("UserPostedJobs")
 }
 
 enum Role {
@@ -90,16 +91,66 @@ model Cloud {
   isVerified Boolean @default(false)
 }
 
-model JobList {
-  id          String   @id @default(uuid())
-  title       String
-  company     String
-  rating      Float?
-  reviews     Int?
-  experience  String?
-  location    String?
-  description String?
-  skills      String[] // Array of skills
-  posted      DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// model Job {
+//   id          String   @id @default(uuid())
+//   title       String
+//   company     String
+//   rating      Float?
+//   reviews     Int?
+//   experience  String?
+//   location    String?
+//   description String?
+//   skills      String[] // Array of skills
+//   posted      DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+// }
+
+enum EmploymentType {
+  FullTime
+  PartTime
+  Internship
+  Contract
+  Freelance
+}
+
+enum ExperienceLevel {
+  Internship
+  EntryLevel
+  Mid
+  Senior
+  Lead
+}
+
+enum JobStatus {
+  Open
+  Closed
+  Draft
+}
+
+model Job {
+  id                  String           @id @default(uuid())
+  role                String
+  description         String?
+  employmentType      EmploymentType
+  experience          String?
+  experienceLevel     ExperienceLevel?
+  location            String?
+  skills              String[] // Array of skills
+  salary              Int
+  companyName         String
+  responsibilities    String[]
+  qualifications      String[]
+  jobType             String
+  status              JobStatus        @default(Open)
+  applicationDeadline String
+  // rating      Float?
+  // reviews     Int?
+  // companyId          String?
+  // company            Company?  @relation(fields: [companyId], references: [id])
+
+  postedById String?
+  postedBy   Users?  @relation("UserPostedJobs", fields: [postedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

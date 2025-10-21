@@ -1,4 +1,4 @@
-import { email, z } from 'zod'
+import {  z } from 'zod'
 
 
 
@@ -87,6 +87,44 @@ const addCloudValidator = z.object({
   name: z.string()
 })
 
+
+// Job listing validators
+const getJobListValidator = z.object({
+  // TODO: Add filter parameters
+})
+
+const postJobValidator = z.object({
+  // TODO: Add job creation fields
+})
+
+// Job application validators
+const applyJobValidator = z.object({
+  // TODO: Add application fields if needed
+})
+
+const withdrawJobValidator = z.object({
+  // TODO: Add withdrawal fields if needed
+})
+
+// Saved jobs validators
+const saveJobValidator = z.object({
+  // TODO: Add save job fields if needed
+})
+
+const removeSavedJobValidator = z.object({
+  // TODO: Add remove saved job fields if needed
+})
+
+// Company job management validators
+const editJobValidator = z.object({
+  editid: z.strict()
+})
+
+const deleteJobValidator = z.object({
+  deleteList: z.array()
+  // TODO: Add delete confirmation fields if needed
+})
+
 export {
   googleAuthValidator,
   OtpGenerateValidator,
@@ -96,5 +134,13 @@ export {
   updateSkillsValidator,
   updateCertificationsValidator,
   updateLocationValidator,
-  addCloudValidator
+  addCloudValidator,
+  getJobListValidator,
+  postJobValidator,
+  applyJobValidator,
+  withdrawJobValidator,
+  saveJobValidator,
+  removeSavedJobValidator,
+  editJobValidator,
+  deleteJobValidator
 }
