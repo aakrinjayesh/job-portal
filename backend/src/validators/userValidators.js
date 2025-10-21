@@ -117,7 +117,39 @@ const removeSavedJobValidator = z.object({
 
 // Company job management validators
 const editJobValidator = z.object({
-  editid: z.strict()
+  editid: z.string(),
+  role: z.string(),
+  description: z.string(),
+
+  employmentType: z
+    .enum(["FullTime", "PartTime", "Internship", "Contract", "Freelance"]),
+
+  experience: z.string(),
+  experienceLevel: z
+    .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
+
+  location: z.string(),
+
+  skills: z.array(z.string().min(1)),
+
+  responsibilities: z.array(z.string().min(1)),
+  qualifications: z.array(z.string().min(1)),
+
+  salary: z
+    .number({ invalid_type_error: "salary must be a number" })
+    .int()
+    .nonnegative(),
+
+  companyName: z.string().optional(),
+
+  jobType: z.string().optional(),
+
+  status: z.enum(["Open", "Closed", "Draft"]).optional(),
+
+  applicationDeadline: z
+    .string()
+    .optional(),
+  postedById: z.string().optional(),
 })
 
 const deleteJobValidator = z.object({

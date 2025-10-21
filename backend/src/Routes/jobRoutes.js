@@ -49,7 +49,9 @@ import {
 const JobRouters = express.Router()
 
 // Public job routes
-JobRouters.get('/jobs', validateInput(getJobListValidator), getJobList) // Changed to GET
+JobRouters.get('/jobs', 
+  // validateInput(getJobListValidator),
+   getJobList) // Changed to GET
 JobRouters.post('/jobs/filter', validateInput(getJobListValidator), authenticateToken, getJobList) // For filtered search
 
 
