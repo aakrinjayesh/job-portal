@@ -29,6 +29,7 @@ import Settings from "./candidate/pages/Settings";
 import FAQ from "./candidate/pages/FAQ";
 import Signup from "./candidate/pages/Signup";
 import DashBoard from "./company/pages/DashBoard";
+import CompanyLayout from "./company/layout/CompanyLayout";
 
 function App() {
   return (
@@ -77,33 +78,33 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <MainLayout>
+            <CompanyLayout>
               <DashBoard />
-            </MainLayout>
+            </CompanyLayout>
           }
         />
         <Route
           path="/manage-jobs"
           element={
-            <MainLayout>
+            <CompanyLayout>
               <div>company jobs</div>
-            </MainLayout>
+            </CompanyLayout>
           }
         />
         <Route
           path="/candidates"
           element={
-            <MainLayout>
+            <CompanyLayout>
               <div>company candidates</div>
-            </MainLayout>
+            </CompanyLayout>
           }
         />
         <Route
           path="/company-settings"
           element={
-            <MainLayout>
+            <CompanyLayout>
               <div>company seetings</div>
-            </MainLayout>
+            </CompanyLayout>
           }
         />
       </Routes>
