@@ -126,72 +126,70 @@ const userAllSavedJobs = async (req, res) => {
 
 // hari
 // Get list of jobs that are recently posted
-const getJobList = async (req, res) => {
-  const body = req.body
-  if (body && Object.keys(body).length > 0) {
-    try {
-      // TODO: Implement filter logic
-      // - Parse filter criteria from body
-      // - Apply filters to job query
-      // - Return filtered results
-      return res.status(501).json({
-        status: "not_implemented",
-        message: "Filter logic pending implementation"
-      })
-    } catch (error) {
-      console.error("getJobList Filter Error:", error);
-      return res.status(500).json({
-        status: "failed",
-        error: error.message || "Internal server error"
-      })
+ const getJobList = async (req, res) => {
+  try{
+    const jobs= await prisma.job.findMany()
+    if(!jobs){
+      return res.status(200).json({message:"Something went wrong"})
     }
-  } else {
-    try {
-      const jobs = await prisma.job.findMany({
-        select: {
-          id: true,
-          title: true,
-          company: true,
-          rating: true,
-          reviews: true,
-          experience: true,
-          location: true,
-          description: true,
-          skills: true,
-          posted: true
-        },
-        orderBy: {
-          posted: 'desc'
-        }
-      })
-      console.log('jobs', jobs)
-      return res.status(200).json({
-        status: "success",
-        jobs
-      })
-    } catch (error) {
-      console.error("getJobList Error:", error);
-      return res.status(500).json({
-        status: "failed",
-        error: error.message || "Internal server error"
-      })
-    }
+    return res.status(200).json({
+      status: "Success",
+      jobs
+    })
+  }catch(error){
+    console.error("userAllSavedJobs Error:", error);
+    return res.status(500).json({
+      status: "failed",
+      error: error.message || "Internal server error"
+    })
   }
-}
+};
 
 // jayesh
 // Post a job by company or vendor
 const postJob = async (req, res) => {
   try {
-    // TODO: Implement post job logic
-    // - Extract job details from req.body
-    // - Validate required fields
-    // - Create job record in database
-    // - Return created job with success response
-    return res.status(501).json({
-      status: "not_implemented",
-      message: "Post job functionality pending"
-    })
+      const {
+      role,
+      description,
+      employmentType,
+      experience,
+      experienceLevel,
+      location,
+      skills,
+      salary,
+      companyName,
+      responsibilities,
+      qualifications,
+      jobType,
+      applicationDeadline,
+    } = req.body;
+    console.log('body ##########',req.body)
+    const userFromAuth = req.user
+
+    const job = await prisma.job.create({
+      data: {
+        role,
+        description,
+        employmentType,
+        experience,
+        experienceLevel,
+        location,
+        skills,
+        salary,
+        companyName,
+        responsibilities,
+        qualifications,
+        jobType,
+        applicationDeadline,
+        postedById: userFromAuth.id, // optional
+      },
+    });
+    return res.status(201).json({
+      status: "success",
+      message: "Job posted successfully",
+      job,
+    });
   } catch (error) {
     console.error("postJob Error:", error);
     return res.status(500).json({
@@ -205,66 +203,137 @@ const postJob = async (req, res) => {
 // Get list of all jobs posted by company
 const postedJobs = async (req, res) => {
   try {
-    // TODO: Implement get posted jobs logic
-    // - Extract companyId from req
-    // - Query all jobs by company
-    // - Return list of posted jobs
-    return res.status(501).json({
-      status: "not_implemented",
-      message: "Get posted jobs functionality pending"
-    })
+    // ✅ Get userid from POST body
+    const { userid } = req.body;
+
+    // ✅ Fetch all jobs posted by this user
+    const jobs = await prisma.job.findMany({
+      where: { postedById: userid },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Posted jobs fetched successfully",
+      count: jobs.length,
+      data: jobs
+    });
+
   } catch (error) {
-    console.error("postedJobs Error:", error);
+    console.error("postedJobs POST Error:", error);
     return res.status(500).json({
       status: "failed",
       error: error.message || "Internal server error"
-    })
+    });
   }
-}
+};
 
-// jayesh
+
 // Edit job posted by company or vendor
 const editJob = async (req, res) => {
   try {
-    // TODO: Implement edit job logic
-    // - Extract jobId and update data from req
-    // - Validate company ownership
-    // - Update job record
-    // - Return updated job
-    return res.status(501).json({
-      status: "not_implemented",
-      message: "Edit job functionality pending"
-    })
+    const {
+      id, // the job ID to update
+      role,
+      description,
+      employmentType,
+      experience,
+      experienceLevel,
+      location,
+      skills,
+      salary,
+      companyName,
+      responsibilities,
+      qualifications,
+      jobType,
+      status,
+      applicationDeadline,
+    } = req.body;
+
+    const userFromAuth = req.user;
+
+    // Check if job exists first
+    const existingJob = await prisma.job.findUnique({
+      where: { id: id },
+    });
+
+    if (!existingJob) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Job not found",
+      });
+    }
+
+    // Optional: check if user is authorized to edit
+    if (existingJob.postedById && existingJob.postedById !== userFromAuth.id) {
+      return res.status(403).json({
+        status: "failed",
+        message: "You are not authorized to edit this job",
+      });
+    }
+
+    // Update the job
+    const updatedJob = await prisma.job.update({
+      where: { id },
+      data: {
+        id, // the job ID to update
+        role,
+        description,
+        employmentType,
+        experience,
+        experienceLevel,
+        location,
+        skills,
+        salary,
+        companyName,
+        responsibilities,
+        qualifications,
+        jobType,
+        status,
+        applicationDeadline,
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Job updated successfully",
+      job: updatedJob,
+    });
   } catch (error) {
     console.error("editJob Error:", error);
     return res.status(500).json({
       status: "failed",
-      error: error.message || "Internal server error"
-    })
+      error: error.message || "Internal server error",
+    });
   }
-}
+};
+
 
 // shruthi
 // Delete job posted by company or vendor
 const deleteJob = async (req, res) => {
+  console.log("Delete Job API hit");
   try {
-    // TODO: Implement delete job logic
-    // - Extract jobId from req
-    // - Validate company ownership
-    // - Delete job record and related data
-    // - Return success response
-    return res.status(501).json({
-      status: "not_implemented",
-      message: "Delete job functionality pending"
-    })
+    const { jobIds } = req.body;  // For multiple delete
+ 
+    if (jobIds && Array.isArray(jobIds) && jobIds.length > 0) {
+      await prisma.job.deleteMany({
+        where: { id: { in: jobIds } },
+      });
+ 
+      return res.status(200).json({
+        status: "success",
+        message: "jobs deleted successfully"
+      });
+    }
   } catch (error) {
     console.error("deleteJob Error:", error);
     return res.status(500).json({
       status: "failed",
-      error: error.message || "Internal server error"
-    })
+      error: error.message || "Internal server error",
+    });
   }
-}
+};
 
 export {
   userApplyJob,

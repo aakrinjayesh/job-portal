@@ -43,15 +43,17 @@ import {
   saveJobValidator,
   removeSavedJobValidator,
   editJobValidator,
-  deleteJobValidator
+  deleteJobValidator,
+  postedJobValidator
 } from '../validators/userValidators.js'
 
 const JobRouters = express.Router()
 
 // Public job routes
 JobRouters.get('/jobs', 
-  // validateInput(getJobListValidator),
-   getJobList) // Changed to GET
+  // validateInput(getJobListValidator), 
+  authenticateToken,
+   getJobList)
 JobRouters.post('/jobs/filter', validateInput(getJobListValidator), authenticateToken, getJobList) // For filtered search
 
 
@@ -71,11 +73,14 @@ JobRouters.get('/jobs/saved', authenticateToken, userAllSavedJobs)
 
 
 // Company/Vendor job management routes
-JobRouters.post('/jobs/create', validateInput(postJobValidator), authenticateToken, postJob)
-JobRouters.get('/jobs/posted', authenticateToken, postedJobs)
-JobRouters.put('/jobs/:jobId', validateInput(editJobValidator), authenticateToken, editJob)
-JobRouters.patch('/jobs/:jobId', validateInput(editJobValidator), authenticateToken, editJob) // Alternative for partial updates
-JobRouters.delete('/jobs/:jobId', validateInput(deleteJobValidator), authenticateToken, deleteJob)
+JobRouters.post('/jobs/create', 
+  validateInput(postJobValidator), 
+  authenticateToken, postJob)
+JobRouters.post('/jobs/posted',validateInput(postedJobValidator),authenticateToken, postedJobs)
+JobRouters.post('/jobs/update', 
+  validateInput(editJobValidator), 
+  authenticateToken, editJob)
+JobRouters.delete('/jobs/delete', validateInput(deleteJobValidator), authenticateToken, deleteJob)
 
 
 

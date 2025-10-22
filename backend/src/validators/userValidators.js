@@ -94,7 +94,26 @@ const getJobListValidator = z.object({
 })
 
 const postJobValidator = z.object({
-  // TODO: Add job creation fields
+  role: z.string(),
+  description: z.string(),
+  employmentType: z
+    .enum(["FullTime", "PartTime", "Internship", "Contract", "Freelance"]),
+  experience: z.string(),
+  experienceLevel: z
+    .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
+  location: z.string(),
+  skills: z.array(z.string()),
+  salary: z
+    .number({ invalid_type_error: "salary must be a number" })
+    .int()
+    .nonnegative(),
+  companyName: z.string(),
+  responsibilities: z.array(z.string()),
+  qualifications: z.array(z.string()),
+  jobType: z.string().optional(),
+  status: z.enum(["Open", "Closed", "Draft"]).optional(),
+  applicationDeadline: z
+    .string()
 })
 
 // Job application validators
@@ -117,44 +136,37 @@ const removeSavedJobValidator = z.object({
 
 // Company job management validators
 const editJobValidator = z.object({
-  editid: z.string(),
+  id: z.string(),
   role: z.string(),
   description: z.string(),
-
   employmentType: z
     .enum(["FullTime", "PartTime", "Internship", "Contract", "Freelance"]),
-
   experience: z.string(),
   experienceLevel: z
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
-
   location: z.string(),
-
-  skills: z.array(z.string().min(1)),
-
-  responsibilities: z.array(z.string().min(1)),
-  qualifications: z.array(z.string().min(1)),
-
+  skills: z.array(z.string()),
   salary: z
     .number({ invalid_type_error: "salary must be a number" })
     .int()
     .nonnegative(),
-
-  companyName: z.string().optional(),
-
+  companyName: z.string(),
+  responsibilities: z.array(z.string()),
+  qualifications: z.array(z.string()),
   jobType: z.string().optional(),
-
   status: z.enum(["Open", "Closed", "Draft"]).optional(),
-
   applicationDeadline: z
     .string()
-    .optional(),
-  postedById: z.string().optional(),
 })
 
 const deleteJobValidator = z.object({
-  deleteList: z.array()
+  jobIds: z.array(z.string())
   // TODO: Add delete confirmation fields if needed
+})
+
+const postedJobValidator = z.object({
+  userid:z.string()
+  
 })
 
 export {
@@ -174,5 +186,6 @@ export {
   saveJobValidator,
   removeSavedJobValidator,
   editJobValidator,
-  deleteJobValidator
+  deleteJobValidator,
+  postedJobValidator
 }
