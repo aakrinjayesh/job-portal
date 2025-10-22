@@ -31,7 +31,6 @@ import Signup from "./candidate/pages/Signup";
 import DashBoard from "./company/pages/DashBoard";
 
 function App() {
-  console.log("hi");
   return (
     <BrowserRouter>
       <Routes>
