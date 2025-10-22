@@ -22,17 +22,15 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./candidate/layouts/MainLayout";
-import { useState, useEffect } from "react";
 import Login from "./pages/Login";
 import Home from "./candidate/pages/Home";
 import UpdateUserProfile from "./candidate/pages/UpdateUserProfile";
 import Settings from "./candidate/pages/Settings";
 import FAQ from "./candidate/pages/FAQ";
 import Signup from "./candidate/pages/Signup";
+import DashBoard from "./company/pages/DashBoard";
 
 function App() {
-  const [role, setRole] = useState(localStorage.getItem("role"));
-
   return (
     <BrowserRouter>
       <Routes>
@@ -42,80 +40,72 @@ function App() {
         <Route path="/signup" element={<Signup />} />
 
         {/* Candidate routes */}
-        {role === "candidate" && (
-          <>
-            <Route
-              path="/home"
-              element={
-                <MainLayout>
-                  <Home />
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/updateprofile"
-              element={
-                <MainLayout>
-                  <UpdateUserProfile />
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <MainLayout>
-                  <Settings />
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/faq"
-              element={
-                <MainLayout>
-                  <FAQ />
-                </MainLayout>
-              }
-            />
-          </>
-        )}
+        <Route
+          path="/home"
+          element={
+            <MainLayout>
+              <Home />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/updateprofile"
+          element={
+            <MainLayout>
+              <UpdateUserProfile />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <MainLayout>
+              <Settings />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/faq"
+          element={
+            <MainLayout>
+              <FAQ />
+            </MainLayout>
+          }
+        />
 
         {/* Company routes */}
-        {role === "company" && (
-          <>
-            <Route
-              path="/dashboard"
-              element={
-                <MainLayout>
-                  <div>company dashboard</div>
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/manage-jobs"
-              element={
-                <MainLayout>
-                  <div>company jobs</div>
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/candidates"
-              element={
-                <MainLayout>
-                  <div>company candidates</div>
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/company-settings"
-              element={
-                <MainLayout>
-                  <div>company seetings</div>
-                </MainLayout>
-              }
-            />
-          </>
-        )}
+        <Route
+          path="/dashboard"
+          element={
+            <MainLayout>
+              <DashBoard />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/manage-jobs"
+          element={
+            <MainLayout>
+              <div>company jobs</div>
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/candidates"
+          element={
+            <MainLayout>
+              <div>company candidates</div>
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/company-settings"
+          element={
+            <MainLayout>
+              <div>company seetings</div>
+            </MainLayout>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

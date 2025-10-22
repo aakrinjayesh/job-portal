@@ -81,12 +81,7 @@ const LoginForm = ({ userType }) => {
         localStorage.setItem("token", response?.token);
         localStorage.setItem("role", response?.role);
         messageApi.success("Logged in successfully!");
-        if (response?.role === "candidate") {
-          navigate("/home");
-        } else {
-          navigate("/dashboard");
-          console.log("company dashboard");
-        }
+        navigate(response?.role === "candidate" ? "/home" : "/dashboard");
       }
     } catch (err) {
       console.log("validate otp error", err);
