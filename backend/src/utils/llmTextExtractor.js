@@ -1,7 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSysPrompt } from "./systemPrompt.js";
+import dotenv from 'dotenv';
 
-const genAI = new GoogleGenerativeAI("AIzaSyCj3C19RXKxE1XoVuurPN95F3JH6-Z2OCU"); // set API key in .env
+dotenv.config();
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); // set API key in .env
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 export const extractResumeSections = async (text) => {
@@ -14,7 +17,7 @@ export const extractResumeSections = async (text) => {
 
   const toArray = (value) => Array.isArray(value) ? value : [];
   // Function to safely check if value is a finite number, otherwise null
-  const toNumber = (value) => typeof value === 'number' && isFinite(value) ? value : null;
+const toNumber = (value) => typeof value === 'number' && isFinite(value) ? value : null;
 
 
   // Try parsing JSON safely
