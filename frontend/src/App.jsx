@@ -30,6 +30,8 @@ import FAQ from "./candidate/pages/FAQ";
 import Signup from "./candidate/pages/Signup";
 import DashBoard from "./company/pages/DashBoard";
 import CompanyLayout from "./company/layout/CompanyLayout";
+import RecruiterJobList from "./company/components/Home/RecruiterJobList";
+import JobDetails from "./company/components/Home/JobDetails";
 
 function App() {
   return (
@@ -80,6 +82,23 @@ function App() {
           element={
             <CompanyLayout>
               <DashBoard />
+            </CompanyLayout>
+          }
+        />
+
+        <Route
+          path="/job/:id"
+          element={
+            <CompanyLayout>
+              <JobDetails />
+            </CompanyLayout>
+          }
+        />
+        <Route
+          path="/recruiterjoblist"
+          element={
+            <CompanyLayout>
+              <RecruiterJobList />
             </CompanyLayout>
           }
         />
