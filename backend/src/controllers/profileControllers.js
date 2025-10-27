@@ -10,17 +10,18 @@ import { extractResumeSections } from '../utils/llmTextExtractor.js'
 const UploadResume = async (req, res) => {
   try {
     console.log('inside file');
-
+ 
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-
+    const { role } = req.body;
+ 
     const pdfBuffer = req.file.buffer;
-    
+   
     const text = await extractTextFromBase64(pdfBuffer)
-
-    const structuredData = await extractResumeSections(text);
-
+ 
+    const structuredData = await extractResumeSections(text,role);
+ 
     res.status(200).json({
       message: "File received successfully",
       fileName: req.file.originalname,
@@ -28,7 +29,7 @@ const UploadResume = async (req, res) => {
       size: req.file.size,
        extracted: structuredData,
     });
-
+ 
   } catch (err) {
     console.error("Error in userUploadTicket:", err);
     res.status(500).json({ error: "Something went wrong while uploading" });

@@ -76,3 +76,102 @@ ${text}
 
 
 
+export const recruiterSysPrompt = (text) => `
+You are extracting structured recruiter-related information from a resume text. Parse the text and return **ONLY valid JSON**...
+### **Required JSON Schema & Data Type Compliance**
+
+| Key | Data Type | Notes & Normalization Rules | Default Value (If Not Found) |
+| :--- | :--- | :--- | :--- |
+| **role** | \`string | null\` | Job title or designation (e.g., "Machine Learning Engineer"). | \`null\` |
+| **description** | \`string | null\` | Full job description text. | \`null\` |
+| **employmentType** | \`string | null\` | **Normalization Required:** Choose one from **"FullTime"**, **"PartTime"**, **"Contract"**, **"Internship"**, or **"Freelance"**. | \`null\` |
+| **experience** | \`string | null\` | Text form of required experience (e.g., "3 years", "2-5 years"). | \`null\` |
+| **experienceLevel** | \`string | null\` | Normalize into **"Intern"**, **"Junior"**, **"Mid"**, **"Senior"**, or **"Lead"**. | \`null\` |
+| **location** | \`string | null\` | Job location (e.g., "Bangalore, India"). | \`null\` |
+| **skills** | \`string[]\` | List of skills mentioned (e.g., ["Python", "TensorFlow", "SQL"]). | \`[]\` |
+| **salary** | \`number | 0\` | Annual salary (numeric only). Remove symbols like ₹ or $, e.g., "₹12,00,000" → 1200000. | \`0\` |
+| **companyName** | \`string | null\` | Name of the hiring company. | \`null\` |
+| **responsibilities** | \`string[]\` | List of job responsibilities. | \`[]\` |
+| **qualifications** | \`string[]\` | Required educational or professional qualifications. | \`[]\` |
+| **jobType** | \`string | null\` | Work type: one of **"Onsite"**, **"Remote"**, or **"Hybrid"**. | \`null\` |
+| **status** | \`string | null\` | Job posting status (e.g., "Open", "Closed", "Draft"). | \`"Open"\` |
+| **applicationDeadline** | \`string | null\` | Deadline date for applications in **YYYY-MM-DD** format if possible. | \`null\` |
+
+---
+
+### **Extraction & Normalization Rules**
+
+1. **Output Format:**  
+   - Return **only the JSON object**, no markdown code fences (\`\`\`), no text before or after.  
+   - Example ✅  
+     \`\`\`json
+     {"role": "Machine Learning Engineer", "skills": ["Python", "TensorFlow"]}
+     \`\`\`
+     ❌ Wrong → "Here is your JSON output"
+
+2. **Default Values:**  
+   - If a field is missing, use the provided default value from the table above.
+
+3. **Normalization Rules:**
+   - **employmentType:**  
+     Normalize similar words:  
+     "full time", "permanent" → **"FullTime"**  
+     "contractual", "consultant" → **"Contract"**  
+     "intern" → **"Internship"**  
+     "part time" → **"PartTime"**  
+     "freelance" → **"Freelance"**
+   
+   - **experienceLevel:**  
+     - If text mentions "junior", "entry", or "<3 years" → **"Junior"**  
+     - "mid-level", "intermediate", "3-6 years" → **"Mid"**  
+     - "senior", "lead", "7+ years" → **"Senior" or "Lead"**  
+     - "intern" → **"Intern"**
+
+   - **jobType:**  
+     Normalize to **"Onsite"**, **"Remote"**, or **"Hybrid"**.
+
+   - **salary:**  
+     Extract only numbers, remove currency symbols or text like "LPA", "per annum", etc.
+
+   - **applicationDeadline:**  
+     - If only month/year found, format as "YYYY-MM" or "YYYY-MM-01".  
+     - If no valid date is found, set as \`null\`.
+
+4. **Responsibilities & Qualifications:**  
+   - Must be arrays of strings.  
+   - If given as a paragraph, split by bullet points or sentences.
+
+5. **Experience Parsing:**  
+   - Keep as readable text, don’t convert to a number (e.g., “3 years” → **3 years**).  
+   - If range like “2–5 years”, keep it as is.
+
+6. **Skills Extraction:**  
+   - Extract all technical, domain, or software-related terms.  
+   - Convert them into a clean array of strings.  
+   - Avoid duplicates, symbols, or phrases like "knowledge of".
+
+7. **Status Field:**  
+   - Default = "Open" unless text says "Closed", "Expired", or similar.
+
+---
+
+### **Additional Notes**
+- If any key information (like companyName or salary) is missing, still include the key with its default value.
+- The JSON must be **valid, parseable, and syntactically correct**.
+- No markdown, explanations, or surrounding text — only JSON.
+
+---
+
+### **Final Output Rule (Strict)**
+⚠️ Return **only** the JSON object.
+Do **not** include markdown formatting (\`\`\`), explanations, or text around it.
+Only valid, machine-readable JSON is accepted.
+
+---
+
+### **Job Post Text (Unstructured):**
+--- 
+// Resume Text (Unstructured):  
+${text}
+`;
+

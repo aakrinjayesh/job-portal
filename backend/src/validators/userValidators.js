@@ -169,6 +169,10 @@ const postedJobValidator = z.object({
   
 })
 
+const getJobDeatilsValidator = z.object({
+  jobid:z.string()
+})
+
 export {
   googleAuthValidator,
   OtpGenerateValidator,
@@ -187,5 +191,6 @@ export {
   removeSavedJobValidator,
   editJobValidator,
   deleteJobValidator,
-  postedJobValidator
+  postedJobValidator,
+  getJobDeatilsValidator
 }

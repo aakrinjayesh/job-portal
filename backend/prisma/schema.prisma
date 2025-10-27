@@ -143,6 +143,9 @@ model Job {
   jobType             String
   status              JobStatus        @default(Open)
   applicationDeadline String
+  isDeleted           Boolean          @default(false)
+  deletedReason       String?
+  deletedAt           DateTime?
   // rating      Float?
   // reviews     Int?
   // companyId          String?

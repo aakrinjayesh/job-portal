@@ -30,7 +30,8 @@ import {
   userAllSavedJobs, 
   postedJobs, 
   editJob, 
-  deleteJob 
+  deleteJob,
+  getJobDetails 
 } from '../controllers/jobControllers.js'
 import { validateInput } from '../Middleware/inputValidator.js'
 import { authenticateToken } from '../Middleware/authMiddleware.js'
@@ -44,7 +45,8 @@ import {
   removeSavedJobValidator,
   editJobValidator,
   deleteJobValidator,
-  postedJobValidator
+  postedJobValidator,
+  getJobDeatilsValidator
 } from '../validators/userValidators.js'
 
 const JobRouters = express.Router()
@@ -55,7 +57,7 @@ JobRouters.get('/jobs',
   authenticateToken,
    getJobList)
 JobRouters.post('/jobs/filter', validateInput(getJobListValidator), authenticateToken, getJobList) // For filtered search
-
+JobRouters.post('/job/details',validateInput(getJobDeatilsValidator), authenticateToken, getJobDetails)
 
 
 // User job application routes

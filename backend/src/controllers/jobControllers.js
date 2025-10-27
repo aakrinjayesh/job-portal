@@ -145,6 +145,7 @@ const userAllSavedJobs = async (req, res) => {
   }
 };
 
+
 // jayesh
 // Post a job by company or vendor
 const postJob = async (req, res) => {
@@ -314,11 +315,16 @@ const editJob = async (req, res) => {
 const deleteJob = async (req, res) => {
   console.log("Delete Job API hit");
   try {
-    const { jobIds } = req.body;  // For multiple delete
+    const { jobIds,deletedReason } = req.body;  // For multiple delete
  
     if (jobIds && Array.isArray(jobIds) && jobIds.length > 0) {
-      await prisma.job.deleteMany({
+      await prisma.job.updateMany({
         where: { id: { in: jobIds } },
+        data: {
+        isDeleted: true,
+        deletedReason,
+        deletedAt: new Date()
+      },
       });
  
       return res.status(200).json({
@@ -334,6 +340,28 @@ const deleteJob = async (req, res) => {
     });
   }
 };
+ 
+const getJobDetails = async (req, res) => {
+  try{
+    const {jobid} = req.body
+    const job= await prisma.job.findUnique({
+      where:{id: jobid}
+    })
+    if(!job){
+      return res.status(200).json({message:"Something went wrong"})
+    }
+    return res.status(200).json({
+      status: "Success",
+      job
+    })
+  }catch(error){
+    console.error("userAllSavedJobs Error:", error);
+    return res.status(500).json({
+      status: "failed",
+      error: error.message || "Internal server error"
+    })
+  }
+};
 
 export {
   userApplyJob,
@@ -346,5 +374,6 @@ export {
   postJob,
   postedJobs,
   editJob,
-  deleteJob
+  deleteJob,
+  getJobDetails
 }
