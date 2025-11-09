@@ -12,6 +12,7 @@ import {
 } from "antd";
 import axios from "axios";
 import { ArrowLeftOutlined, EnvironmentOutlined } from "@ant-design/icons";
+import { GetJobDetails } from "../../api/api";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -27,16 +28,19 @@ const JobDetails = () => {
 
   const fetchJobDetails = async () => {
     try {
-      const response = await axios.post(`http://localhost:3000/job/details`, {
-        jobid: id,
-      });
-      setJob(response.data.job);
+      const payload = { jobid: id };
+      const response = await GetJobDetails(payload);
+      setJob(response?.job);
     } catch (error) {
       message.error("Failed to load job details");
       console.error(error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewCandidates = () => {
+    navigate("/company/candidates", { state: { id } });
   };
 
   if (loading) return <Spin size="large" style={{ marginTop: 100 }} />;
@@ -47,7 +51,7 @@ const JobDetails = () => {
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
       <Button
         type="link"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/company/jobs")}
         icon={<ArrowLeftOutlined />}
       >
         Back
@@ -101,18 +105,11 @@ const JobDetails = () => {
           ))}
         </div>
 
-        {job.deletedReason && (
-          <>
-            <Divider />
-            <Text type="danger">
-              <strong>Deleted Reason:</strong> {job.deletedReason}
-            </Text>
-          </>
-        )}
-
         <Divider />
 
-        <Button type="primary">Apply Now</Button>
+        <Button type="primary" onClick={handleViewCandidates}>
+          View Candidates
+        </Button>
       </Card>
     </div>
   );

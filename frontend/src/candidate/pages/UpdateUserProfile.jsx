@@ -7,6 +7,7 @@ import {
   message,
   Form,
   Input,
+  InputNumber,
   Select,
   Row,
   Col,
@@ -35,11 +36,20 @@ import ExperienceCard from "../components/UserProfile/ExperienceCard";
 const { Title } = Typography;
 const { Option } = Select;
 
-const UpdateUserProfile = () => {
+const UpdateUserProfile = ({
+  handleFormDetails,
+  Reciviedrole,
+  setModalVisible,
+  editRecord,
+  setEditRecord,
+}) => {
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [form] = Form.useForm();
   const [messageAPI, contextHolder] = message.useMessage();
+
+  console.log("Recivied Role", Reciviedrole);
+  console.log("edit", editRecord);
 
   // State for skills with experience (stored as objects)
   const [primarySkills, setPrimarySkills] = useState([]);
@@ -48,6 +58,81 @@ const UpdateUserProfile = () => {
   const [secondaryClouds, setSecondaryClouds] = useState([]);
   const [educationList, setEducationList] = useState([]);
   const [experienceList, setExperienceList] = useState([]);
+
+  const role = localStorage.getItem("role");
+
+  useEffect(() => {
+    if (editRecord && Reciviedrole) {
+      console.log("edit true");
+      // Reset previous values
+      form.resetFields();
+
+      // Extract primary & secondary skills
+      const skillsJson = editRecord?.skillsJson || [];
+      const prims = skillsJson
+        .filter((s) => s?.level === "primary")
+        .map((s) => ({ name: s?.name, experience: s?.experience ?? 0 }));
+      const secs = skillsJson
+        .filter((s) => s?.level === "secondary")
+        .map((s) => ({ name: s?.name, experience: s?.experience ?? 0 }));
+
+      // Extract clouds safely
+      const primClouds = (editRecord?.primaryClouds || []).map((c) =>
+        typeof c === "string" ? { name: c, experience: 0 } : c
+      );
+      const secClouds = (editRecord?.secondaryClouds || []).map((c) =>
+        typeof c === "string" ? { name: c, experience: 0 } : c
+      );
+
+      // Update local states (for SkillManagerCard, etc.)
+      setPrimarySkills(prims);
+      setSecondarySkills(secs);
+      setPrimaryClouds(primClouds);
+      setSecondaryClouds(secClouds);
+      setEducationList(editRecord?.education || []);
+      setExperienceList(editRecord?.workExperience || []);
+
+      // Update form fields
+      form.setFieldsValue({
+        name: editRecord?.name || "",
+        phoneNumber: editRecord?.phoneNumber || "",
+        email: editRecord?.email || "",
+        portfolioLink: editRecord?.portfolioLink || "",
+        profilePicture: editRecord?.profilePicture || null,
+        title: editRecord?.title || "",
+        currentCTC: editRecord?.currentCTC || "",
+        expectedCTC: editRecord?.expectedCTC || "",
+        rateCardPerHour: editRecord?.rateCardPerHour || {
+          value: "",
+          currency: "INR",
+        },
+        joiningPeriod: editRecord?.joiningPeriod || "",
+        totalExperience: editRecord?.totalExperience || "",
+        relevantSalesforceExperience:
+          editRecord?.relevantSalesforceExperience || "",
+        linkedInUrl: editRecord?.linkedInUrl || "",
+        trailheadUrl: editRecord?.trailheadUrl || "",
+        preferredLocation: editRecord?.preferredLocation || [],
+        currentLocation: editRecord?.currentLocation || null,
+        preferredJobType: editRecord?.preferredJobType || [],
+        certifications: editRecord?.certifications || [],
+        education: editRecord?.education || [],
+        workExperience: editRecord?.workExperience || [],
+        primarySkills: prims,
+        secondarySkills: secs,
+        primaryClouds: primClouds,
+        secondaryClouds: secClouds,
+      });
+    } else {
+      console.log("edit false");
+    }
+    return () => {
+      form.resetFields();
+      // if (setEditRecord) {
+      //   setEditRecord(null);
+      // }
+    };
+  }, [editRecord]);
 
   const getInitialData = async () => {
     try {
@@ -82,6 +167,10 @@ const UpdateUserProfile = () => {
 
         // Populate form - INCLUDING skills and clouds
         form.setFieldsValue({
+          name: user?.name || "",
+          phoneNumber: user?.phoneNumber || "",
+          email: user?.email || "",
+          portfolioLink: user?.portfolioLink || "",
           profilePicture: user?.profilePicture || null,
           preferredLocation: user?.preferredLocation || [],
           currentLocation: user?.currentLocation,
@@ -93,6 +182,10 @@ const UpdateUserProfile = () => {
           relevantSalesforceExperience: user?.relevantSalesforceExperience,
           certifications: user?.certifications || [],
           workExperience: user?.workExperience || [],
+          rateCardPerHour: user?.rateCardPerHour || {
+            value: "",
+            currency: "INR",
+          },
           title: user?.title || "",
           linkedInUrl: user?.linkedInUrl || "",
           trailheadUrl: user?.trailheadUrl || "",
@@ -119,10 +212,12 @@ const UpdateUserProfile = () => {
 
     const uploadFormData = new FormData();
     uploadFormData.append("file", file);
+    uploadFormData.append("role", Reciviedrole || role);
 
     try {
       const response = await UploadPdf(uploadFormData);
       const extracted = response?.extracted || {};
+      console.log("ectracted", extracted);
 
       // Handle skills extraction
       if (extracted.skillsJson && Array.isArray(extracted.skillsJson)) {
@@ -182,10 +277,18 @@ const UpdateUserProfile = () => {
 
       // Populate other fields
       form.setFieldsValue({
+        name: extracted?.name || form.getFieldValue("name"),
+        phoneNumber:
+          extracted?.phoneNumber || form.getFieldValue("phoneNumber"),
+        email: extracted?.email || form.getFieldValue("email"),
+        portfolioLink:
+          extracted?.portfolioLink || form.getFieldValue("portfolioLink"),
         title: extracted?.title || form.getFieldValue("title"),
         currentCTC: extracted?.currentCTC || form.getFieldValue("currentCTC"),
         expectedCTC:
           extracted?.expectedCTC || form.getFieldValue("expectedCTC"),
+        rateCardPerHour:
+          extracted?.rateCardPerHour || form.getFieldValue("rateCardPerHour"),
         joiningPeriod:
           extracted?.joiningPeriod || form.getFieldValue("joiningPeriod"),
         totalExperience:
@@ -247,6 +350,7 @@ const UpdateUserProfile = () => {
   };
 
   const handleExperienceChange = (updatedExperience) => {
+    console.log("experience", updatedExperience);
     setExperienceList(updatedExperience);
     form.setFieldsValue({ workExperience: updatedExperience });
   };
@@ -270,6 +374,10 @@ const UpdateUserProfile = () => {
       ];
 
       const payload = {
+        name: values?.name,
+        phoneNumber: values?.phoneNumber,
+        email: values?.email,
+        portfolioLink: values?.portfolioLink,
         profilePicture: values?.profilePicture || null,
         title: values?.title || null,
         currentCTC: values?.currentCTC || null,
@@ -290,10 +398,21 @@ const UpdateUserProfile = () => {
         // workExperience: values?.workExperience || [],
         workExperience: experienceList,
         education: educationList,
+        rateCardPerHour: values.rateCardPerHour || {},
       };
-
+      if (Reciviedrole) {
+        handleFormDetails(payload);
+        setModalVisible(false);
+        form.resetFields(); // ✅ clears all fields
+        setPrimarySkills([]);
+        setSecondarySkills([]);
+        setPrimaryClouds([]);
+        setSecondaryClouds([]);
+        setEducationList([]);
+        setExperienceList([]);
+        return;
+      }
       console.log("Submitting payload of user form:", payload);
-
       const response = await profiledata(payload);
       if (response?.status === "success") {
         messageAPI.success("Profile updated successfully!");
@@ -360,8 +479,48 @@ const UpdateUserProfile = () => {
               </Form.Item>
             </Col>
 
-            {/* Title/Role */}
-            <Col span={12}>
+            {/* Name, Phone, Email */}
+            <Col xs={24} sm={12} md={8}>
+              <Form.Item
+                label="Full Name"
+                name="name"
+                rules={[{ required: true, message: "Please enter full name" }]}
+              >
+                <Input placeholder="Enter full name" />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12} md={8}>
+              <Form.Item
+                label="Phone Number"
+                name="phoneNumber"
+                rules={[
+                  { required: true, message: "Please enter phone number" },
+                  {
+                    pattern: /^\+\d{1,3}\s\d{7,14}$/,
+                    message: "Format: +91 9876543210",
+                  },
+                ]}
+              >
+                <Input placeholder="+91 9876543210" />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12} md={8}>
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Enter valid email" },
+                ]}
+              >
+                <Input placeholder="example@email.com" />
+              </Form.Item>
+            </Col>
+
+            {/* Title / Role */}
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="Title / Role (candidate is looking for)"
                 name="title"
@@ -370,8 +529,8 @@ const UpdateUserProfile = () => {
               </Form.Item>
             </Col>
 
-            {/* Preferred Location */}
-            <Col span={12}>
+            {/* Preferred & Current Location */}
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="Preferred Location (Select up to 3)"
                 name="preferredLocation"
@@ -390,18 +549,20 @@ const UpdateUserProfile = () => {
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+
+            <Col xs={24} sm={12}>
               <Form.Item label="Current Job Location" name="currentLocation">
                 <ReusableSelect
                   single={true}
-                  placeholder="Select CurrentJob locations"
+                  placeholder="Select Current Job Location"
                   fetchFunction={GetLocations}
                   addFunction={PostLocations}
                 />
               </Form.Item>
             </Col>
+
             {/* Preferred Job Type */}
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="Preferred Job Type (Max 2)"
                 name="preferredJobType"
@@ -420,33 +581,72 @@ const UpdateUserProfile = () => {
               </Form.Item>
             </Col>
 
-            {/* Current/Expected CTC */}
-            <Col span={12}>
-              <Form.Item
-                label="Current CTC"
-                name="currentCTC"
-                rules={[
-                  { required: true, message: "Please enter current CTC!" },
-                ]}
-              >
-                <Input placeholder="e.g., ₹18 LPA" />
-              </Form.Item>
-            </Col>
+            {/* Current/Expected CTC or Rate Card */}
+            {!Reciviedrole ? (
+              <>
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    label="Current CTC"
+                    name="currentCTC"
+                    rules={[
+                      { required: true, message: "Please enter current CTC!" },
+                    ]}
+                  >
+                    <Input placeholder="e.g., ₹8 LPA" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    label="Expected CTC"
+                    name="expectedCTC"
+                    rules={[
+                      { required: true, message: "Please enter expected CTC!" },
+                    ]}
+                  >
+                    <Input placeholder="e.g., ₹12 LPA" />
+                  </Form.Item>
+                </Col>
+              </>
+            ) : (
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="Rate Card Per Hour"
+                  name="rateCardPerHour"
+                  rules={[
+                    { required: true, message: "Enter rate card per hour" },
+                  ]}
+                >
+                  <Input.Group compact>
+                    <Form.Item
+                      name={["rateCardPerHour", "value"]}
+                      noStyle
+                      rules={[{ required: true, message: "Enter rate value" }]}
+                    >
+                      <InputNumber
+                        style={{ width: "70%" }}
+                        placeholder="Enter rate per hour"
+                      />
+                    </Form.Item>
 
-            <Col span={12}>
-              <Form.Item
-                label="Expected CTC"
-                name="expectedCTC"
-                rules={[
-                  { required: true, message: "Please enter expected CTC!" },
-                ]}
-              >
-                <Input placeholder="e.g., ₹24 LPA" />
-              </Form.Item>
-            </Col>
+                    <Form.Item
+                      name={["rateCardPerHour", "currency"]}
+                      noStyle
+                      initialValue="INR"
+                      rules={[{ required: true, message: "Select currency" }]}
+                    >
+                      <Select style={{ width: "30%" }}>
+                        <Select.Option value="INR">INR</Select.Option>
+                        <Select.Option value="EURO">EURO</Select.Option>
+                        <Select.Option value="USD">USD</Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Input.Group>
+                </Form.Item>
+              </Col>
+            )}
 
-            {/* Joining Period dropdown */}
-            <Col span={12}>
+            {/* Joining Period */}
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="Joining Period"
                 name="joiningPeriod"
@@ -465,7 +665,7 @@ const UpdateUserProfile = () => {
             </Col>
 
             {/* Total Experience */}
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="Total Experience"
                 name="totalExperience"
@@ -478,7 +678,7 @@ const UpdateUserProfile = () => {
             </Col>
 
             {/* Relevant Salesforce Experience */}
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="Relevant Experience in Salesforce"
                 name="relevantSalesforceExperience"
@@ -496,7 +696,7 @@ const UpdateUserProfile = () => {
 
           <Divider />
 
-          {/* Primary Skills */}
+          {/* Skills */}
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item name="primarySkills" noStyle>
@@ -513,7 +713,6 @@ const UpdateUserProfile = () => {
 
           <Divider />
 
-          {/* Secondary Skills */}
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item name="secondarySkills" noStyle>
@@ -559,6 +758,7 @@ const UpdateUserProfile = () => {
 
           <Divider />
 
+          {/* Education */}
           <Row>
             <Col span={24}>
               <Form.Item
@@ -621,9 +821,15 @@ const UpdateUserProfile = () => {
 
           <Divider />
 
-          {/* LinkedIn & Trailhead */}
+          {/* Portfolio, LinkedIn, Trailhead */}
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={8}>
+              <Form.Item label="Portfolio Link" name="portfolioLink">
+                <Input placeholder="https://yourportfolio.com (optional)" />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={8}>
               <Form.Item
                 label="LinkedIn URL"
                 name="linkedInUrl"
@@ -634,7 +840,8 @@ const UpdateUserProfile = () => {
                 <Input placeholder="https://www.linkedin.com/in/yourprofile" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+
+            <Col xs={24} sm={8}>
               <Form.Item
                 label="Trailhead URL"
                 name="trailheadUrl"
@@ -647,7 +854,7 @@ const UpdateUserProfile = () => {
             </Col>
           </Row>
 
-          {/* Action Buttons */}
+          {/* Submit + Generate Resume */}
           <Form.Item style={{ marginTop: 24 }}>
             <div style={{ display: "flex", gap: "12px" }}>
               <Button

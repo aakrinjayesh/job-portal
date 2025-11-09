@@ -15,13 +15,17 @@ datasource db {
 }
 
 model Users {
-  id          String       @id @default(uuid())
-  name        String
-  email       String       @unique
-  role        Role         @default(candidate)
-  createdAt   DateTime     @default(now())
-  UserProfile UserProfile?
-  Job         Job[]        @relation("UserPostedJobs")
+  id               String           @id @default(uuid())
+  name             String
+  email            String           @unique
+  role             Role             @default(candidate)
+  password         String?
+  createdAt        DateTime         @default(now())
+  CandidateProfile UserProfile?     @relation("CandidateUserProfile")
+  VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
+  Job              Job[]            @relation("UserPostedJobs")
+  JobApplications  JobApplication[]
+  SavedJobs        SavedJob[]
 }
 
 enum Role {
@@ -37,17 +41,25 @@ enum JobType {
 }
 
 model UserProfile {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String  @id @default(uuid())
+  userId   String? @unique
+  vendorId String?
+  user     Users?  @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
+  vendor   Users?  @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
 
+  venderId                     String?
   profilePicture               String?
-  title                        String? // New: candidate role/title they are looking for
+  title                        String?
+  name                         String?
+  phoneNumber                  String?
+  email                        String?
+  portfolioLink                String?
   preferredLocation            String[]
   currentLocation              String?
   preferredJobType             JobType[]
   currentCTC                   String?
   expectedCTC                  String?
+  rateCardPerHour              Json?
   joiningPeriod                String?
   totalExperience              String?
   relevantSalesforceExperience String?
@@ -60,8 +72,8 @@ model UserProfile {
   workExperience Json?
   education      Json?
 
-  linkedInUrl  String? // New
-  trailheadUrl String? // New
+  linkedInUrl  String?
+  trailheadUrl String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -90,20 +102,6 @@ model Cloud {
   name       String  @unique
   isVerified Boolean @default(false)
 }
-
-// model Job {
-//   id          String   @id @default(uuid())
-//   title       String
-//   company     String
-//   rating      Float?
-//   reviews     Int?
-//   experience  String?
-//   location    String?
-//   description String?
-//   skills      String[] // Array of skills
-//   posted      DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-// }
 
 enum EmploymentType {
   FullTime
@@ -135,7 +133,7 @@ model Job {
   experience          String?
   experienceLevel     ExperienceLevel?
   location            String?
-  skills              String[] // Array of skills
+  skills              String[] // Array of Json Skills
   salary              Int
   companyName         String
   responsibilities    String[]
@@ -154,6 +152,47 @@ model Job {
   postedById String?
   postedBy   Users?  @relation("UserPostedJobs", fields: [postedById], references: [id])
 
+  applications JobApplication[]
+  savedBy      SavedJob[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum ApplicationStatus {
+  Pending
+  Reviewed
+  Shortlisted
+  Rejected
+  Hired
+}
+
+model JobApplication {
+  id        String            @id @default(uuid())
+  jobId     String
+  userId    String
+  status    ApplicationStatus @default(Pending)
+  appliedAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId]) // Prevent duplicate applications
+  @@index([userId])
+  @@index([jobId])
+}
+
+model SavedJob {
+  id      String   @id @default(uuid())
+  jobId   String
+  userId  String
+  savedAt DateTime @default(now())
+
+  job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId]) // Prevent duplicate saves
+  @@index([userId])
+  @@index([jobId])
 }

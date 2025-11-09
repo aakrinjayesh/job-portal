@@ -9,6 +9,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
  
 export const extractResumeSections = async (text,role) => {
   console.log('inside llm logic')
+  console.log('role', role)
  let prompt;
   if (role === "candidate") {
     prompt = getSysPrompt(text);

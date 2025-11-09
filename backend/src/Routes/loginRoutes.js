@@ -2,8 +2,8 @@ import express from 'express'
 import { validateInput } from '../Middleware/inputValidator.js'
 import { googleAuthValidator,OtpGenerateValidator,OtpValidator } from '../validators/userValidators.js';
 import { googleAuth } from '../controllers/authControllers.js';
-import { dummy, userOtpGenerate, userOtpValidator } from '../controllers/loginControllers.js';
-import { authenticateToken } from '../Middleware/authMiddleware.js';
+import {  userOtpGenerate, userOtpValidator, login, setPassword } from '../controllers/loginControllers.js';
+
 
 const LoginRouters = express.Router()
 
@@ -13,7 +13,9 @@ const LoginRouters = express.Router()
 LoginRouters.post('/auth/google', validateInput(googleAuthValidator),googleAuth)
 LoginRouters.post('/otp', validateInput(OtpGenerateValidator), userOtpGenerate)
 LoginRouters.post('/otp/validate', validateInput(OtpValidator),userOtpValidator)
-LoginRouters.post('/dummy', authenticateToken, dummy)
+LoginRouters.post("/setpassword", setPassword)
+LoginRouters.post("/login",login)
+
 
 
 export default LoginRouters

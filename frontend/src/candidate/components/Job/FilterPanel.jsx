@@ -17,7 +17,7 @@ const FiltersPanel = ({ onFiltersChange }) => {
   ];
 
   const locationOptions = [
-    { label: "Bengaluru", count: 4543 },
+    { label: "Bangalore", count: 4543 },
     { label: "Hyderabad", count: 2662 },
     { label: "Delhi / NCR", count: 2203 },
     { label: "Pune", count: 1918 },

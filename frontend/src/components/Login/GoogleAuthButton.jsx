@@ -25,11 +25,10 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
       // Store token if backend sends one
       if (resp?.status === "success") {
         localStorage.setItem("token", resp?.token);
-        localStorage.setItem("role", resp?.role || "no role");
+        localStorage.setItem("role", resp?.user?.role || "no role");
+        localStorage.setItem("user", JSON.stringify(resp?.user));
+        navigate("/candidate/dashboard");
       }
-      setTimeout(() => {
-        navigate(resp?.role === "candidate" && "/home");
-      }, 500);
     } catch (error) {
       console.error("Google login error:", error);
       // setIsProcessing(false);

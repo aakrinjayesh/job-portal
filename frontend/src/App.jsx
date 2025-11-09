@@ -1,133 +1,185 @@
-// import Signup from "./pages/Signup";
-// import Login from "./pages/Login";
-// import Home from "./pages/Home";
-// import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
-// function App() {
-//   return (
-//     <>
-//       <BrowserRouter>
-//         <Routes>
-//           <Route path="/" element={<Navigate to="/login" replace />} />
-//           <Route path="/login" element={<Login />} />
-//           <Route path="/signup" element={<Signup />} />
-//           <Route path="/home" element={<Home />} />
-//         </Routes>
-//       </BrowserRouter>
-//     </>
-//   );
-// }
-
-// export default App;
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./candidate/layouts/MainLayout";
-import Login from "./pages/Login";
-import Home from "./candidate/pages/Home";
 import UpdateUserProfile from "./candidate/pages/UpdateUserProfile";
 import Settings from "./candidate/pages/Settings";
 import FAQ from "./candidate/pages/FAQ";
-import Signup from "./candidate/pages/Signup";
 import DashBoard from "./company/pages/DashBoard";
 import CompanyLayout from "./company/layout/CompanyLayout";
-import RecruiterJobList from "./company/components/Home/RecruiterJobList";
-import JobDetails from "./company/components/Home/JobDetails";
+import { ConfigProvider, theme } from "antd";
+import CandidateJobDetails from "./candidate/components/Job/CandidateJobDetails";
+import JobDetails from "./company/components/Job/JobDetails";
+import Jobs from "./candidate/pages/Jobs";
+import AppliedJobs from "./candidate/pages/AppliedJobs";
+import Job from "./company/pages/Job";
+import CandidateDetails from "./company/components/Job/CandidateDetails";
+import CandidateList from "./company/components/Job/CandidateList";
+import Bench from "./company/pages/Bench";
+import FindJob from "./company/pages/FindJob";
+import SavedJobs from "./candidate/pages/SavedJobs";
+import LoginPage from "./pages/LoginPage";
+import Signup from "./pages/Signup";
+import CreatePassword from "./pages/CreatePassword";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+    <ConfigProvider
+      theme={{
+        components: {
+          Layout: {
+            triggerBg: "#fff",
+            triggerColor: "black",
+          },
+        },
+      }}
+    >
+      <BrowserRouter>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/createpassword" element={<CreatePassword />} />
 
-        {/* Candidate routes */}
-        <Route
-          path="/home"
-          element={
-            <MainLayout>
-              <Home />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/updateprofile"
-          element={
-            <MainLayout>
-              <UpdateUserProfile />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <MainLayout>
-              <Settings />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/faq"
-          element={
-            <MainLayout>
-              <FAQ />
-            </MainLayout>
-          }
-        />
+          {/* Candidate routes */}
+          <Route
+            path="/candidate/dashboard"
+            element={
+              <MainLayout>
+                <div>dashboard</div>
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/candidate/jobs"
+            element={
+              <MainLayout>
+                <Jobs />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/candidate/jobs/saved"
+            element={
+              <MainLayout>
+                <SavedJobs />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/candidate/jobs/applied"
+            element={
+              <MainLayout>
+                <AppliedJobs />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/candidate/profile"
+            element={
+              <MainLayout>
+                <UpdateUserProfile />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/candidate/settings"
+            element={
+              <MainLayout>
+                <Settings />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/candidate/faq"
+            element={
+              <MainLayout>
+                <FAQ />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/candidate/job/:id"
+            element={
+              <MainLayout>
+                <CandidateJobDetails />
+              </MainLayout>
+            }
+          />
 
-        {/* Company routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <CompanyLayout>
-              <DashBoard />
-            </CompanyLayout>
-          }
-        />
+          {/* Company routes */}
+          <Route
+            path="/company/dashboard"
+            element={
+              <CompanyLayout>
+                <DashBoard />
+              </CompanyLayout>
+            }
+          />
 
-        <Route
-          path="/job/:id"
-          element={
-            <CompanyLayout>
-              <JobDetails />
-            </CompanyLayout>
-          }
-        />
-        <Route
-          path="/recruiterjoblist"
-          element={
-            <CompanyLayout>
-              <RecruiterJobList />
-            </CompanyLayout>
-          }
-        />
-        <Route
-          path="/manage-jobs"
-          element={
-            <CompanyLayout>
-              <div>company jobs</div>
-            </CompanyLayout>
-          }
-        />
-        <Route
-          path="/candidates"
-          element={
-            <CompanyLayout>
-              <div>company candidates</div>
-            </CompanyLayout>
-          }
-        />
-        <Route
-          path="/company-settings"
-          element={
-            <CompanyLayout>
-              <div>company seetings</div>
-            </CompanyLayout>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+          <Route
+            path="/company/candidates"
+            element={
+              <CompanyLayout>
+                <CandidateList />
+              </CompanyLayout>
+            }
+          />
+
+          <Route
+            path="/company/candidate/:id"
+            element={
+              <CompanyLayout>
+                <CandidateDetails />
+              </CompanyLayout>
+            }
+          />
+
+          <Route
+            path="/company/bench"
+            element={
+              <CompanyLayout>
+                <Bench />
+              </CompanyLayout>
+            }
+          />
+
+          <Route
+            path="/company/jobs"
+            element={
+              <CompanyLayout>
+                <Job />
+              </CompanyLayout>
+            }
+          />
+
+          <Route
+            path="/company/job/find"
+            element={
+              <CompanyLayout>
+                <FindJob />
+              </CompanyLayout>
+            }
+          />
+
+          <Route
+            path="/company/job/:id"
+            element={
+              <CompanyLayout>
+                <JobDetails />
+              </CompanyLayout>
+            }
+          />
+          <Route
+            path="/company/bench/find"
+            element={
+              <CompanyLayout>
+                <div>bench details</div>
+              </CompanyLayout>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </ConfigProvider>
   );
 }
 

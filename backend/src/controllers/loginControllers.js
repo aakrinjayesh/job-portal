@@ -1,122 +1,296 @@
-import generateOtp from '../utils/generateOtp.js'
-import sendEmail from '../utils/sendEmail.js'
-import prisma from '../config/prisma.js'
-import generateToken from '../utils/generateToken.js'
-
+import generateOtp from "../utils/generateOtp.js";
+import sendEmail from "../utils/sendEmail.js";
+import prisma from "../config/prisma.js";
+import generateToken from "../utils/generateToken.js";
+import axios from "axios";
+import bcrypt from "bcrypt";
 
 const otpStore = new Map();
 
-
-const userOtpGenerate = async (req,res)=>{
-  try{
-    const { email, role } = req.body
-    let user = await prisma.users.findUnique({ where: { email } })
-
-    if (!user) {
-      const name = email.split("@")[0];
-      const create_email = await prisma.users.create({
-        data: {
-          name,
-          email,
-          role,
-        }
-      })
-    }
-
-    const GenerateOtp = generateOtp()
-    otpStore.set(email, GenerateOtp);
-    console.log('otp store',otpStore)
-
-    sendEmail({
-      to: email,
-      subject: 'Your OTP Code',
-      text: `Your verification code is ${GenerateOtp}`
-    })
-
-    return res.status(200).json({ status: 'success', message: 'OTP sent to email' })
-  }catch(err){
-    return res.status(400).json({ status: 'failed', message: err.message })
-  }
-}
-
-const userOtpValidator = async (req,res) => {
+/**
+ * Generate OTP and create user (no external registration here anymore)
+ */
+const userOtpGenerate = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    console.log('validate otp',req.body)
-    console.log('email',email)
-    console.log('otp',otp)
-    if(!email || !otp){
-      return res.status(401).json({
-        status: "failed",
-        message: "Send all credentials",
-      });
-    }
-
+    const { email, role } = req.body;
     let user = await prisma.users.findUnique({ where: { email } });
 
+    // If user not found, create it
     if (!user) {
+      const name = email.split("@")[0];
+      user = await prisma.users.create({
+        data: { name, email, role },
+      });
+    }
+
+    // Generate and store OTP
+    const GenerateOtp = generateOtp();
+    otpStore.set(email, GenerateOtp);
+    console.log("🗂️ otpStore:", otpStore);
+
+    // Send OTP to email
+    await sendEmail({
+      to: email,
+      subject: "Your OTP Code",
+      text: `Your verification code is ${GenerateOtp}`,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "OTP sent to email",
+    });
+  } catch (err) {
+    console.error("Error in userOtpGenerate:", err);
+    return res
+      .status(400)
+      .json({ status: "failed", message: err.message || "Something went wrong" });
+  }
+};
+
+/**
+ * Validate OTP
+ * If invalid → delete user from Prisma (no external deregistration)
+ * If valid → login locally (no external login here)
+ */
+const userOtpValidator = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    console.log("🔍 Validating OTP for:", email);
+
+    const user = await prisma.users.findUnique({
+      where: { email },
+      select: { id: true, email: true, name: true, role: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User not found",
+      });
+    }
+
+    const savedOtp = otpStore.get(email);
+    if (!savedOtp) {
+      return res.status(400).json({
+        status: "failed",
+        message: "OTP expired or not found. Please request a new one.",
+      });
+    }
+
+    // ❌ OTP INVALID
+    if (otp !== savedOtp) {
+      console.log("❌ Invalid OTP for:", email);
+
+      await prisma.users.delete({ where: { email } });
+      otpStore.delete(email);
+
       return res.status(401).json({
         status: "failed",
-        message: "Something went Wrong",
+        message: "Invalid OTP. User has been deleted.",
       });
     }
-    console.log('store',otpStore)
-    const savedOtp = otpStore.get(email);
-    console.log("savedotp store", savedOtp)
 
-    if (!savedOtp) {
-      return res.status(400).json({ status: 'failed', message: 'No OTP found. Please request again.' });
-    }
+    console.log(`✅ OTP is correct (Generated: ${savedOtp}, Received: ${otp})`);
+    otpStore.delete(email);
 
-    if (otp === savedOtp) {
-      otpStore.delete(email); // clear OTP once used
+   
 
-      const accessToken = generateToken(user);
-      return res.status(200).json({
-        status: 'success',
-        message: 'Successfully logged in',
-        token: accessToken,
-         role: user.role,
-      });
-    } else {
-      return res.status(401).json({
-        status: 'failed',
-        message: 'Invalid OTP',
-      });
-    }
+    return res.status(200).json({
+      status: "success",
+      message: "OTP verified successfully",
+    });
   } catch (err) {
-    return res.status(500).json({ status: 'failed', message: err.message });
+    console.error("❌ OTP validation error:", err);
+    return res.status(500).json({
+      status: "failed",
+      message: "An error occurred during validation",
+    });
   }
-}
+};
 
-const dummy = async (req,res) =>{
- 
+/**
+ * Set password and register on external service
+ */
+const setPassword = async (req, res) => {
   try {
-    const {name} = req.body
-    const userFromToken = req.user
-    const id = userFromToken.id
-    console.log('name',name)
-    const dummy = await prisma.dummy.create({
-      data:{name: name, userid:id }
-    })
-    console.log('dummy',dummy)
+    const { email, password, role } = req.body;
+
+    if (!email || !password || !role) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Email, password, and role are required",
+      });
+    }
+
+    // Find user
+    const user = await prisma.users.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User not found. Please complete OTP verification first.",
+      });
+    }
+
+    if (user.role !== role) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid role for this user",
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update locally
+    const updatedUser = await prisma.users.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
+
+    // Register user in external system
+    try {
+      const payload = {
+        email: updatedUser.email,
+        username: updatedUser.name,
+        password, // use actual password now
+      };
+
+      const registerResponse = await axios.post(
+        "http://localhost:8080/api/v1/users/register",
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("✅ External Register Response:", registerResponse?.data);
+    } catch (err) {
+      console.error("⚠️ External registration failed (continuing flow):", err.message);
+    }
+
     return res.status(200).json({
-      status:'succces',
-      dummy
-    })
+      status: "success",
+      message: "Password set successfully!",
+    });
   } catch (error) {
-    console.log('3')
-    console.log('erroe',error.message)
-    return res.status(200).json({
-      status: 'error',
-      message:`error ${error.message}`
-    })
+    console.error("Error in setPassword:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Internal server error",
+    });
   }
-}
+};
 
+/**
+ * Local + External login flow
+ */
+const login = async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
 
-export {
-  userOtpGenerate,
-  userOtpValidator,
-  dummy
-}
+    if (!email || !password || !role) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Please provide email, password, and role",
+      });
+    }
+
+    // Check user
+    const user = await prisma.users.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User not found",
+      });
+    }
+
+    // Validate password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        status: "failed",
+        message: "Invalid password",
+      });
+    }
+
+    // Validate role
+    if (user.role !== role) {
+      return res.status(403).json({
+        status: "failed",
+        message: `User is not authorized as ${role}`,
+      });
+    }
+
+    // Generate local JWT
+    const userjwt = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+    const token = generateToken(userjwt);
+
+    // Attempt external login
+    let loginResponse = null;
+    try {
+      const payload = {
+        email: user.email,
+        username: user.name,
+        password,
+      };
+
+      loginResponse = await axios.post(
+        "http://localhost:8080/api/v1/users/login",
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("✅ External Login Response:", loginResponse?.data);
+    } catch (err) {
+      console.error("⚠️ External login failed (continuing local flow):", err.message);
+    }
+
+    // Cookie setup (same as before)
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    };
+
+    if (loginResponse?.data?.accessToken && loginResponse?.data?.refreshToken) {
+      res
+        .cookie("accessToken", loginResponse?.data?.accessToken, options)
+        .cookie("refreshToken", loginResponse?.data?.refreshToken, options);
+    }
+
+    // Final response
+    return res.status(200).json({
+      status: "success",
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+      chatmeatadata: loginResponse
+        ? {
+            user: loginResponse?.data?.user,
+            astoken: loginResponse?.data?.accessToken,
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Internal server error",
+    });
+  }
+};
+
+export { userOtpGenerate, userOtpValidator, setPassword, login };

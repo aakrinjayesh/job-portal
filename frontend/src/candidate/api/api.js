@@ -2,64 +2,7 @@
 import axiosInstance from "./axiosInstance";
 
 
-export async function LoginRoute(payload) {
-  try {
-    let data = JSON.stringify(payload);
-    const response = await axiosInstance.post("/login", data, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in LoginRoute:", error);
-    throw error;
-  }
-}
-
-export async function SignupRoute(payload) {
-  try {
-    let data = JSON.stringify(payload);
-    const response = await axiosInstance.post("/register", data, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in SignupRoute:", error);
-    throw error;
-  }
-}
-
-export async function UploadPdf(formdata) {
-  try {
-    const response = await axiosInstance.post("/upload", formdata, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in UploadPdf:", error);
-    throw error;
-  }
-}
-
-export async function profiledata(payload) {
-  try {
-    let data = JSON.stringify(payload);
-    const response = await axiosInstance.post("/profile", data, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in profiledata:", error);
-    throw error;
-  }
-}
+//  login routes
 
 export async function GoogleAuth(payload) {
   try {
@@ -102,6 +45,76 @@ export async function ValidateOtp(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in ValidateOtp:", error);
+    throw error;
+  }
+}
+
+
+export async function login(payload) {
+  try {
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/login", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in Login:", error);
+    throw error;
+  }
+}
+export const SetPassword = async (payload) => {
+  try {
+    const response = await axiosInstance.post(`/setpassword`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in SetPassword:", error);
+    return { status: "failed", message: "Something went wrong" };
+  }
+};
+
+
+export async function UploadPdf(formdata) {
+  try {
+    const response = await axiosInstance.post("/upload", formdata, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in UploadPdf:", error);
+    throw error;
+  }
+}
+
+export async function profiledata(payload) {
+  try {
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/profile", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in profiledata:", error);
+    throw error;
+  }
+}
+
+
+
+export async function GetJobDetails(payload) {
+  try {
+    const data = JSON.stringify(payload)
+    const response = await axiosInstance.post("/job/details",data, {headers: { 'Content-Type': 'application/json' }});
+    return response.data;
+  } catch (error) {
+    console.error("Error in LoginRoute:", error);
     throw error;
   }
 }
@@ -235,6 +248,92 @@ export async function PostClouds(payload) {
     throw error;
   }
 }
+
+
+export async function ApplyJob(payload) {
+  try {
+      let data = JSON.stringify(payload)
+      const response = await axiosInstance.post('/jobs/apply', data , {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+
+
+export async function AppliedJobsList(page = 1, limit = 10) {
+  try {
+    const response = await axiosInstance.get(`/jobs/applications?page=${page}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    throw error;
+  }
+}
+
+export async function SaveJob(payload) {
+  try {
+      let data = JSON.stringify(payload)
+      const response = await axiosInstance.post('/jobs/save', data , {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+export async function UnSaveJob(payload) {
+  try {
+      let data = JSON.stringify(payload)
+      const response = await axiosInstance.post('/jobs/unsave', data , {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+
+export async function  SavedJobsList(page = 1, limit = 10) {
+  try {
+      const response = await axiosInstance.get(`/jobs/saved?page=${page}&limit=${limit}`, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+
+export async function  UserJobsids() {
+  try {
+      const response = await axiosInstance.get(`/job/applied/ids`, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+
+
 
 
 

@@ -6,7 +6,7 @@ import userRouter from "./Routes/profileRoutes.js";
 import JobRouters from "./Routes/jobRoutes.js";
 import CommonRouters from "./Routes/commonRoutes.js";
 import LoginRouters from "./Routes/loginRoutes.js";
-
+import VendorRoutes from "./Routes/vendorRoutes.js";
 
 
 dotenv.config();
@@ -22,6 +22,7 @@ app.use(LoginRouters)
 app.use(userRouter)
 app.use(JobRouters)
 app.use(CommonRouters)
+app.use('/vendor',VendorRoutes)
 
 
 const PORT = process.env.PORT

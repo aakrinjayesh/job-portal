@@ -11,15 +11,23 @@ import {
   Typography,
   Popconfirm,
   message,
+  Row,
+  Col,
+  Select,
+  Divider,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
-function ExperienceCard({ title = "Experience", apidata, onExperienceChange }) {
+const ExperienceCard = ({
+  title = "Experience",
+  apidata,
+  onExperienceChange,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [experiences, setExperiences] = useState([]);
@@ -31,28 +39,65 @@ function ExperienceCard({ title = "Experience", apidata, onExperienceChange }) {
     }
   }, [apidata]);
 
-  // Open modal for new or edit mode
   const openModal = (index = null) => {
     setEditingIndex(index);
     if (index !== null) {
+      console.log("if edit");
       const exp = experiences[index];
-      form.setFieldsValue({
-        dateRange: [dayjs(exp?.startDate), dayjs(exp?.endDate)],
-        projects: exp?.projects,
-      });
+      console.log("exp", exp);
+
+      // Use setTimeout to ensure form is ready
+      setTimeout(() => {
+        form.setFieldsValue({
+          dateRange: [dayjs(exp.startDate), dayjs(exp.endDate)],
+          payrollCompanyName: exp.payrollCompanyName,
+          role: exp.role,
+          projects: exp.projects.map((p) => ({
+            projectName: p.projectName,
+            cloudUsed: p.cloudUsed,
+            skillsUsed: p.skillsUsed,
+            rolesAndResponsibilities: p.rolesAndResponsibilities,
+            projectDescription: p.projectDescription,
+          })),
+        });
+      }, 0);
     } else {
+      console.log("else field - adding new");
       form.resetFields();
+      // Initialize with one empty project
+      form.setFieldsValue({
+        projects: [
+          {
+            projectName: "",
+            cloudUsed: undefined,
+            skillsUsed: [],
+            rolesAndResponsibilities: "",
+            projectDescription: "",
+          },
+        ],
+      });
     }
     setIsModalOpen(true);
   };
 
-  const handleOk = () => {
-    form.validateFields().then((values) => {
-      const { dateRange, projects } = values;
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      console.log("values", values);
+      const { dateRange, payrollCompanyName, role, projects } = values;
+
       const newExperience = {
         startDate: dateRange[0].format("YYYY-MM"),
         endDate: dateRange[1].format("YYYY-MM"),
-        projects,
+        payrollCompanyName: payrollCompanyName || "",
+        role: role || "",
+        projects: (projects || []).map((p) => ({
+          projectName: p.projectName || "",
+          cloudUsed: p.cloudUsed || "",
+          skillsUsed: p.skillsUsed || [],
+          rolesAndResponsibilities: p.rolesAndResponsibilities || "",
+          projectDescription: p.projectDescription || "",
+        })),
       };
 
       let updated = [...experiences];
@@ -63,24 +108,29 @@ function ExperienceCard({ title = "Experience", apidata, onExperienceChange }) {
         updated.push(newExperience);
         message.success("Experience added!");
       }
+
       setExperiences(updated);
       setIsModalOpen(false);
       setEditingIndex(null);
       form.resetFields();
 
-      if (onExperienceChange) {
-        onExperienceChange(updated);
-      }
-    });
+      if (onExperienceChange) onExperienceChange(updated);
+    } catch (err) {
+      console.error("Validation error:", err);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setEditingIndex(null);
+    form.resetFields();
   };
 
   const handleDelete = (index) => {
     const updated = experiences.filter((_, i) => i !== index);
     setExperiences(updated);
     message.success("Experience deleted!");
-    if (onExperienceChange) {
-      onExperienceChange(updated);
-    }
+    if (onExperienceChange) onExperienceChange(updated);
   };
 
   return (
@@ -95,110 +145,256 @@ function ExperienceCard({ title = "Experience", apidata, onExperienceChange }) {
           Add {title}
         </Button>
       }
-      style={{
-        height: 350,
-        overflowY: "auto",
-        scrollbarWidth: "none",
-      }}
+      style={{ height: 350, overflowY: "auto", scrollbarWidth: "none" }}
     >
       {experiences.length > 0 ? (
         <List
           dataSource={experiences}
           renderItem={(item, index) => (
-            <List.Item
-              actions={[
-                <Button
-                  type="link"
-                  icon={<EditOutlined />}
-                  onClick={() => openModal(index)}
-                />,
-                <Popconfirm
-                  title="Are you sure to delete this experience?"
-                  onConfirm={() => handleDelete(index)}
-                >
-                  <Button type="link" danger icon={<DeleteOutlined />} />
-                </Popconfirm>,
-              ]}
-            >
-              <List.Item.Meta
-                title={
-                  <Text strong>
-                    {item.startDate} - {item.endDate}
-                  </Text>
-                }
-                description={
-                  <ul>
-                    {item.projects.map((p, i) => (
-                      <li key={i}>{p}</li>
-                    ))}
-                  </ul>
-                }
-              />
-            </List.Item>
+            <>
+              <List.Item
+                style={{
+                  borderLeft: "4px solid #1677ff",
+                  paddingLeft: 16,
+                  background: "#fafafa",
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                }}
+                actions={[
+                  <Button
+                    type="link"
+                    icon={<EditOutlined />}
+                    onClick={() => openModal(index)}
+                  />,
+                  <Popconfirm
+                    title="Are you sure to delete this experience?"
+                    onConfirm={() => handleDelete(index)}
+                  >
+                    <Button type="link" danger icon={<DeleteOutlined />} />
+                  </Popconfirm>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={
+                    <>
+                      <div>
+                        {item.startDate} - {item.endDate}
+                      </div>
+                      <div>
+                        <Text strong>Company:</Text>{" "}
+                        {item.payrollCompanyName || "-"} &nbsp;|&nbsp;{" "}
+                        <Text strong>Role:</Text> {item.role || "-"}
+                      </div>
+                    </>
+                  }
+                  description={
+                    <div>
+                      {(item.projects || []).map((p, i) => (
+                        <div key={i} style={{ marginTop: 8 }}>
+                          <div>
+                            <Text strong>Project:</Text> {p.projectName || "-"}{" "}
+                            {p.cloudUsed ? `| Cloud: ${p.cloudUsed}` : ""}
+                          </div>
+
+                          <div>
+                            <Text strong>Skills:</Text>{" "}
+                            {(p.skillsUsed || []).join(", ") || "-"}
+                          </div>
+
+                          <div style={{ marginTop: 6 }}>
+                            <Text strong>Roles & Responsibilities:</Text>
+                            <div style={{ whiteSpace: "pre-wrap" }}>
+                              {p.rolesAndResponsibilities || "-"}
+                            </div>
+                          </div>
+
+                          <div style={{ marginTop: 6 }}>
+                            <Text strong>Project Description:</Text>
+                            <div style={{ whiteSpace: "pre-wrap" }}>
+                              {p.projectDescription || "-"}
+                            </div>
+                          </div>
+
+                          {i !== (item.projects || []).length - 1 && (
+                            <Divider />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  }
+                />
+              </List.Item>
+            </>
           )}
         />
       ) : (
         <Text type="secondary">No experience added yet.</Text>
       )}
 
-      {/* Modal for Add/Edit */}
       <Modal
         title={editingIndex !== null ? "Edit Experience" : "Add Experience"}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={handleCancel}
         onOk={handleOk}
         okText={editingIndex !== null ? "Update" : "Add"}
-        // destroyOnClose
+        width={900}
+        destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="dateRange"
-            label="Date Range"
-            rules={[{ required: true, message: "Please select date range" }]}
-          >
-            <RangePicker picker="month" format="MMM YYYY" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="dateRange"
+                label="Date Range"
+                rules={[
+                  { required: true, message: "Please select date range" },
+                ]}
+              >
+                <RangePicker
+                  picker="month"
+                  format="MMM YYYY"
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="payrollCompanyName"
+                label="Payroll / Company"
+                rules={[{ required: true, message: "Enter company" }]}
+              >
+                <Input placeholder="e.g. TCS" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="role"
+                label="Role"
+                rules={[{ required: true, message: "Enter role" }]}
+              >
+                <Input placeholder="e.g. Frontend Developer" />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          {/* Dynamic Projects */}
-          <Form.List
-            name="projects"
-            initialValue={[""]}
-            rules={[
-              {
-                validator: async (_, projects) => {
-                  if (!projects || projects.length < 1) {
-                    return Promise.reject(
-                      new Error("Add at least one project")
-                    );
-                  }
-                },
-              },
-            ]}
-          >
+          <Divider />
+
+          <Form.List name="projects">
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name, ...restField }) => (
-                  <Space
+                {fields.map(({ key, name, ...restField }, idx) => (
+                  <div
                     key={key}
-                    align="baseline"
-                    style={{ display: "block" }}
+                    style={{
+                      padding: 12,
+                      border: "1px solid #f0f0f0",
+                      borderRadius: 6,
+                      marginBottom: 12,
+                    }}
                   >
-                    <Form.Item
-                      {...restField}
-                      name={name}
-                      rules={[
-                        { required: true, message: "Enter project details" },
-                      ]}
-                      // style={{ flex: 1 }}
-                    >
-                      <TextArea placeholder="Enter project details" rows={4} />
-                    </Form.Item>
-                    {fields.length > 1 && (
-                      <Button type="link" danger onClick={() => remove(name)}>
-                        Delete
-                      </Button>
-                    )}
-                  </Space>
+                    <Row gutter={12}>
+                      <Col span={12}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "projectName"]}
+                          label={`Project Name ${idx + 1}`}
+                          rules={[
+                            { required: true, message: "Enter project name" },
+                          ]}
+                        >
+                          <Input placeholder="Project name" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={6}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "cloudUsed"]}
+                          label="Cloud Used"
+                        >
+                          <Select
+                            showSearch
+                            placeholder="e.g. AWS"
+                            allowClear
+                            options={[
+                              { value: "AWS" },
+                              { value: "Azure" },
+                              { value: "GCP" },
+                            ]}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={6}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "skillsUsed"]}
+                          label="Skills Used"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Add at least one skill",
+                            },
+                          ]}
+                        >
+                          <Select
+                            mode="tags"
+                            placeholder="Add skills (type and press enter)"
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Row gutter={12}>
+                      <Col span={12}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "rolesAndResponsibilities"]}
+                          label="Roles & Responsibilities"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Add roles & responsibilities",
+                            },
+                          ]}
+                        >
+                          <TextArea
+                            rows={4}
+                            maxLength={1000}
+                            showCount
+                            placeholder="Describe roles & responsibilities (max 1000 chars)"
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "projectDescription"]}
+                          label="Project Description"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Add project description",
+                            },
+                          ]}
+                        >
+                          <TextArea
+                            rows={4}
+                            maxLength={1000}
+                            showCount
+                            placeholder="Project description (max 1000 chars)"
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <div style={{ textAlign: "right" }}>
+                      {fields.length > 1 && (
+                        <Button type="link" danger onClick={() => remove(name)}>
+                          Remove project
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 ))}
                 <Form.Item>
                   <Button
@@ -217,6 +413,6 @@ function ExperienceCard({ title = "Experience", apidata, onExperienceChange }) {
       </Modal>
     </Card>
   );
-}
+};
 
 export default ExperienceCard;

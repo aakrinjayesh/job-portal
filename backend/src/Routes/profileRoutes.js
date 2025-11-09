@@ -22,7 +22,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 
 // user profile routes
-userRouter.post('/upload', upload.single('file'), validateInput(UploadResumeValidator),authenticateToken,UploadResume)
+userRouter.post('/upload', upload.single('file'), authenticateToken,UploadResume)
 
 
 userRouter.post('/profile',

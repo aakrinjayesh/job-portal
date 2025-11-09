@@ -1,78 +1,194 @@
 export const getSysPrompt = (text) => `
-You are extracting structured candidate details from a resume text. Parse the text and return **ONLY valid JSON** (no code fences, no explanations, no filler text) that strictly adheres to the schema, data types, and normalization rules provided below.
+You are an **expert resume parser and Salesforce recruitment data normalizer**. Your task is to extract structured candidate information from the given resume text and produce **only valid JSON** strictly following the schema, data types, and normalization rules below.
 
-### **Required JSON Schema & Data Type Compliance**
-
-| Key | Data Type | Notes & Normalization Rules | Default Value (If Not Found) |
-| :--- | :--- | :--- | :--- |
-| **profilePicture** | \`string | null\` | URL or set to \`null\`. | \`null\` |
-| **title** | \`string | null\` | Candidate's primary professional title. | \`null\` |
-| **preferredLocation** | \`string[]\` | List of preferred job locations. | \`[]\` |
-| **preferredJobType** | \`string[]\` | **Normalization Required:** Maximum of two values. Must be from: **"FullTime"**, **"Contract"**, **"Freelance"**. | \`[]\` |
-| **currentCTC** | \`string | 0\` | Keep as the original text (e.g., "₹18 LPA", "18"). | \`0\` |
-| **expectedCTC** | \`string | 0\` | Keep as the original text (e.g., "₹24 LPA", "24"). | \`0\` |
-| **rateCardPerHour** | \`number | 0\` | Hourly rate. | \`0\` |
-| **joiningPeriod** | \`string | Immediately\` | **Normalization Required:** Closest fit from: **"Immediately"**, **"15 days"**, **"1 month"**, **"2 months"**, **"3 months"**. | \`"Immediately"\` |
-| **totalExperience** | \`number | 0\` | Total years of professional experience, converted to a **number** (e.g., 6, 3.5). | \`0\` |
-| **relevantSalesforceExperience** | \`number | 0\` | Relevant years of experience, converted to a **number** (e.g., 4, 2). | \`0\` |
-| **skillsJson** | \`object[]\` | Array of skill objects: \`{"name": string, "level": "primary" | "secondary", "experience": number \| 0}\`. Distinguish **primary** (core expertise) vs. **secondary** (familiarity/supportive) skills. Experience is in years as a **number**. Empty array \`[]\` if not found. |
-| **primaryClouds** | \`object[]\` | Array of **Salesforce Cloud** experience: \`{"name": string, "experience": number \| 0}\`. These are core Salesforce Clouds the candidate has worked extensively with (e.g., Sales Cloud, Service Cloud, Marketing Cloud). Empty array \`[]\` if not found. |
-| **secondaryClouds** | \`object[]\` | Array of less-focused **Salesforce Cloud** experience: \`{"name": string, "experience": number \| 0}\`. These are Salesforce Clouds the candidate has minor or supporting experience with. Empty array \`[]\` if not found. |
-| **certifications** | \`string[]\` | List of certification names. Empty array \`[]\` if not found. |
-| **workExperience** | \`object[]\` | Array of work entries: \`{"startDate": string, "endDate": string, "projects": string[]}\`. Use **YYYY-MM** format for dates if possible. | \`[]\` |
-| **education** | \`object[]\` | Array of education entries: \`{"name": string, "toYear": string, "fromYear": string, "educationType": string}\`. Use **YYYY** format for years. | \`[]\` |
-| **linkedInUrl** | \`string | null\` | Candidate's LinkedIn profile URL. | \`null\` |
-| **trailheadUrl** | \`string | null\` | Candidate's Salesforce Trailhead URL. | \`null\` |
+⚠️ **CRITICAL OUTPUT RULES**
+1. Return **only a single valid JSON object** — no markdown, no code fences, no explanations.
+2. **Every key from the schema must appear** in the output, using the default value if missing.
+3. All text normalization, conversions, and defaults must comply exactly with the rules below.
 
 ---
 
-### **Extraction & Default Instructions**
+### 🎯 **JSON Schema Specification**
 
-1. **Output Format:** Return **ONLY** the JSON object. Do not include markdown code fences (\`\`\`), any introductory text, or explanations.
-2. **Default Values:** If a field's information is not explicitly found in the resume, you **must** use the designated **Default Value** from the table above (e.g., \`null\` for URLs, \`0\` for numbers, \`[]\` for lists).
-3. **Normalization Rules:**
-   - **preferredJobType:** Extract and normalize values like "permanent", "freelance", "full-time", "contract", etc. to the allowed values: **"FullTime"**, **"Contract"**, **"Freelance"**. Choose a maximum of **2** values.
-   - **joiningPeriod:** Map notice periods to the closest standardized value: **"Immediately"**, **"15 days"**, **"1 month"**, **"2 months"**, **"3 months"**.
-   
-4. **Experience Parsing:**
-   - Ensure **totalExperience** and **relevantSalesforceExperience** are extracted and converted to a **single decimal number**.
-   - If experience is given in both years and months (e.g., "6 years 3 months"), convert to decimal format and round to **one decimal place** (e.g., "6 years 3 months" → **6.3**, "2 years 6 months" → **2.5**).
-5. **Skill Classification:**
-   - For \`skillsJson\`, use **"primary"** for core expertise and **"secondary"** for supporting/lesser expertise.
-   - Group based on placement and emphasis. If found under "Expertise", "Key Skills", "Core Skills" → treat as **primary**. If found under "Tools", "Technologies Used", "Familiar with" → treat as **secondary**.
-6. **Work Experience Normalization**  
-   - For each item in the \`workExperience\` array, the \`projects\` field should be an array of strings.  
-   - The **first item** in the \`projects\` array **must be the company name**.  
-   - Any project descriptions can follow as additional items in the array.  
-   - If only the company name is available, include it as the sole item.
+| Key | Data Type | Rules & Normalization | Default |
+|------|------------|-----------------------|----------|
+| **name** | \`string \| null\` | Candidate's full name. Clean and properly capitalized. | \`null\` |
+| **email** | \`string \| null\` | Extract professional email address. Validate basic format. | \`null\` |
+| **phoneNumber** | \`string | null\` | Extract digits and optional +. Normalize to format: "+<countryCode> <number>". Always ensure one space between the country code and the number. Rules: 1) Remove all spaces, dashes, brackets. 2) If the number starts with "+", treat the digits after "+" until the next digit block as country code. 3) If no country code and number is 10 digits, assume default country code "+91". 4) Final output: "+<countryCode> <nationalNumber>" (no extra symbols). Invalid numbers → null. | \`null\` |
+| **portfolioLink** | \`string \| null\` | URL to candidate's personal website or portfolio. Normalize or set \`null\`. | \`null\` |
+| **profilePicture** | \`string \| null\` | URL or \`null\`. | \`null\` |
+| **title** | \`string \| null\` | Primary professional title. | \`null\` |
+| **preferredLocation** | \`string[]\` | Array of preferred job locations. | \`[]\` |
+| **preferredJobType** | \`string[]\` | Normalize: "full-time"/"permanent" → "FullTime", "contract" → "Contract", "freelance" → "Freelance". Max 2 values. | \`[]\` |
+| **currentCTC** | \`string \| "0"\` | Keep as text (e.g., "₹18 LPA"). | \`"0"\` |
+| **expectedCTC** | \`string \| "0"\` | Keep as text (e.g., "₹24 LPA"). | \`"0"\` |
+| **rateCardPerHour** | \`Object\` | Hourly rate object with numeric string value and detected currency (INR / USD / EUR). | \`{}\` |
+| **joiningPeriod** | \`string\` | Normalize to one of: "Immediately", "15 days", "1 month", "2 months", "3 months". | \`"Immediately"\` |
+| **totalExperience** | \`number\` | Convert to decimal (e.g., 6y 3m → 6.3). Round to 1 decimal. | \`0\` |
+| **relevantSalesforceExperience** | \`number\` | Convert as above. | \`0\` |
+| **skillsJson** | \`object[]\` | [{"name": string, "level": "primary" \| "secondary", "experience": number}] | \`[]\` |
+| **primaryClouds** | \`object[]\` | [{"name": string, "experience": number}] — Salesforce Clouds only. | \`[]\` |
+| **secondaryClouds** | \`object[]\` | [{"name": string, "experience": number}] — minor Salesforce Clouds. | \`[]\` |
+| **certifications** | \`string[]\` | Formal Salesforce certifications only. | \`[]\` |
+| **workExperience** | \`object[]\` | Array of work experience objects with detailed project information (see format below). | \`[]\` |
+| **education** | \`object[]\` | [{"name": string, "fromYear": string, "toYear": string, "educationType": string}] | \`[]\` |
+| **linkedInUrl** | \`string \| null\` | Normalize to full URL or \`null\`. | \`null\` |
+| **trailheadUrl** | \`string \| null\` | Normalize to full URL or \`null\`. | \`null\` |
+
+---
+
+### 🧠 **Normalization & Parsing Rules**
+
+#### **Contact & Identity Fields**
+- **name:** Extract full name from top of resume or signature; remove prefixes/suffixes (e.g., "Mr.", "Ms.").  
+- **email:** Validate using pattern like \`something@domain.com\`. If invalid or missing → \`null\`.  
+- **phoneNumber:** Normalize to the format "+<countryCode> <number>" following the detailed rule in the schema above.  
+- **portfolioLink:** Detect URLs pointing to personal sites (e.g., \`.com\`, \`.io\`, \`.dev\`, \`.me\`) or GitHub portfolios. Normalize to full URL or \`null\`.
 
 
+#### **Work Experience Format**
+Each work experience entry must follow this structure:
+\`\`\`json
+{
+  "role": "Job Title/Role",
+  "startDate": "YYYY-MM",
+  "endDate": "YYYY-MM" or "Present",
+  "payrollCompanyName": "Company Name",
+  "projects": [
+    {
+      "projectName": "Project Title",
+      "projectDescription": "Brief description of the project",
+      "rolesAndResponsibilities": "What the candidate did in this project",
+      "cloudUsed": "Cloud platform used (e.g., AWS, Azure, Salesforce)" or "",
+      "skillsUsed": ["skill1", "skill2", "skill3"]
+    }
+  ]
+}
+\`\`\`
+
+**Work Experience Parsing Rules:**
+1. Extract the job role/title for the "role" field
+2. Parse start and end dates in "YYYY-MM" format
+3. Extract company name for "payrollCompanyName"
+4. For each project within that role:
+   - Extract project name/title
+   - Write a concise project description
+   - List key responsibilities and contributions
+   - Identify cloud platforms mentioned (AWS, Azure, GCP, Salesforce, etc.)
+   - Extract all technical skills/technologies used in the project
+5. If no specific projects are mentioned, create one project entry with the overall job responsibilities
+6. Keep descriptions concise and professional
+
+#### **Skills Conversion Logic**
+1. If skills are listed without any experience and level, convert to:
+   \`\`\`json
+   "skillsJson": [
+     {"name": "HTML", "level": "primary", "experience": 0},
+     {"name": "CSS", "level": "primary", "experience": 0},
+     {"name": "Python", "level": "secondary", "experience": 0}
+   ]
+   \`\`\`
+2. **Experience default:** Always set \`experience: 0\` when no duration is mentioned.
+3. **Skill Level Classification:**
+   - "Key Skills", "Expertise", "Core Skills" → **primary**
+   - "Tools", "Technologies Used", "Familiar with" → **secondary**
+   - If no section context exists, first half = **primary**, remaining = **secondary**.
+4. **Ignore duplicates** and capitalize skill names (first letter uppercase).
+
+#### **Experience Normalization**
+- Convert mixed format (e.g., "5 years 6 months") → decimal (5.5).
+- Round to one decimal place.
+
+#### **Other Normalization**
+- Missing data → use default value.
+- Partial dates → use "YYYY" or "YYYY-01".
+- Certifications → Salesforce-specific only.
+- Clouds → Salesforce products only.
 
 ---
 
-### **Additional Normalization & Fallback Instructions**
+### 🧾 **Example Output (Format Only — Use Schema Defaults if Missing)**
 
-- **Date Handling:**  
-  If dates (work/education) are partially written (e.g., only year), use "YYYY" or "YYYY-01" format. If any date is missing, set it as an empty string "".
-
-- **Certifications:**  
-  Only include formal certifications (e.g., "Salesforce Certified Administrator"). Ignore course names unless explicitly labeled as a certification.
-
-- **Salesforce Clouds (primaryClouds & secondaryClouds):**  
-  These refer only to Salesforce products such as Sales Cloud, Service Cloud, Marketing Cloud, Commerce Cloud, etc.  
-  Do not include AWS, GCP, Azure, or other general cloud platforms.
-
-- **LinkedIn & Trailhead URLs:**  
-  If the URL is incomplete (e.g., starts with "linkedin.com" or "trailhead.salesforce.com"), still extract and normalize it to a proper full URL if possible. Otherwise, set to \`null\`.
-
-- **Final Output Rule (Strict):**  
-  ⚠️ Return only a raw JSON object. **No markdown formatting, no explanations, no surrounding text, no code blocks. Only valid, parseable JSON will be accepted.**
-
+\`\`\`json
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phoneNumber": "+91 9876543210",
+  "portfolioLink": "https://johndoe.dev",
+  "profilePicture": null,
+  "title": "Salesforce Developer",
+  "preferredLocation": ["Bangalore"],
+  "preferredJobType": ["FullTime"],
+  "currentCTC": "1800000",
+  "expectedCTC": "2400000",
+  "rateCardPerHour": {
+          value: "2500",
+          currency: "INR",
+        },
+  "joiningPeriod": "1 month",
+  "totalExperience": 5.5,
+  "relevantSalesforceExperience": 4,
+  "skillsJson": [
+    {"name": "HTML", "level": "primary", "experience": 0},
+    {"name": "CSS", "level": "primary", "experience": 0},
+    {"name": "Python", "level": "secondary", "experience": 0}
+  ],
+  "primaryClouds": [{"name": "Sales Cloud", "experience": 3}],
+  "secondaryClouds": [],
+  "certifications": ["Salesforce Certified Administrator"],
+  "workExperience": [
+    {
+      "role": "Software Developer",
+      "startDate": "2024-02",
+      "endDate": "2025-04",
+      "payrollCompanyName": "deepnetlabs",
+      "projects": [
+        {
+          "projectName": "Conversational AI",
+          "projectDescription": "Developed a chart-based analytics platform for generating SQL queries and visualizing data.",
+          "rolesAndResponsibilities": "Contributed to the frontend development and integrated APIs for dynamic data visualization and query generation.",
+          "cloudUsed": "AWS",
+          "skillsUsed": ["react", "js", "node", "typescript"]
+        },
+        {
+          "projectName": "Smart Bond AI",
+          "projectDescription": "Built a chart-based AI platform that generates smart financial bonds using AI tools",
+          "rolesAndResponsibilities": "Contributed to the frontend development using React, implemented interactive chart features, and ensured smooth UI functionality.",
+          "cloudUsed": "AWS",
+          "skillsUsed": ["React", "JavaScript", "FastAPI", "OpenAI"]
+        }
+      ]
+    },
+    {
+      "role": "Machine Learning Intern",
+      "startDate": "2023-08",
+      "endDate": "2023-11",
+      "payrollCompanyName": "Anspro Technologies",
+      "projects": [
+        {
+          "projectName": "Electricity Consumption",
+          "projectDescription": "Analysed electricity consumption data to identify usage patterns and trends.",
+          "rolesAndResponsibilities": "Contributed to data pre-processing, performed statistical analysis, and visualized trends to provide insights.",
+          "cloudUsed": "",
+          "skillsUsed": ["Python", "pandas", "matplotlib"]
+        }
+      ]
+    }
+  ],
+  "education": [
+    {"name": "B.Tech Computer Science", "fromYear": "2015", "toYear": "2019", "educationType": "Bachelor"}
+  ],
+  "linkedInUrl": "https://www.linkedin.com/in/johndoe",
+  "trailheadUrl": "https://trailhead.salesforce.com/en/me/johndoe"
+}
+\`\`\`
 
 ---
-Resume Text (Unstructured):  
+
+Resume Text:
 ${text}
 `;
+
 
 
 
@@ -84,9 +200,9 @@ You are extracting structured recruiter-related information from a resume text. 
 | :--- | :--- | :--- | :--- |
 | **role** | \`string | null\` | Job title or designation (e.g., "Machine Learning Engineer"). | \`null\` |
 | **description** | \`string | null\` | Full job description text. | \`null\` |
-| **employmentType** | \`string | null\` | **Normalization Required:** Choose one from **"FullTime"**, **"PartTime"**, **"Contract"**, **"Internship"**, or **"Freelance"**. | \`null\` |
+| **employmentType** | \`string | null\` | Normalize into one of: **"FullTime"**, **"PartTime"**, or **"Contract"**. | \`null\` |
 | **experience** | \`string | null\` | Text form of required experience (e.g., "3 years", "2-5 years"). | \`null\` |
-| **experienceLevel** | \`string | null\` | Normalize into **"Intern"**, **"Junior"**, **"Mid"**, **"Senior"**, or **"Lead"**. | \`null\` |
+| **experienceLevel** | \`string | null\` | Normalize into one of: **"Internship"**, **"EntryLevel"**, **"Mid"**, **"Senior"**, or **"Lead"**. | \`null\` |
 | **location** | \`string | null\` | Job location (e.g., "Bangalore, India"). | \`null\` |
 | **skills** | \`string[]\` | List of skills mentioned (e.g., ["Python", "TensorFlow", "SQL"]). | \`[]\` |
 | **salary** | \`number | 0\` | Annual salary (numeric only). Remove symbols like ₹ or $, e.g., "₹12,00,000" → 1200000. | \`0\` |
@@ -114,18 +230,21 @@ You are extracting structured recruiter-related information from a resume text. 
 
 3. **Normalization Rules:**
    - **employmentType:**  
-     Normalize similar words:  
-     "full time", "permanent" → **"FullTime"**  
-     "contractual", "consultant" → **"Contract"**  
-     "intern" → **"Internship"**  
-     "part time" → **"PartTime"**  
-     "freelance" → **"Freelance"**
+  Normalize using these rules:
+  - "full time", "permanent", "regular", "ft" → **"FullTime"**
+  - "part time", "pt" → **"PartTime"**
+  - "contract", "contractual", "consultant", "temp", "temporary" → **"Contract"**
+
    
    - **experienceLevel:**  
-     - If text mentions "junior", "entry", or "<3 years" → **"Junior"**  
-     - "mid-level", "intermediate", "3-6 years" → **"Mid"**  
-     - "senior", "lead", "7+ years" → **"Senior" or "Lead"**  
-     - "intern" → **"Intern"**
+  Normalize into one of **"Internship"**, **"EntryLevel"**, **"Mid"**, **"Senior"**, or **"Lead"**.  
+  Rules:
+  - If text includes "intern", "internship" → **"Internship"**  
+  - If text includes "fresher", "junior", "entry", "entry-level", "<3 years", "0-2 years" → **"EntryLevel"**  
+  - If text includes "mid", "mid-level", "intermediate", "3-6 years" → **"Mid"**  
+  - If text includes "senior", "7+ years", "sr.", "sr" → **"Senior"**  
+  - If text includes "lead", "team lead", "technical lead", "principal" → **"Lead"**  
+
 
    - **jobType:**  
      Normalize to **"Onsite"**, **"Remote"**, or **"Hybrid"**.

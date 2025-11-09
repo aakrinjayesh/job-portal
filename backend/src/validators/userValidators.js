@@ -118,7 +118,7 @@ const postJobValidator = z.object({
 
 // Job application validators
 const applyJobValidator = z.object({
-  // TODO: Add application fields if needed
+  jobId: z.string()
 })
 
 const withdrawJobValidator = z.object({

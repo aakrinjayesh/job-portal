@@ -1,0 +1,185 @@
+// controllers/vendorControllers.js
+import { da } from "zod/v4/locales";
+import prisma from "../config/prisma.js";
+
+// ✅ Get all candidates for a vendor
+const getVendorCandidates = async (req, res) => {
+  try {
+    const userAuth = req.user;
+
+    if (userAuth.role !== "company") {
+      return res.status(200).json({
+        status:"failed",
+        message: "Access denied. Only vendors can view candidates.",
+      });
+    }
+
+    const candidates = await prisma.userProfile.findMany({
+      where: { vendorId: userAuth.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.status(200).json({
+      status:"success",
+      message: "Vendor candidates fetched successfully.",
+      data: candidates,
+    });
+  } catch (err) {
+    console.error("Error fetching vendor candidates:", err);
+    return res.status(200).json({
+      status:"failed",
+      message: "Error fetching vendor candidates.",
+    });
+  }
+};
+
+// ✅ Create a new candidate for vendor
+const createVendorCandidate = async (req, res) => {
+  try {
+    const userAuth = req.user;
+
+    if (userAuth.role !== "company") {
+      return res.status(200).json({
+        status:"failed",
+        message: "Access denied. Only vendors can create candidates.",
+      });
+    }
+
+    const data = req.body;
+    const newCandidate = await prisma.userProfile.create({
+      data: {
+        vendorId: userAuth.id,
+        name: data.name,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        title: data.title,
+        portfolioLink: data.portfolioLink,
+        preferredLocation: data.preferredLocation || [],
+        currentLocation: data.currentLocation,
+        preferredJobType: data.preferredJobType || [],
+        currentCTC: data.currentCTC,
+        expectedCTC: data.expectedCTC,
+        rateCardPerHour: data.rateCardPerHour,
+        joiningPeriod: data.joiningPeriod,
+        totalExperience: data.totalExperience,
+        relevantSalesforceExperience: data.relevantSalesforceExperience,
+        skillsJson: data.skillsJson || [],
+        primaryClouds: data.primaryClouds || [],
+        secondaryClouds: data.secondaryClouds || [],
+        certifications: data.certifications || [],
+        workExperience: data.workExperience || [],
+        education: data.education || [],
+        linkedInUrl: data.linkedInUrl,
+        trailheadUrl: data.trailheadUrl,
+        profilePicture: data.profilePicture,
+      },
+    });
+    
+    return res.status(200).json({
+      status:"success",
+      message: "Candidate created successfully.",
+      data: newCandidate,
+    });
+  } catch (err) {
+    console.error("Error creating vendor candidate:", err);
+    return res.status(200).json({
+      status:"failed",
+      message: "Error creating vendor candidate.",
+    });
+  }
+};
+
+// ✅ Update vendor candidate
+const updateVendorCandidate = async (req, res) => {
+  try {
+    const userAuth = req.user;
+    const { id, ...data } = req.body;
+
+    if (userAuth.role !== "company") {
+      return res.status(200).json({
+        status:"failed",
+        message: "Access denied. Only vendors can update candidates.",
+      });
+    }
+
+    const existingCandidate = await prisma.userProfile.findFirst({
+      where: {
+        id,
+        vendorId: userAuth.id,
+      },
+    });
+
+    if (!existingCandidate) {
+      return res.status(200).json({
+        status:"failed",
+        message: "Candidate not found or not authorized to update.",
+      });
+    }
+
+    const updatedCandidate = await prisma.userProfile.update({
+      where: { id },
+      data,
+    });
+
+    return res.status(200).json({
+      status:"success",
+      message: "Candidate updated successfully.",
+      data: updatedCandidate,
+    });
+  } catch (err) {
+    console.error("Error updating vendor candidate:", err);
+    return res.status(200).json({
+      status:"failed",
+      message: "Error updating vendor candidate.",
+    });
+  }
+};
+
+// ✅ Delete vendor candidate (hard delete)
+const deleteVendorCandidate = async (req, res) => {
+  try {
+    const userAuth = req.user;
+    const { id } = req.body;
+
+    if (userAuth.role !== "company") {
+      return res.status(200).json({
+        status:"failed",
+        message: "Access denied. Only vendors can delete candidates.",
+      });
+    }
+
+    const existingCandidate = await prisma.userProfile.findFirst({
+      where: {
+        id,
+        vendorId: userAuth.id,
+      },
+    });
+
+    if (!existingCandidate) {
+      return res.status(200).json({
+        status:"failed",
+        message: "Candidate not found or not authorized to delete.",
+      });
+    }
+
+    await prisma.userProfile.delete({ where: { id } });
+
+    return res.status(200).json({
+      status:"success",
+      message: "Candidate deleted successfully.",
+    });
+  } catch (err) {
+    console.error("Error deleting vendor candidate:", err);
+    return res.status(200).json({
+      status:"failed",
+      message: "Error deleting vendor candidate.",
+    });
+  }
+};
+
+export {
+  getVendorCandidates,
+  createVendorCandidate,
+  updateVendorCandidate,
+  deleteVendorCandidate,
+};
