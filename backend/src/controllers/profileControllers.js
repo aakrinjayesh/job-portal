@@ -2,6 +2,7 @@ import prisma from '../config/prisma.js'
 import extractTextFromBase64 from '../utils/extractText.js'
 import { extractResumeSections } from '../utils/llmTextExtractor.js'
 
+//generate otp to validate phone number of user
 
 
 
@@ -15,7 +16,6 @@ const UploadResume = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const { role } = req.body;
- 
     const pdfBuffer = req.file.buffer;
    
     const text = await extractTextFromBase64(pdfBuffer)
@@ -59,7 +59,10 @@ const updateProfiledetails = async (req, res) => {
       name = null,
       phoneNumber = null,
       portfolioLink = null,
-      email= null,
+      email,
+      firstName,
+      lastName,
+      companyName=null,
       preferredLocation = [],
       preferredJobType = [],
       currentLocation = null,
@@ -78,6 +81,7 @@ const updateProfiledetails = async (req, res) => {
       linkedInUrl = null,
       trailheadUrl = null,
       title,
+    
     } = req.body
 
     const upserted = await prisma.userProfile.upsert({
@@ -85,6 +89,9 @@ const updateProfiledetails = async (req, res) => {
       update: {
         profilePicture,
         name ,
+        firstName,
+        lastName,
+        companyName,
       phoneNumber ,
       portfolioLink ,
       email,
@@ -106,11 +113,15 @@ const updateProfiledetails = async (req, res) => {
         education,
         currentLocation,
         title,
+      
       },
       create: {
         userId: user.id,
         profilePicture,
          name ,
+        firstName,
+        lastName,
+        companyName, 
       phoneNumber ,
       portfolioLink ,
       email,
@@ -132,6 +143,7 @@ const updateProfiledetails = async (req, res) => {
         linkedInUrl,
         trailheadUrl,
         title,
+        
       }
     })
     console.log('upded db useeprofile',upserted)
@@ -145,6 +157,7 @@ const updateProfiledetails = async (req, res) => {
 
 
 const getUserProfileDetails = async (req, res) => {
+  console.log("in user profile",req.user)
   try {
     // The JWT middleware puts user info here
     const { id } = req.user;  
@@ -169,10 +182,139 @@ const getUserProfileDetails = async (req, res) => {
   }
 };
 
+//--------------------------------------
+// Get Countries + States (Address form)
+// --------------------------------------
+ const getCountriesWithStates = async (req, res) => {
+  console.log("in get countries")
+  try {
+    const countries = await prisma.country.findMany({
+      include: { states: true },
+    });
+ console.log(JSON.stringify(countries, null, 2));
+    return res.json({
+      status: "success",
+      data: countries,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "failed",
+      message: "Unable to fetch countries",
+    });
+  }
+};
+// -------------------------------------------------------
+// Save or Update Address (Upsert) for User Profile
+// -------------------------------------------------------
+ const saveOrUpdateAddress = async (req, res) => {
+  console.log("address update start")
+  try {
+    const userId = req.user?.id;
 
+    if (!userId) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid user ID",
+      });
+    }
 
+    // Get user profile to fetch profileId
+    const profile = await prisma.userProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User profile not found",
+      });
+    }
+
+    const profileId = profile.id;
+ console.log(profileId);
+    // Dynamic frontend object (doorNo, street, countryId, stateId, pincode etc.)
+    const addressData = req.body;
+ console.log(addressData)
+    // Filter undefined fields
+    const filteredData = Object.fromEntries(
+      Object.entries(addressData).filter(([_, v]) => v !== undefined)
+    );
+
+    // If empty — reject (user clicked save without editing anything)
+    if (Object.keys(filteredData).length === 0) {
+      return res.status(400).json({
+        status: "failed",
+        message: "No address fields to update",
+      });
+    }
+
+    // Address UPSERT
+    const updatedAddress = await prisma.address.upsert({
+      where: { profileId }, // ensure profileId is unique in Prisma schema
+      update: filteredData,
+      create: {
+        profileId,
+        ...filteredData,
+      },
+    });
+ console.log("Updated address object:", updatedAddress);
+    return res.json({
+      status: "success",
+      message: "Address saved successfully",
+      data: updatedAddress,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "failed",
+      message: "Unable to save address",
+      error: error.message,
+    });
+  }
+};
+// --------------------------------------
+// Get User Address (for logged-in user)
+// --------------------------------------
+const getUserAddress = async (req, res) => {
+  try {
+    const userId = req.user?.id; // token is already decoded by middleware
+
+    if (!userId) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid user ID",
+      });
+    }
+
+    // Find user profile to get profileId
+    const profile = await prisma.userProfile.findUnique({
+      where: { userId },
+      include: { address: true }, // include the related Address
+    });
+
+    if (!profile) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User profile not found",
+      });
+    }
+ console.log(profile)
+    // Send address (may be null if not saved)
+    return res.status(200).json({
+      data:{
+      status: "success",
+      address: profile.address || null,
+  }});
+  } catch (error) {
+    console.error("Error fetching user address:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Could not fetch user address",
+      error: error.message,
+    });
+  }
+};
 
 
 export { 
   // userRegister, userLogin, 
-  UploadResume, updateProfiledetails, getUserProfileDetails}
+  UploadResume, updateProfiledetails, getUserProfileDetails,getCountriesWithStates,saveOrUpdateAddress,getUserAddress}

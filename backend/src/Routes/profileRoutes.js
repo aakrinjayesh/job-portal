@@ -5,7 +5,7 @@ UploadResumeValidator,
 } from '../validators/userValidators.js'
 
 import { 
-  UploadResume, updateProfiledetails,  getUserProfileDetails
+  UploadResume, updateProfiledetails,  getUserProfileDetails,getCountriesWithStates,saveOrUpdateAddress, getUserAddress
 } from '../controllers/profileControllers.js'
 
 
@@ -25,7 +25,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 userRouter.post('/upload', upload.single('file'), authenticateToken,UploadResume)
 
 
-userRouter.post('/profile',
+userRouter.put('/profile',
   // validateInput(userProfileValidator), 
   authenticateToken,updateProfiledetails);
 
@@ -33,7 +33,17 @@ userRouter.post('/profile',
 // for the below just pass {} as payload
 userRouter.post('/profile/details', authenticateToken, getUserProfileDetails);
 
+// Countries & States endpoint
+// (GET /api/countries)
+// --------------------------------------
+userRouter.get("/countries", authenticateToken, getCountriesWithStates);
 
+// --------------------------------------
+// Address Save / Update
+// (POST /api/address)
+// --------------------------------------
+userRouter.put("/profile/update/address", authenticateToken, saveOrUpdateAddress);
 
+userRouter.get("/profile/address", authenticateToken, getUserAddress);
 
 export default userRouter

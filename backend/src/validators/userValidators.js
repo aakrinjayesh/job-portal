@@ -36,7 +36,7 @@ const userProfileValidator = z.object({
   title: z.string().trim().optional().or(z.literal("").transform(() => null)),
 
   preferredLocation: z.array(z.string().trim()).default([]),
-
+phoneNumber: z.string().trim().optional().or(z.literal("").transform(() => null)),
   currentLocation: z.string().trim().optional().or(z.literal("").transform(() => null)),
 
   preferredJobType: z
