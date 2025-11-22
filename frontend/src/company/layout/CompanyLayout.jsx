@@ -13,6 +13,7 @@ import {
   Divider,
   Tooltip,
   Checkbox,
+  Calendar,
 } from "antd";
 import {
   DashboardOutlined,
@@ -27,6 +28,8 @@ import {
   StarFilled,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
+  CalendarOutlined,
+   PlayCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
@@ -43,7 +46,11 @@ const CompanyLayout = ({ children }) => {
     bench: "/company/bench",
     findjob: "/company/job/find",
     findbench: "/company/bench/find",
-    logout: "/login",
+    profile:"/myProfile/edit",
+    calendar:"/Calendar",
+    logout: "/login", 
+    course:"/course"
+
   };
 
   const items = [
@@ -73,6 +80,20 @@ const CompanyLayout = ({ children }) => {
       label: "Find Bench",
       icon: <SearchOutlined />,
     },
+    { key: "profile",
+       label: "My Profile",
+        icon: <UserOutlined /> 
+      },
+       {
+      key: "course",
+      label: "Courses",
+      icon: <PlayCircleOutlined />,
+    },
+   {
+    key: "calendar",
+    label: "Calendar",
+    icon: <CalendarOutlined />,
+  },
     {
       key: "logout",
       label: "Logout",

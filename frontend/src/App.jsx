@@ -1,3 +1,4 @@
+// App.js
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./candidate/layouts/MainLayout";
 import UpdateUserProfile from "./candidate/pages/UpdateUserProfile";
@@ -5,7 +6,7 @@ import Settings from "./candidate/pages/Settings";
 import FAQ from "./candidate/pages/FAQ";
 import DashBoard from "./company/pages/DashBoard";
 import CompanyLayout from "./company/layout/CompanyLayout";
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider } from "antd";
 import CandidateJobDetails from "./candidate/components/Job/CandidateJobDetails";
 import JobDetails from "./company/components/Job/JobDetails";
 import Jobs from "./candidate/pages/Jobs";
@@ -19,6 +20,10 @@ import SavedJobs from "./candidate/pages/SavedJobs";
 import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
 import CreatePassword from "./pages/CreatePassword";
+import MyProfile from "./company/pages/MyProfile";
+import AppWrapper from "./AppWrapper";
+import CalendarPage from "./company/components/Calander/CalendarPage";
+import CourseForm from "./components/CourseCreator/CourseForm";
 
 function App() {
   return (
@@ -34,149 +39,177 @@ function App() {
     >
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes — not wrapped by AppWrapper */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/createpassword" element={<CreatePassword />} />
 
-          {/* Candidate routes */}
-          <Route
-            path="/candidate/dashboard"
+          {/* Protected routes wrapped by AppWrapper */}
+          <Route element={<AppWrapper />}>
+          {/*Calendar routes */}
+          
+            {/* Candidate routes */}
+            <Route
+            path="/Calendar"
             element={
-              <MainLayout>
-                <div>dashboard</div>
-              </MainLayout>
+              <CompanyLayout>
+                <CalendarPage />
+              </CompanyLayout>
             }
-          />
-          <Route
-            path="/candidate/jobs"
-            element={
-              <MainLayout>
-                <Jobs />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/candidate/jobs/saved"
-            element={
-              <MainLayout>
-                <SavedJobs />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/candidate/jobs/applied"
-            element={
-              <MainLayout>
-                <AppliedJobs />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/candidate/profile"
-            element={
-              <MainLayout>
-                <UpdateUserProfile />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/candidate/settings"
-            element={
-              <MainLayout>
-                <Settings />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/candidate/faq"
-            element={
-              <MainLayout>
-                <FAQ />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/candidate/job/:id"
-            element={
-              <MainLayout>
-                <CandidateJobDetails />
-              </MainLayout>
-            }
-          />
+            >
 
-          {/* Company routes */}
-          <Route
-            path="/company/dashboard"
-            element={
-              <CompanyLayout>
-                <DashBoard />
-              </CompanyLayout>
-            }
-          />
+            </Route>
+            <Route
+              path="/candidate/dashboard"
+              element={
+                <MainLayout>
+                  <div>dashboard</div>
+                </MainLayout>
+              }
+            />
+              <Route
+              path="/course"
+              element={
+                <MainLayout>
+                  <CourseForm />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/candidate/jobs"
+              element={
+                <MainLayout>
+                  <Jobs />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/candidate/jobs/saved"
+              element={
+                <MainLayout>
+                  <SavedJobs />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/candidate/jobs/applied"
+              element={
+                <MainLayout>
+                  <AppliedJobs />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/candidate/profile"
+              element={
+                <MainLayout>
+                  <UpdateUserProfile />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/candidate/settings"
+              element={
+                <MainLayout>
+                  <Settings />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/candidate/faq"
+              element={
+                <MainLayout>
+                  <FAQ />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/candidate/job/:id"
+              element={
+                <MainLayout>
+                  <CandidateJobDetails />
+                </MainLayout>
+              }
+            />
 
-          <Route
-            path="/company/candidates"
-            element={
-              <CompanyLayout>
-                <CandidateList />
-              </CompanyLayout>
-            }
-          />
-
-          <Route
-            path="/company/candidate/:id"
-            element={
-              <CompanyLayout>
-                <CandidateDetails />
-              </CompanyLayout>
-            }
-          />
-
-          <Route
-            path="/company/bench"
-            element={
-              <CompanyLayout>
-                <Bench />
-              </CompanyLayout>
-            }
-          />
-
-          <Route
-            path="/company/jobs"
-            element={
-              <CompanyLayout>
-                <Job />
-              </CompanyLayout>
-            }
-          />
-
-          <Route
-            path="/company/job/find"
-            element={
-              <CompanyLayout>
-                <FindJob />
-              </CompanyLayout>
-            }
-          />
-
-          <Route
-            path="/company/job/:id"
-            element={
-              <CompanyLayout>
-                <JobDetails />
-              </CompanyLayout>
-            }
-          />
-          <Route
-            path="/company/bench/find"
-            element={
-              <CompanyLayout>
-                <div>bench details</div>
-              </CompanyLayout>
-            }
-          />
+            {/* Company routes */}
+            <Route
+              path="/company/dashboard"
+              element={
+                <CompanyLayout>
+                  <DashBoard />
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/company/candidates"
+              element={
+                <CompanyLayout>
+                  <CandidateList />
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/company/candidate/:id"
+              element={
+                <CompanyLayout>
+                  <CandidateDetails />
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/company/bench"
+              element={
+                <CompanyLayout>
+                  <Bench />
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/company/jobs"
+              element={
+                <CompanyLayout>
+                  <Job />
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/company/job/find"
+              element={
+                <CompanyLayout>
+                  <FindJob />
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/company/job/:id"
+              element={
+                <CompanyLayout>
+                  <JobDetails />
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/company/bench/find"
+              element={
+                <CompanyLayout>
+                  <div>bench details</div>
+                </CompanyLayout>
+              }
+            />
+            <Route
+              path="/myProfile/edit"
+              element={
+                <CompanyLayout>
+                  <MyProfile />
+                </CompanyLayout>
+              }
+            />
+          </Route>
+          
+          {/* Optional: catch-all route to redirect unknown paths */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>
