@@ -52,9 +52,9 @@ const Bench = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const filteredCandidates = candidates
-    .map((item) => ({
+    ?.map((item) => ({
       ...item,
-      isMatch: item.name.toLowerCase().includes(searchText.toLowerCase()),
+      isMatch: item?.name?.toLowerCase().includes(searchText.toLowerCase()),
     }))
     .sort((a, b) => b.isMatch - a.isMatch); // matched items go to top
 
@@ -63,7 +63,7 @@ const Bench = () => {
     try {
       setLoading(true);
       const res = await GetVendorCandidates();
-      const list = Array.isArray(res?.data) ? res.data : res;
+      const list = Array.isArray(res?.data) && res.data;
       setCandidates(list || []);
 
       // --- NEW: update verified / unverified counts ---
@@ -582,8 +582,8 @@ const Bench = () => {
           // dataSource={filteredCandidates}
           dataSource={
             activeTab === "active"
-              ? filteredCandidates.filter((c) => c.status !== "inactive")
-              : filteredCandidates.filter((c) => c.status === "inactive")
+              ? filteredCandidates?.filter((c) => c.status !== "inactive")
+              : filteredCandidates?.filter((c) => c.status === "inactive")
           }
           rowKey={(record) => record.id || record.name}
           bordered

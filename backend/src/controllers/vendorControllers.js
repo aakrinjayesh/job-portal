@@ -1,5 +1,4 @@
 // controllers/vendorControllers.js
-import { da } from "zod/v4/locales";
 import prisma from "../config/prisma.js";
 
 // ✅ Get all candidates for a vendor
@@ -8,8 +7,8 @@ const getVendorCandidates = async (req, res) => {
     const userAuth = req.user;
 
     if (userAuth.role !== "company") {
-      return res.status(200).json({
-        status:"failed",
+      return res.status(403).json({
+        status: "failed",
         message: "Access denied. Only vendors can view candidates.",
       });
     }
@@ -20,14 +19,14 @@ const getVendorCandidates = async (req, res) => {
     });
 
     return res.status(200).json({
-      status:"success",
+      status: "success",
       message: "Vendor candidates fetched successfully.",
       data: candidates,
     });
   } catch (err) {
     console.error("Error fetching vendor candidates:", err);
-    return res.status(200).json({
-      status:"failed",
+    return res.status(500).json({
+      status: "failed",
       message: "Error fetching vendor candidates.",
     });
   }
@@ -39,13 +38,14 @@ const createVendorCandidate = async (req, res) => {
     const userAuth = req.user;
 
     if (userAuth.role !== "company") {
-      return res.status(200).json({
-        status:"failed",
+      return res.status(403).json({
+        status: "failed",
         message: "Access denied. Only vendors can create candidates.",
       });
     }
 
     const data = req.body;
+
     const newCandidate = await prisma.userProfile.create({
       data: {
         vendorId: userAuth.id,
@@ -74,16 +74,16 @@ const createVendorCandidate = async (req, res) => {
         profilePicture: data.profilePicture,
       },
     });
-    
-    return res.status(200).json({
-      status:"success",
+
+    return res.status(201).json({
+      status: "success",
       message: "Candidate created successfully.",
       data: newCandidate,
     });
   } catch (err) {
     console.error("Error creating vendor candidate:", err);
-    return res.status(200).json({
-      status:"failed",
+    return res.status(500).json({
+      status: "failed",
       message: "Error creating vendor candidate.",
     });
   }
@@ -96,8 +96,8 @@ const updateVendorCandidate = async (req, res) => {
     const { id, ...data } = req.body;
 
     if (userAuth.role !== "company") {
-      return res.status(200).json({
-        status:"failed",
+      return res.status(403).json({
+        status: "failed",
         message: "Access denied. Only vendors can update candidates.",
       });
     }
@@ -110,8 +110,8 @@ const updateVendorCandidate = async (req, res) => {
     });
 
     if (!existingCandidate) {
-      return res.status(200).json({
-        status:"failed",
+      return res.status(404).json({
+        status: "failed",
         message: "Candidate not found or not authorized to update.",
       });
     }
@@ -122,14 +122,14 @@ const updateVendorCandidate = async (req, res) => {
     });
 
     return res.status(200).json({
-      status:"success",
+      status: "success",
       message: "Candidate updated successfully.",
       data: updatedCandidate,
     });
   } catch (err) {
     console.error("Error updating vendor candidate:", err);
-    return res.status(200).json({
-      status:"failed",
+    return res.status(500).json({
+      status: "failed",
       message: "Error updating vendor candidate.",
     });
   }
@@ -142,8 +142,8 @@ const deleteVendorCandidate = async (req, res) => {
     const { id } = req.body;
 
     if (userAuth.role !== "company") {
-      return res.status(200).json({
-        status:"failed",
+      return res.status(403).json({
+        status: "failed",
         message: "Access denied. Only vendors can delete candidates.",
       });
     }
@@ -156,8 +156,8 @@ const deleteVendorCandidate = async (req, res) => {
     });
 
     if (!existingCandidate) {
-      return res.status(200).json({
-        status:"failed",
+      return res.status(404).json({
+        status: "failed",
         message: "Candidate not found or not authorized to delete.",
       });
     }
@@ -165,13 +165,13 @@ const deleteVendorCandidate = async (req, res) => {
     await prisma.userProfile.delete({ where: { id } });
 
     return res.status(200).json({
-      status:"success",
+      status: "success",
       message: "Candidate deleted successfully.",
     });
   } catch (err) {
     console.error("Error deleting vendor candidate:", err);
-    return res.status(200).json({
-      status:"failed",
+    return res.status(500).json({
+      status: "failed",
       message: "Error deleting vendor candidate.",
     });
   }

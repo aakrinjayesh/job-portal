@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Loader from "../components/Loader";
 
 const AuthContext = createContext({
   user: null,
@@ -64,7 +63,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, token, login, register, logout }}>
-      {isLoading ? <Loader /> : children}
+      {children}
     </AuthContext.Provider>
   );
 };
