@@ -22,6 +22,7 @@ import {
   AppstoreOutlined,
   SearchOutlined,
   LogoutOutlined,
+  WhatsAppOutlined,
   CloudOutlined,
   EnvironmentOutlined,
   StarFilled,
@@ -43,6 +44,7 @@ const CompanyLayout = ({ children }) => {
     bench: "/company/bench",
     findjob: "/company/job/find",
     findbench: "/company/bench/find",
+    chat: "/company/chat",
     logout: "/login",
   };
 
@@ -74,6 +76,11 @@ const CompanyLayout = ({ children }) => {
       icon: <SearchOutlined />,
     },
     {
+      key: "chat",
+      label: "Chat",
+      icon: <WhatsAppOutlined />,
+    },
+    {
       key: "logout",
       label: "Logout",
       icon: <LogoutOutlined />,
@@ -86,6 +93,10 @@ const CompanyLayout = ({ children }) => {
       if (e.key === "logout") {
         // Handle logout
         localStorage.clear();
+      }
+      if (e.key === "chat") {
+        navigate("/company/chat", { state: { userType: "company" } });
+        return;
       }
       navigate(route);
     }
@@ -169,7 +180,7 @@ const CompanyLayout = ({ children }) => {
           }}
         >
           <Title level={4} style={{ margin: 0 }}>
-            Welcome <span style={{ color: "#1677ff" }}>Aakrin Pvt. Ltd.</span>
+            Welcome <span style={{ color: "#1677ff" }}>{name}</span>
           </Title>
         </Header>
 

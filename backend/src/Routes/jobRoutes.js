@@ -87,7 +87,9 @@ JobRouters.get('/saved/:jobId', authenticateToken, checkIfJobSaved);
 JobRouters.post('/jobs/create', 
   validateInput(postJobValidator), 
   authenticateToken, postJob)
-JobRouters.post('/jobs/posted',validateInput(postedJobValidator),authenticateToken, postedJobs)
+JobRouters.get('/jobs/posted',
+  // validateInput(postedJobValidator),
+  authenticateToken, postedJobs)
 JobRouters.post('/jobs/update', 
   validateInput(editJobValidator), 
   authenticateToken, editJob)

@@ -11,6 +11,17 @@ export async function GetJobsList(page = 1, limit = 10) {
   }
 }
 
+
+export async function PostedJobsList(page = 1, limit = 10) {
+  try {
+    const response = await axiosInstance.get(`/jobs/posted?page=${page}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    throw error;
+  }
+}
+
  
 export async function GetJobDetails(payload) {
   try {
@@ -143,4 +154,40 @@ export async function DeleteVendorCandidate(payload) {
     console.error("Error in UpdateJob:", error);
     throw error;
   }
+}
+
+
+// Send verification OTP to candidate email
+export async function SendVerificationOtp(payload) {
+  try {
+    const response = await axiosInstance.post("/verification/send-otp", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error sending OTP:", error);
+    throw error;
+  }
+}
+ 
+// Verify candidate OTP
+export async function VerifyCandidateOtp(payload) {
+  try {
+    const response = await axiosInstance.post("/verification/verify-otp", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    throw error;
+  }
+}
+
+export async function  UserJobsids() {
+  try {
+      const response = await axiosInstance.get(`/job/applied/ids`, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
 }

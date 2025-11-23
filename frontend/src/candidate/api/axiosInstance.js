@@ -7,7 +7,7 @@ const history = createBrowserHistory()
 
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:3000", // common base URL
+  baseURL: "http://localhost:3000", 
   maxBodyLength: Infinity,
 });
 

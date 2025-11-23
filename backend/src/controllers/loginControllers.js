@@ -186,6 +186,7 @@ const setPassword = async (req, res) => {
  * Local + External login flow
  */
 const login = async (req, res) => {
+  console.log('login route')
   try {
     const { email, password, role } = req.body;
 
@@ -260,10 +261,10 @@ const login = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
     };
 
-    if (loginResponse?.data?.accessToken && loginResponse?.data?.refreshToken) {
+    if (loginResponse?.data?.data?.accessToken && loginResponse?.data?.data?.refreshToken) {
       res
-        .cookie("accessToken", loginResponse?.data?.accessToken, options)
-        .cookie("refreshToken", loginResponse?.data?.refreshToken, options);
+        .cookie("accessToken", loginResponse?.data?.data?.accessToken, options)
+        .cookie("refreshToken", loginResponse?.data?.data?.refreshToken, options);
     }
 
     // Final response
@@ -277,10 +278,11 @@ const login = async (req, res) => {
         name: user.name,
         role: user.role,
       },
-      chatmeatadata: loginResponse
+      chatmeatadata: loginResponse?.data?.data
         ? {
-            user: loginResponse?.data?.user,
-            astoken: loginResponse?.data?.accessToken,
+            user: loginResponse.data.data.user,
+            accessToken: loginResponse.data.data.accessToken,
+            refreshToken: loginResponse.data.data.refreshToken,
           }
         : null,
     });
@@ -293,4 +295,89 @@ const login = async (req, res) => {
   }
 };
 
-export { userOtpGenerate, userOtpValidator, setPassword, login };
+
+
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email, role } = req.body;
+ 
+    if (!email || !role) {
+      return res.status(400).json({ status: "failed", message: "Email and role are required" });
+    }
+ 
+    // ✅ Correct Prisma query
+    const user = await prisma.users.findFirst({
+      where: { email, role },
+    });
+ 
+    if (!user) {
+      return res.status(404).json({ status: "failed", message: "User not found" });
+    }
+ 
+    // Generate OTP
+    const otp = Math.floor(1000 + Math.random() * 9000);
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min validity
+ 
+    // Save OTP to DB
+    await prisma.users.update({
+      where: { id: user.id },
+      data: { otp: otp.toString(), otpExpiry },
+    });
+ 
+    // Send email (mock or actual)
+    console.log(`OTP for ${email}: ${otp}`);
+ 
+    return res.status(200).json({
+      status: "success",
+      message: "OTP sent successfully to your email",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({
+      status: "failed",
+      message: error.message || "Internal server error",
+    });
+  }
+};
+ 
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+ 
+    const user = await prisma.users.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User not found",
+      });
+    }
+ 
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.users.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
+ 
+    return res.status(200).json({
+      status: "success",
+      message: "Password reset successful",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Internal server error",
+    });
+  }
+};
+ 
+export {
+  userOtpGenerate,
+  userOtpValidator,
+  setPassword,
+  login,
+  forgotPassword,
+  resetPassword,
+};

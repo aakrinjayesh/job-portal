@@ -60,7 +60,17 @@ const JobDetails = () => {
       <Card
         style={{ borderRadius: 12, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
       >
-        <Title level={3}>{job.role}</Title>
+        <Title level={3}>
+          {job.role}{" "}
+          <Button
+            type="primary"
+            onClick={handleViewCandidates}
+            style={{ float: "right" }}
+          >
+            View Candidates
+          </Button>
+        </Title>
+
         <Text strong>{job.companyName}</Text>
 
         <Space style={{ display: "block", marginTop: 8 }}>
@@ -106,10 +116,6 @@ const JobDetails = () => {
         </div>
 
         <Divider />
-
-        <Button type="primary" onClick={handleViewCandidates}>
-          View Candidates
-        </Button>
       </Card>
     </div>
   );

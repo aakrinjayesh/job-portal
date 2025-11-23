@@ -1,11 +1,14 @@
-import React from "react";
-import { Form, Input, Button, Card, message } from "antd";
+import React, { useState, useEffect } from "react";
+import { Form, Input, Button, Typography, message } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SetPassword } from "../candidate/api/api";
-//import backgroundImage from "../../assets/salesforce_bg.jpg"; // ✅ same image as login/signup
-import { useState } from "react";
 
-// import { SetPassword } from "../api/api"; // uncomment when API ready
+import bg1 from "../assets/salesforce1_bg.jpg";
+import bg5 from "../assets/bg5.webp";
+import bg3 from "../assets/bg3.jpg";
+import bg4 from "../assets/bg4.jpg";
+
+const { Title, Text } = Typography;
 
 const CreatePassword = () => {
   const [form] = Form.useForm();
@@ -13,8 +16,18 @@ const CreatePassword = () => {
   const location = useLocation();
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
+  const [bgIndex, setBgIndex] = useState(0);
 
-  // ✅ Get email & role passed from signup page
+  // ✅ Background images (same as signup)
+  const backgrounds = [bg1, bg5, bg3, bg4];
+
+  // 🔹 Set background only once when page loads or refreshes
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * backgrounds.length);
+    setBgIndex(randomIndex);
+  }, []);
+
+  // ✅ Get email & role from signup navigation
   const email = location?.state?.email;
   const role = location?.state?.role;
 
@@ -27,6 +40,7 @@ const CreatePassword = () => {
     );
   }
 
+  // ✅ Handle form submit
   const onFinish = async (values) => {
     if (values.password !== values.confirmPassword) {
       messageApi.error("Passwords do not match!");
@@ -35,23 +49,16 @@ const CreatePassword = () => {
     setPasswordLoading(true);
 
     try {
-      // Uncomment when SetPassword API is implemented
       const res = await SetPassword({ email, password: values.password, role });
 
-      // Simulate success for testing
-      // const res = { status: "success" };
-
       if (res.status === "success") {
-        setPasswordLoading(false);
         messageApi.success("Password set successfully!");
         navigate("/login", { state: { role } });
       } else {
-        setPasswordLoading(false);
         messageApi.error(res.message || "Failed to set password");
       }
     } catch (err) {
       console.log("Set password error:", err);
-      setPasswordLoading(false);
       messageApi.error("Something went wrong");
     } finally {
       setPasswordLoading(false);
@@ -61,76 +68,102 @@ const CreatePassword = () => {
   return (
     <div
       style={{
-        // backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        minHeight: "100vh",
+        height: "100vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* ✅ Semi-transparent overlay for readability */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(255, 255, 255, 0.5)",
-          backdropFilter: "blur(5px)",
-        }}
-      ></div>
-
       {contextHolder}
 
-      {/* ✅ Password Card */}
-      <Card
-        title="Create Password"
-        hoverable
+      {/* 🔁 Background slideshow */}
+      {backgrounds.map((img, index) => (
+        <div
+          key={index}
+          style={{
+            backgroundImage: `url(${img})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "brightness(0.5)",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            opacity: bgIndex === index ? 1 : 0,
+            transition: "opacity 2s ease-in-out",
+          }}
+        ></div>
+      ))}
+
+      {/* 🔒 Password form box */}
+      <div
         style={{
-          zIndex: 2,
-          width: 450,
-          padding: "40px",
-          background: "#fff",
-          borderRadius: "12px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          position: "relative",
+          zIndex: 1,
+          width: "400px",
+          textAlign: "center",
+          padding: "25px",
+          borderRadius: "10px",
         }}
       >
+        <Title level={1} style={{ marginBottom: "20px", color: "white" }}>
+          QuickhireSF
+        </Title>
+
+        <Title
+          level={4}
+          style={{
+            color: "white",
+            marginBottom: "30px",
+            fontWeight: "400",
+          }}
+        >
+          Create Your Password
+        </Title>
+
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          style={{ marginTop: 20 }}
+          style={{ width: "100%" }}
         >
           <Form.Item
-            label="Password"
             name="password"
-            rules={[{ required: true, message: "Please enter your password!" }]}
+            rules={[{ required: true, message: "Please enter your password" }]}
           >
-            <Input.Password placeholder="Enter new password" />
+            <Input.Password placeholder="Enter new password" size="large" />
           </Form.Item>
 
           <Form.Item
-            label="Confirm Password"
             name="confirmPassword"
             rules={[
-              { required: true, message: "Please confirm your password!" },
+              { required: true, message: "Please confirm your password" },
             ]}
           >
-            <Input.Password placeholder="Confirm your password" />
+            <Input.Password placeholder="Confirm password" size="large" />
           </Form.Item>
 
           <Button
             type="primary"
-            loading={passwordLoading}
             htmlType="submit"
+            loading={passwordLoading}
             block
+            size="large"
           >
             Set Password
           </Button>
         </Form>
-      </Card>
+
+        <Text style={{ display: "block", color: "white", marginTop: "20px" }}>
+          Already have an account?{" "}
+          <Button type="link" onClick={() => navigate("/login")}>
+            Login
+          </Button>
+        </Text>
+      </div>
     </div>
   );
 };

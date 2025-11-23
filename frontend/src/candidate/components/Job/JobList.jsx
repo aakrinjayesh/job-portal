@@ -14,7 +14,6 @@ import {
 import {
   StarFilled,
   EnvironmentOutlined,
-  CloudOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -79,15 +78,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids }) => {
                 <Title level={5} style={{ margin: 0 }}>
                   {job?.role}
                 </Title>
-                <CloudOutlined
-                  style={{
-                    fontSize: 28,
-                    color: "#1890ff",
-                    border: "1px solid #d9d9d9",
-                    borderRadius: "50%",
-                    padding: 6,
-                  }}
-                />
               </div>
 
               <Space align="center" style={{ marginTop: 6 }}>

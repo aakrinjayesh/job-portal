@@ -20,6 +20,9 @@ import {
 import UpdateUserProfile from "../../candidate/pages/UpdateUserProfile";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
 
+import { Input } from "antd";
+import { SendVerificationOtp, VerifyCandidateOtp } from "../api/api";
+
 const Bench = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -33,6 +36,28 @@ const Bench = () => {
   const [hotlistFile, setHotlistFile] = useState(null);
   const [editRecord, setEditRecord] = useState(null);
 
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
+  const [verifyCandidate, setVerifyCandidate] = useState(null);
+  const [otp, setOtp] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+
+  // add near other useState() calls
+  const [verifiedCount, setVerifiedCount] = useState(0);
+  const [unverifiedCount, setUnverifiedCount] = useState(0);
+
+  const [searchText, setSearchText] = useState("");
+
+  const [activeTab, setActiveTab] = useState("active");
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+
+  const filteredCandidates = candidates
+    .map((item) => ({
+      ...item,
+      isMatch: item.name.toLowerCase().includes(searchText.toLowerCase()),
+    }))
+    .sort((a, b) => b.isMatch - a.isMatch); // matched items go to top
+
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
     try {
@@ -40,6 +65,17 @@ const Bench = () => {
       const res = await GetVendorCandidates();
       const list = Array.isArray(res?.data) ? res.data : res;
       setCandidates(list || []);
+
+      // --- NEW: update verified / unverified counts ---
+      if (Array.isArray(list)) {
+        const verified = list.filter((c) => !!c.isVerified).length;
+        const unverified = list.length - verified;
+        setVerifiedCount(verified);
+        setUnverifiedCount(unverified);
+      } else {
+        setVerifiedCount(0);
+        setUnverifiedCount(0);
+      }
     } catch (error) {
       console.error("Error fetching candidates:", error);
       message.error("Failed to fetch vendor candidates.");
@@ -105,6 +141,9 @@ const Bench = () => {
           setCandidates((prev) =>
             prev.map((cand) => (cand.id === editRecord.id ? res.data : cand))
           );
+
+          // ✅ Recalculate counts after editing
+          fetchCandidates();
         } else {
           message.error(res?.message || "Failed to update candidate");
         }
@@ -113,6 +152,15 @@ const Bench = () => {
         if (res?.status === "success") {
           message.success("Candidate added successfully!");
           setCandidates((prev) => [res.data, ...prev]);
+
+          // adjust counts based on new candidate's isVerified flag (default false usually)
+          if (res?.data) {
+            if (res.data.isVerified) {
+              setVerifiedCount((v) => v + 1);
+            } else {
+              setUnverifiedCount((u) => u + 1);
+            }
+          }
         } else {
           message.error(res?.message || "Failed to add candidate");
         }
@@ -128,13 +176,120 @@ const Bench = () => {
     }
   };
 
+  // 🔹 Open Verify Modal
+  const openVerifyModal = (record) => {
+    setVerifyCandidate(record);
+    setOtp("");
+    setVerifyModalVisible(true);
+  };
+
+  // 🔹 Send OTP to candidate's email
+  const handleSendOtp = async () => {
+    if (!verifyCandidate?.email) {
+      message.error("Candidate email not available");
+      return;
+    }
+    try {
+      setOtpSending(true);
+      const res = await SendVerificationOtp({
+        userProfileId: verifyCandidate.id,
+      });
+      if (res?.status === "success") {
+        message.success(`OTP sent to ${verifyCandidate.email}`);
+      } else {
+        message.error(res?.message || "Failed to send OTP");
+      }
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  // 🔹 Verify OTP
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      message.warning("Please enter the OTP");
+      return;
+    }
+
+    try {
+      setOtpVerifying(true);
+      const res = await VerifyCandidateOtp({
+        userProfileId: verifyCandidate.id,
+        otp,
+      });
+
+      if (res?.status === "success") {
+        message.success("Candidate verified successfully!");
+        setCandidates((prev) =>
+          prev.map((c) =>
+            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
+          )
+        );
+
+        // Update counters immediately:
+        setVerifiedCount((v) => v + 1);
+        setUnverifiedCount((u) => (u > 0 ? u - 1 : 0));
+        setVerifyModalVisible(false);
+      } else {
+        message.error(res?.message || "Invalid OTP");
+      }
+    } catch (err) {
+      console.error(err);
+      message.error("Verification failed");
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
+  const handleCheckboxChange = (id, checked) => {
+    if (checked) {
+      setSelectedRowKeys((prev) => [...prev, id]);
+    } else {
+      setSelectedRowKeys((prev) => prev.filter((key) => key !== id));
+    }
+  };
+
+  const updateStatus = (status) => {
+    const updated = candidates.map((c) =>
+      selectedRowKeys.includes(c.id) ? { ...c, status } : c
+    );
+
+    setCandidates(updated);
+    setSelectedRowKeys([]);
+
+    message.success(
+      status === "active" ? "Moved to Active!" : "Moved to Inactive!"
+    );
+  };
+
   // 🔹 Table Columns
   const columns = [
+    {
+      title: "",
+      dataIndex: "select",
+      key: "select",
+      width: 50,
+      render: (_, record) => (
+        <input
+          type="checkbox"
+          checked={selectedRowKeys.includes(record.id)}
+          onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
+          onClick={(e) => e.stopPropagation()} // stop row click
+        />
+      ),
+    },
+
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (text) => (
+        <span style={{ color: "#1677ff", fontWeight: 600 }}>{text}</span>
+      ),
     },
     {
       title: "Role",
@@ -171,31 +326,57 @@ const Bench = () => {
           ? record.preferredLocation.join(", ")
           : "-",
     },
+
     {
-      title: "Rate Card Value",
-      key: "rateValue",
-      sorter: (a, b) =>
-        parseFloat(a?.rateCardPerHour?.value || 0) -
-        parseFloat(b?.rateCardPerHour?.value || 0),
-      render: (_, record) =>
-        record?.rateCardPerHour?.value ? record.rateCardPerHour.value : "-",
-    },
-    {
-      title: "Currency",
-      key: "currency",
+      title: "Rate Card",
+      key: "rateCard",
       filters: [
         { text: "INR", value: "INR" },
         { text: "USD", value: "USD" },
         { text: "EUR", value: "EUR" },
       ],
       onFilter: (value, record) => record?.rateCardPerHour?.currency === value,
-      render: (_, record) => record?.rateCardPerHour?.currency || "-",
+      sorter: (a, b) =>
+        parseFloat(a?.rateCardPerHour?.value || 0) -
+        parseFloat(b?.rateCardPerHour?.value || 0),
+      render: (_, record) => {
+        const rate = record?.rateCardPerHour?.value || "-";
+        const currency = record?.rateCardPerHour?.currency || "";
+        if (rate === "-" && !currency) return "-";
+        return (
+          <span style={{ fontWeight: 600 }}>
+            {currency} {rate}
+          </span>
+        );
+      },
     },
+
     {
       title: "Joining Period",
       dataIndex: "joiningPeriod",
       key: "joiningPeriod",
     },
+    {
+      title: "Verified",
+      key: "verified",
+      render: (_, record) => {
+        const isVerified = record?.isVerified; // boolean from DB
+        return isVerified ? (
+          <span style={{ color: "#52c41a", fontWeight: 600 }}>Verified</span>
+        ) : (
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              openVerifyModal(record); // we'll implement this function
+            }}
+          >
+            Verify
+          </Button>
+        );
+      },
+    },
+
     {
       title: "Actions",
       key: "actions",
@@ -249,22 +430,166 @@ const Bench = () => {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "10px",
+          justifyContent: "space-between",
           marginBottom: 16,
+          background: "#f8f9fa",
+          padding: "10px 16px",
+          borderRadius: 8,
+          border: "1px solid #e5e5e5",
         }}
       >
-        <Button type="primary" onClick={showModal}>
-          Add Candidate
-        </Button>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Button type="primary" onClick={showModal}>
+            Add Candidate
+          </Button>
+          <Button onClick={fetchCandidates}>Refresh</Button>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 24,
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
+          }}
+        >
+          {/* <div style={{ fontWeight: 600 }}>
+       Verified: <span style={{ color: "#52c41a" }}>{verifiedCount}</span>
+    </div> */}
+          <div
+            style={{
+              fontWeight: 800,
+              color: "#000",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            Verified:
+            <span
+              style={{
+                background: "#52c41a",
+                color: "white",
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontWeight: "bold",
+                fontSize: 14,
+              }}
+            >
+              {verifiedCount}
+            </span>
+          </div>
+
+          {/* <div style={{ fontWeight: 600 }}>
+       Not Verified: <span style={{ color: "#ff4d4f" }}>{unverifiedCount}</span>
+    </div> */}
+          <div
+            style={{
+              fontWeight: 800,
+              color: "#000",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            Not Verified:
+            <span
+              style={{
+                background: "#ff4d4f",
+                color: "white",
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontWeight: "bold",
+                fontSize: 14,
+              }}
+            >
+              {unverifiedCount}
+            </span>
+          </div>
+
+          {/* Total Candidates */}
+          <div
+            style={{
+              fontWeight: 800,
+              color: "#000",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            Total:
+            <span
+              style={{
+                background: "#1677ff",
+                color: "white",
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontWeight: "bold",
+                fontSize: 14,
+              }}
+            >
+              {candidates.length}
+            </span>
+          </div>
+
+          {/* Active / Inactive Buttons */}
+          <Button
+            type={activeTab === "active" ? "primary" : "default"}
+            onClick={() => setActiveTab("active")}
+          >
+            Active
+          </Button>
+
+          <Button
+            type={activeTab === "inactive" ? "primary" : "default"}
+            onClick={() => setActiveTab("inactive")}
+          >
+            Inactive
+          </Button>
+        </div>
       </div>
 
       <Spin spinning={loading}>
+        {/* 🔍 SEARCH INPUT */}
+        <Input
+          placeholder="Search by name..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={{
+            width: 250,
+            marginBottom: 16,
+            height: 35,
+            borderRadius: 6,
+          }}
+        />
+
         <Table
           columns={columns}
-          dataSource={candidates}
+          // dataSource={candidates}
+          // dataSource={filteredCandidates}
+          dataSource={
+            activeTab === "active"
+              ? filteredCandidates.filter((c) => c.status !== "inactive")
+              : filteredCandidates.filter((c) => c.status === "inactive")
+          }
           rowKey={(record) => record.id || record.name}
           bordered
-          pagination={{ pageSize: 10 }}
+          // pagination={{ pageSize: 10 }}
+          pagination={false}
+          scroll={{ x: 1000 }}
           style={{ cursor: "pointer" }}
           onRow={(record) => ({
             onClick: () => {
@@ -274,6 +599,24 @@ const Bench = () => {
             },
           })}
         />
+
+        <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
+          <Button
+            type="primary"
+            disabled={selectedRowKeys.length === 0}
+            onClick={() => updateStatus("active")}
+          >
+            Activate Selected
+          </Button>
+
+          <Button
+            danger
+            disabled={selectedRowKeys.length === 0}
+            onClick={() => updateStatus("inactive")}
+          >
+            Deactivate Selected
+          </Button>
+        </div>
       </Spin>
 
       {/* ✅ Add/Edit Candidate Modal */}
@@ -360,6 +703,115 @@ const Bench = () => {
             </Button>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* ✅ Enhanced Verification Modal */}
+      <Modal
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span
+              style={{
+                background: "#1677ff",
+                color: "white",
+                borderRadius: "50%",
+                width: 30,
+                height: 30,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontWeight: "bold",
+              }}
+            >
+              🔐
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 600 }}>
+              Verify Candidate
+            </span>
+          </div>
+        }
+        open={verifyModalVisible}
+        onCancel={() => setVerifyModalVisible(false)}
+        footer={null}
+        centered
+        bodyStyle={{ padding: "24px 32px" }}
+      >
+        <div
+          style={{
+            background: "#f8f9fa",
+            padding: "16px 20px",
+            borderRadius: 10,
+            marginBottom: 20,
+            border: "1px solid #e5e5e5",
+          }}
+        >
+          <p style={{ marginBottom: 0, fontSize: 15 }}>
+            <b>Email:</b>{" "}
+            <span style={{ color: "#1677ff", fontWeight: 500 }}>
+              {verifyCandidate?.email || "-"}
+            </span>
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <Button
+            type="primary"
+            icon={<i className="ri-mail-send-line" />}
+            onClick={handleSendOtp}
+            loading={otpSending}
+            disabled={otpSending}
+            style={{
+              width: "100%",
+              height: 40,
+              fontWeight: 600,
+              fontSize: 15,
+            }}
+          >
+            {otpSending ? "Sending..." : "Send OTP"}
+          </Button>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+            }}
+          >
+            <Input
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+              style={{
+                flex: 1,
+                height: 40,
+                borderRadius: 6,
+                fontSize: 15,
+                textAlign: "center",
+                letterSpacing: 3,
+              }}
+            />
+            <Button
+              type="primary"
+              onClick={handleVerifyOtp}
+              loading={otpVerifying}
+              disabled={!otp || otpVerifying}
+              style={{
+                width: 100,
+                height: 40,
+                fontWeight: 600,
+                fontSize: 15,
+              }}
+            >
+              {otpVerifying ? "Verifying..." : "Verify"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { GoogleAuth } from "../../candidate/api/api";
+import { useAuth } from "../../chat/context/AuthContext";
 
 const GoogleAuthButton = ({ userType, messageAPI }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const handleSuccess = async (credentialResponse) => {
@@ -27,6 +29,14 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
         localStorage.setItem("token", resp?.token);
         localStorage.setItem("role", resp?.user?.role || "no role");
         localStorage.setItem("user", JSON.stringify(resp?.user));
+        localStorage.setItem("astoken", resp?.chatmeatadata?.accessToken);
+        localStorage.setItem(
+          "asuser",
+          JSON.stringify(resp?.chatmeatadata?.user)
+        );
+
+        login(resp?.chatmeatadata?.user, resp?.chatmeatadata?.accessToken);
+
         navigate("/candidate/dashboard");
       }
     } catch (error) {

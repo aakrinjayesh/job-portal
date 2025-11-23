@@ -17,6 +17,7 @@ import {
   DatePicker,
   Modal,
   Select,
+  Empty,
   Input,
   Form,
 } from "antd";
@@ -28,7 +29,13 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
-import { GetJobsList, CreateJob, UpdateJob } from "../../api/api";
+import {
+  // GetJobsList,
+  PostedJobsList,
+  CreateJob,
+  UpdateJob,
+  GetCandidateDeatils,
+} from "../../api/api";
 import { DeleteJobDetails } from "../../api/api";
 import { Upload } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
@@ -88,8 +95,28 @@ const RecruiterJobList = () => {
   // ✅ Fetch job list
   const fetchJobs = async () => {
     try {
-      const response = await GetJobsList();
-      setJobs(response?.jobs || []);
+      const response = await PostedJobsList();
+      const jobList = response?.jobs || [];
+
+      // 🔹 For each job, get candidate count
+      const jobsWithCounts = await Promise.all(
+        jobList.map(async (job) => {
+          try {
+            const candidateResponse = await GetCandidateDeatils({
+              jobId: job.id,
+            });
+            const applicantCount = candidateResponse?.total || 0;
+
+            return { ...job, applicantCount };
+          } catch (err) {
+            console.error(`Error fetching candidates for job ${job.id}:`, err);
+            return { ...job, applicantCount: 0 }; // fallback
+          }
+        })
+      );
+
+      setJobs(jobsWithCounts);
+      console.log("Jobs with applicant counts:", jobsWithCounts);
     } catch (error) {
       console.error("Error fetching jobs:", error);
       messageApi.error("Failed to fetch jobs");
@@ -129,15 +156,17 @@ const RecruiterJobList = () => {
         experienceLevel: values.experienceLevel,
         location: values.location,
         skills: values.skills || [], // array
+        clouds: values.clouds || [],
         salary: Number(values.salary) || 0,
         companyName: values.companyName,
         responsibilities: values.responsibilities || [], // array
         qualifications: values.qualifications || [], // array
         jobType: values.jobType,
         applicationDeadline: values.applicationDeadline
-          ? values.applicationDeadline.toISOString() // convert dayjs → ISO
+          ? values.applicationDeadline.toISOString()
           : null,
       };
+      console.log("payload", payload);
 
       if (isEditing) {
         // ✅ Add job ID to payload
@@ -154,12 +183,12 @@ const RecruiterJobList = () => {
         messageApi.success(response.message || "Job created successfully");
       }
 
+      setIsModalVisible(false);
+      form.resetFields();
       // ✅ Refresh the job list after update or create
       await fetchJobs();
 
       // ✅ Close modal and reset form
-      setIsModalVisible(false);
-      form.resetFields();
     } catch (error) {
       console.error("Error saving job:", error);
       messageApi.error("Failed to save job");
@@ -188,6 +217,7 @@ const RecruiterJobList = () => {
         experienceLevel: extracted.experienceLevel || "",
         location: extracted.location || "",
         skills: extracted.skills || [],
+        clouds: extracted.clouds || [],
         salary: extracted.salary || 0,
         companyName: extracted.companyName || "",
         responsibilities: extracted.responsibilities || [],
@@ -333,131 +363,218 @@ const RecruiterJobList = () => {
 
       {/* ✅ Job Cards */}
       <Row gutter={[16, 16]}>
-        {jobs?.map((job) => (
-          <Col span={24} key={job.id}>
-            <Card
-              hoverable
-              onClick={() => navigate(`/company/job/${job.id}`)} // ✅ Navigate to Job Details
-              style={{
-                borderRadius: 12,
-                background: "#fff",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                cursor: "pointer",
-              }}
-            >
-              {/* ✅ Checkbox and Header */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Checkbox
-                  checked={selectedJobs.includes(job.id)}
-                  onClick={(e) => e.stopPropagation()} // 👈 Prevent card click
-                  onChange={() => handleSelect(job.id)}
-                />
-
-                <Title level={5} style={{ margin: 0 }}>
-                  {job.title}
-                </Title>
-                <CloudOutlined
-                  style={{
-                    fontSize: 28,
-                    color: "#1890ff",
-                  }}
-                />
-              </div>
-
-              {/* Company Info */}
-              <Space align="center" style={{ marginTop: 6 }}>
-                <Text strong style={{ color: "#1890ff" }}>
-                  {job.company}
-                  {job.role}
-                </Text>
-                <StarFilled style={{ color: "#faad14" }} />
-                <Text>{job.rating}</Text>
-                <Text type="secondary">{`${job.reviews || 0} Reviews`}</Text>
-              </Space>
-
-              {/* Job Details */}
-              <div style={{ marginTop: 12 }}>
-                <Space
-                  split={<Divider type="vertical" />}
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <Space>
-                    <Text>{job.experience}</Text>
-                  </Space>
-                  <Space>
-                    <EnvironmentOutlined />
-                    <Tooltip title={job.location}>
-                      <Text>{job.location}</Text>
-                    </Tooltip>
-                  </Space>
-                </Space>
-              </div>
-
-              {/* Description */}
-              <Space align="start" style={{ marginTop: 12 }}>
-                <FileTextOutlined style={{ marginTop: 4 }} />
-                <Paragraph
-                  type="secondary"
-                  ellipsis={{
-                    rows: 2,
-                    expandable: true,
-                    symbol: "more",
-                  }}
-                >
-                  {job.description}
-                </Paragraph>
-              </Space>
-
-              {/* Skills Tags */}
-              <div style={{ marginTop: 12 }}>
-                {job.skills?.map((skill, index) => (
-                  <Tag color="blue" key={index} style={{ borderRadius: 20 }}>
-                    {skill}
-                  </Tag>
-                ))}
-              </div>
-
-              {/* Footer */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: 12,
-                }}
-              >
-                <Text type="secondary">
-                  Posted{" "}
-                  {job?.updatedAt
-                    ? `${dayjs(job.updatedAt).fromNow()} (${dayjs(
-                        job?.appliedAt
-                      ).format("MMM D, YYYY")})`
-                    : "Recently posted"}
-                </Text>
-
-                <Button
-                  type="link"
-                  style={{ color: "#1890ff" }}
-                  onClick={(e) => {
-                    e.stopPropagation(); // ⛔ prevents the card click
-                    showEditModal(job); // ✅ opens your edit modal only
-                  }}
-                >
-                  Edit
-                </Button>
-              </div>
-            </Card>
+        {jobs.length === 0 ? (
+          <Col span={24}>
+            <Empty
+            // description="No job posts found"
+            // style={{ marginTop: 80 }}
+            // image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
           </Col>
-        ))}
+        ) : (
+          jobs?.map((job) => (
+            <Col span={24} key={job.id}>
+              <Tooltip title="Click to view full job details">
+                <Card
+                  hoverable
+                  onClick={() => navigate(`/company/job/${job.id}`)} // ✅ Navigate to Job Details
+                  style={{
+                    borderRadius: 12,
+                    background: "#fff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {/* ✅ Checkbox and Header */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedJobs.includes(job.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => handleSelect(job.id)}
+                      style={{
+                        margin: 0,
+                        padding: 0,
+                        lineHeight: "1",
+                        transform: "scale(1.05)",
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: "4px",
+                      }}
+                    >
+                      <Text
+                        strong
+                        style={{
+                          fontSize: "16px",
+                          color: "#1890ff",
+                          cursor: "pointer",
+                          margin: 0,
+                          padding: 0,
+                          lineHeight: "1",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/company/job/${job.id}`);
+                        }}
+                      >
+                        {job.role || job.title}
+                      </Text>
+                    </div>
+                  </div>
+
+                  {/* Company Info */}
+                  <Space align="center" style={{ marginTop: 6 }}>
+                    <Text strong style={{ color: "#1890ff" }}>
+                      {/* {job.company}
+                  {job.role} */}
+                    </Text>
+                    <StarFilled style={{ color: "#faad14" }} />
+                    <Text>{job.rating}</Text>
+                    <Text type="secondary">{`${
+                      job.reviews || 0
+                    } Reviews`}</Text>
+                  </Space>
+
+                  {/* Job Details */}
+                  <div style={{ marginTop: 12 }}>
+                    <Space
+                      split={<Divider type="vertical" />}
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Space>
+                        <Text>{job.experience}</Text>
+                      </Space>
+                      <Space>
+                        <EnvironmentOutlined />
+                        <Tooltip title={job.location}>
+                          <Text>{job.location}</Text>
+                        </Tooltip>
+                      </Space>
+                    </Space>
+                  </div>
+
+                  {/* Description */}
+                  <Space align="start" style={{ marginTop: 12 }}>
+                    <FileTextOutlined style={{ marginTop: 4 }} />
+                    <Paragraph
+                      type="secondary"
+                      ellipsis={{
+                        rows: 2,
+                        expandable: true,
+                        symbol: "more",
+                      }}
+                    >
+                      {job.description}
+                    </Paragraph>
+                  </Space>
+
+                  {/* Skills Tags */}
+                  <div style={{ marginTop: 12 }}>
+                    {job.skills?.map((skill, index) => (
+                      <Tag
+                        color="blue"
+                        key={index}
+                        style={{ borderRadius: 20 }}
+                      >
+                        {skill}
+                      </Tag>
+                    ))}
+                  </div>
+
+                  {/* Primary Clouds */}
+                  <div style={{ marginTop: 12 }}>
+                    {job.clouds?.map((cloud, index) => (
+                      <Tag
+                        color="blue"
+                        key={index}
+                        style={{ borderRadius: 20 }}
+                      >
+                        {cloud}
+                      </Tag>
+                    ))}
+                  </div>
+                  {/* <div style={{ marginTop: 12 }}>
+                  
+                    <Tag color="gray"  style={{ borderRadius: 20 }}>
+                      AWS,Azure
+                    </Tag>
+                  
+                </div> */}
+
+                  {/* Footer Section */}
+                  {/* Footer Section */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 16,
+                    }}
+                  >
+                    <Text type="secondary">
+                      Posted{" "}
+                      {job?.updatedAt
+                        ? `${dayjs(job.updatedAt).fromNow()} (${dayjs(
+                            job?.appliedAt
+                          ).format("MMM D, YYYY")})`
+                        : "Recently posted"}
+                    </Text>
+
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      {/* 👁️ View Candidates Button */}
+                      <Button
+                        type="primary"
+                        style={{
+                          color: "#fff",
+                          fontWeight: 500,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/company/candidates", {
+                            state: { id: job.id },
+                          });
+                        }}
+                      >
+                        View Candidates({job.applicantCount || 0})
+                      </Button>
+
+                      {/* ✏️ Edit Button */}
+                      <Button
+                        type="primary"
+                        style={{
+                          backgroundColor: "#1677ff", // ✅ Ant Design blue for edit
+                          borderColor: "#1677ff",
+                          color: "#fff",
+                          fontWeight: 500,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showEditModal(job);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </Tooltip>
+            </Col>
+          ))
+        )}
       </Row>
       <Modal
         title={isEditing ? "Edit Job Post" : "Create Job Post"}
@@ -523,6 +640,15 @@ const RecruiterJobList = () => {
           </Form.Item>
           <Form.Item name="location" label="Location">
             <Input placeholder="e.g. Bangalore, India" />
+          </Form.Item>
+          <Form.Item name="clouds" label="Clouds" rules={[{ required: false }]}>
+            <Select
+              mode="tags"
+              // allowClear
+              style={{ width: "100%" }}
+              placeholder="Type and press Enter to add clouds"
+              // tokenSeparators={[","]}
+            />
           </Form.Item>
           <Form.Item name="skills" label="Skills">
             <Select

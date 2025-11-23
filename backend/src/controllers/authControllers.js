@@ -33,15 +33,135 @@ const getEmailErrorMessage = (type) => {
 };
 
 
+// const googleAuth = async (req, res) => {
+//   const { credential, clientId, type } = req.body;
+ 
+//   try {
+//     // 1️⃣ Verify Google token
+//     const ticket = await client.verifyIdToken({
+//       idToken: credential,
+//       audience: clientId,
+//     });
+//     const payload = ticket.getPayload();
+//     const { email, given_name, family_name } = payload;
+
+//     if (!email) {
+//       return res.status(400).json({
+//         status: "failed",
+//         message: "Email not found in Google payload",
+//       });
+//     }
+
+//     // 2️⃣ Validate email type (personal vs company)
+//     if (!isValidEmail(email, type)) {
+//       const msg = getEmailErrorMessage(type);
+//       return res.status(200).json({ status: "failed", message: msg });
+//     }
+
+//     // 3️⃣ Check or create user in Prisma
+//     let user = await prisma.users.findUnique({ where: { email } });
+//     const name =
+//       [given_name, family_name].filter(Boolean).join(" ").trim() ||
+//       "Google User";
+
+//     const externalPayload = {
+//       email,
+//       username: name,
+//       password: "123456789",
+//     };
+
+//     if (!user) {
+//       user = await prisma.users.create({
+//         data: {
+//           name,
+//           email,
+//           role: type,
+//         },
+//       });
+
+//       // Try external registration (non-blocking)
+//       try {
+//         await axios.post(
+//           "http://localhost:8080/api/v1/users/register",
+//           externalPayload,
+//           { headers: { "Content-Type": "application/json" } }
+//         );
+//       } catch (registerErr) {
+//         console.warn(
+//           "⚠️ External register failed (continuing):",
+//           registerErr.message
+//         );
+//       }
+//     }
+
+//     // 4️⃣ Try to log in externally (optional)
+//     let loginResponse = null;
+//     try {
+//       loginResponse = await axios.post(
+//         "http://localhost:8080/api/v1/users/login",
+//         externalPayload,
+//         { headers: { "Content-Type": "application/json" } }
+//       );
+//       console.log("External login success:", loginResponse?.data);
+//     } catch (loginErr) {
+//       console.warn("⚠️ External login failed (continuing):", loginErr.message);
+//     }
+
+//     // 5️⃣ Always generate local token
+//     const token = generateToken(user);
+//     const options = {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//     };
+
+ 
+
+//     if (loginResponse?.data?.data?.accessToken && loginResponse?.data?.data?.refreshToken) {
+//       res
+//         .cookie("accessToken", loginResponse?.data?.data?.accessToken, options)
+//         .cookie("refreshToken", loginResponse?.data?.data?.refreshToken, options);
+//     }
+
+//     // 7️⃣ Return unified response
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Authenticated with Google",
+//       token,
+//       user: {
+//         email: user.email,
+//         name: user.name,
+//         role: user.role,
+//       },
+//       chatmeatadata: loginResponse?.data?.data
+//         ? {
+//             user: loginResponse.data.data.user,
+//             accessToken: loginResponse.data.data.accessToken,
+//             refreshToken: loginResponse.data.data.refreshToken,
+//           }
+//         : null,
+//     });
+//   } catch (err) {
+//     console.error("Google auth error:", err.message);
+//     return res.status(500).json({
+//       status: "failed",
+//       message: err.message || "Google authentication failed",
+//     });
+//   }
+// };
+
+
 const googleAuth = async (req, res) => {
   const { credential, clientId, type } = req.body;
- 
+
   try {
-    // 1️⃣ Verify Google token
+    // -------------------------------------------
+    // 1️⃣ VERIFY GOOGLE TOKEN
+    // -------------------------------------------
     const ticket = await client.verifyIdToken({
       idToken: credential,
       audience: clientId,
     });
+
     const payload = ticket.getPayload();
     const { email, given_name, family_name } = payload;
 
@@ -52,28 +172,40 @@ const googleAuth = async (req, res) => {
       });
     }
 
-    // 2️⃣ Validate email type (personal vs company)
+    // -------------------------------------------
+    // 2️⃣ VALIDATE EMAIL CATEGORY (Personal/Business)
+    // -------------------------------------------
     if (!isValidEmail(email, type)) {
-      const msg = getEmailErrorMessage(type);
-      return res.status(200).json({ status: "failed", message: msg });
+      return res.status(200).json({
+        status: "failed",
+        message: getEmailErrorMessage(type),
+      });
     }
 
-    // 3️⃣ Check or create user in Prisma
+    // -------------------------------------------
+    // 3️⃣ LOCAL USER LOOKUP
+    // -------------------------------------------
     let user = await prisma.users.findUnique({ where: { email } });
-    const name =
-      [given_name, family_name].filter(Boolean).join(" ").trim() ||
-      "Google User";
+
+    const fullName = `${given_name || ""} ${family_name || ""}`.trim() || "User";
 
     const externalPayload = {
       email,
-      username: name,
-      password: "123456789",
+      username: fullName,
+      password: "123456789",   // simple pass for chat system only
     };
 
+    let isNewUser = false;
+
+    // -------------------------------------------
+    // 4️⃣ IF NEW → CREATE USER LOCALLY & REGISTER IN EXTERNAL SYSTEM
+    // -------------------------------------------
     if (!user) {
+      isNewUser = true;
+
       user = await prisma.users.create({
         data: {
-          name,
+          name: fullName,
           email,
           role: type,
         },
@@ -81,69 +213,83 @@ const googleAuth = async (req, res) => {
 
       // Try external registration (non-blocking)
       try {
-        await axios.post(
+       externalregisterData = await axios.post(
           "http://localhost:8080/api/v1/users/register",
-          externalPayload,
-          { headers: { "Content-Type": "application/json" } }
+          externalPayload
         );
-      } catch (registerErr) {
-        console.warn(
-          "⚠️ External register failed (continuing):",
-          registerErr.message
-        );
+        console.log('external register', externalregisterData)
+      } catch (err) {
+        console.warn("⚠️ External register failed:", err.message);
       }
     }
 
-    // 4️⃣ Try to log in externally (optional)
-    let loginResponse = null;
+    // -------------------------------------------
+    // 5️⃣ ALWAYS TRY EXTERNAL LOGIN
+    // -------------------------------------------
+    let externalLoginData = null;
     try {
-      loginResponse = await axios.post(
+      const loginResp = await axios.post(
         "http://localhost:8080/api/v1/users/login",
-        externalPayload,
-        { headers: { "Content-Type": "application/json" } }
+        externalPayload
       );
-      console.log("External login success:", loginResponse?.data);
-    } catch (loginErr) {
-      console.warn("⚠️ External login failed (continuing):", loginErr.message);
+
+      console.log('extarnal login', loginResp)
+      externalLoginData = loginResp.data?.data || null;
+    } catch (err) {
+      console.warn("⚠️ External login failed:", err.message);
     }
 
-    // 5️⃣ Always generate local token
-    const token = generateToken(user);
-    const options = {
+    // -------------------------------------------
+    // 6️⃣ ALWAYS GENERATE LOCAL TOKEN
+    // -------------------------------------------
+    const localToken = generateToken(user);
+
+    // Cookies
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
     };
 
-    // 6️⃣ Attach cookies only if external login succeeded
-    if (loginResponse?.data?.accessToken && loginResponse?.data?.refreshToken) {
-      res.cookie("accessToken", loginResponse.data.accessToken, options);
-      res.cookie("refreshToken", loginResponse.data.refreshToken, options);
+    // Set external tokens if available
+    if (externalLoginData?.accessToken) {
+      res.cookie("accessToken", externalLoginData.accessToken, cookieOptions);
+      res.cookie("refreshToken", externalLoginData.refreshToken, cookieOptions);
     }
 
-    // 7️⃣ Return unified response
+    // -------------------------------------------
+    // 7️⃣ RETURN FINAL RESPONSE
+    // -------------------------------------------
     return res.status(200).json({
       status: "success",
-      message: "Authenticated with Google",
-      token,
+      message: isNewUser
+        ? "Google Signup Successful"
+        : "Google Login Successful",
+
+      token: localToken,
+
       user: {
+        id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
       },
-      chatmetadata: loginResponse
+
+      chatmeatadata: externalLoginData
         ? {
-            user: loginResponse.data.user,
-            astoken: loginResponse.data.accessToken,
+            user: externalLoginData.user,
+            accessToken: externalLoginData.accessToken,
+            refreshToken: externalLoginData.refreshToken,
           }
-        : null, // still respond safely
+        : null,
     });
   } catch (err) {
-    console.error("Google auth error:", err.message);
+    console.error("Google auth error:", err);
     return res.status(500).json({
       status: "failed",
       message: err.message || "Google authentication failed",
     });
   }
 };
+
 
 export { googleAuth };

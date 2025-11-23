@@ -12,6 +12,7 @@ import {
   Row,
   Col,
   Divider,
+  Checkbox,
 } from "antd";
 import { UploadOutlined, UserOutlined } from "@ant-design/icons";
 import {
@@ -47,6 +48,8 @@ const UpdateUserProfile = ({
   const [submitLoading, setSubmitLoading] = useState(false);
   const [form] = Form.useForm();
   const [messageAPI, contextHolder] = message.useMessage();
+
+  const [showContact, setShowContact] = useState(false);
 
   console.log("Recivied Role", Reciviedrole);
   console.log("edit", editRecord);
@@ -385,7 +388,7 @@ const UpdateUserProfile = ({
         joiningPeriod: values?.joiningPeriod || null,
         totalExperience: String(values?.totalExperience) || null,
         relevantSalesforceExperience:
-          values?.relevantSalesforceExperience || null,
+          String(values?.relevantSalesforceExperience) || null,
         linkedInUrl: values?.linkedInUrl || null,
         trailheadUrl: values?.trailheadUrl || null,
         preferredLocation: values?.preferredLocation || [],
@@ -490,33 +493,158 @@ const UpdateUserProfile = ({
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="Phone Number"
-                name="phoneNumber"
-                rules={[
-                  { required: true, message: "Please enter phone number" },
-                  {
-                    pattern: /^\+\d{1,3}\s\d{7,14}$/,
-                    message: "Format: +91 9876543210",
-                  },
-                ]}
-              >
-                <Input placeholder="+91 9876543210" />
+            <Col span={24}>
+              <Form.Item>
+                <Checkbox
+                  checked={showContact}
+                  onChange={(e) => setShowContact(e.target.checked)}
+                >
+                  Show Contact Details
+                </Checkbox>
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="Email"
-                name="email"
-                rules={[
-                  { required: true, message: "Please enter email" },
-                  { type: "email", message: "Enter valid email" },
-                ]}
-              >
-                <Input placeholder="example@email.com" />
-              </Form.Item>
+            <Col xs={24} sm={12} md={12}>
+              {/* Conditional Phone Number Input */}
+              {/* {showPhone && (
+    <Form.Item
+      label="Phone Number"
+      name="phoneNumber"
+      rules={[
+        {
+          required: true,
+          message: "Please enter phone number",
+        },
+        {
+          pattern: /^\+\d{1,3}\s\d{7,14}$/,
+          message: "Format: +91 9876543210",
+        },
+      ]}
+    >
+      <Input placeholder="+91 9876543210" />
+    </Form.Item>
+  )} */}
+
+              {showContact && (
+                <Col xs={24} sm={12} md={12}>
+                  <Form.Item
+                    label="Phone Number"
+                    name="phoneNumber"
+                    rules={[
+                      { required: true, message: "Please enter phone number" },
+                      {
+                        pattern: /^\+\d{1,3}\s\d{7,14}$/,
+                        message: "Format: +91 9876543210",
+                      },
+                    ]}
+                  >
+                    <Input placeholder="+91 9876543210" />
+                  </Form.Item>
+                </Col>
+              )}
+            </Col>
+
+            <Col xs={24} sm={12} md={12}>
+              {/* Email field is shown ONLY when showEmail = true */}
+              {/* {showEmail && (
+    <Form.Item
+      label="Email"
+      name="email"
+      rules={[
+        {
+          required: true,
+          message: "Please enter email",
+        },
+        {
+          type: "email",
+          message: "Please enter a valid email address",
+        },
+        {
+          validator: (_, value) => {
+            if (!value) {
+              return Promise.reject("Email is required");
+            }
+            const domain = "@aakrin.com";
+            if (value.toLowerCase().endsWith(domain)) {
+              return Promise.resolve();
+            }
+            return Promise.reject(
+              `Only company emails ending with ${domain} are allowed`
+            );
+          },
+        },
+      ]}
+    >
+      <Input placeholder="e.g., hari.babu@aakrin.com" />
+    </Form.Item>
+  )} */}
+              {showContact && (
+                <Col xs={24} sm={12} md={12}>
+                  {/* <Form.Item
+      label="Email"
+      name="email"
+      rules={[
+        { required: true, message: "Please enter email" },
+        { type: "email", message: "Enter valid email" },
+        {
+          validator: (_, value) => {
+            if (!value) return Promise.reject("Email is required");
+            const domain = "@aakrin.com";
+            return value.toLowerCase().endsWith(domain)
+              ? Promise.resolve()
+              : Promise.reject(
+                  `Only company emails ending with ${domain} are allowed`
+                );
+          },
+        },
+      ]}
+    >
+      <Input placeholder="e.g., hari.babu@aakrin.com" />
+    </Form.Item> */}
+                  <Form.Item
+                    label="Email"
+                    name="email"
+                    rules={[
+                      { required: true, message: "Please enter email" },
+                      { type: "email", message: "Enter valid email" },
+                      {
+                        validator: (_, value) => {
+                          if (!value)
+                            return Promise.reject("Email is required");
+
+                          const allowedDomains = [
+                            "aakrin.com",
+                            "yahoo.com",
+                            "outlook.com",
+                            "hotmail.com",
+                            "protonmail.com",
+                            "icloud.com",
+                            "aol.com",
+                            "zoho.com",
+                            "yandex.com",
+                            "tcs.com",
+                            "accenture.com",
+                          ];
+
+                          const emailDomain = value.toLowerCase().split("@")[1];
+
+                          if (allowedDomains.includes(emailDomain)) {
+                            return Promise.resolve();
+                          }
+
+                          return Promise.reject(
+                            `Email domain not allowed. Allowed: ${allowedDomains.join(
+                              ", "
+                            )}`
+                          );
+                        },
+                      },
+                    ]}
+                  >
+                    <Input placeholder="e.g., user@aakrin.com" />
+                  </Form.Item>
+                </Col>
+              )}
             </Col>
 
             {/* Title / Role */}
@@ -524,6 +652,12 @@ const UpdateUserProfile = ({
               <Form.Item
                 label="Title / Role (candidate is looking for)"
                 name="title"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter the candidate's role!",
+                  },
+                ]}
               >
                 <Input placeholder="e.g., Salesforce Developer" />
               </Form.Item>
@@ -562,7 +696,7 @@ const UpdateUserProfile = ({
             </Col>
 
             {/* Preferred Job Type */}
-            <Col xs={24} sm={12}>
+            {/* <Col xs={24} sm={12}>
               <Form.Item
                 label="Preferred Job Type (Max 2)"
                 name="preferredJobType"
@@ -579,7 +713,7 @@ const UpdateUserProfile = ({
                   <Option value="Freelance">Freelance</Option>
                 </Select>
               </Form.Item>
-            </Col>
+            </Col> */}
 
             {/* Current/Expected CTC or Rate Card */}
             {!Reciviedrole ? (
@@ -610,7 +744,7 @@ const UpdateUserProfile = ({
             ) : (
               <Col xs={24} sm={12}>
                 <Form.Item
-                  label="Rate Card Per Hour"
+                  label="Rate Card Per Month"
                   name="rateCardPerHour"
                   rules={[
                     { required: true, message: "Enter rate card per hour" },
@@ -624,7 +758,7 @@ const UpdateUserProfile = ({
                     >
                       <InputNumber
                         style={{ width: "70%" }}
-                        placeholder="Enter rate per hour"
+                        placeholder="Enter rate per Month"
                       />
                     </Form.Item>
 
@@ -835,6 +969,12 @@ const UpdateUserProfile = ({
                 name="linkedInUrl"
                 rules={[
                   { required: true, message: "Please enter LinkedIn URL!" },
+                  {
+                    pattern:
+                      /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+\/?$/,
+                    message:
+                      "Please enter a valid LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourprofile)",
+                  },
                 ]}
               >
                 <Input placeholder="https://www.linkedin.com/in/yourprofile" />
@@ -847,6 +987,12 @@ const UpdateUserProfile = ({
                 name="trailheadUrl"
                 rules={[
                   { required: true, message: "Please enter Trailhead URL!" },
+                  {
+                    pattern:
+                      /^https:\/\/(www\.)?trailblazer\.me\/id\/[A-Za-z0-9_-]+\/?$/,
+                    message:
+                      "Please enter a valid Trailhead URL (e.g. https://trailblazer.me/id/yourprofile)",
+                  },
                 ]}
               >
                 <Input placeholder="https://trailblazer.me/id/yourprofile" />

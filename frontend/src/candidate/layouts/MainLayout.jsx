@@ -7,6 +7,7 @@ import {
   SearchOutlined,
   SaveFilled,
   LogoutOutlined,
+  WhatsAppOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +23,7 @@ const MainLayout = ({ children }) => {
     dashboard: "/candidate/dashboard",
     profile: "/candidate/profile",
     job: "/candidate/jobs",
+    chat: "/candidate/chat",
     appliedjobs: "/candidate/jobs/applied",
     savedjobs: "/candidate/jobs/saved",
     settings: "/candidate/settings",
@@ -34,6 +36,7 @@ const MainLayout = ({ children }) => {
     { key: "job", label: "Find Jobs", icon: <SearchOutlined /> },
     { key: "appliedjobs", label: "Applied Jobs", icon: <FileTextOutlined /> },
     { key: "savedjobs", label: "Saved Jobs", icon: <SaveFilled /> },
+    { key: "chat", label: "Chat", icon: <WhatsAppOutlined /> },
     { key: "logout", label: "Logout", icon: <LogoutOutlined /> },
     { key: "settings", label: "Settings", icon: <SettingOutlined /> },
     { key: "faq", label: "FAQ", icon: <QuestionCircleOutlined /> },
@@ -43,6 +46,10 @@ const MainLayout = ({ children }) => {
     const route = menuRoutes[e.key];
     if (route) {
       if (e.key === "logout") localStorage.clear();
+      if (e.key === "chat") {
+        navigate("/candidate/chat", { state: { userType: "candidate" } });
+        return;
+      }
       navigate(route);
     }
   };
@@ -126,7 +133,7 @@ const MainLayout = ({ children }) => {
           }}
         >
           <Title level={4} style={{ margin: 0 }}>
-            Welcome <span style={{ color: "#1677ff" }}>Aakrin Pvt. Ltd.</span>
+            Welcome <span style={{ color: "#1677ff" }}>{name}</span>
           </Title>
         </Header>
 

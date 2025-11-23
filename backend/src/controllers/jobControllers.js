@@ -637,6 +637,7 @@ const postJob = async (req, res) => {
       experienceLevel,
       location,
       skills,
+      clouds,
       salary,
       companyName,
       responsibilities,
@@ -656,6 +657,7 @@ const postJob = async (req, res) => {
         experienceLevel,
         location,
         skills,
+        clouds,
         salary,
         companyName,
         responsibilities,
@@ -683,20 +685,41 @@ const postJob = async (req, res) => {
 // Get list of all jobs posted by company
 const postedJobs = async (req, res) => {
   try {
-    // ✅ Get userid from POST body
-    const { userid } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    // ✅ Fetch all jobs posted by this user
-    const jobs = await prisma.job.findMany({
-      where: { postedById: userid },
-      orderBy: { createdAt: 'desc' }
-    });
+    const userFromAuth = req.user
+
+    // ❗ Validate userId
+    if (!userFromAuth.id) {
+      return res.status(400).json({
+        status: "failed",
+        message: "User ID is required"
+      });
+    }
+
+    // 🟢 Fetch paginated jobs & count based on userId + isDeleted
+    const [jobs, totalCount] = await Promise.all([
+      prisma.job.findMany({
+        skip,
+        take: limit,
+        where: { postedById: userFromAuth.id, isDeleted: false },
+        orderBy: { createdAt: "desc" }
+      }),
+
+      prisma.job.count({
+        where: { postedById: userFromAuth.id, isDeleted: false }
+      })
+    ]);
 
     return res.status(200).json({
       status: "success",
       message: "Posted jobs fetched successfully",
-      count: jobs.length,
-      data: jobs
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      jobs
     });
 
   } catch (error) {
@@ -707,6 +730,7 @@ const postedJobs = async (req, res) => {
     });
   }
 };
+
 
 
 // Edit job posted by company or vendor
@@ -721,6 +745,7 @@ const editJob = async (req, res) => {
       experienceLevel,
       location,
       skills,
+      clouds,
       salary,
       companyName,
       responsibilities,
@@ -765,6 +790,7 @@ const editJob = async (req, res) => {
         location,
         skills,
         salary,
+        clouds,
         companyName,
         responsibilities,
         qualifications,

@@ -7,6 +7,7 @@ import JobRouters from "./Routes/jobRoutes.js";
 import CommonRouters from "./Routes/commonRoutes.js";
 import LoginRouters from "./Routes/loginRoutes.js";
 import VendorRoutes from "./Routes/vendorRoutes.js";
+import VerificationRoutes from "./Routes/verificationRoutes.js";
 
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use(userRouter)
 app.use(JobRouters)
 app.use(CommonRouters)
 app.use('/vendor',VendorRoutes)
+app.use("/verification", VerificationRoutes);
 
 
 const PORT = process.env.PORT

@@ -47,7 +47,7 @@ model UserProfile {
   user     Users?  @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
   vendor   Users?  @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
 
-  venderId                     String?
+  // venderId                     String?
   profilePicture               String?
   title                        String?
   name                         String?
@@ -72,8 +72,14 @@ model UserProfile {
   workExperience Json?
   education      Json?
 
+  address Address?
+
   linkedInUrl  String?
   trailheadUrl String?
+
+  isVerified      Boolean   @default(false)
+  verificationOtp String?
+  otpExpiry       DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -134,8 +140,9 @@ model Job {
   experienceLevel     ExperienceLevel?
   location            String?
   skills              String[] // Array of Json Skills
+  clouds              String[]
   salary              Int
-  companyName         String
+  companyName         String?
   responsibilities    String[]
   qualifications      String[]
   jobType             String
@@ -144,10 +151,6 @@ model Job {
   isDeleted           Boolean          @default(false)
   deletedReason       String?
   deletedAt           DateTime?
-  // rating      Float?
-  // reviews     Int?
-  // companyId          String?
-  // company            Company?  @relation(fields: [companyId], references: [id])
 
   postedById String?
   postedBy   Users?  @relation("UserPostedJobs", fields: [postedById], references: [id])
@@ -195,4 +198,31 @@ model SavedJob {
   @@unique([jobId, userId]) // Prevent duplicate saves
   @@index([userId])
   @@index([jobId])
+}
+
+model Address {
+  id         String      @id @default(uuid())
+  doorNumber String?
+  street     String?
+  city       String?
+  state      String?
+  country    String?
+  pinCode    String?
+  profileId  String      @unique
+  profile    UserProfile @relation(fields: [profileId], references: [id])
+}
+
+model Country {
+  id     String  @id @default(uuid())
+  name   String  @unique
+  code   String?
+  states State[]
+}
+
+model State {
+  id        String  @id @default(uuid())
+  name      String
+  code      String?
+  countryId String
+  country   Country @relation(fields: [countryId], references: [id])
 }

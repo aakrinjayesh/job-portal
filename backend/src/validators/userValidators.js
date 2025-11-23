@@ -103,6 +103,7 @@ const postJobValidator = z.object({
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
   location: z.string(),
   skills: z.array(z.string()),
+  clouds: z.array(z.string()),
   salary: z
     .number({ invalid_type_error: "salary must be a number" })
     .int()
@@ -146,6 +147,7 @@ const editJobValidator = z.object({
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
   location: z.string(),
   skills: z.array(z.string()),
+  clouds: z.array(z.string()),
   salary: z
     .number({ invalid_type_error: "salary must be a number" })
     .int()

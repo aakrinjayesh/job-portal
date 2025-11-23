@@ -1,18 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  Form,
-  Input,
-  Button,
-  Typography,
-  Divider,
-  Space,
-  Tabs,
-  message,
-} from "antd";
-import { GoogleOutlined, AppleOutlined } from "@ant-design/icons";
+import { Form, Input, Button, Typography, Divider, message, Tabs } from "antd";
 import GoogleAuthButton from "../components/Login/GoogleAuthButton";
-import { login } from "../candidate/api/api";
+import { login as LoginApi } from "../candidate/api/api";
+import { useAuth } from "../chat/context/AuthContext";
 
 import bg1 from "../assets/salesforce1_bg.jpg";
 import bg5 from "../assets/bg5.webp";
@@ -27,28 +18,29 @@ const LoginPage = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
   const location = useLocation();
   const role = location?.state?.role;
 
+  const backgrounds = [bg1, bg5, bg3, bg4];
+
+  // 🔹 Set background only once when page loads or refreshes
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * backgrounds.length);
+    setBgIndex(randomIndex);
+  }, []);
+
+  // 🔹 If role is passed from navigation, pre-select that tab
   useEffect(() => {
     if (role) {
       setActiveTab(role);
     }
   }, [role]);
 
-  const backgrounds = [bg1, bg5, bg3, bg4];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBgIndex((prev) => (prev + 1) % backgrounds.length);
-    }, 9000);
-    return () => clearInterval(interval);
-  }, []);
-
   const onFinish = async (values, role) => {
     try {
       setSubmitting(true);
-      const res = await login({
+      const res = await LoginApi({
         email: values.email,
         password: values.password,
         role: role,
@@ -57,6 +49,13 @@ const LoginPage = () => {
         localStorage.setItem("token", res?.token);
         localStorage.setItem("role", res?.user?.role);
         localStorage.setItem("user", JSON.stringify(res?.user));
+        localStorage.setItem("astoken", res?.chatmeatadata?.accessToken);
+        localStorage.setItem(
+          "asuser",
+          JSON.stringify(res?.chatmeatadata?.user)
+        );
+
+        login(res?.chatmeatadata?.user, res?.chatmeatadata?.accessToken);
         messageApi.success("Logged in successfully!");
         navigate(
           res?.user?.role === "candidate"
@@ -64,17 +63,17 @@ const LoginPage = () => {
             : "/company/dashboard"
         );
       } else {
-        messageApi.error("Login Failed!");
+        messageApi.error(res.message || "Login Failed!");
       }
     } catch (err) {
-      console.log("validate login error", err);
+      console.error("validate login error", err);
       messageApi.error("Something went wrong");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ✅ Memoized LoginForm to prevent re-render
+  // ✅ Memoized LoginForm
   const LoginForm = useMemo(
     () =>
       ({ role }) =>
@@ -112,7 +111,7 @@ const LoginPage = () => {
             </Button>
           </Form>
         ),
-    [submitting] // only create once
+    [submitting]
   );
 
   const tabItems = useMemo(
@@ -140,6 +139,11 @@ const LoginPage = () => {
     navigate("/signup", { state: { role } });
   };
 
+  const handleForgotPassword = () => {
+    const role = activeTab;
+    navigate("/forgotpassword", { state: { role } });
+  };
+
   return (
     <div
       style={{
@@ -152,27 +156,24 @@ const LoginPage = () => {
       }}
     >
       {contextHolder}
-      {/* Background slideshow */}
-      {backgrounds.map((img, index) => (
-        <div
-          key={index}
-          style={{
-            backgroundImage: `url(${img})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "brightness(0.5)",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            opacity: bgIndex === index ? 1 : 0,
-            transition: "opacity 2s ease-in-out",
-          }}
-        ></div>
-      ))}
 
-      {/* Login box */}
+      {/* Background Image (Static for each refresh) */}
+      <div
+        style={{
+          backgroundImage: `url(${backgrounds[bgIndex]})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "brightness(0.5)",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          transition: "opacity 1s ease-in-out",
+        }}
+      ></div>
+
+      {/* Login Box */}
       <div
         style={{
           position: "relative",
@@ -194,25 +195,23 @@ const LoginPage = () => {
           items={tabItems}
         />
 
-        <Button color="danger" variant="link">
-          Forgot Password ?
+        <Button
+          type="link"
+          onClick={handleForgotPassword}
+          style={{ color: "#fff", textDecoration: "underline" }}
+        >
+          Forgot Password?
         </Button>
 
         {activeTab === "candidate" && (
           <>
             <Divider plain>or</Divider>
-
-            {/* <Space direction="vertical" style={{ width: "100%" }}> */}
-            {/* <Button icon={<GoogleOutlined />} block size="large">
-        Continue with Google
-      </Button> */}
             <GoogleAuthButton userType={activeTab} messageAPI={messageApi} />
-            {/* </Space> */}
           </>
         )}
 
         <Text style={{ display: "block", marginTop: "20px", color: "white" }}>
-          New to QuickhireF?{" "}
+          New to QuickhireSF?{" "}
           <Button type="link" onClick={handleSignup}>
             Signup
           </Button>

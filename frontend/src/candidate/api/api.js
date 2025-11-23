@@ -333,6 +333,28 @@ export async function  UserJobsids() {
 }
 
 
+// Forgot Password
+export async function ForgotPassword(email) {
+  try {
+    const response = await axiosInstance.post("/forgotpassword", { email });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ForgotPassword:", error);
+    throw error;
+  }
+}
+ 
+// Reset Password
+export async function ResetPasswords(payload) {
+  try {
+    const response = await axiosInstance.post("/resetpassword", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
+  }
+}
+
 
 
 

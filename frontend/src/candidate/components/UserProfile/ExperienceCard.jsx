@@ -51,7 +51,10 @@ const ExperienceCard = ({
         form.setFieldsValue({
           dateRange: [dayjs(exp.startDate), dayjs(exp.endDate)],
           payrollCompanyName: exp.payrollCompanyName,
-          role: exp.role,
+          // role: exp.role,
+          roleLevel: exp.role?.split(" - ")[0],
+          roleType: exp.role?.split(" - ")[1],
+
           projects: exp.projects.map((p) => ({
             projectName: p.projectName,
             cloudUsed: p.cloudUsed,
@@ -84,13 +87,23 @@ const ExperienceCard = ({
     try {
       const values = await form.validateFields();
       console.log("values", values);
-      const { dateRange, payrollCompanyName, role, projects } = values;
+      const {
+        dateRange,
+        payrollCompanyName,
+        // role,
+        roleLevel,
+        roleType,
+        projects,
+      } = values;
 
       const newExperience = {
-        startDate: dateRange[0].format("YYYY-MM"),
-        endDate: dateRange[1].format("YYYY-MM"),
+        // startDate: dateRange[0].format("YYYY-MM"),
+        // endDate: dateRange[1].format("YYYY-MM"),
+        startDate: dateRange[0].format("MM-YYYY"),
+        endDate: dateRange[1].format("MM-YYYY"),
         payrollCompanyName: payrollCompanyName || "",
-        role: role || "",
+        // role: role || "",
+        role: `${roleLevel} - ${roleType}`, // ⭐ SAVE COMBINED ROLE HERE
         projects: (projects || []).map((p) => ({
           projectName: p.projectName || "",
           cloudUsed: p.cloudUsed || "",
@@ -181,10 +194,19 @@ const ExperienceCard = ({
                       <div>
                         {item.startDate} - {item.endDate}
                       </div>
-                      <div>
+                      {/* <div>
                         <Text strong>Company:</Text>{" "}
                         {item.payrollCompanyName || "-"} &nbsp;|&nbsp;{" "}
                         <Text strong>Role:</Text> {item.role || "-"}
+                      </div> */}
+                      <div style={{ marginTop: 4 }}>
+                        <div>
+                          <Text strong>Company:</Text>{" "}
+                          {item.payrollCompanyName || "-"}
+                        </div>
+                        <div>
+                          <Text strong>Role:</Text> {item.role || "-"}
+                        </div>
                       </div>
                     </>
                   }
@@ -192,9 +214,24 @@ const ExperienceCard = ({
                     <div>
                       {(item.projects || []).map((p, i) => (
                         <div key={i} style={{ marginTop: 8 }}>
-                          <div>
+                          {/* <div>
                             <Text strong>Project:</Text> {p.projectName || "-"}{" "}
                             {p.cloudUsed ? `| Cloud: ${p.cloudUsed}` : ""}
+                          </div> */}
+
+                          <div style={{ marginTop: 6 }}>
+                            <div>
+                              <Text strong>Project:</Text>{" "}
+                              {p.projectName || "-"}
+                            </div>
+                            {p.cloudUsed && (
+                              <div>
+                                <Text strong>Cloud:</Text>{" "}
+                                {Array.isArray(p.cloudUsed)
+                                  ? p.cloudUsed.join(", ")
+                                  : p.cloudUsed}
+                              </div>
+                            )}
                           </div>
 
                           <div>
@@ -258,22 +295,94 @@ const ExperienceCard = ({
                 />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col span={5}>
               <Form.Item
                 name="payrollCompanyName"
-                label="Payroll / Company"
+                label="Payroll Vendor"
                 rules={[{ required: true, message: "Enter company" }]}
               >
                 <Input placeholder="e.g. TCS" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            {/* <Col span={5}>
               <Form.Item
                 name="role"
                 label="Role"
                 rules={[{ required: true, message: "Enter role" }]}
               >
-                <Input placeholder="e.g. Frontend Developer" />
+
+                 <Select style={{ width: "30%" }}>
+                                        <Select.Option value="JUNIOR">Junior</Select.Option>
+                                        <Select.Option value="MID">Mid</Select.Option>
+                                        <Select.Option value="SENIOR">Senior</Select.Option>
+                                      </Select>
+                 <Select
+      placeholder="Select Salesforce Role"
+      showSearch
+      allowClear
+      optionFilterProp="children"
+    >
+      <Select.Option value="Salesforce Developer">Salesforce Developer</Select.Option>
+      <Select.Option value="Salesforce Administrator">Salesforce Administrator</Select.Option>
+      <Select.Option value="Salesforce Consultant">Salesforce Consultant</Select.Option>
+      <Select.Option value="Salesforce Architect">Salesforce Architect</Select.Option>
+      <Select.Option value="LWC Developer">LWC Developer</Select.Option>
+      <Select.Option value="Apex Developer">Apex Developer</Select.Option>
+      <Select.Option value="Integration Developer">Integration Developer</Select.Option>
+    </Select>
+               
+              </Form.Item>
+            </Col> */}
+            <Col span={7}>
+              <Form.Item label="Role">
+                <Input.Group compact>
+                  <Form.Item
+                    name="roleLevel"
+                    noStyle
+                    rules={[{ required: true, message: "Select level" }]}
+                  >
+                    <Select style={{ width: "35%" }} placeholder="Level">
+                      <Select.Option value="Junior">Junior</Select.Option>
+                      <Select.Option value="Mid">Mid</Select.Option>
+                      <Select.Option value="Senior">Senior</Select.Option>
+                    </Select>
+                  </Form.Item>
+
+                  <Form.Item
+                    name="roleType"
+                    noStyle
+                    rules={[{ required: true, message: "Select role" }]}
+                  >
+                    <Select
+                      style={{ width: "65%" }}
+                      placeholder="Salesforce Role"
+                      showSearch
+                      allowClear
+                    >
+                      <Select.Option value="Salesforce Developer">
+                        Salesforce Developer
+                      </Select.Option>
+                      <Select.Option value="Salesforce Administrator">
+                        Salesforce Administrator
+                      </Select.Option>
+                      <Select.Option value="Salesforce Consultant">
+                        Salesforce Consultant
+                      </Select.Option>
+                      <Select.Option value="Salesforce Architect">
+                        Salesforce Architect
+                      </Select.Option>
+                      <Select.Option value="LWC Developer">
+                        LWC Developer
+                      </Select.Option>
+                      <Select.Option value="Apex Developer">
+                        Apex Developer
+                      </Select.Option>
+                      <Select.Option value="Integration Developer">
+                        Integration Developer
+                      </Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Input.Group>
               </Form.Item>
             </Col>
           </Row>
@@ -315,6 +424,7 @@ const ExperienceCard = ({
                           <Select
                             showSearch
                             placeholder="e.g. AWS"
+                            mode="multiple"
                             allowClear
                             options={[
                               { value: "AWS" },

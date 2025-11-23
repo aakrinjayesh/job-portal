@@ -19,6 +19,7 @@ const CandidateDetails = () => {
 
   return (
     <div style={{ padding: "20px" }}>
+      {/* Back Button */}
       <Button
         type="link"
         onClick={() =>
@@ -27,6 +28,19 @@ const CandidateDetails = () => {
         icon={<ArrowLeftOutlined />}
       >
         Back
+      </Button>
+
+      {/* Chat Button */}
+      <Button
+        type="primary"
+        style={{ marginBottom: 15 }}
+        onClick={() =>
+          navigate(`/company/chat`, {
+            state: { candidate, jobId },
+          })
+        }
+      >
+        Chat with {candidate.name}
       </Button>
 
       <Card title={candidate.name} bordered={false}>
