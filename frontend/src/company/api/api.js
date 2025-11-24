@@ -179,12 +179,28 @@ export async function VerifyCandidateOtp(payload) {
   }
 }
 
+
+
 export async function  UserJobsids() {
   try {
       const response = await axiosInstance.get(`/job/applied/ids`, {
         headers:{
           "Content-Type": "application/json"
         }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+export async function  UpdateVendorCandidateStatus( payload) {
+  try {
+      const response = await axiosInstance.post(`/vendor/candidate/update-status`, {
+        headers:{
+          "Content-Type": "application/json"
+        },
+         payload
       })
       return response.data
   } catch (error) {

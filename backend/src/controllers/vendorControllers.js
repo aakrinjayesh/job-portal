@@ -177,9 +177,82 @@ const deleteVendorCandidate = async (req, res) => {
   }
 };
 
+
+// ✅ Update status (active / inactive)
+const updateCandidateStatus = async (req, res) => {
+  try {
+    const userAuth = req.user;
+    const { ids, status } = req.body; // expect: { ids: [...], status: 'inactive' }
+
+    if (userAuth.role !== "company") {
+      return res.status(200).json({
+        status: "failed",
+        message: "Access denied.",
+      });
+    }
+
+    // Update all selected candidates
+    await prisma.userProfile.updateMany({
+      where: {
+        id: { in: ids },
+        vendorId: userAuth.id
+      },
+      data: { status },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: `Updated to ${status} successfully`,
+    });
+  } catch (err) {
+    console.error("Error updating status:", err);
+    return res.status(200).json({
+      status: "failed",
+      message: "Error updating status",
+    });
+  }
+};
+
+
+// // ✅ Update status (active / inactive)
+// const updateCandidateStatus = async (req, res) => {
+//   try {
+//     const userAuth = req.user;
+//     const { ids, status } = req.body; // expect: { ids: [...], status: 'inactive' }
+
+//     if (userAuth.role !== "company") {
+//       return res.status(200).json({
+//         status: "failed",
+//         message: "Access denied.",
+//       });
+//     }
+
+//     // Update all selected candidates
+//     await prisma.userProfile.updateMany({
+//       where: {
+//         id: { in: ids },
+//         vendorId: userAuth.id
+//       },
+//       data: { status },
+//     });
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: `Updated to ${status} successfully`,
+//     });
+//   } catch (err) {
+//     console.error("Error updating status:", err);
+//     return res.status(200).json({
+//       status: "failed",
+//       message: "Error updating status",
+//     });
+//   }
+// };
+
 export {
   getVendorCandidates,
   createVendorCandidate,
   updateVendorCandidate,
   deleteVendorCandidate,
+   updateCandidateStatus,
 };

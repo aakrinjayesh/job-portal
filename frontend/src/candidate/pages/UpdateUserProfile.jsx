@@ -13,6 +13,7 @@ import {
   Col,
   Divider,
   Checkbox,
+  Switch
 } from "antd";
 import { UploadOutlined, UserOutlined } from "@ant-design/icons";
 import {
@@ -493,159 +494,88 @@ const UpdateUserProfile = ({
               </Form.Item>
             </Col>
 
-            <Col span={24}>
-              <Form.Item>
-                <Checkbox
-                  checked={showContact}
-                  onChange={(e) => setShowContact(e.target.checked)}
-                >
-                  Show Contact Details
-                </Checkbox>
-              </Form.Item>
-            </Col>
+            <Form.Item
+  name="hideContact"
+  label="Hide Contact Details"
+  valuePropName="checked"
+>
+  <Switch checkedChildren="ON" unCheckedChildren="OFF" />
+</Form.Item>
 
             <Col xs={24} sm={12} md={12}>
-              {/* Conditional Phone Number Input */}
-              {/* {showPhone && (
-    <Form.Item
-      label="Phone Number"
-      name="phoneNumber"
-      rules={[
-        {
-          required: true,
-          message: "Please enter phone number",
-        },
-        {
-          pattern: /^\+\d{1,3}\s\d{7,14}$/,
-          message: "Format: +91 9876543210",
-        },
-      ]}
-    >
-      <Input placeholder="+91 9876543210" />
-    </Form.Item>
-  )} */}
+  <Form.Item
+    label="Phone Number"
+    name="phoneNumber"
+    rules={[
+      { 
+        // required: true,
+         message: "Please enter phone number" },
+      {
+        pattern: /^\+\d{1,3}\s\d{7,14}$/,
+        message: "Format: +91 9876543210",
+      },
+    ]}
+  >
+    <Input placeholder="+91 9876543210" />
+  </Form.Item>
+</Col>
 
-              {showContact && (
-                <Col xs={24} sm={12} md={12}>
-                  <Form.Item
-                    label="Phone Number"
-                    name="phoneNumber"
-                    rules={[
-                      { required: true, message: "Please enter phone number" },
-                      {
-                        pattern: /^\+\d{1,3}\s\d{7,14}$/,
-                        message: "Format: +91 9876543210",
-                      },
-                    ]}
-                  >
-                    <Input placeholder="+91 9876543210" />
-                  </Form.Item>
-                </Col>
-              )}
-            </Col>
 
-            <Col xs={24} sm={12} md={12}>
-              {/* Email field is shown ONLY when showEmail = true */}
-              {/* {showEmail && (
-    <Form.Item
-      label="Email"
-      name="email"
-      rules={[
-        {
-          required: true,
-          message: "Please enter email",
+  <Col xs={24} sm={12} md={12}>
+  <Form.Item
+    label="Email"
+    name="email"
+    rules={[
+      { required: true, message: "Please enter email" },
+      { type: "email", message: "Enter valid email" },
+      {
+        validator: (_, value) => {
+          if (!value) return Promise.reject("Email is required");
+
+          const allowedDomains = [
+            "tcs.com",
+            "accenture.com",
+            "infosys.com",
+            "wipro.com",
+            "hcl.com",
+            "capgemini.com",
+            "techmahindra.com",
+            "cognizant.com",
+            "ibm.com",
+            "oracle.com",
+            "dell.com",
+            "salesforce.com",
+            "google.com",
+            "microsoft.com",
+            "adobe.com",
+            "persistent.com",
+            "mindtree.com",
+            "mphasis.com",
+            "birlasoft.com",
+            "lntinfotech.com",
+            "freshworks.com",
+            "zoho.in",
+            "swiggy.in",
+            "razorpay.com",
+            "zerodha.com",
+            "aakrin.com"
+          ];
+
+          const emailDomain = value.toLowerCase().split("@")[1];
+          if (allowedDomains.includes(emailDomain)) {
+            return Promise.resolve();
+          }
+
+          return Promise.reject("Please provide a work email ID.");
         },
-        {
-          type: "email",
-          message: "Please enter a valid email address",
-        },
-        {
-          validator: (_, value) => {
-            if (!value) {
-              return Promise.reject("Email is required");
-            }
-            const domain = "@aakrin.com";
-            if (value.toLowerCase().endsWith(domain)) {
-              return Promise.resolve();
-            }
-            return Promise.reject(
-              `Only company emails ending with ${domain} are allowed`
-            );
-          },
-        },
-      ]}
-    >
-      <Input placeholder="e.g., hari.babu@aakrin.com" />
-    </Form.Item>
-  )} */}
-              {showContact && (
-                <Col xs={24} sm={12} md={12}>
-                  {/* <Form.Item
-      label="Email"
-      name="email"
-      rules={[
-        { required: true, message: "Please enter email" },
-        { type: "email", message: "Enter valid email" },
-        {
-          validator: (_, value) => {
-            if (!value) return Promise.reject("Email is required");
-            const domain = "@aakrin.com";
-            return value.toLowerCase().endsWith(domain)
-              ? Promise.resolve()
-              : Promise.reject(
-                  `Only company emails ending with ${domain} are allowed`
-                );
-          },
-        },
-      ]}
-    >
-      <Input placeholder="e.g., hari.babu@aakrin.com" />
-    </Form.Item> */}
-                  <Form.Item
-                    label="Email"
-                    name="email"
-                    rules={[
-                      { required: true, message: "Please enter email" },
-                      { type: "email", message: "Enter valid email" },
-                      {
-                        validator: (_, value) => {
-                          if (!value)
-                            return Promise.reject("Email is required");
+      },
 
-                          const allowedDomains = [
-                            "aakrin.com",
-                            "yahoo.com",
-                            "outlook.com",
-                            "hotmail.com",
-                            "protonmail.com",
-                            "icloud.com",
-                            "aol.com",
-                            "zoho.com",
-                            "yandex.com",
-                            "tcs.com",
-                            "accenture.com",
-                          ];
-
-                          const emailDomain = value.toLowerCase().split("@")[1];
-
-                          if (allowedDomains.includes(emailDomain)) {
-                            return Promise.resolve();
-                          }
-
-                          return Promise.reject(
-                            `Email domain not allowed. Allowed: ${allowedDomains.join(
-                              ", "
-                            )}`
-                          );
-                        },
-                      },
-                    ]}
-                  >
-                    <Input placeholder="e.g., user@aakrin.com" />
-                  </Form.Item>
-                </Col>
-              )}
-            </Col>
+    ]}
+    
+  >
+    <Input placeholder="e.g., user@aakrin.com" />
+  </Form.Item>
+</Col>
 
             {/* Title / Role */}
             <Col xs={24} sm={12}>
@@ -695,26 +625,7 @@ const UpdateUserProfile = ({
               </Form.Item>
             </Col>
 
-            {/* Preferred Job Type */}
-            {/* <Col xs={24} sm={12}>
-              <Form.Item
-                label="Preferred Job Type (Max 2)"
-                name="preferredJobType"
-                rules={[{ required: true, message: "Please select job type!" }]}
-              >
-                <Select
-                  mode="multiple"
-                  placeholder="Select job types"
-                  maxTagCount={2}
-                  style={{ width: "100%" }}
-                >
-                  <Option value="FullTime">Full Time</Option>
-                  <Option value="Contract">Contract</Option>
-                  <Option value="Freelance">Freelance</Option>
-                </Select>
-              </Form.Item>
-            </Col> */}
-
+           
             {/* Current/Expected CTC or Rate Card */}
             {!Reciviedrole ? (
               <>
@@ -1022,3 +933,4 @@ const UpdateUserProfile = ({
 };
 
 export default UpdateUserProfile;
+

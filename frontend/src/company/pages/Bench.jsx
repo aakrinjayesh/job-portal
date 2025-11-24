@@ -16,6 +16,7 @@ import {
   CreateVendorCandidate,
   UpdateVendorCandidate,
   DeleteVendorCandidate,
+  //  UpdateVendorCandidateStatus ,
 } from "../api/api";
 import UpdateUserProfile from "../../candidate/pages/UpdateUserProfile";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
@@ -41,6 +42,7 @@ const Bench = () => {
   const [otp, setOtp] = useState("");
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpExpired, setOtpExpired] = useState(false);
 
   // add near other useState() calls
   const [verifiedCount, setVerifiedCount] = useState(0);
@@ -51,12 +53,52 @@ const Bench = () => {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
+  const [timer, setTimer] = useState(0); 
+const [isCounting, setIsCounting] = useState(false);
+
+
+useEffect(() => {
+  let interval = null;
+
+  if (isCounting && timer > 0) {
+    interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+  }
+
+  if (timer === 0 && isCounting) {
+    setIsCounting(false);
+    setOtpExpired(true); // mark OTP expired
+  }
+
+  return () => clearInterval(interval);
+}, [isCounting, timer]);
+
+  // const filteredCandidates = candidates
+  //   ?.map((item) => ({
+  //     ...item,
+  //     isMatch: item?.name?.toLowerCase().includes(searchText.toLowerCase()),
+  //   }))
+  //   .sort((a, b) => b.isMatch - a.isMatch); // matched items go to top
+
   const filteredCandidates = candidates
-    ?.map((item) => ({
+  ?.map((item) => {
+    const text = searchText.toLowerCase();
+
+    const nameMatch = item.name?.toLowerCase().includes(text);
+    const roleMatch = item.title?.toLowerCase().includes(text);
+    const cloudNames = Array.isArray(item.primaryClouds)
+      ? item.primaryClouds.map((c) => c.name?.toLowerCase())
+      : [];
+
+    const cloudMatch = cloudNames.some((c) => c.includes(text));
+
+    return {
       ...item,
-      isMatch: item?.name?.toLowerCase().includes(searchText.toLowerCase()),
-    }))
-    .sort((a, b) => b.isMatch - a.isMatch); // matched items go to top
+      isMatch: nameMatch || roleMatch || cloudMatch,
+    };
+  })
+  .sort((a, b) => b.isMatch - a.isMatch);
 
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
@@ -194,8 +236,16 @@ const Bench = () => {
       const res = await SendVerificationOtp({
         userProfileId: verifyCandidate.id,
       });
+
+
       if (res?.status === "success") {
         message.success(`OTP sent to ${verifyCandidate.email}`);
+
+    setOtp("");          
+  setOtpExpired(false);  
+  setTimer(60);
+  setIsCounting(true);
+
       } else {
         message.error(res?.message || "Failed to send OTP");
       }
@@ -559,37 +609,54 @@ const Bench = () => {
           >
             Inactive
           </Button>
+
+          <Button
+  type={activeTab === "all" ? "primary" : "default"}
+  onClick={() => setActiveTab("all")}
+>
+  All
+</Button>
         </div>
       </div>
 
       <Spin spinning={loading}>
         {/* 🔍 SEARCH INPUT */}
-        <Input
-          placeholder="Search by name..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{
-            width: 250,
-            marginBottom: 16,
-            height: 35,
-            borderRadius: 6,
-          }}
-        />
+      
+         <Input
+    // placeholder="Search by name..."
+    placeholder="Search by name or role or cloud ..."
 
-        <Table
+    value={searchText}
+    onChange={(e) => setSearchText(e.target.value)}
+    style={{
+      width: 250,
+      marginBottom: 16,
+      height: 35,
+      borderRadius: 6,
+    }}
+  />
+
+        
+         <Table
           columns={columns}
-          // dataSource={candidates}
-          // dataSource={filteredCandidates}
-          dataSource={
-            activeTab === "active"
-              ? filteredCandidates?.filter((c) => c.status !== "inactive")
-              : filteredCandidates?.filter((c) => c.status === "inactive")
-          }
+      
+dataSource={
+  activeTab === "all"
+    ? filteredCandidates
+    : activeTab === "active"
+      ? filteredCandidates.filter(c => c.status !== "inactive")
+      : filteredCandidates.filter(c => c.status === "inactive")
+}
+
+
+   
+
+
           rowKey={(record) => record.id || record.name}
           bordered
           // pagination={{ pageSize: 10 }}
           pagination={false}
-          scroll={{ x: 1000 }}
+           scroll={{ x: 1000 }}  
           style={{ cursor: "pointer" }}
           onRow={(record) => ({
             onClick: () => {
@@ -706,115 +773,126 @@ const Bench = () => {
       </Modal>
 
       {/* ✅ Enhanced Verification Modal */}
+   
+
       <Modal
-        title={
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span
-              style={{
-                background: "#1677ff",
-                color: "white",
-                borderRadius: "50%",
-                width: 30,
-                height: 30,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontWeight: "bold",
-              }}
-            >
-              🔐
-            </span>
-            <span style={{ fontSize: 18, fontWeight: 600 }}>
-              Verify Candidate
-            </span>
-          </div>
-        }
-        open={verifyModalVisible}
-        onCancel={() => setVerifyModalVisible(false)}
-        footer={null}
-        centered
-        bodyStyle={{ padding: "24px 32px" }}
+  title={
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <span
+        style={{
+          background: "#1677ff",
+          color: "white",
+          borderRadius: "50%",
+          width: 30,
+          height: 30,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          fontWeight: "bold",
+        }}
       >
-        <div
-          style={{
-            background: "#f8f9fa",
-            padding: "16px 20px",
-            borderRadius: 10,
-            marginBottom: 20,
-            border: "1px solid #e5e5e5",
-          }}
-        >
-          <p style={{ marginBottom: 0, fontSize: 15 }}>
-            <b>Email:</b>{" "}
-            <span style={{ color: "#1677ff", fontWeight: 500 }}>
-              {verifyCandidate?.email || "-"}
-            </span>
-          </p>
-        </div>
+        🔐
+      </span>
+      <span style={{ fontSize: 18, fontWeight: 600 }}>Verify Candidate</span>
+    </div>
+  }
+  open={verifyModalVisible}
+  onCancel={() => setVerifyModalVisible(false)}
+  footer={null}
+  centered
+  bodyStyle={{ padding: "24px 32px" }}
+>
+  <div
+    style={{
+      background: "#f8f9fa",
+      padding: "16px 20px",
+      borderRadius: 10,
+      marginBottom: 20,
+      border: "1px solid #e5e5e5",
+    }}
+  >
+    <p style={{ marginBottom: 0, fontSize: 15 }}>
+      <b>Email:</b>{" "}
+      <span style={{ color: "#1677ff", fontWeight: 500 }}>
+        {verifyCandidate?.email || "-"}
+      </span>
+    </p>
+  </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
-        >
-          <Button
-            type="primary"
-            icon={<i className="ri-mail-send-line" />}
-            onClick={handleSendOtp}
-            loading={otpSending}
-            disabled={otpSending}
-            style={{
-              width: "100%",
-              height: 40,
-              fontWeight: 600,
-              fontSize: 15,
-            }}
-          >
-            {otpSending ? "Sending..." : "Send OTP"}
-          </Button>
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 16,
+    }}
+  >
+   
 
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
-            }}
-          >
-            <Input
-              placeholder="Enter 6-digit OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-              style={{
-                flex: 1,
-                height: 40,
-                borderRadius: 6,
-                fontSize: 15,
-                textAlign: "center",
-                letterSpacing: 3,
-              }}
-            />
-            <Button
-              type="primary"
-              onClick={handleVerifyOtp}
-              loading={otpVerifying}
-              disabled={!otp || otpVerifying}
-              style={{
-                width: 100,
-                height: 40,
-                fontWeight: 600,
-                fontSize: 15,
-              }}
-            >
-              {otpVerifying ? "Verifying..." : "Verify"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+    <Button
+  type="primary"
+  icon={<i className="ri-mail-send-line" />}
+  onClick={handleSendOtp}
+  loading={otpSending}
+  disabled={otpSending || isCounting}
+  style={{
+    width: "100%",
+    height: 40,
+    fontWeight: 600,
+    fontSize: 15,
+  }}
+>
+  {otpSending
+    ? "Sending..."
+    : isCounting
+    ? `Resend OTP in ${timer}s`
+    : "Send OTP"}
+</Button>
+
+
+    <div
+      style={{
+        display: "flex",
+        gap: 10,
+        alignItems: "center",
+      }}
+    >
+      <Input
+        placeholder="Enter 6-digit OTP"
+        value={otp}
+        onChange={(e) => setOtp(e.target.value)}
+        maxLength={6}
+        style={{
+          flex: 1,
+          height: 40,
+          borderRadius: 6,
+          fontSize: 15,
+          textAlign: "center",
+          letterSpacing: 3,
+        }}
+      />
+    
+      <Button
+  type="primary"
+  onClick={handleVerifyOtp}
+  loading={otpVerifying}
+  disabled={!otp || otpVerifying || otpExpired}   // ⬅ IMPORTANT
+  style={{
+    width: 100,
+    height: 40,
+    fontWeight: 600,
+    fontSize: 15,
+  }}
+>
+  {otpExpired ? "Expired" : otpVerifying ? "Verifying..." : "Verify"}
+</Button>
+
+    </div>
+  </div>
+</Modal>
     </div>
   );
 };
 
 export default Bench;
+
+

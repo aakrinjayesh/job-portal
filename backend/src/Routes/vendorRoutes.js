@@ -5,6 +5,7 @@ import {
   createVendorCandidate,
   updateVendorCandidate,
   deleteVendorCandidate,
+   updateCandidateStatus ,
  
 } from "../controllers/vendorControllers.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -26,6 +27,12 @@ VendorRoutes.post(
  
 VendorRoutes.post("/candidate/delete", authenticateToken, deleteVendorCandidate);
 
+
+VendorRoutes.post(
+  "/candidate/update-status",
+  authenticateToken,
+  updateCandidateStatus
+);
 
 
 
