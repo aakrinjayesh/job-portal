@@ -28,7 +28,13 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
-import { GetJobsList, CreateJob, UpdateJob, GetCandidateDeatils } from "../../api/api";
+import {
+  GetJobsList,
+  CreateJob,
+  UpdateJob,
+  GetCandidateDeatils,
+  PostedJobsList,
+} from "../../api/api";
 import { DeleteJobDetails } from "../../api/api";
 import { Upload } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
@@ -95,7 +101,9 @@ const RecruiterJobList = () => {
       const jobsWithCounts = await Promise.all(
         jobList.map(async (job) => {
           try {
-            const candidateResponse = await GetCandidateDeatils({ jobId: job.id });
+            const candidateResponse = await GetCandidateDeatils({
+              jobId: job.id,
+            });
             const applicantCount = candidateResponse?.total || 0;
             return { ...job, applicantCount };
           } catch (err) {
@@ -114,7 +122,6 @@ const RecruiterJobList = () => {
       setLoading(false);
     }
   };
-
 
   // ✅ Handle selecting/deselecting a job
   const handleSelect = (jobId) => {
@@ -157,7 +164,6 @@ const RecruiterJobList = () => {
           ? values.applicationDeadline.toISOString()
           : null,
       };
-
 
       if (isEditing) {
         // ✅ Add job ID to payload
@@ -336,9 +342,14 @@ const RecruiterJobList = () => {
                 <Form.Item
                   label="Custom Reason"
                   name="customReason"
-                  rules={[{ required: true, message: "Please enter your reason" }]}
+                  rules={[
+                    { required: true, message: "Please enter your reason" },
+                  ]}
                 >
-                  <Input.TextArea rows={3} placeholder="Enter your custom reason" />
+                  <Input.TextArea
+                    rows={3}
+                    placeholder="Enter your custom reason"
+                  />
                 </Form.Item>
               ) : null
             }
@@ -389,26 +400,25 @@ const RecruiterJobList = () => {
                       gap: "4px",
                     }}
                   >
-                  <Text
-                    strong
-                    style={{
-                      fontSize: "16px",
-                      color: "#1890ff",
+                    <Text
+                      strong
+                      style={{
+                        fontSize: "16px",
+                        color: "#1890ff",
                         cursor: "pointer",
                         margin: 0,
                         padding: 0,
                         lineHeight: "1",
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/company/job/${job.id}`);
-                    }}
-                  >
-                    {job.role || job.title}
-                  </Text>
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/company/job/${job.id}`);
+                      }}
+                    >
+                      {job.role || job.title}
+                    </Text>
+                  </div>
                 </div>
-                </div>
-
 
                 {/* Company Info */}
                 <Space align="center" style={{ marginTop: 6 }}>
@@ -431,7 +441,7 @@ const RecruiterJobList = () => {
                     }}
                   >
                     <Space>
-                    <Text>{job.experience}</Text>
+                      <Text>{job.experience}</Text>
                     </Space>
                     <Space>
                       <EnvironmentOutlined />
@@ -487,9 +497,9 @@ const RecruiterJobList = () => {
                   <Text type="secondary">
                     Posted{" "}
                     {job?.updatedAt
-                      ? `${dayjs(job.updatedAt).fromNow()} (${dayjs(job?.appliedAt).format(
-                        "MMM D, YYYY"
-                      )})`
+                      ? `${dayjs(job.updatedAt).fromNow()} (${dayjs(
+                          job?.appliedAt
+                        ).format("MMM D, YYYY")})`
                       : "Recently posted"}
                   </Text>
 
@@ -503,7 +513,9 @@ const RecruiterJobList = () => {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate("/company/candidates", { state: { id: job.id } });
+                        navigate("/company/candidates", {
+                          state: { id: job.id },
+                        });
                       }}
                     >
                       View Candidates({job.applicantCount || 0})
@@ -549,7 +561,6 @@ const RecruiterJobList = () => {
         style={{ top: 40 }}
       >
         <Form form={form} layout="vertical" name="jobForm">
-
           {/* ❌ Upload field — NO REQUIRED RULE ADDED */}
           <Form.Item label="Upload Job Description (PDF/DOCX)">
             <Upload
@@ -570,15 +581,19 @@ const RecruiterJobList = () => {
             <Input placeholder="e.g. Machine Learning Engineer" />
           </Form.Item>
 
-         <Form.Item
-  name="description"
-  label="Description"
+          <Form.Item
+            name="description"
+            label="Description"
             rules={[{ required: true }]}
->
+          >
             <TextArea rows={3} placeholder="Job Description" />
           </Form.Item>
 
-          <Form.Item name="employmentType" label="Employment Type" rules={[{ required: true }]}>
+          <Form.Item
+            name="employmentType"
+            label="Employment Type"
+            rules={[{ required: true }]}
+          >
             <Select>
               <Option value="FullTime">Full Time</Option>
               <Option value="PartTime">Part Time</Option>
@@ -592,7 +607,11 @@ const RecruiterJobList = () => {
           >
             <Input placeholder="e.g. 3 years" />
           </Form.Item>
-          <Form.Item name="experienceLevel" label="Experience Level" rules={[{ required: true }]}>
+          <Form.Item
+            name="experienceLevel"
+            label="Experience Level"
+            rules={[{ required: true }]}
+          >
             <Select>
               <Option value="Internship">Internship</Option>
               <Option value="EntryLevel">Entry Level</Option>
@@ -601,14 +620,14 @@ const RecruiterJobList = () => {
               <Option value="Lead">Lead</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="location" label="Location" rules={[{ required: true }]}>
-            <Input placeholder="e.g. Bangalore, India" />
-          </Form.Item>
           <Form.Item
-            name="clouds"
-            label="Clouds"
+            name="location"
+            label="Location"
             rules={[{ required: true }]}
           >
+            <Input placeholder="e.g. Bangalore, India" />
+          </Form.Item>
+          <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
             <Select
               mode="tags"
               allowClear
@@ -626,22 +645,42 @@ const RecruiterJobList = () => {
           </Form.Item>
 
           <Form.Item name="salary" label="Salary" rules={[{ required: true }]}>
-            <InputNumber style={{ width: "100%" }} min={0} formatter={(value) => `₹ ${value}`} />
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+              formatter={(value) => `₹ ${value}`}
+            />
           </Form.Item>
 
-          <Form.Item name="companyName" label="Company Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="companyName"
+            label="Company Name"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="Company Name" />
           </Form.Item>
 
-          <Form.Item name="responsibilities" label="Responsibilities" rules={[{ required: true }]}>
+          <Form.Item
+            name="responsibilities"
+            label="Responsibilities"
+            rules={[{ required: true }]}
+          >
             <Select mode="tags" placeholder="Add responsibilities" />
           </Form.Item>
 
-          <Form.Item name="qualifications" label="Qualifications" rules={[{ required: true }]}>
+          <Form.Item
+            name="qualifications"
+            label="Qualifications"
+            rules={[{ required: true }]}
+          >
             <Select mode="tags" placeholder="Add qualifications" />
           </Form.Item>
 
-          <Form.Item name="jobType" label="Job Type" rules={[{ required: true }]}>
+          <Form.Item
+            name="jobType"
+            label="Job Type"
+            rules={[{ required: true }]}
+          >
             <Select>
               <Option value="Remote">Remote</Option>
               <Option value="Onsite">Onsite</Option>

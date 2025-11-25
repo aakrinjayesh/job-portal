@@ -488,6 +488,7 @@ const ChatPage = () => {
   const location = useLocation();
   const candidate = location?.state?.candidate;
   const userType = location?.state?.userType;
+  console.log("userType", userType);
 
   const currentChat = useRef(null);
   const typingTimeoutRef = useRef(null);
