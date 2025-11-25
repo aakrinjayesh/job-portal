@@ -57,6 +57,9 @@ const Bench = () => {
 const [isCounting, setIsCounting] = useState(false);
 
 
+
+
+
 useEffect(() => {
   let interval = null;
 
@@ -134,6 +137,7 @@ useEffect(() => {
   const showModal = () => {
     form.resetFields();
     setEditRecord(null);
+   
     setIsModalVisible(true);
   };
 
@@ -190,22 +194,49 @@ useEffect(() => {
           message.error(res?.message || "Failed to update candidate");
         }
       } else {
-        const res = await CreateVendorCandidate(data);
-        if (res?.status === "success") {
-          message.success("Candidate added successfully!");
-          setCandidates((prev) => [res.data, ...prev]);
+        // const res = await CreateVendorCandidate(data);
+        // if (res?.status === "success") {
+        //   message.success("Candidate added successfully!");
+        //   setCandidates((prev) => [res.data, ...prev]);
 
-          // adjust counts based on new candidate's isVerified flag (default false usually)
-          if (res?.data) {
-            if (res.data.isVerified) {
-              setVerifiedCount((v) => v + 1);
-            } else {
-              setUnverifiedCount((u) => u + 1);
-            }
-          }
-        } else {
-          message.error(res?.message || "Failed to add candidate");
-        }
+        //   // adjust counts based on new candidate's isVerified flag (default false usually)
+        //   if (res?.data) {
+        //     if (res.data.isVerified) {
+        //       setVerifiedCount((v) => v + 1);
+        //     } else {
+        //       setUnverifiedCount((u) => u + 1);
+        //     }
+        //   }
+        // } else {
+        //   message.error(res?.message || "Failed to add candidate");
+        // }
+
+        const res = await CreateVendorCandidate(data);
+if (res?.status === "success") {
+  message.success("Candidate added successfully!");
+
+  // REFRESH from backend so we get the exact saved fields (incl. profilePicture URL)
+  await fetchCandidates();
+
+  // optionally: if you want to open the newly created candidate immediately,
+  // find it in the updated list and setSelectedCandidate.
+  // const created = res?.data;
+  // if (created) {
+  //   setSelectedCandidate(createdFromServer); // after fetchCandidates you can look up the id
+  // }
+
+  // update counters (safer to recalc after fetchCandidates, but keep this for speed)
+  if (res?.data) {
+    if (res.data.isVerified) {
+      setVerifiedCount((v) => v + 1);
+    } else {
+      setUnverifiedCount((u) => u + 1);
+    }
+  }
+} else {
+  message.error(res?.message || "Failed to add candidate");
+}
+
       }
 
       setIsModalVisible(false);
@@ -695,6 +726,7 @@ dataSource={
         width={900}
       >
         <UpdateUserProfile
+    
           handleFormDetails={handleFormDetails}
           Reciviedrole={"candidate"}
           setModalVisible={setIsModalVisible}

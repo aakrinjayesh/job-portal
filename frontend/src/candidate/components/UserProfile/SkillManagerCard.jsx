@@ -413,7 +413,7 @@
 // export default SkillManagerCard;
 
 import React, { useState, useEffect } from "react";
-import { Button, Modal, Input, List, Card } from "antd";
+import { Button, Modal,  InputNumber, List, Card } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import ReusableSelect from "./ReusableSelect";
 
@@ -451,6 +451,14 @@ const SkillManagerCard = ({
     if (!currentSkill) {
       return; // Don't save if no skill selected
     }
+
+const isValidSkill = /^[A-Za-z0-9 .-]+$/.test(currentSkill);
+
+if (!isValidSkill) {
+  message.error("Skill name must contain only letters, numbers and spaces!");
+  return;
+}
+
 
     let updatedSkills;
     if (editingIndex !== null) {
@@ -519,12 +527,20 @@ const SkillManagerCard = ({
           <label style={{ display: "block", marginBottom: 8 }}>
             Experience:
           </label>
-          <Input
+          {/* <Input
             type="number"
             value={experience}
             onChange={(e) => setExperience(parseFloat(e.target.value) || 0)}
             addonAfter="yrs"
-          />
+          /> */}
+          <InputNumber
+  min={1}                       // prevents minus & zero
+  step={1}                      // only +1 increments
+  value={experience}
+  onChange={(value) => setExperience(value || 1)}
+  addonAfter="yrs"
+  style={{ width: "100%" }}
+/>
         </div>
       </Modal>
 

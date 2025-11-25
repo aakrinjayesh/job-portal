@@ -28,6 +28,7 @@ import {
   PostLocations,
   GetClouds,
   PostClouds,
+  uploadProfilePicture ,
 } from "../api/api";
 import GenerateResume from "../components/UserProfile/GenerateResume";
 import ReusableSelect from "../components/UserProfile/ReusableSelect";
@@ -51,6 +52,8 @@ const UpdateUserProfile = ({
   const [messageAPI, contextHolder] = message.useMessage();
 
   const [showContact, setShowContact] = useState(false);
+  const [fileList, setFileList] = useState([]);
+
 
   console.log("Recivied Role", Reciviedrole);
   console.log("edit", editRecord);
@@ -64,6 +67,12 @@ const UpdateUserProfile = ({
   const [experienceList, setExperienceList] = useState([]);
 
   const role = localStorage.getItem("role");
+
+
+ 
+
+
+
 
   useEffect(() => {
     if (editRecord && Reciviedrole) {
@@ -127,6 +136,21 @@ const UpdateUserProfile = ({
         primaryClouds: primClouds,
         secondaryClouds: secClouds,
       });
+
+      // SHOW EXISTING IMAGE IN UPLOAD PREVIEW
+if (editRecord?.profilePicture) {
+  setFileList([
+    {
+      uid: "-1",
+      name: "profile.jpg",
+      status: "done",
+      url: editRecord.profilePicture,
+    }
+  ]);
+} else {
+  setFileList([]); // no image
+}
+
     } else {
       console.log("edit false");
     }
@@ -359,77 +383,245 @@ const UpdateUserProfile = ({
     form.setFieldsValue({ workExperience: updatedExperience });
   };
 
+  // const onFinish = async (values) => {
+  //   try {
+  //     setSubmitLoading(true);
+
+  //      let profilePicUrl = null;
+
+  //   // ----------------------------------
+  //   // 1️⃣ Upload profile picture IF new file selected
+  //   // ----------------------------------
+  //   if (values?.profilePicture instanceof File) {
+  //     const fd = new FormData();
+  //     fd.append("file", values.profilePicture);
+
+  //     const uploadRes = await uploadProfilePicture(fd);  // separate API call
+
+  //     if (uploadRes?.status === "success") {
+  //       profilePicUrl = uploadRes.url;
+  //     } else {
+  //       messageAPI.error("Failed to upload profile picture");
+  //       setSubmitLoading(false);
+  //       return;
+  //     }
+  //   } else {
+  //     // keep old image when editing
+  //     profilePicUrl = editRecord?.profilePicture || null;
+  //   }
+
+
+  //     // Compose skillsJson from state (not form values)
+  //     const skillsJson = [
+  //       ...primarySkills.map((s) => ({
+  //         name: s?.name,
+  //         experience: Number(s?.experience ?? 0),
+  //         level: "primary",
+  //       })),
+  //       ...secondarySkills.map((s) => ({
+  //         name: s.name,
+  //         experience: Number(s?.experience ?? 0),
+  //         level: "secondary",
+  //       })),
+  //     ];
+
+  //     const payload = {
+  //       name: values?.name,
+  //       phoneNumber: values?.phoneNumber,
+  //       email: values?.email,
+  //       portfolioLink: values?.portfolioLink,
+  //       // profilePicture: values?.profilePicture || null,
+  //        profilePicture: profilePicUrl,
+  //       title: values?.title || null,
+  //       currentCTC: values?.currentCTC || null,
+  //       expectedCTC: values?.expectedCTC || null,
+  //       joiningPeriod: values?.joiningPeriod || null,
+  //       totalExperience: String(values?.totalExperience) || null,
+  //       relevantSalesforceExperience:
+  //         String(values?.relevantSalesforceExperience) || null,
+  //       linkedInUrl: values?.linkedInUrl || null,
+  //       trailheadUrl: values?.trailheadUrl || null,
+  //       preferredLocation: values?.preferredLocation || [],
+  //       currentLocation: values?.currentLocation || null,
+  //       preferredJobType: values?.preferredJobType || [],
+  //       skillsJson,
+  //       primaryClouds: primaryClouds,
+  //       secondaryClouds: secondaryClouds,
+  //       certifications: values?.certifications || [],
+  //       // workExperience: values?.workExperience || [],
+  //       workExperience: experienceList,
+  //       education: educationList,
+  //       rateCardPerHour: values.rateCardPerHour || {},
+  //     };
+  //     if (Reciviedrole) {
+  //       handleFormDetails(payload);
+  //       setModalVisible(false);
+  //       form.resetFields(); // ✅ clears all fields
+  //       setPrimarySkills([]);
+  //       setSecondarySkills([]);
+  //       setPrimaryClouds([]);
+  //       setSecondaryClouds([]);
+  //       setEducationList([]);
+  //       setExperienceList([]);
+  //       return;
+  //     }
+
+      
+  //     console.log("Submitting payload of user form:", payload);
+  //     const response = await profiledata(payload);
+  //     if (response?.status === "success") {
+  //       messageAPI.success("Profile updated successfully!");
+  //     } else {
+  //       messageAPI.error("Failed to update profile. Please try again.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Profile update error:", error);
+  //     messageAPI.error("Failed to update profile. Please try again.");
+  //   } finally {
+  //     setSubmitLoading(false);
+  //   }
+  // };
+
+
   const onFinish = async (values) => {
-    try {
-      setSubmitLoading(true);
+  try {
+    setSubmitLoading(true);
 
-      // Compose skillsJson from state (not form values)
-      const skillsJson = [
-        ...primarySkills.map((s) => ({
-          name: s?.name,
-          experience: Number(s?.experience ?? 0),
-          level: "primary",
-        })),
-        ...secondarySkills.map((s) => ({
-          name: s.name,
-          experience: Number(s?.experience ?? 0),
-          level: "secondary",
-        })),
-      ];
+    // -------------------------------
+    // 1️⃣ HANDLE PROFILE PICTURE UPLOAD
+    // -------------------------------
+    let profilePicUrl = null;
+    const fileObj = values?.profilePicture;
 
-      const payload = {
-        name: values?.name,
-        phoneNumber: values?.phoneNumber,
-        email: values?.email,
-        portfolioLink: values?.portfolioLink,
-        profilePicture: values?.profilePicture || null,
-        title: values?.title || null,
-        currentCTC: values?.currentCTC || null,
-        expectedCTC: values?.expectedCTC || null,
-        joiningPeriod: values?.joiningPeriod || null,
-        totalExperience: String(values?.totalExperience) || null,
-        relevantSalesforceExperience:
-          String(values?.relevantSalesforceExperience) || null,
-        linkedInUrl: values?.linkedInUrl || null,
-        trailheadUrl: values?.trailheadUrl || null,
-        preferredLocation: values?.preferredLocation || [],
-        currentLocation: values?.currentLocation || null,
-        preferredJobType: values?.preferredJobType || [],
-        skillsJson,
-        primaryClouds: primaryClouds,
-        secondaryClouds: secondaryClouds,
-        certifications: values?.certifications || [],
-        // workExperience: values?.workExperience || [],
-        workExperience: experienceList,
-        education: educationList,
-        rateCardPerHour: values.rateCardPerHour || {},
-      };
-      if (Reciviedrole) {
-        handleFormDetails(payload);
-        setModalVisible(false);
-        form.resetFields(); // ✅ clears all fields
-        setPrimarySkills([]);
-        setSecondarySkills([]);
-        setPrimaryClouds([]);
-        setSecondaryClouds([]);
-        setEducationList([]);
-        setExperienceList([]);
-        return;
-      }
-      console.log("Submitting payload of user form:", payload);
-      const response = await profiledata(payload);
-      if (response?.status === "success") {
-        messageAPI.success("Profile updated successfully!");
-      } else {
-        messageAPI.error("Failed to update profile. Please try again.");
-      }
-    } catch (error) {
-      console.error("Profile update error:", error);
-      messageAPI.error("Failed to update profile. Please try again.");
-    } finally {
-      setSubmitLoading(false);
+    const isNewFile =
+      fileObj instanceof File ||
+      fileObj instanceof Blob ||
+      (fileObj && fileObj.uid && fileObj.originFileObj instanceof File);
+
+    if (isNewFile) {
+      const realFile = fileObj.originFileObj || fileObj;
+
+      const fd = new FormData();
+      fd.append("file", realFile);
+
+      // const uploadRes = await uploadProfilePicture(fd);
+
+      // if (uploadRes?.data?.status === "success") {
+      //   // profilePicUrl = uploadRes.data.url;   // <--- VERY IMPORTANT
+      //   profilePicUrl = uploadRes.url;   // FIXED
+      // } else {
+      //   messageAPI.error("Failed to upload profile picture");
+      //   setSubmitLoading(false);
+      //   return;
+      // }
+
+      const uploadRes = await uploadProfilePicture(fd);
+console.log("UPLOAD RESPONSE:", uploadRes);
+
+const profilePicUrlFromRes =
+  uploadRes?.url ?? 
+  uploadRes?.data?.url ?? 
+  uploadRes?.data?.location ?? 
+  null;
+
+if (!profilePicUrlFromRes) {
+  messageAPI.error("Failed to upload profile picture");
+  setSubmitLoading(false);
+  return;
+}
+
+profilePicUrl = profilePicUrlFromRes;
+
+
+    } else {
+      profilePicUrl = editRecord?.profilePicture || null;
     }
-  };
+
+    // -------------------------------
+    // 2️⃣ BUILD SKILLS JSON
+    // -------------------------------
+    const skillsJson = [
+      ...primarySkills.map((s) => ({
+        name: s.name,
+        experience: Number(s.experience ?? 0),
+        level: "primary",
+      })),
+      ...secondarySkills.map((s) => ({
+        name: s.name,
+        experience: Number(s.experience ?? 0),
+        level: "secondary",
+      })),
+    ];
+
+    // -------------------------------
+    // 3️⃣ FINAL PAYLOAD
+    // -------------------------------
+    const payload = {
+      name: values?.name,
+      phoneNumber: values?.phoneNumber,
+      email: values?.email,
+      portfolioLink: values?.portfolioLink,
+      profilePicture: profilePicUrl,   // <---- SAVED
+      title: values?.title || null,
+      currentCTC: values?.currentCTC || null,
+      expectedCTC: values?.expectedCTC || null,
+      joiningPeriod: values?.joiningPeriod || null,
+      totalExperience: String(values?.totalExperience) || null,
+      relevantSalesforceExperience:
+        String(values?.relevantSalesforceExperience) || null,
+      linkedInUrl: values?.linkedInUrl || null,
+      trailheadUrl: values?.trailheadUrl || null,
+      preferredLocation: values?.preferredLocation || [],
+      currentLocation: values?.currentLocation || null,
+      preferredJobType: values?.preferredJobType || [],
+      skillsJson,
+      primaryClouds,
+      secondaryClouds,
+      certifications: values?.certifications || [],
+      workExperience: experienceList,
+      education: educationList,
+      rateCardPerHour: values.rateCardPerHour || {},
+    };
+
+    // ⭐⭐⭐ ADD THIS ⭐⭐⭐
+if (editRecord && editRecord.id) {
+  payload.id = editRecord.id;
+}
+
+    // -------------------------------
+    // 4️⃣ FOR VENDOR POPUP MODE
+    // -------------------------------
+    if (Reciviedrole) {
+      handleFormDetails(payload);
+      setModalVisible(false);
+      form.resetFields();
+      setPrimarySkills([]);
+      setSecondarySkills([]);
+      setPrimaryClouds([]);
+      setSecondaryClouds([]);
+      setEducationList([]);
+      setExperienceList([]);
+      return;
+    }
+
+    // -------------------------------
+    // 5️⃣ SAVE TO BACKEND
+    // -------------------------------
+    const response = await profiledata(payload);
+
+    if (response?.status === "success") {
+      messageAPI.success("Profile updated successfully!");
+    } else {
+      messageAPI.error("Failed to update profile. Please try again.");
+    }
+  } catch (error) {
+    console.error("Profile update error:", error);
+    messageAPI.error("Failed to update profile. Please try again.");
+  } finally {
+    setSubmitLoading(false);
+  }
+};
+
 
   const onFinishFailed = (errorInfo) => {
     console.log("Failed:", errorInfo);
@@ -466,12 +658,26 @@ const UpdateUserProfile = ({
           <Row gutter={16}>
             {/* Profile Picture */}
             <Col span={24}>
-              <Form.Item label="Upload Profile Picture" name="profilePicture">
+              <Form.Item label="Upload Profile Picture .Jpg,.Png,.Jpeg" name="profilePicture">
                 <Upload
                   listType="picture-card"
+                  fileList={fileList}
                   maxCount={1}
-                  beforeUpload={() => false}
+                   accept=".jpg,.jpeg,.png"
+                  // beforeUpload={() => false}
+                  beforeUpload={(file) => {
+  const allowed = ["image/jpeg", "image/png", "image/jpg"];
+  if (!allowed.includes(file.type)) {
+    message.error("Only JPG, JPEG, PNG images are allowed!");
+    return Upload.LIST_IGNORE; 
+  }
+  return false;
+}}
+
                   onChange={(info) => {
+                    // form.setFieldsValue({ profilePicture: info.file });
+                    // form.setFieldsValue({ profilePicture: info.file.originFileObj });
+                    setFileList(info.fileList); 
                     form.setFieldsValue({ profilePicture: info.file });
                   }}
                 >
@@ -586,7 +792,12 @@ const UpdateUserProfile = ({
                   {
                     required: true,
                     message: "Please enter the candidate's role!",
+                    
                   },
+                   {
+  pattern: /^[A-Za-z0-9 ]+$/,
+  message: "Only letters, numbers and spaces are allowed!",
+}
                 ]}
               >
                 <Input placeholder="e.g., Salesforce Developer" />
@@ -832,11 +1043,13 @@ const UpdateUserProfile = ({
                 name="certifications"
                 rules={[
                   { required: true, message: "Please enter certifications!" },
+                  
                 ]}
               >
                 <ReusableSelect
                   placeholder="Select or add certifications"
                   fetchFunction={GetCertifications}
+                  
                   addFunction={PostCertifications}
                   single={false}
                 />
@@ -899,14 +1112,15 @@ const UpdateUserProfile = ({
                 rules={[
                   { required: true, message: "Please enter Trailhead URL!" },
                   {
-                    pattern:
-                      /^https:\/\/(www\.)?trailblazer\.me\/id\/[A-Za-z0-9_-]+\/?$/,
+                    // pattern:
+                    //   /^https:\/\/(www\.)?trailblazer\.me\/id\/[A-Za-z0-9_-]+\/?$/,
+                     pattern: /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
                     message:
-                      "Please enter a valid Trailhead URL (e.g. https://trailblazer.me/id/yourprofile)",
+                       "Please enter a valid Trailhead URL (e.g. https://www.salesforce.com/trailblazer/yourprofile)",
                   },
                 ]}
               >
-                <Input placeholder="https://trailblazer.me/id/yourprofile" />
+                <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
               </Form.Item>
             </Col>
           </Row>
@@ -923,7 +1137,7 @@ const UpdateUserProfile = ({
               >
                 Submit
               </Button>
-              <GenerateResume form={form} />
+              {/* <GenerateResume form={form} /> */}
             </div>
           </Form.Item>
         </Form>

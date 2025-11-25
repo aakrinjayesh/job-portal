@@ -71,7 +71,7 @@ const RecruiterJobList = () => {
     setIsEditing(true);
     setEditingJob(job);
     setIsModalVisible(true);
-    // form.setFieldsValue(job);
+
     form.setFieldsValue({
       ...job,
       applicationDeadline: job.applicationDeadline
@@ -97,7 +97,6 @@ const RecruiterJobList = () => {
           try {
             const candidateResponse = await GetCandidateDeatils({ jobId: job.id });
             const applicantCount = candidateResponse?.total || 0;
-
             return { ...job, applicantCount };
           } catch (err) {
             console.error(`Error fetching candidates for job ${job.id}:`, err);
@@ -195,12 +194,13 @@ const RecruiterJobList = () => {
     const uploadFormData = new FormData();
     uploadFormData.append("file", file);
     uploadFormData.append("role", "company");
+
     try {
-      const response = await UploadPdf(uploadFormData); // API call
+      const response = await UploadPdf(uploadFormData);
       setUploadLoading(false);
-      const extracted = response?.extracted || {}; // JSON from backend
-      console.log("extracted", extracted);
-      // Auto-fill the form fields with extracted data
+
+      const extracted = response?.extracted || {};
+
       form.setFieldsValue({
         role: extracted.role || "",
         description: extracted.description || "",
@@ -221,6 +221,7 @@ const RecruiterJobList = () => {
           ? dayjs(extracted.applicationDeadline)
           : null,
       });
+
       messageApi.success("JD uploaded and fields auto-filled!");
     } catch (error) {
       console.error(error);
@@ -231,8 +232,6 @@ const RecruiterJobList = () => {
     }
   };
 
-  // ✅ Submit delete with reason
-
   const handleConfirmDelete = async () => {
     try {
       const values = await form.validateFields();
@@ -240,20 +239,18 @@ const RecruiterJobList = () => {
       const finalReason = reason === "Other" ? customReason : reason;
 
       setDeleteLoading(true);
-      // ✅ Prepare payload for API
+
       const payload = {
         jobIds: selectedJobs,
         deletedReason: finalReason,
       };
 
-      // ✅ Call your API helper function
       const response = await DeleteJobDetails(payload);
       if (response.status === "success") {
         setDeleteLoading(false);
         messageApi.success(response.message || "Jobs deleted successfully");
       }
 
-      // ✅ Update UI state
       setJobs((prev) => prev.filter((job) => !selectedJobs.includes(job.id)));
       setSelectedJobs([]);
       form.resetFields();
@@ -293,6 +290,7 @@ const RecruiterJobList = () => {
           Delete Selected
         </Button>
       </div>
+
       {contextHolder}
       {/* ✅ Delete Reason Modal */}
       <Modal
@@ -338,14 +336,9 @@ const RecruiterJobList = () => {
                 <Form.Item
                   label="Custom Reason"
                   name="customReason"
-                  rules={[
-                    { required: true, message: "Please enter your reason" },
-                  ]}
+                  rules={[{ required: true, message: "Please enter your reason" }]}
                 >
-                  <Input.TextArea
-                    rows={3}
-                    placeholder="Enter your custom reason"
-                  />
+                  <Input.TextArea rows={3} placeholder="Enter your custom reason" />
                 </Form.Item>
               ) : null
             }
@@ -360,7 +353,7 @@ const RecruiterJobList = () => {
             <Tooltip title="Click to view full job details">
               <Card
                 hoverable
-                onClick={() => navigate(`/company/job/${job.id}`)} // ✅ Navigate to Job Details
+                onClick={() => navigate(`/company/job/${job.id}`)}
                 style={{
                   borderRadius: 12,
                   background: "#fff",
@@ -396,24 +389,24 @@ const RecruiterJobList = () => {
                       gap: "4px",
                     }}
                   >
-                    <Text
-                      strong
-                      style={{
-                        fontSize: "16px",
-                        color: "#1890ff",
+                  <Text
+                    strong
+                    style={{
+                      fontSize: "16px",
+                      color: "#1890ff",
                         cursor: "pointer",
                         margin: 0,
                         padding: 0,
                         lineHeight: "1",
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/company/job/${job.id}`);
-                      }}
-                    >
-                      {job.role || job.title}
-                    </Text>
-                  </div>
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/company/job/${job.id}`);
+                    }}
+                  >
+                    {job.role || job.title}
+                  </Text>
+                </div>
                 </div>
 
 
@@ -438,7 +431,7 @@ const RecruiterJobList = () => {
                     }}
                   >
                     <Space>
-                      <Text>{job.experience}</Text>
+                    <Text>{job.experience}</Text>
                     </Space>
                     <Space>
                       <EnvironmentOutlined />
@@ -534,12 +527,12 @@ const RecruiterJobList = () => {
                     </Button>
                   </div>
                 </div>
-
               </Card>
             </Tooltip>
           </Col>
         ))}
-      </Row >
+      </Row>
+
       <Modal
         title={isEditing ? "Edit Job Post" : "Create Job Post"}
         open={isModalVisible}
@@ -556,6 +549,8 @@ const RecruiterJobList = () => {
         style={{ top: 40 }}
       >
         <Form form={form} layout="vertical" name="jobForm">
+
+          {/* ❌ Upload field — NO REQUIRED RULE ADDED */}
           <Form.Item label="Upload Job Description (PDF/DOCX)">
             <Upload
               customRequest={handleFileUpload}
@@ -569,9 +564,11 @@ const RecruiterJobList = () => {
             </Upload>
           </Form.Item>
 
+          {/* ALL BELOW HAVE rules={[{ required: true }]} */}
+
           <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-  <Input placeholder="e.g. Machine Learning Engineer" />
-</Form.Item>
+            <Input placeholder="e.g. Machine Learning Engineer" />
+          </Form.Item>
 
          <Form.Item
   name="description"
@@ -579,9 +576,9 @@ const RecruiterJobList = () => {
             rules={[{ required: true }]}
 >
             <TextArea rows={3} placeholder="Job Description" />
-</Form.Item>
+          </Form.Item>
 
-          <Form.Item name="employmentType" label="Employment Type">
+          <Form.Item name="employmentType" label="Employment Type" rules={[{ required: true }]}>
             <Select>
               <Option value="FullTime">Full Time</Option>
               <Option value="PartTime">Part Time</Option>
@@ -595,7 +592,7 @@ const RecruiterJobList = () => {
           >
             <Input placeholder="e.g. 3 years" />
           </Form.Item>
-          <Form.Item name="experienceLevel" label="Experience Level">
+          <Form.Item name="experienceLevel" label="Experience Level" rules={[{ required: true }]}>
             <Select>
               <Option value="Internship">Internship</Option>
               <Option value="EntryLevel">Entry Level</Option>
@@ -604,13 +601,13 @@ const RecruiterJobList = () => {
               <Option value="Lead">Lead</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="location" label="Location">
+          <Form.Item name="location" label="Location" rules={[{ required: true }]}>
             <Input placeholder="e.g. Bangalore, India" />
           </Form.Item>
           <Form.Item
             name="clouds"
             label="Clouds"
-            rules={[{ required: false }]}
+            rules={[{ required: true }]}
           >
             <Select
               mode="tags"
@@ -620,50 +617,45 @@ const RecruiterJobList = () => {
               tokenSeparators={[","]}
             />
           </Form.Item>
-          <Form.Item name="skills" label="Skills">
+          <Form.Item name="skills" label="Skills" rules={[{ required: true }]}>
             <Select
               mode="tags"
               style={{ width: "100%" }}
               placeholder="Add skills (press Enter)"
             />
           </Form.Item>
-          <Form.Item name="salary" label="Salary (per year)">
-            <InputNumber
-              style={{ width: "100%" }}
-              min={0}
-              formatter={(value) => `₹ ${value}`}
-            />
+
+          <Form.Item name="salary" label="Salary" rules={[{ required: true }]}>
+            <InputNumber style={{ width: "100%" }} min={0} formatter={(value) => `₹ ${value}`} />
           </Form.Item>
-          <Form.Item name="companyName" label="Company Name">
+
+          <Form.Item name="companyName" label="Company Name" rules={[{ required: true }]}>
             <Input placeholder="Company Name" />
           </Form.Item>
-          <Form.Item name="responsibilities" label="Responsibilities">
-            <Select
-              mode="tags"
-              style={{ width: "100%" }}
-              placeholder="Add each responsibility (press Enter)"
-            />
+
+          <Form.Item name="responsibilities" label="Responsibilities" rules={[{ required: true }]}>
+            <Select mode="tags" placeholder="Add responsibilities" />
           </Form.Item>
-          <Form.Item name="qualifications" label="Qualifications">
-            <Select
-              mode="tags"
-              style={{ width: "100%" }}
-              placeholder="Add each qualification (press Enter)"
-            />
+
+          <Form.Item name="qualifications" label="Qualifications" rules={[{ required: true }]}>
+            <Select mode="tags" placeholder="Add qualifications" />
           </Form.Item>
-          <Form.Item name="jobType" label="Job Type">
+
+          <Form.Item name="jobType" label="Job Type" rules={[{ required: true }]}>
             <Select>
               <Option value="Remote">Remote</Option>
               <Option value="Onsite">Onsite</Option>
               <Option value="Hybrid">Hybrid</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="status" label="Status">
+
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
             <Select>
               <Option value="Open">Open</Option>
               <Option value="Closed">Closed</Option>
             </Select>
           </Form.Item>
+
           <Form.Item
             name="applicationDeadline"
             label="Application Deadline"

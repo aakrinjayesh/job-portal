@@ -90,6 +90,50 @@ const createVendorCandidate = async (req, res) => {
 };
 
 // ✅ Update vendor candidate
+// const updateVendorCandidate = async (req, res) => {
+//   try {
+//     const userAuth = req.user;
+//     const { id, ...data } = req.body;
+
+//     if (userAuth.role !== "company") {
+//       return res.status(403).json({
+//         status: "failed",
+//         message: "Access denied. Only vendors can update candidates.",
+//       });
+//     }
+
+//     const existingCandidate = await prisma.userProfile.findFirst({
+//       where: {
+//         id,
+//         vendorId: userAuth.id,
+//       },
+//     });
+
+//     if (!existingCandidate) {
+//       return res.status(404).json({
+//         status: "failed",
+//         message: "Candidate not found or not authorized to update.",
+//       });
+//     }
+
+//     const updatedCandidate = await prisma.userProfile.update({
+//       where: { id },
+//       data,
+//     });
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Candidate updated successfully.",
+//       data: updatedCandidate,
+//     });
+//   } catch (err) {
+//     console.error("Error updating vendor candidate:", err);
+//     return res.status(500).json({
+//       status: "failed",
+//       message: "Error updating vendor candidate.",
+//     });
+//   }
+// };
 const updateVendorCandidate = async (req, res) => {
   try {
     const userAuth = req.user;
@@ -116,9 +160,14 @@ const updateVendorCandidate = async (req, res) => {
       });
     }
 
+    // ⭐ Ignore undefined fields (very important)
+    const safeData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== undefined)
+    );
+
     const updatedCandidate = await prisma.userProfile.update({
       where: { id },
-      data,
+      data: safeData,
     });
 
     return res.status(200).json({
@@ -134,6 +183,7 @@ const updateVendorCandidate = async (req, res) => {
     });
   }
 };
+
 
 // ✅ Delete vendor candidate (hard delete)
 const deleteVendorCandidate = async (req, res) => {

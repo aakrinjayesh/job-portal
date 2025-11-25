@@ -5,7 +5,7 @@ UploadResumeValidator,
 } from '../validators/userValidators.js'
 
 import { 
-  UploadResume, updateProfiledetails,  getUserProfileDetails
+  UploadResume, updateProfiledetails,  getUserProfileDetails,uploadProfilePicture
 } from '../controllers/profileControllers.js'
 
 
@@ -32,6 +32,16 @@ userRouter.post('/profile',
 
 // for the below just pass {} as payload
 userRouter.post('/profile/details', authenticateToken, getUserProfileDetails);
+
+// NEW: Profile Picture Route
+// --------------------------
+userRouter.post(
+  "/profile/upload-picture",
+  authenticateToken,
+  upload.single("file"),
+  uploadProfilePicture
+);
+
 
 
 

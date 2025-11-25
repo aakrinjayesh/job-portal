@@ -355,6 +355,24 @@ export async function ResetPasswords(payload) {
   }
 }
 
+export async function uploadProfilePicture(formData) {
+  try {
+    const response = await axiosInstance.post(
+      "/profile/upload-picture",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return response.data;  // RETURN ONLY DATA
+  } catch (error) {
+    console.error("Upload picture API error:", error);
+    throw error;
+  }
+}
+
+
 
 
 

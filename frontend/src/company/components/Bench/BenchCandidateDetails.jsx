@@ -78,7 +78,7 @@ const BenchCandidateDetails = ({ selectedCandidate }) => {
     >
       {/* Header Section */}
       <Row align="middle" gutter={16}>
-        <Col flex="80px">
+        {/* <Col flex="80px">
           <Avatar
             size={80}
             icon={<UserOutlined />}
@@ -88,7 +88,34 @@ const BenchCandidateDetails = ({ selectedCandidate }) => {
               fontSize: 28,
             }}
           />
-        </Col>
+        </Col> */}
+
+        <Col flex="80px">
+  <Avatar
+    size={80}
+    // if profilePicture exists, use it; add ?t=... to bust cache when url changes
+    src={
+      selectedCandidate?.profilePicture
+        ? `${selectedCandidate.profilePicture}?t=${new Date().getTime()}`
+        : undefined
+    }
+    icon={!selectedCandidate?.profilePicture ? <UserOutlined /> : null}
+    style={{
+      backgroundColor: selectedCandidate?.profilePicture ? undefined : "#1677ff",
+      color: selectedCandidate?.profilePicture ? undefined : "#fff",
+      fontSize: 28,
+      objectFit: "cover",
+    }}
+    // when image fails to load, fallback to initials/icon
+    onError={(e) => {
+      // remove src to show icon fallback
+      e.currentTarget.src = "";
+    }}
+    // ensure React will re-render Avatar when profilePicture changes
+    key={selectedCandidate?.profilePicture || "no-profile-pic"}
+  />
+</Col>
+
         <Col flex="auto">
           <Title level={2} style={{ marginBottom: 0 }}>
             {name}

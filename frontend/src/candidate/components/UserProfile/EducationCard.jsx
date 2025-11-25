@@ -158,7 +158,12 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
           <Form.Item
             name="name"
             label="Institute Name"
-            rules={[{ required: true, message: "Please enter education name" }]}
+            rules={[{ required: true, message: "Please enter education name" },
+               {
+    pattern: /^[A-Za-z0-9 .,&-]+$/,
+    message: "Only letters and spaces are allowed!",
+  },
+            ]}
           >
             <Input placeholder="e.g. B.Tech Computer Science" />
           </Form.Item>
@@ -166,7 +171,7 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
           <Form.Item
             name="yearRange"
             label="Year Range"
-            rules={[{ required: true, message: "Please select year range" }]}
+            rules={[{ required: true, message: "Please select year range" },]}
           >
             <RangePicker picker="year" style={{ width: "100%" }} />
           </Form.Item>
@@ -174,7 +179,12 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
           <Form.Item
             name="educationType"
             label="Education Type"
-            rules={[{ required: true, message: "Please enter education type" }]}
+            rules={[{ required: true, message: "Please enter education type" },
+               {
+     pattern: /^[A-Za-z0-9 .,&-]+$/,
+    message: "Only letters and spaces are allowed!",
+  },
+            ]}
           >
             <Input placeholder="e.g. Undergraduate, High School" />
           </Form.Item>

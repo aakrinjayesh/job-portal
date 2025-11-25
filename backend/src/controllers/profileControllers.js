@@ -1,6 +1,8 @@
 import prisma from '../config/prisma.js'
 import extractTextFromBase64 from '../utils/extractText.js'
 import { extractResumeSections } from '../utils/llmTextExtractor.js'
+import fs from "fs";
+import path from "path";
 
 
 
@@ -169,10 +171,47 @@ const getUserProfileDetails = async (req, res) => {
   }
 };
 
+// NEW: Upload Profile Picture
+const uploadProfilePicture = async (req, res) => {
+  try {
+    console.log("📸 Upload API hit. File:", req.file);
 
+    if (!req.file) {
+      return res.status(400).json({
+        status: "failed",
+        message: "No file uploaded",
+      });
+    }
 
+    const fileExt = req.file.originalname.split(".").pop();
+    const fileName = `${Date.now()}.${fileExt}`;
 
+    const uploadDir = path.join(process.cwd(), "uploads");
+
+    // Ensure folder exists
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+
+    const savePath = path.join(uploadDir, fileName);
+    fs.writeFileSync(savePath, req.file.buffer);
+
+    const fileUrl = `${process.env.BASE_URL}/uploads/${fileName}`;
+
+    return res.status(200).json({
+      status: "success",
+      url: fileUrl,
+    });
+
+  } catch (error) {
+    console.error("Profile Picture Upload Error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Upload failed",
+    });
+  }
+};
 
 export { 
   // userRegister, userLogin, 
-  UploadResume, updateProfiledetails, getUserProfileDetails}
+  UploadResume, updateProfiledetails, getUserProfileDetails,uploadProfilePicture}
