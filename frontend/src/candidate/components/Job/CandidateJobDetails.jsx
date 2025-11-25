@@ -22,7 +22,10 @@ const CandidateJobDetails = () => {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
-  const { type, jobids } = location.state;
+  const type = location?.state?.type;
+  const jobids = location?.state?.jobids;
+  const [ApplyLoading, setApplyLoading] = useState(false);
+  const [messageAPI, contextHolder] = message.useMessage();
 
   console.log("jobsids", jobids);
   console.log("type", type);
@@ -37,7 +40,7 @@ const CandidateJobDetails = () => {
       const response = await GetJobDetails(payload);
       setJob(response?.job);
     } catch (error) {
-      message.error("Failed to load job details");
+      messageAPI.error("Failed to load job details");
       console.error(error);
     } finally {
       setLoading(false);
@@ -50,6 +53,7 @@ const CandidateJobDetails = () => {
 
   const handleApply = async () => {
     console.log("apply button clicked");
+    setApplyLoading(true);
     try {
       const payload = {
         jobId: id,
@@ -57,30 +61,32 @@ const CandidateJobDetails = () => {
       console.log("payload", payload);
       const resp = await ApplyJob(payload);
       if (resp.status === "success") {
-        message.success(resp.message);
-      } else if (resp.status === "failed") {
-        message.error(resp.messages);
+        messageAPI.success(resp.message || "Successfully applied");
+      } else {
+        messageAPI.error(resp.message || "Failed to apply Job");
       }
       console.log("apply job response:", resp);
-
-      if (resp?.status === "success" || resp?.success) {
-        message.success(resp?.message || "Application submitted!");
-      } else {
-        message.error(resp?.message || "Something went wrong");
-      }
     } catch (error) {
       console.log("error at apply", error);
       message.error("Failed to apply for the job");
+    } finally {
+      setApplyLoading(false);
     }
   };
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
+      {contextHolder}
       <Button
         type="link"
         onClick={() =>
           navigate(
-            type === "save" ? "/candidate/jobs/saved" : "/candidate/jobs"
+            // type === "save" ? "/candidate/jobs/saved" : "/candidate/jobs"
+            type === "save"
+              ? "/candidate/jobs/saved"
+              : type === "apply"
+              ? "/candidate/jobs/applied"
+              : "/candidate/jobs"
           )
         }
         icon={<ArrowLeftOutlined />}
@@ -141,6 +147,7 @@ const CandidateJobDetails = () => {
         <Button
           type="primary"
           onClick={handleApply}
+          loading={ApplyLoading}
           disabled={jobids?.includes(id)}
         >
           {jobids?.includes(id) ? "Already Applied" : "Apply Now"}

@@ -17,6 +17,7 @@ const ReusableSelect = ({
   const [loading, setLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [name, setName] = useState("");
+  const [messageAPI, contextHolder] = message.useMessage();
   const inputRef = useRef(null);
 
   // Fetch items on component mount
@@ -31,7 +32,7 @@ const ReusableSelect = ({
           setItems(response.data);
         }
       } catch (error) {
-        message.error("Failed to load items");
+        messageAPI.error("Failed to load items");
         console.error("Error fetching items:", error);
       } finally {
         setLoading(false);
@@ -49,36 +50,36 @@ const ReusableSelect = ({
     e.preventDefault();
 
     if (!name.trim()) {
-      message.warning("Please enter a value");
+      messageAPI.warning("Please enter a value");
       return;
     }
 
     if (!addFunction) {
-      message.error("Add function not provided");
+      messageAPI.error("Add function not provided");
       return;
     }
 
     setAddLoading(true);
     try {
       const response = await addFunction({ name: name.trim() });
+      const newItem = {
+        id: response.id || Date.now(),
+        name: name.trim(),
+        isVerified: false,
+      };
+
+      setItems([...items, newItem]);
+      setName("");
+
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
 
       if (response.status === "success") {
-        const newItem = {
-          id: response.id,
-          name: name.trim(),
-          isVerified: false,
-        };
-
-        setItems([...items, newItem]);
-        setName("");
-        message.success("Item added successfully");
-
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 0);
+        messageAPI.success("Item added successfully");
       }
     } catch (error) {
-      message.error("Failed to add item");
+      messageAPI.error("Failed to add item");
       console.error("Error adding item:", error);
     } finally {
       setAddLoading(false);
@@ -96,49 +97,52 @@ const ReusableSelect = ({
   };
 
   return (
-    <Select
-      mode={single === false && "multiple"}
-      style={style}
-      className={className}
-      placeholder={placeholder}
-      value={value}
-      onChange={onSelectChange}
-      disabled={disabled}
-      loading={loading}
-      filterOption={(input, option) =>
-        (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-      }
-      popupRender={(menu) => (
-        <>
-          {menu}
-          <Divider style={{ margin: "8px 0" }} />
-          <Space style={{ padding: "0 8px 4px", width: "100%" }}>
-            <Input
-              placeholder="Add new item"
-              ref={inputRef}
-              value={name}
-              onChange={onNameChange}
-              onKeyDown={(e) => e.stopPropagation()}
-              onKeyPress={handleKeyPress}
-              disabled={addLoading}
-              style={{ flex: 1 }}
-            />
-            <Button
-              type="text"
-              icon={<PlusOutlined />}
-              onClick={addItem}
-              loading={addLoading}
-            >
-              Add
-            </Button>
-          </Space>
-        </>
-      )}
-      options={items.map((item) => ({
-        label: item.name,
-        value: item.name,
-      }))}
-    />
+    <>
+      {contextHolder}
+      <Select
+        mode={single === false && "multiple"}
+        style={style}
+        className={className}
+        placeholder={placeholder}
+        value={value}
+        onChange={onSelectChange}
+        disabled={disabled}
+        loading={loading}
+        filterOption={(input, option) =>
+          (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+        }
+        popupRender={(menu) => (
+          <>
+            {menu}
+            <Divider style={{ margin: "8px 0" }} />
+            <Space style={{ padding: "0 8px 4px", width: "100%" }}>
+              <Input
+                placeholder="Add new item"
+                ref={inputRef}
+                value={name}
+                onChange={onNameChange}
+                onKeyDown={(e) => e.stopPropagation()}
+                onKeyPress={handleKeyPress}
+                disabled={addLoading}
+                style={{ flex: 1 }}
+              />
+              <Button
+                type="text"
+                icon={<PlusOutlined />}
+                onClick={addItem}
+                loading={addLoading}
+              >
+                Add
+              </Button>
+            </Space>
+          </>
+        )}
+        options={items.map((item) => ({
+          label: item.name,
+          value: item.name,
+        }))}
+      />
+    </>
   );
 };
 

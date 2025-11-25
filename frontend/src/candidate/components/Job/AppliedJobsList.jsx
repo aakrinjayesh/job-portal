@@ -28,7 +28,7 @@ const AppliedJobsList = ({ applications }) => {
   const navigate = useNavigate();
 
   const handleCardClick = (jobId) => {
-    navigate(`/candidate/job/${jobId}`);
+    navigate(`/candidate/job/${jobId}`, { state: { type: "apply" } });
   };
 
   return (
