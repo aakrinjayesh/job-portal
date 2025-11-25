@@ -23,7 +23,8 @@ import {
   SearchOutlined,
   LogoutOutlined,
   WhatsAppOutlined,
-  CloudOutlined,
+  SaveFilled,
+ CloudOutlined,
   EnvironmentOutlined,
   StarFilled,
   MenuUnfoldOutlined,
@@ -44,6 +45,7 @@ const CompanyLayout = ({ children }) => {
     bench: "/company/bench",
     findjob: "/company/job/find",
     findbench: "/company/bench/find",
+    savedjobs: "/company/jobs/saved",
     chat: "/company/chat",
     logout: "/login",
   };
@@ -60,15 +62,20 @@ const CompanyLayout = ({ children }) => {
       label: "My Jobs",
       icon: <FileTextOutlined />,
     },
+     {
+      key: "findjob",
+      label: "Find Jobs",
+      icon: <SearchOutlined />,
+    },
+    {
+      key: "savedjobs",
+      label: "Saved Jobs",
+      icon: <SaveFilled />,
+    },
     {
       key: "bench",
       label: "My Bench",
       icon: <TeamOutlined />,
-    },
-    {
-      key: "findjob",
-      label: "Find Jobs",
-      icon: <SearchOutlined />,
     },
     {
       key: "findbench",
@@ -142,7 +149,7 @@ const CompanyLayout = ({ children }) => {
             size={54}
             icon={<UserOutlined />}
             style={{ cursor: "pointer" }}
-            onClick={() => navigate("/candidate/dashboard")}
+            onClick={() => navigate("/company/dashboard")}
           />
           {!collapsed && (
             <>

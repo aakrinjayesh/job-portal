@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Card, Typography, Collapse, Slider, Divider } from "antd";
+import { Card, Typography, Collapse, Slider, Divider, InputNumber } from "antd";
 import FilterSection from "./FilterSection";
+import AddSkillInput from "./AddSkillInput";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Panel } = Collapse;
 
 const FiltersPanel = ({ onFiltersChange }) => {
-  // Sample dynamic data
-  const salaryOptions = [
-    { label: "0-3 Lakhs", count: 1443 },
-    { label: "3-6 Lakhs", count: 6255 },
-    { label: "6-10 Lakhs", count: 8221 },
-    { label: "10-15 Lakhs", count: 5403 },
-    { label: "15-20 Lakhs", count: 2401 },
-    { label: "20-30 Lakhs", count: 982 },
-  ];
+  const [experience, setExperience] = useState(30);
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [selectedJobTypes, setSelectedJobTypes] = useState([]);
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [clouds, setClouds] = useState([]);
 
   const locationOptions = [
     { label: "Bangalore", count: 4543 },
@@ -25,78 +23,120 @@ const FiltersPanel = ({ onFiltersChange }) => {
     { label: "Chennai", count: 1343 },
   ];
 
-  // State management
-  const [experience, setExperience] = useState(30);
-  const [selectedSalaries, setSelectedSalaries] = useState([]);
-  const [selectedLocations, setSelectedLocations] = useState([]);
+  const employeeTypeOptions = [
+    { label: "FullTime" },
+    { label: "PartTime" },
+    { label: "Contract" },
+    { label: "Internship" },
+    { label: "Freelance" },
+  ];
 
-  // Handle experience slider
-  const handleExperienceChange = (value) => {
-    setExperience(value);
-  };
+  const jobTypeOptions = [
+    { label: "On-site" },
+    { label: "Remote" },
+    { label: "Hybrid" },
+  ];
 
-  // Combined filters update
+  const salesforceSkillSuggestions = ["Apex", "Aura", "LWC", "SOQL"];
+  const salesforceCloudSuggestions = ["Sales Cloud", "Service Cloud", "Marketing Cloud"];
+
+  // Handle Changes
   useEffect(() => {
-    const filters = {
-      experience: experience === 30 ? "Any" : `${experience} Yrs`,
-      salary: selectedSalaries,
+    onFiltersChange?.({
+      experience: experience === 30 ? null : experience,
       location: selectedLocations,
-    };
-    console.log("Filters Updated →", filters);
-    if (onFiltersChange) onFiltersChange(filters);
-  }, [experience, selectedSalaries, selectedLocations]);
+      jobType: selectedJobTypes,
+      employmentType: selectedEmploymentTypes,
+      skills,
+      clouds,
+    });
+  }, [
+    experience,
+    selectedLocations,
+    selectedJobTypes,
+    selectedEmploymentTypes,
+    skills,
+    clouds,
+  ]);
 
   return (
-    <Card style={{ borderRadius: 8 }}>
-      <Title level={4}>All Filters</Title>
+    <Collapse defaultActiveKey={["filters"]} ghost>
+      {/* LEFT SIDE COLLAPSE HEADER */}
+      <Panel header={<Text strong>Filters</Text>} key="filters">
+        <Card style={{ borderRadius: 8 }}>
 
-      <Collapse
-        defaultActiveKey={["1", "2", "3"]}
-        expandIconPosition="end"
-        ghost
-      >
-        {/* Experience Section */}
-        <Panel header={<Text strong>Experience</Text>} key="1">
+          {/* EXPERIENCE */}
+          <Text strong>Experience</Text>
           <Slider
             min={0}
             max={30}
-            defaultValue={30}
-            tooltip={{
-              formatter: (val) => (val === 30 ? "Any" : `${val} Yrs`),
-            }}
-            onChange={handleExperienceChange}
+            value={experience}
+            tooltip={{ formatter: (val) => (val === 30 ? "Any" : `${val} Yrs`) }}
+            onChange={setExperience}
           />
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <Text>0 Yrs</Text>
-            <Text>Any</Text>
-          </div>
-        </Panel>
-
-        <Divider style={{ margin: "8px 0" }} />
-
-        {/* Salary Section */}
-        <Panel header={<Text strong>Salary</Text>} key="2">
-          <FilterSection
-            title="Salary"
-            options={salaryOptions}
-            selected={selectedSalaries}
-            onChange={setSelectedSalaries}
+          <InputNumber
+            min={0}
+            max={30}
+            value={experience}
+            onChange={(value) => setExperience(value || 0)}
+            style={{ width: "100%" }}
           />
-        </Panel>
 
-        <Divider style={{ margin: "8px 0" }} />
+          <Divider />
 
-        {/* Location Section */}
-        <Panel header={<Text strong>Location</Text>} key="3">
+          {/* LOCATION */}
+          <Text strong>Location</Text>
           <FilterSection
-            title="Location"
             options={locationOptions}
             selected={selectedLocations}
             onChange={setSelectedLocations}
           />
-        </Panel>
-      </Collapse>
-    </Card>
+
+          <Divider />
+
+          {/* JOB TYPE */}
+          <Text strong>Job Type</Text>
+          <FilterSection
+            options={jobTypeOptions}
+            selected={selectedJobTypes}
+            onChange={setSelectedJobTypes}
+          />
+
+          <Divider />
+
+          {/* EMPLOYMENT TYPE */}
+          <Text strong>Employment Type</Text>
+          <FilterSection
+            options={employeeTypeOptions}
+            selected={selectedEmploymentTypes}
+            onChange={setSelectedEmploymentTypes}
+          />
+
+          <Divider />
+
+          {/* SKILLS */}
+          {/* <Text strong>Skills</Text> */}
+          <AddSkillInput
+            label="Skills"
+            values={skills}
+            onChange={setSkills}
+            suggestions={salesforceSkillSuggestions}
+          />
+
+          <Divider />
+
+          {/* CLOUDS */}
+          <Text strong>Clouds</Text>
+          <AddSkillInput
+            label="Clouds"
+            values={clouds}
+            onChange={setClouds}
+            suggestions={salesforceCloudSuggestions}
+          />
+
+        </Card>
+      </Panel>
+    </Collapse>
   );
 };
 

@@ -21,6 +21,7 @@ import Signup from "./pages/Signup";
 import CreatePassword from "./pages/CreatePassword";
 import ChatPage from "./chat/pages/chat";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import CompanySavedJobs from "./company/pages/CompanySavedJobs";
 // import ResetPassword from "./pages/ResetPassword";
 
 function App() {
@@ -148,15 +149,6 @@ function App() {
         />
 
         <Route
-          path="/company/bench"
-          element={
-            <CompanyLayout>
-              <Bench />
-            </CompanyLayout>
-          }
-        />
-
-        <Route
           path="/company/jobs"
           element={
             <CompanyLayout>
@@ -165,7 +157,7 @@ function App() {
           }
         />
 
-        <Route
+         <Route
           path="/company/job/find"
           element={
             <CompanyLayout>
@@ -175,6 +167,15 @@ function App() {
         />
 
         <Route
+            path="/company/jobs/saved"
+            element={
+              <CompanyLayout>
+                <CompanySavedJobs />
+              </CompanyLayout>
+            }
+          />
+
+        <Route
           path="/company/job/:id"
           element={
             <CompanyLayout>
@@ -182,6 +183,16 @@ function App() {
             </CompanyLayout>
           }
         />
+
+         <Route
+          path="/company/bench"
+          element={
+            <CompanyLayout>
+              <Bench />
+            </CompanyLayout>
+          }
+        />
+
         <Route
           path="/company/bench/find"
           element={

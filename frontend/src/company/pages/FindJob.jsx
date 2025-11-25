@@ -84,60 +84,104 @@ function FindJob() {
   }, [page]);
 
   const filterJobs = useCallback((filters, allJobs) => {
-    return allJobs.filter((job) => {
-      // --- EXPERIENCE FILTER ---
-      if (filters.experience && filters.experience !== "Any") {
-        const jobExp = job.experience?.toString().toLowerCase() || "";
-        const filterExp = filters.experience.toLowerCase();
+  return allJobs.filter((job) => {
 
-        // Regex: match "3", "3 years", "3+ years", etc.
-        const expRegex = new RegExp(
-          `\\b${filterExp.replace("+", "\\+")}\\b`,
-          "i"
-        );
-        if (!expRegex.test(jobExp)) return false;
+    // --- EXPERIENCE FILTER ---
+    if (
+      filters.experience !== null &&
+      filters.experience !== undefined &&
+      filters.experience !== "Any"
+    ) {
+      const enteredExp = parseInt(filters.experience);
+      const jobExp = parseInt(job.experience);
+
+      if (!isNaN(enteredExp) && !isNaN(jobExp)) {
+        if (jobExp < enteredExp) return false;
       }
+    }
 
-      // --- SALARY FILTER ---
-      if (filters.salary && filters.salary.length > 0) {
-        // Convert job.salary (number) to lakhs for easier comparison
-        const jobSalaryInLakhs = job.salary / 100000;
+    // --- SKILLS FILTER ---
+    if (filters.skills && filters.skills.length > 0) {
+      const jobSkills = (job.skills || []).map((s) => s.toLowerCase());
 
-        const matches = filters.salary.some((range) => {
-          // e.g. "0-3 Lakhs", "3-6 Lakhs", "10+ Lakhs"
-          const clean = range.replace(" Lakhs", "").trim();
+      const matches = filters.skills.every((skill) =>
+        jobSkills.includes(skill.toLowerCase())
+      );
 
-          if (clean.includes("-")) {
-            const [minStr, maxStr] = clean.split("-");
-            const min = parseFloat(minStr);
-            const max = parseFloat(maxStr);
-            return jobSalaryInLakhs >= min && jobSalaryInLakhs <= max;
-          } else if (clean.includes("+")) {
-            const min = parseFloat(clean);
-            return jobSalaryInLakhs >= min;
-          } else {
-            // exact match (e.g. "5 Lakhs")
-            const exact = parseFloat(clean);
-            return Math.abs(jobSalaryInLakhs - exact) < 0.1;
-          }
-        });
+      if (!matches) return false;
+    }
 
-        if (!matches) return false;
-      }
+    // --- CLOUDS FILTER ---
+    if (filters.clouds && filters.clouds.length > 0) {
+      const jobClouds = (job.clouds || []).map((s) => s.toLowerCase());
 
-      // --- LOCATION FILTER ---
-      if (filters.location && filters.location.length > 0) {
-        const jobLocation = job.location?.toLowerCase() || "";
-        const matches = filters.location.some((loc) => {
-          const regex = new RegExp(loc.toLowerCase(), "i");
-          return regex.test(jobLocation);
-        });
-        if (!matches) return false;
-      }
+      const matches = filters.clouds.every((cloud) =>
+        jobClouds.includes(cloud.toLowerCase())
+      );
 
-      return true;
-    });
-  }, []);
+      if (!matches) return false;
+    }
+
+    // --- SALARY FILTER ---
+    if (filters.salary && filters.salary.length > 0) {
+      const jobSalaryInLakhs = job.salary / 100000;
+
+      const matches = filters.salary.some((range) => {
+        const clean = range.replace(" Lakhs", "").trim();
+
+        if (clean.includes("-")) {
+          const [minStr, maxStr] = clean.split("-");
+          const min = parseFloat(minStr);
+          const max = parseFloat(maxStr);
+          return jobSalaryInLakhs >= min && jobSalaryInLakhs <= max;
+        } else if (clean.includes("+")) {
+          const min = parseFloat(clean);
+          return jobSalaryInLakhs >= min;
+        } else {
+          const exact = parseFloat(clean);
+          return Math.abs(jobSalaryInLakhs - exact) < 0.1;
+        }
+      });
+
+      if (!matches) return false;
+    }
+
+    // --- LOCATION FILTER ---
+    if (filters.location && filters.location.length > 0) {
+      const jobLocation = job.location?.toLowerCase() || "";
+      const matches = filters.location.some((loc) => {
+        const regex = new RegExp(loc.toLowerCase(), "i");
+        return regex.test(jobLocation);
+      });
+      if (!matches) return false;
+    }
+
+    // --- JOBTYPE FILTER ---
+    if (filters.jobType && filters.jobType.length > 0) {
+      const jobType = job.jobType?.toLowerCase() || "";
+      const matches = filters.jobType.some((type) => {
+         jobType.includes(type.toLowerCase())
+      });
+      if (!matches) return false;
+    }
+
+     
+   // --- EMPLOYMENT TYPE FILTER ---
+if (filters.employmentType && filters.employmentType.length > 0) {
+  const jobEmployment = job.employmentType?.toLowerCase() || "";
+
+  const matches = filters.employmentType.some((emp) =>
+    jobEmployment.includes(emp.toLowerCase())
+  );
+
+  if (!matches) return false;
+}
+
+    return true;
+  });
+}, []);
+
+
 
   // const handleFiltersChange = (filters) => {
   //   console.log("Received in jobs.jsx:", filters);
@@ -191,7 +235,7 @@ function FindJob() {
             )}
             {!hasMore && !loading && (
               <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
-                🎉 You’ve reached the end!
+                 You’ve reached the end!
               </p>
             )}
           </Card>

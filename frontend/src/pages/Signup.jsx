@@ -165,17 +165,25 @@ const Signup = () => {
             <Input placeholder="Email" size="large" />
           </Form.Item>
 
-          <Button
-            onClick={handleGenerateOtp}
-            type="default"
-            block
-            loading={generateLoading}
-            size="large"
-            disabled={isResendDisabled && timer > 0}
-            style={{ marginBottom: "10px" }}
-          >
-            {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
-          </Button>
+         <Button
+  onClick={timer === 0 ? handleGenerateOtp : null}
+  type="default"
+  block
+  loading={generateLoading}
+  size="large"
+  style={{
+    marginBottom: "10px",
+    backgroundColor: timer > 0 ? "#999" : "",   // Disabled color
+    color: timer > 0 ? "white" : "",
+    borderColor: timer > 0 ? "#999" : "",
+    pointerEvents: timer > 0 ? "none" : "auto",  // disable click
+    opacity: 1, // remove AntD fade effect
+    cursor: timer > 0 ? "not-allowed" : "pointer"
+  }}
+>
+  {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
+</Button>
+
 
           <Form.Item
             name="otp"
