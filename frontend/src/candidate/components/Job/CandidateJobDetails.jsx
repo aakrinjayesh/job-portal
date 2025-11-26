@@ -26,13 +26,21 @@ const CandidateJobDetails = () => {
   const jobids = location?.state?.jobids;
   const [ApplyLoading, setApplyLoading] = useState(false);
   const [messageAPI, contextHolder] = message.useMessage();
+  const [isApplied, setIsApplied] = useState(false);
 
   console.log("jobsids", jobids);
   console.log("type", type);
 
   useEffect(() => {
     fetchJobDetails();
-  }, [id]);
+    // 2. Check if already applied based on passed history
+    if (jobids && jobids.includes(id)) {
+      console.log("is applied true");
+      setIsApplied(true);
+    } else {
+      console.log("isapplied false");
+    }
+  }, [id, jobids]);
 
   const fetchJobDetails = async () => {
     try {
@@ -61,6 +69,7 @@ const CandidateJobDetails = () => {
       console.log("payload", payload);
       const resp = await ApplyJob(payload);
       if (resp.status === "success") {
+        setIsApplied(true);
         messageAPI.success(resp.message || "Successfully applied");
       } else {
         messageAPI.error(resp.message || "Failed to apply Job");
@@ -148,9 +157,9 @@ const CandidateJobDetails = () => {
           type="primary"
           onClick={handleApply}
           loading={ApplyLoading}
-          disabled={jobids?.includes(id)}
+          disabled={isApplied || type === "apply"}
         >
-          {jobids?.includes(id) ? "Already Applied" : "Apply Now"}
+          {isApplied || type === "apply" ? "Already Applied" : "Apply Now"}
         </Button>
       </Card>
     </div>

@@ -13,6 +13,7 @@ import {
 import axios from "axios";
 import { ArrowLeftOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import { GetJobDetails } from "../../api/api";
+import { useLocation } from "react-router-dom";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -21,6 +22,14 @@ const JobDetails = () => {
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const location = useLocation();
+
+  const type = location?.state?.type;
+  const portal = location?.state?.portal;
+  // console.log("location objects", location);
+  console.log("type in compant jobdetails", type);
+  console.log("portal", portal);
 
   useEffect(() => {
     fetchJobDetails();
@@ -43,6 +52,16 @@ const JobDetails = () => {
     navigate("/company/candidates", { state: { id } });
   };
 
+  const handleBackButton = () => {
+    if (type === "save") {
+      navigate("/company/jobs/saved");
+    } else if (type === "find") {
+      navigate("/company/job/find");
+    } else {
+      navigate("/company/jobs");
+    }
+  };
+
   if (loading) return <Spin size="large" style={{ marginTop: 100 }} />;
 
   if (!job) return <Text type="danger">Job not found</Text>;
@@ -51,7 +70,7 @@ const JobDetails = () => {
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
       <Button
         type="link"
-        onClick={() => navigate("/company/jobs")}
+        onClick={handleBackButton}
         icon={<ArrowLeftOutlined />}
       >
         Back

@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Card,
@@ -9,7 +8,7 @@ import {
   Col,
   Tooltip,
   Divider,
-  Cascader ,
+  Cascader,
   message,
 } from "antd";
 import {
@@ -29,7 +28,7 @@ dayjs.extend(relativeTime);
 
 const { Text, Title, Paragraph } = Typography;
 
-const JobList = ({ jobs, lastJobRef, type, jobids }) => {
+const JobList = ({ jobs, lastJobRef, type, jobids, portal }) => {
   const navigate = useNavigate();
   const [sortedJobs, setSortedJobs] = useState(jobs);
   const [messageApi, contextHolder] = message.useMessage();
@@ -65,9 +64,12 @@ const JobList = ({ jobs, lastJobRef, type, jobids }) => {
     setSortedJobs(sorted);
   };
 
-  
   const handleCardClick = (id) => {
-    navigate(`/candidate/job/${id}`, { state: { type, jobids } });
+    if (portal === "company") {
+      navigate(`/company/job/${id}`, { state: { type, jobids, portal } });
+    } else {
+      navigate(`/candidate/job/${id}`, { state: { type, jobids } });
+    }
   };
 
   const handleSave = async (id) => {
@@ -87,142 +89,146 @@ const JobList = ({ jobs, lastJobRef, type, jobids }) => {
   };
 
   return (
-  <Row gutter={[16, 16]}>
-    {contextHolder}
+    <Row gutter={[16, 16]}>
+      {contextHolder}
 
-    {/* ✅ SORT DROPDOWN — shown ONLY once */}
-    <Col xs={24}>
-     <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+      {/* ✅ SORT DROPDOWN — shown ONLY once */}
+      <Col xs={24}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: 16,
+          }}
+        >
+          <Cascader
+            options={sortOptions}
+            onChange={handleSort}
+            placeholder="Sort Jobs"
+            style={{ width: 250 }}
+            allowClear
+          />
+        </div>
+      </Col>
 
-        <Cascader
-          options={sortOptions}
-          onChange={handleSort}
-          placeholder="Sort Jobs"
-          style={{ width: 250 }}
-          allowClear
-        />
-      </div>
-    </Col>
+      {/* ✅ DISPLAY SORTED JOBS */}
+      {sortedJobs?.map((job, index) => {
+        const isLastJob = index === sortedJobs?.length - 1;
 
-    {/* ✅ DISPLAY SORTED JOBS */}
-    {sortedJobs?.map((job, index) => {
-      const isLastJob = index === sortedJobs?.length - 1;
-
-      return (
-        <Col xs={24} key={job?.id} ref={isLastJob ? lastJobRef : null}>
-          <Card
-            hoverable
-            onClick={() => handleCardClick(job.id)}
-            style={{
-              borderRadius: 12,
-              background: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            }}
-          >
-            <div
+        return (
+          <Col xs={24} key={job?.id} ref={isLastJob ? lastJobRef : null}>
+            <Card
+              hoverable
+              onClick={() => handleCardClick(job.id)}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
+                borderRadius: 12,
+                background: "#fff",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}
             >
-              <Title level={5} style={{ margin: 0 }}>
-                {job?.role}
-              </Title>
-            </div>
-
-            <Space align="center" style={{ marginTop: 6 }}>
-              <Text strong style={{ color: "#1890ff" }}>
-                {job?.companyName}
-              </Text>
-              {job?.rating && (
-                <>
-                  <StarFilled style={{ color: "#faad14" }} />
-                  <Text>{job?.rating}</Text>
-                </>
-              )}
-            </Space>
-
-            <div style={{ marginTop: 12 }}>
-              <Space split={<Divider type="vertical" />} wrap>
-                {job?.experience && <Text>{job?.experience}</Text>}
-
-                {job?.location && (
-                  <Space>
-                    <EnvironmentOutlined />
-                    <Tooltip title={job?.location}>
-                      <Text>{job?.location}</Text>
-                    </Tooltip>
-                  </Space>
-                )}
-
-                {job?.salary && (
-                  <Text>₹{Number(job?.salary).toLocaleString()} PA</Text>
-                )}
-              </Space>
-            </div>
-
-            {job?.description && (
-              <Space
-                align="start"
-                style={{ marginTop: 12 }}
-                onClick={(e) => e.stopPropagation()}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
               >
-                <FileTextOutlined style={{ marginTop: 4 }} />
-                <Paragraph
-                  type="secondary"
-                  ellipsis={{
-                    rows: 2,
-                    expandable: true,
-                    symbol: "more",
-                  }}
-                  style={{ margin: 0 }}
-                >
-                  {job.description}
-                </Paragraph>
+                <Title level={5} style={{ margin: 0 }}>
+                  {job?.role}
+                </Title>
+              </div>
+
+              <Space align="center" style={{ marginTop: 6 }}>
+                <Text strong style={{ color: "#1890ff" }}>
+                  {job?.companyName}
+                </Text>
+                {job?.rating && (
+                  <>
+                    <StarFilled style={{ color: "#faad14" }} />
+                    <Text>{job?.rating}</Text>
+                  </>
+                )}
               </Space>
-            )}
 
-            <div style={{ marginTop: 12 }}>
-              {job.clouds?.map((cloud, index) => (
-                <Tag color="gray" key={index} style={{ borderRadius: 20 }}>
-                  {cloud}
-                </Tag>
-              ))}
-            </div>
-
-            {job?.skills?.length > 0 && (
               <div style={{ marginTop: 12 }}>
-                {job?.skills.map((skill, i) => (
-                  <Tag key={i} color="blue" style={{ borderRadius: 20 }}>
-                    {skill}
+                <Space split={<Divider type="vertical" />} wrap>
+                  {job?.experience && <Text>{job?.experience}</Text>}
+
+                  {job?.location && (
+                    <Space>
+                      <EnvironmentOutlined />
+                      <Tooltip title={job?.location}>
+                        <Text>{job?.location}</Text>
+                      </Tooltip>
+                    </Space>
+                  )}
+
+                  {job?.salary && (
+                    <Text>₹{Number(job?.salary).toLocaleString()} PA</Text>
+                  )}
+                </Space>
+              </div>
+
+              {job?.description && (
+                <Space
+                  align="start"
+                  style={{ marginTop: 12 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <FileTextOutlined style={{ marginTop: 4 }} />
+                  <Paragraph
+                    type="secondary"
+                    ellipsis={{
+                      rows: 2,
+                      expandable: true,
+                      symbol: "more",
+                    }}
+                    style={{ margin: 0 }}
+                  >
+                    {job.description}
+                  </Paragraph>
+                </Space>
+              )}
+
+              <div style={{ marginTop: 12 }}>
+                {job.clouds?.map((cloud, index) => (
+                  <Tag color="gray" key={index} style={{ borderRadius: 20 }}>
+                    {cloud}
                   </Tag>
                 ))}
               </div>
-            )}
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 12,
-              }}
-            >
-              {job?.createdAt && (
-                <Text type="secondary">
-                  Posted {dayjs(job?.createdAt).fromNow()} (
-                  {dayjs(job?.createdAt).format("MMM D, YYYY")})
-                </Text>
+              {job?.skills?.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  {job?.skills.map((skill, i) => (
+                    <Tag key={i} color="blue" style={{ borderRadius: 20 }}>
+                      {skill}
+                    </Tag>
+                  ))}
+                </div>
               )}
-            </div>
-          </Card>
-        </Col>
-      );
-    })}
-  </Row>
-);
 
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: 12,
+                }}
+              >
+                {job?.createdAt && (
+                  <Text type="secondary">
+                    Posted {dayjs(job?.createdAt).fromNow()} (
+                    {dayjs(job?.createdAt).format("MMM D, YYYY")})
+                  </Text>
+                )}
+              </div>
+            </Card>
+          </Col>
+        );
+      })}
+    </Row>
+  );
 };
 
 export default JobList;

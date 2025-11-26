@@ -94,7 +94,13 @@ function SavedJobs() {
           <Spin size="large" />
         </div>
       ) : jobs.length > 0 ? (
-        <JobList jobs={jobs} lastJobRef={lastJobRef} type="save" jobids={ids} />
+        <JobList
+          jobs={jobs}
+          lastJobRef={lastJobRef}
+          type="save"
+          jobids={ids}
+          portal={"candidate"}
+        />
       ) : (
         <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>
           No saved jobs found.
