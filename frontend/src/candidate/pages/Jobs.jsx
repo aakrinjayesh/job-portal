@@ -87,8 +87,13 @@ function Jobs() {
     return allJobs.filter((job) => {
       // --- EXPERIENCE FILTER ---
       if (filters.experience && filters.experience !== "Any") {
-        const jobExp = job.experience?.toString().toLowerCase() || "";
-        const filterExp = filters.experience.toLowerCase();
+  const jobExp = job.experience?.toString().toLowerCase() || "";
+
+  // convert array → string
+  const filterExp = (Array.isArray(filters.experience)
+    ? filters.experience[0]
+    : filters.experience
+  ).toString().toLowerCase();
 
         // Regex: match "3", "3 years", "3+ years", etc.
         const expRegex = new RegExp(
@@ -191,7 +196,7 @@ function Jobs() {
             )}
             {!hasMore && !loading && (
               <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
-                🎉 You’ve reached the end!
+                You’ve reached the end!
               </p>
             )}
           </Card>

@@ -37,8 +37,93 @@ const FiltersPanel = ({ onFiltersChange }) => {
     { label: "Hybrid" },
   ];
 
-  const salesforceSkillSuggestions = ["Apex", "Aura", "LWC", "SOQL"];
-  const salesforceCloudSuggestions = ["Sales Cloud", "Service Cloud", "Marketing Cloud"];
+  const salesforceSkillSuggestions = ["Apex",
+"Approvals",
+"Advanced Approvals",
+"API",
+"AP",
+"Azure DevOps",
+"Bitbucket",
+"Bugzilla",
+"Change Sets",
+"CI/CD",
+"CI/CD (Copado)",
+"Community Setup",
+"Copado",
+"Custom Obj",
+"Custom Objects",
+"Data Loader",
+"DataRaptors",
+"Dashboards",
+"Dell Boomi",
+"DocuSign Integration",
+"Einstein",
+"Fileds",
+"FlexCards",
+"Flows",
+"Force.com IDE",
+"Formula Fields",
+"Gearset",
+"Git",
+"HTML",
+"Integration Procedures",
+"Integration",
+"iOS Mobile Testing",
+"JIRA",
+"JS",
+"LWC",
+"Mantis",
+"Mobile Testing (iOS)",
+"Monday",
+"OmniScripts",
+"Order Management",
+"PB",
+"Plecto",
+"Postman",
+"Process Automation",
+"Process Builder",
+"Regression Testing",
+"Reports",
+"Salesforce Inspector",
+"SAML",
+"SFDX",
+"SF Inspector",
+"Slack Integration",
+"SOQL",
+"SOSL",
+"Scripting",
+"Schema Builder",
+"SQL",
+"Streaming API",
+"Talend",
+"Tibco",
+"TestLink",
+"Triggers",
+"UAT",
+"User & Security Management",
+"Validation Rules",
+"VS Code",
+"VF",
+"VR",
+"WF",
+"Workflows",
+"Workbench"
+];
+  const salesforceCloudSuggestions = ["Salesforce Sales Cloud","Salesforce Marketing Cloud",
+"Salesforce Service Cloud",
+"Salesforce Commerce Cloud",
+"Salesforce Experience Cloud",
+"Salesforce Analytics Cloud",
+"Salesforce Integration Cloud",
+"Salesforce App Cloud",
+"Salesforce IoT Cloud",
+"Salesforce Manufacturing Cloud",
+"Salesforce Financial Services",
+"Salesforce Health Cloud",
+"Salesforce Education Cloud",
+"Salesforce Nonprofit Cloud",
+"Salesforce Media Cloud"
+];
 
   // Handle Changes
   useEffect(() => {
@@ -126,7 +211,6 @@ const FiltersPanel = ({ onFiltersChange }) => {
           <Divider />
 
           {/* CLOUDS */}
-          <Text strong>Clouds</Text>
           <AddSkillInput
             label="Clouds"
             values={clouds}

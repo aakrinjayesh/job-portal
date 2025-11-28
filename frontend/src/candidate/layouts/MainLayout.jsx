@@ -32,14 +32,16 @@ const MainLayout = ({ children }) => {
   };
 
   const items = [
-    { key: "profile", label: "Profile", icon: <FileTextOutlined /> },
+    { key: "dashboard", label: "Dashboard", icon: <FileTextOutlined /> },
     { key: "job", label: "Find Jobs", icon: <SearchOutlined /> },
-    { key: "appliedjobs", label: "Applied Jobs", icon: <FileTextOutlined /> },
     { key: "savedjobs", label: "Saved Jobs", icon: <SaveFilled /> },
-    { key: "chat", label: "Chat", icon: <WhatsAppOutlined /> },
-    { key: "logout", label: "Logout", icon: <LogoutOutlined /> },
+     { key: "appliedjobs", label: "Applied Jobs", icon: <FileTextOutlined /> },
+     { key: "chat", label: "Chat", icon: <WhatsAppOutlined /> },
     { key: "settings", label: "Settings", icon: <SettingOutlined /> },
-    { key: "faq", label: "FAQ", icon: <QuestionCircleOutlined /> },
+    { key: "profile", label: "Profile", icon: <FileTextOutlined /> },
+    { key: "logout", label: "Logout", icon: <LogoutOutlined /> },
+    
+    //{ key: "faq", label: "FAQ", icon: <QuestionCircleOutlined /> },
   ];
 
   const onClick = (e) => {

@@ -160,6 +160,7 @@ const Signup = () => {
         >
           <Form.Item
             name="email"
+            style={{ marginBottom: "18px" }}
             rules={[{ required: true, message: "Please enter your email" }]}
           >
             <Input placeholder="Email" size="large" />
@@ -167,7 +168,7 @@ const Signup = () => {
 
           <Button
             onClick={handleGenerateOtp}
-            type="default"
+            type="primary"
             block
             loading={generateLoading}
             size="large"
@@ -187,6 +188,7 @@ const Signup = () => {
 
           <Form.Item
             name="otp"
+            style={{ marginBottom: "18px" }}
             rules={[{ required: true, message: "Please enter OTP" }]}
           >
             <Input.OTP length={4} size="large" />
@@ -196,6 +198,7 @@ const Signup = () => {
             type="primary"
             htmlType="submit"
             loading={submitLoading}
+            style={{ marginBottom: "5px" }}
             block
             size="large"
           >
@@ -203,11 +206,11 @@ const Signup = () => {
           </Button>
         </Form>
 
-        <Divider plain style={{ color: "white" }}>
+        <Divider plain style={{ color: "white",marginBottom:"1px"}}>
           or
         </Divider>
 
-        <Text style={{ display: "block", color: "white", marginTop: "10px" }}>
+        <Text style={{ display: "block", color: "white", marginBottom: "18px" }}>
           Already have an account?{" "}
           <Button type="link" onClick={handleLoginRedirect}>
             Login

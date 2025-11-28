@@ -132,19 +132,38 @@ const CreatePassword = () => {
         >
           <Form.Item
             name="password"
-            rules={[{ required: true, message: "Please enter your password" }]}
+            rules={[
+              { required: true, message: "Please enter your password" },
+              {
+                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                message:
+                  "Password must be at least 8 characters, include uppercase, lowercase, number & special character",
+              },
+            ]}
+            style={{ color: "white" }}
           >
             <Input.Password placeholder="Enter new password" size="large" />
           </Form.Item>
 
+
           <Form.Item
             name="confirmPassword"
+            dependencies={['password']}
             rules={[
               { required: true, message: "Please confirm your password" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("Passwords do not match!"));
+                },
+              }),
             ]}
           >
             <Input.Password placeholder="Confirm password" size="large" />
           </Form.Item>
+
 
           <Button
             type="primary"

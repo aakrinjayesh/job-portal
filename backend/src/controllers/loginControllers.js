@@ -32,7 +32,8 @@ const userOtpGenerate = async (req, res) => {
     await sendEmail({
       to: email,
       subject: "Your OTP Code",
-      text: `Your verification code is ${GenerateOtp}`,
+      text: `Hi, Welcome to QuickHireSF
+      Your verification code is ${GenerateOtp}`,
     });
 
     return res.status(200).json({

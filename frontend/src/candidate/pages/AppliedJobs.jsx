@@ -214,7 +214,7 @@ function AppliedJobs() {
             )}
             {!hasMore && !loading && (
               <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
-                🎉 You’ve reached the end!
+                 You’ve reached the end!
               </p>
             )}
           </Card>
