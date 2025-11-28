@@ -293,12 +293,12 @@ const ExperienceCard = ({
             <Col span={5}>
               <Form.Item
                 name="payrollCompanyName"
-                label="Payroll Vendor"
+                label="Payroll Company"
                 rules={[{ required: true, message: "Enter company" },
-                    {
-     pattern: /^[A-Za-z0-9 .,'/-]+$/,
-      message: "Only letters, numbers, are allowed!",
-    },
+    //                 {
+    //  pattern: /^[A-Za-z0-9 .,'/-]+$/,
+    //   message: "Only letters, numbers, are allowed!",
+    // },
                 ]}
               >
                 <Input placeholder="e.g. TCS" />
@@ -309,7 +309,12 @@ const ExperienceCard = ({
   <Form.Item
   name="role"
   label="Role"
-  rules={[{ required: true, message: "Enter role" }]}
+  rules={[{ required: true, message: "Enter role" },
+                    {
+      pattern: /^[A-Za-z0-9 ]+$/,
+      message: "Only letters, numbers, are allowed!",
+     },
+  ]}
 >
   <Select
     mode="tags"
@@ -363,7 +368,13 @@ const ExperienceCard = ({
                           name={[name, "projectName"]}
                           label={`Project Name ${idx + 1}`}
                           rules={[
-                            { required: true, message: "Enter project name" },
+                            { 
+                              required: true, 
+                              message: "Enter project name" },
+                               {
+      pattern: /^[A-Za-z ]+$/,
+      message: "Only letters, numbers, are allowed!",
+     },
                           ]}
                         >
                           <Input placeholder="Project name" />
@@ -412,31 +423,11 @@ const ExperienceCard = ({
                       <Col span={12}>
                         <Form.Item
                           {...restField}
-                          name={[name, "rolesAndResponsibilities"]}
-                          label="Roles & Responsibilities"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Add roles & responsibilities",
-                            },
-                          ]}
-                        >
-                          <TextArea
-                            rows={4}
-                            maxLength={1000}
-                            showCount
-                            placeholder="Describe roles & responsibilities (max 1000 chars)"
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col span={12}>
-                        <Form.Item
-                          {...restField}
                           name={[name, "projectDescription"]}
                           label="Project Description"
                           rules={[
                             {
-                              required: true,
+                              // required: true,
                               message: "Add project description",
                             },
                           ]}
@@ -449,6 +440,46 @@ const ExperienceCard = ({
                           />
                         </Form.Item>
                       </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "rolesAndResponsibilities"]}
+                          label="Roles & Responsibilities"
+                          rules={[
+                            {
+                              // required: true,
+                              message: "Add roles & responsibilities",
+                            },
+                          ]}
+                        >
+                          <TextArea
+                            rows={4}
+                            maxLength={1000}
+                            showCount
+                            placeholder="Describe roles & responsibilities (max 1000 chars)"
+                          />
+                        </Form.Item>
+                      </Col>
+                      {/* <Col span={12}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "projectDescription"]}
+                          label="Project Description"
+                          rules={[
+                            {
+                              // required: true,
+                              message: "Add project description",
+                            },
+                          ]}
+                        >
+                          <TextArea
+                            rows={4}
+                            maxLength={1000}
+                            showCount
+                            placeholder="Project description (max 1000 chars)"
+                          />
+                        </Form.Item>
+                      </Col> */}
                     </Row>
 
                     <div style={{ textAlign: "right" }}>

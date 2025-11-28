@@ -563,8 +563,8 @@ profilePicUrl = profilePicUrlFromRes;
       portfolioLink: values?.portfolioLink,
       profilePicture: profilePicUrl,   // <---- SAVED
       title: values?.title || null,
-      currentCTC: values?.currentCTC || null,
-      expectedCTC: values?.expectedCTC || null,
+      currentCTC: String(values?.currentCTC) || null,
+      expectedCTC: String(values?.expectedCTC) || null,
       joiningPeriod: values?.joiningPeriod || null,
       totalExperience: String(values?.totalExperience) || null,
       relevantSalesforceExperience:
@@ -661,9 +661,80 @@ if (editRecord && editRecord.id) {
               <Form.Item label="Upload Profile Picture .Jpg,.Png,.Jpeg" name="profilePicture">
                 <Upload
                   listType="picture-card"
+                    style={{ 
+    borderRadius: "50%",       // 👉 makes the upload area circular
+    overflow: "hidden",        // 👉 keeps uploaded photo inside circle
+    width: 120, 
+    height: 120 
+  }}
                   fileList={fileList}
                   maxCount={1}
                    accept=".jpg,.jpeg,.png"
+
+                   previewFile={file => {
+  return Promise.resolve(URL.createObjectURL(file));
+}}
+showUploadList={{
+  showPreviewIcon: true,
+  showRemoveIcon: true,
+  itemRender: (originNode, file, fileList, actions) => (
+    <div style={{
+      width: 120,
+      height: 120,
+      borderRadius: "50%",
+      overflow: "hidden",
+      position: "relative"
+    }}>
+      <img
+        src={file.thumbUrl || file.url}
+        alt="profile"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          borderRadius: "50%"
+        }}
+      />
+
+      {/* eye icon */}
+      <span
+        onClick={() => window.open(file.thumbUrl || file.url)}
+        style={{
+          position: "absolute",
+          bottom: 8,
+          left: 8,
+          background: "rgba(0,0,0,0.6)",
+          color: "#fff",
+          borderRadius: "50%",
+          padding: "2px 6px",
+          cursor: "pointer",
+          fontSize: "12px"
+        }}
+      >
+        👁
+      </span>
+
+      {/* delete icon */}
+      <span
+        onClick={actions.remove}
+        style={{
+          position: "absolute",
+          bottom: 8,
+          right: 8,
+          background: "rgba(0,0,0,0.6)",
+          color: "#fff",
+          borderRadius: "50%",
+          padding: "2px 6px",
+          cursor: "pointer",
+          fontSize: "12px"
+        }}
+      >
+        ✖
+      </span>
+    </div>
+  )
+}}
+
                   // beforeUpload={() => false}
                   beforeUpload={(file) => {
   const allowed = ["image/jpeg", "image/png", "image/jpg"];
@@ -671,6 +742,13 @@ if (editRecord && editRecord.id) {
     message.error("Only JPG, JPEG, PNG images are allowed!");
     return Upload.LIST_IGNORE; 
   }
+  const maxSize = 2 * 1024 * 1024;
+
+if (file.size > maxSize) {
+  message.error("Image must be smaller than 2MB!");
+  return Upload.LIST_IGNORE;
+}
+
   return false;
 }}
 
@@ -680,7 +758,10 @@ if (editRecord && editRecord.id) {
                     setFileList(info.fileList); 
                     form.setFieldsValue({ profilePicture: info.file });
                   }}
+
+                  
                 >
+            
                   <div>
                     <UserOutlined />
                     <div style={{ marginTop: 8 }}>Upload</div>
@@ -689,24 +770,33 @@ if (editRecord && editRecord.id) {
               </Form.Item>
             </Col>
 
+            
+
             {/* Name, Phone, Email */}
-            <Col xs={24} sm={12} md={8}>
+            <Col xs={24} sm={12} md={12}>
               <Form.Item
                 label="Full Name"
                 name="name"
-                rules={[{ required: true, message: "Please enter full name" }]}
+                rules={[{ required: true, message: "Please enter full name" },
+                   {
+      pattern: /^[A-Za-z ]+$/,
+      message: "Only letters and spaces are allowed",
+    },
+                ]}
               >
                 <Input placeholder="Enter full name" />
               </Form.Item>
             </Col>
 
-            <Form.Item
-  name="hideContact"
-  label="Hide Contact Details"
-  valuePropName="checked"
->
-  <Switch checkedChildren="ON" unCheckedChildren="OFF" />
-</Form.Item>
+   {Reciviedrole && (
+              <Form.Item
+                name="hideContact"
+                label="Hide Contact Details"
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="ON" unCheckedChildren="OFF" />
+              </Form.Item>
+            )}
 
             <Col xs={24} sm={12} md={12}>
   <Form.Item
@@ -714,15 +804,39 @@ if (editRecord && editRecord.id) {
     name="phoneNumber"
     rules={[
       { 
-        // required: true,
+        required: true,
          message: "Please enter phone number" },
       {
-        pattern: /^\+\d{1,3}\s\d{7,14}$/,
-        message: "Format: +91 9876543210",
+        pattern: /^[0-9]{10}$/,
+        message: "Format: 9876543210",
       },
     ]}
   >
-    <Input placeholder="+91 9876543210" />
+    {/* <Input placeholder="Enter 10-digit phone number" maxLength={10} 
+     onKeyPress={(e) => {
+    if (!/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  }}/> */}
+  <Input
+  addonBefore={
+    <Select defaultValue="+91" style={{ width: 160 }}>
+      <Select.Option value="+91">🇮🇳 +91</Select.Option>
+      <Select.Option value="+1">🇺🇸 +1</Select.Option>
+      <Select.Option value="+44">🇬🇧 +44</Select.Option>
+      <Select.Option value="+61">🇦🇺 +61</Select.Option>
+      <Select.Option value="+971">🇦🇪 +971</Select.Option>
+    </Select>
+  }
+  placeholder="Enter 10-digit phone number"
+  maxLength={10}
+  onKeyPress={(e) => {
+    if (!/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  }}
+/>
+
   </Form.Item>
 </Col>
 
@@ -737,38 +851,42 @@ if (editRecord && editRecord.id) {
       {
         validator: (_, value) => {
           if (!value) return Promise.reject("Email is required");
-
-          const allowedDomains = [
-            "tcs.com",
-            "accenture.com",
-            "infosys.com",
-            "wipro.com",
-            "hcl.com",
-            "capgemini.com",
-            "techmahindra.com",
-            "cognizant.com",
-            "ibm.com",
-            "oracle.com",
-            "dell.com",
-            "salesforce.com",
-            "google.com",
-            "microsoft.com",
-            "adobe.com",
-            "persistent.com",
-            "mindtree.com",
-            "mphasis.com",
-            "birlasoft.com",
-            "lntinfotech.com",
-            "freshworks.com",
-            "zoho.in",
-            "swiggy.in",
-            "razorpay.com",
-            "zerodha.com",
-            "aakrin.com"
+          if (!Reciviedrole) {
+                const allowedDomains = [
+             "gmail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "protonmail.com",
+  "icloud.com",
+  "aol.com",
+  "zoho.com",
+  "yandex.com",
           ];
 
           const emailDomain = value.toLowerCase().split("@")[1];
           if (allowedDomains.includes(emailDomain)) {
+            return Promise.resolve();
+          }
+
+          return Promise.reject("Please provide a personal ID.");
+      
+    }
+
+          const allowedDomains = [
+             "gmail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "protonmail.com",
+  "icloud.com",
+  "aol.com",
+  "zoho.com",
+  "yandex.com",
+          ];
+
+          const emailDomain = value.toLowerCase().split("@")[1];
+          if (!allowedDomains.includes(emailDomain)) {
             return Promise.resolve();
           }
 
@@ -795,12 +913,37 @@ if (editRecord && editRecord.id) {
                     
                   },
                    {
-  pattern: /^[A-Za-z0-9 ]+$/,
-  message: "Only letters, numbers and spaces are allowed!",
+pattern: /^[A-Za-z ]+$/,
+  message: "Only letters spaces are allowed!",
 }
                 ]}
               >
-                <Input placeholder="e.g., Salesforce Developer" />
+                {/* <Input placeholder="e.g., Salesforce Developer" /> */}
+             <Select
+ 
+  placeholder="e.g., Salesforce Developer"
+  tokenSeparators={[","]}
+  value={form.getFieldValue("title")}
+  onChange={(val) => {
+    // ❌ Allow only one role
+    // const onlyOne = val.slice(0, 1);
+    form.setFieldsValue({ title: val });
+  }}
+  onInputKeyDown={(e) => {
+    // ❌ Block numbers and special characters
+    if (!/^[A-Za-z ]$/.test(e.key) && e.key !== "Backspace" && e.key !== " ") {
+      e.preventDefault();
+    }
+  }}
+>
+  <Select.Option value="Salesforce Developer">Salesforce Developer</Select.Option>
+  <Select.Option value="Salesforce Admin">Salesforce Admin</Select.Option>
+  <Select.Option value="Apex Developer">Apex Developer</Select.Option>
+  <Select.Option value="QA Engineer">QA Engineer</Select.Option>
+  <Select.Option value="Frontend Developer">Frontend Developer</Select.Option>
+</Select>
+
+
               </Form.Item>
             </Col>
 
@@ -842,13 +985,13 @@ if (editRecord && editRecord.id) {
               <>
                 <Col xs={24} sm={12}>
                   <Form.Item
-                    label="Current CTC"
+                    label="Current Annual CTC"
                     name="currentCTC"
                     rules={[
                       { required: true, message: "Please enter current CTC!" },
                     ]}
                   >
-                    <Input placeholder="e.g., ₹8 LPA" />
+                    <Input type="number" min={0} placeholder="e.g.,800000" />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12}>
@@ -859,7 +1002,7 @@ if (editRecord && editRecord.id) {
                       { required: true, message: "Please enter expected CTC!" },
                     ]}
                   >
-                    <Input placeholder="e.g., ₹12 LPA" />
+                    <Input type="number" min={1} placeholder="e.g., 1200000" />
                   </Form.Item>
                 </Col>
               </>
@@ -929,7 +1072,7 @@ if (editRecord && editRecord.id) {
                   { required: true, message: "Please enter total experience!" },
                 ]}
               >
-                <Input type="number" placeholder="e.g., 6 years" />
+                <Input type="number" min={0} placeholder="e.g., 6 " />
               </Form.Item>
             </Col>
 
@@ -945,7 +1088,7 @@ if (editRecord && editRecord.id) {
                   },
                 ]}
               >
-                <Input type="number" placeholder="e.g., 4 years" />
+                <Input type="number" min={0} placeholder="e.g., 4 years" />
               </Form.Item>
             </Col>
           </Row>
@@ -954,8 +1097,8 @@ if (editRecord && editRecord.id) {
 
           {/* Skills */}
           <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item name="primarySkills" noStyle>
+            {/* <Col span={24}>
+              <Form.Item name="primarySkills"  noStyle >
                 <SkillManagerCard
                   title="Primary Skills"
                   skills={primarySkills}
@@ -964,14 +1107,43 @@ if (editRecord && editRecord.id) {
                   addFunction={PostSkills}
                 />
               </Form.Item>
-            </Col>
+            </Col> */}
+            <Col span={24}>
+  <Form.Item
+    label="Primary Skills"
+    name="primarySkills"
+    rules={[
+      {
+        required: true,
+        
+      },
+      {
+        validator: (_, value) => {
+          if (!value || value.length === 0) {
+            return Promise.reject("Please add at least one primary skill!");
+          }
+          return Promise.resolve();
+        },
+      },
+    ]}
+  >
+    <SkillManagerCard
+      title="Primary Skills"
+      skills={primarySkills}
+      onSkillsChange={handlePrimarySkillsChange}
+      fetchFunction={GetSkills}
+      addFunction={PostSkills}
+    />
+  </Form.Item>
+</Col>
+
           </Row>
 
           <Divider />
 
           <Row gutter={16}>
             <Col span={24}>
-              <Form.Item name="secondarySkills" noStyle>
+              <Form.Item  name="secondarySkills" noStyle>
                 <SkillManagerCard
                   title="Secondary Skills"
                   skills={secondarySkills}
@@ -987,7 +1159,7 @@ if (editRecord && editRecord.id) {
 
           {/* Clouds */}
           <Row gutter={16}>
-            <Col span={12}>
+            {/* <Col span={12}>
               <Form.Item name="primaryClouds" noStyle>
                 <SkillManagerCard
                   title="Primary Clouds"
@@ -997,7 +1169,36 @@ if (editRecord && editRecord.id) {
                   addFunction={PostClouds}
                 />
               </Form.Item>
-            </Col>
+            </Col> */}
+            <Col span={12}>
+  <Form.Item
+    label="Primary Clouds"
+    name="primaryClouds"
+    rules={[
+      {
+        required: true,
+        message: "Please add at least one primary cloud!",
+      },
+      {
+        validator: (_, value) => {
+          if (!value || value.length === 0) {
+            return Promise.reject("Please add at least one primary cloud!");
+          }
+          return Promise.resolve();
+        },
+      },
+    ]}
+  >
+    <SkillManagerCard
+      title="Primary Clouds"
+      skills={primaryClouds}
+      onSkillsChange={handlePrimaryCloudsChange}
+      fetchFunction={GetClouds}
+      addFunction={PostClouds}
+    />
+  </Form.Item>
+</Col>
+
 
             <Col span={12}>
               <Form.Item name="secondaryClouds" noStyle>
@@ -1043,7 +1244,7 @@ if (editRecord && editRecord.id) {
                 name="certifications"
                 rules={[
                   { required: true, message: "Please enter certifications!" },
-                  
+
                 ]}
               >
                 <ReusableSelect
@@ -1066,7 +1267,9 @@ if (editRecord && editRecord.id) {
                 label="Work Experience"
                 name="workExperience"
                 rules={[
-                  { required: true, message: "Please enter work experience!" },
+                  { 
+                    required: true, 
+                    message: "Please enter work experience!" },
                 ]}
               >
                 <ExperienceCard
@@ -1094,8 +1297,8 @@ if (editRecord && editRecord.id) {
                 rules={[
                   { required: true, message: "Please enter LinkedIn URL!" },
                   {
-                    pattern:
-                      /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+\/?$/,
+                   pattern: /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
+
                     message:
                       "Please enter a valid LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourprofile)",
                   },
@@ -1110,7 +1313,9 @@ if (editRecord && editRecord.id) {
                 label="Trailhead URL"
                 name="trailheadUrl"
                 rules={[
-                  { required: true, message: "Please enter Trailhead URL!" },
+                  { 
+                    // required: true, 
+                    message: "Please enter Trailhead URL!" },
                   {
                     // pattern:
                     //   /^https:\/\/(www\.)?trailblazer\.me\/id\/[A-Za-z0-9_-]+\/?$/,
@@ -1127,12 +1332,13 @@ if (editRecord && editRecord.id) {
 
           {/* Submit + Generate Resume */}
           <Form.Item style={{ marginTop: 24 }}>
-            <div style={{ display: "flex", gap: "12px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
               <Button
                 type="primary"
                 htmlType="submit"
                 size="large"
-                style={{ flex: 1 }}
+                // style={{ flex: 1 }}
+                 style={{ width: "150px" }}  
                 loading={submitLoading}
               >
                 Submit

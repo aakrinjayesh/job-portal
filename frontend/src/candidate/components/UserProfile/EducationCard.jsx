@@ -157,12 +157,12 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="Institute Name"
+            label="Education Name"
             rules={[{ required: true, message: "Please enter education name" },
-               {
-    pattern: /^[A-Za-z0-9 .,&-]+$/,
-    message: "Only letters and spaces are allowed!",
-  },
+    {
+   pattern: /^[A-Za-z ]+$/,
+     message: "Only letters spaces are allowed!",
+   }
             ]}
           >
             <Input placeholder="e.g. B.Tech Computer Science" />
@@ -181,7 +181,7 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
             label="Education Type"
             rules={[{ required: true, message: "Please enter education type" },
                {
-     pattern: /^[A-Za-z0-9 .,&-]+$/,
+    pattern: /^[A-Za-z .,&-]+$/,
     message: "Only letters and spaces are allowed!",
   },
             ]}

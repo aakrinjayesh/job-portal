@@ -21,6 +21,19 @@ import {
   Form,
 } from "antd";
 import {
+ 
+  GetSkills,
+  PostSkills,
+ 
+  GetLocations,
+  PostLocations,
+  GetClouds,
+  PostClouds,
+  
+} from "../../../candidate/api/api";
+import ReusableSelect from "../../../candidate/components/UserProfile/ReusableSelect";
+
+import {
   StarFilled,
   EnvironmentOutlined,
   CloudOutlined,
@@ -104,7 +117,7 @@ const RecruiterJobList = () => {
             const candidateResponse = await GetCandidateDeatils({
               jobId: job.id,
             });
-            const applicantCount = candidateResponse?.total || 0;
+            const applicantCount = candidateResponse?.count || 0;
             return { ...job, applicantCount };
           } catch (err) {
             console.error(`Error fetching candidates for job ${job.id}:`, err);
@@ -164,7 +177,7 @@ const RecruiterJobList = () => {
           ? values.applicationDeadline.toISOString()
           : null,
       };
-
+       console.log("Payload",payload)
       if (isEditing) {
         // ✅ Add job ID to payload
         payload.id = editingJob.id;
@@ -194,6 +207,8 @@ const RecruiterJobList = () => {
       setPostLoading(false);
     }
   };
+
+  
 
   const handleFileUpload = async ({ file }) => {
     setUploadLoading(true);
@@ -577,7 +592,12 @@ const RecruiterJobList = () => {
 
           {/* ALL BELOW HAVE rules={[{ required: true }]} */}
 
-          <Form.Item name="role" label="Role" rules={[{ required: true }]}>
+          <Form.Item name="role" label="Role" rules={[{ required: true },
+             {
+      pattern: /^[A-Za-z0-9 ]+$/,
+      message: "Only letters, numbers, and spaces are allowed",
+    },
+          ]}>
             <Input placeholder="e.g. Machine Learning Engineer" />
           </Form.Item>
 
@@ -603,7 +623,10 @@ const RecruiterJobList = () => {
           <Form.Item
             name="experience"
             label="Experience"
-            rules={[{ required: true }]}
+            rules={[{ required: true }, {
+      pattern: /^[A-Za-z0-9 ]+$/,
+      message: "Only letters, numbers, and spaces are allowed",
+    },]}
           >
             <Input placeholder="e.g. 3 years" />
           </Form.Item>
@@ -625,26 +648,45 @@ const RecruiterJobList = () => {
             label="Location"
             rules={[{ required: true }]}
           >
-            <Input placeholder="e.g. Bangalore, India" />
+              <ReusableSelect
+                  single={true}
+                  placeholder="Select Current Job Location"
+                  fetchFunction={GetLocations}
+                  addFunction={PostLocations}
+                />
           </Form.Item>
           <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
-            <Select
+            {/* <Select
               mode="tags"
               allowClear
               style={{ width: "100%" }}
               placeholder="Type and press Enter to add clouds"
               tokenSeparators={[","]}
-            />
+            /> */}
+            <ReusableSelect
+                  single={false}
+                  placeholder="select Cloud"
+                  fetchFunction={GetClouds}
+                  addFunction={PostClouds}
+                />
           </Form.Item>
-          <Form.Item name="skills" label="Skills" rules={[{ required: true }]}>
-            <Select
+          <Form.Item name="skills" label="Skills"  rules={[{ required: true }]}>
+            {/* <Select
               mode="tags"
               style={{ width: "100%" }}
               placeholder="Add skills (press Enter)"
-            />
+            /> */}
+            <ReusableSelect
+                  single={false}
+                  placeholder="select skills"
+                  fetchFunction={GetSkills}
+                  addFunction={PostSkills}
+                />
           </Form.Item>
 
-          <Form.Item name="salary" label="Salary" rules={[{ required: true }]}>
+          <Form.Item name="salary" label="Salary" rules={[{ required: true },
+            
+          ]}>
             <InputNumber
               style={{ width: "100%" }}
               min={0}
@@ -655,23 +697,41 @@ const RecruiterJobList = () => {
           <Form.Item
             name="companyName"
             label="Company Name"
-            rules={[{ required: true }]}
+            rules={[{ required: true },
+               {
+      pattern: /^[A-Za-z0-9 ]+$/,
+      message: "Only letters, numbers, and spaces are allowed",
+    },
+            ]}
           >
             <Input placeholder="Company Name" />
           </Form.Item>
 
           <Form.Item
             name="responsibilities"
+            
             label="Responsibilities"
-            rules={[{ required: true }]}
+            rules={[{ required: true },
+              {
+      pattern: /^[A-Za-z0-9 ]+$/,
+      message: "Only letters, numbers, and spaces are allowed",
+    },
+            ]}
           >
             <Select mode="tags" placeholder="Add responsibilities" />
           </Form.Item>
 
+          
+
           <Form.Item
             name="qualifications"
             label="Qualifications"
-            rules={[{ required: true }]}
+            rules={[{ required: true },
+              {
+      pattern: /^[A-Za-z0-9 ]+$/,
+      message: "Only letters, numbers, and spaces are allowed",
+    },
+            ]}
           >
             <Select mode="tags" placeholder="Add qualifications" />
           </Form.Item>
@@ -698,7 +758,7 @@ const RecruiterJobList = () => {
           <Form.Item
             name="applicationDeadline"
             label="Application Deadline"
-            rules={[{ required: true }]}
+            // rules={[{ required: true }]}
           >
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>

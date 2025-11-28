@@ -413,7 +413,7 @@
 // export default SkillManagerCard;
 
 import React, { useState, useEffect } from "react";
-import { Button, Modal,  InputNumber, List, Card } from "antd";
+import { Button, Modal,  InputNumber, List, Card,message } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import ReusableSelect from "./ReusableSelect";
 
@@ -425,12 +425,15 @@ const SkillManagerCard = ({
   addFunction,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentSkill, setCurrentSkill] = useState("");
+  // const [currentSkill, setCurrentSkill] = useState("");
+  const [currentSkill, setCurrentSkill] = useState([]); // NOT ""
+
   const [experience, setExperience] = useState(0);
   const [editingIndex, setEditingIndex] = useState(null);
 
   const openModal = () => {
-    setCurrentSkill("");
+    // setCurrentSkill("");
+      setCurrentSkill([]);  // FIXED
     setExperience(0);
     setEditingIndex(null);
     setModalVisible(true);
@@ -441,44 +444,103 @@ const SkillManagerCard = ({
   }, [skills]);
 
   const openEditModal = (item, index) => {
-    setCurrentSkill(item.name);
+    // setCurrentSkill(item.name);
+    setCurrentSkill([item.name]);   // FIXED
     setExperience(item.experience);
     setEditingIndex(index);
     setModalVisible(true);
   };
 
-  const saveSkill = () => {
-    if (!currentSkill) {
-      return; // Don't save if no skill selected
+//   const saveSkill = () => {
+//     // if (!currentSkill) {
+//     //   return; // Don't save if no skill selected
+//     // }
+//     if (!currentSkill || currentSkill.length === 0) {
+//     message.error("Please select at least one skill!");
+//     return;
+// }
+
+
+// const isValidSkill = /^[A-Za-z0-9 .-]+$/.test(currentSkill);
+
+// if (!isValidSkill) {
+//   message.error("Skill name must contain only letters, numbers and spaces!");
+//   return;
+// }
+
+
+//     let updatedSkills;
+//     if (editingIndex !== null) {
+//       // Update existing skill
+//       updatedSkills = [...skills];
+//       updatedSkills[editingIndex] = { name: currentSkill, experience };
+//     } else {
+//       // Add new skill
+//       updatedSkills = [...skills, { name: currentSkill, experience }];
+//     }
+
+//     // Call parent's onChange handler
+//     if (onSkillsChange) {
+//       onSkillsChange(updatedSkills);
+//     }
+
+//     setModalVisible(false);
+//     // setCurrentSkill("");
+//     setCurrentSkill([]);
+
+//     setExperience(0);
+//     setEditingIndex(null);
+//   };
+ const saveSkill = () => {
+    if (currentSkill.length === 0) {
+      message.error("Please select at least one skill!");
+      return;
     }
 
-const isValidSkill = /^[A-Za-z0-9 .-]+$/.test(currentSkill);
+    
+  // ✅ Validation: allow text, numbers, dot, comma, hyphen
+  const validSkillRegex = /^[A-Za-z0-9 ., -]+$/;
 
-if (!isValidSkill) {
-  message.error("Skill name must contain only letters, numbers and spaces!");
-  return;
-}
+  for (let skillName of currentSkill) {
+    if (!validSkillRegex.test(skillName)) {
+      message.error(
+        "Skill name can contain only letters, numbers, spaces, dot (.), comma (,), and hyphen (-)"
+      );
+      return;
+    }
+  }
 
+    let updatedSkills = [...skills];
 
-    let updatedSkills;
     if (editingIndex !== null) {
-      // Update existing skill
-      updatedSkills = [...skills];
-      updatedSkills[editingIndex] = { name: currentSkill, experience };
+      // Editing ONE skill
+      updatedSkills[editingIndex] = {
+        name: currentSkill[0],
+        experience,
+      };
     } else {
-      // Add new skill
-      updatedSkills = [...skills, { name: currentSkill, experience }];
+      // Adding MULTIPLE skills
+      currentSkill.forEach((skillName) => {
+        const exists = updatedSkills.some(
+          (item) => item.name.toLowerCase() === skillName.toLowerCase()
+        );
+
+        if (!exists) {
+          updatedSkills.push({
+            name: skillName,
+            experience,
+          });
+        }
+      });
     }
 
-    // Call parent's onChange handler
-    if (onSkillsChange) {
-      onSkillsChange(updatedSkills);
-    }
+    onSkillsChange?.(updatedSkills);
 
     setModalVisible(false);
-    setCurrentSkill("");
+    setCurrentSkill([]);
     setExperience(0);
     setEditingIndex(null);
+    message.success("Saved successfully!");
   };
 
   const deleteSkill = (index) => {
@@ -509,10 +571,10 @@ if (!isValidSkill) {
       >
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: "block", marginBottom: 8 }}>
-            Select Skill:
+   Select {title}:
           </label>
           <ReusableSelect
-            single={true}
+            single={false}
             placeholder="Select or add skill"
             fetchFunction={fetchFunction}
             addFunction={addFunction}
