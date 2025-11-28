@@ -20,19 +20,25 @@ function SavedJobs() {
         const { savedJobs, pagination } = resp.data || {};
 
         // Flatten nested job structure
-        const formattedJobs =
-          savedJobs?.map((item) => ({
-            ...item.job, // Extract job info
-            savedId: item.id,
-            deadlineWarning: item.deadlineWarning,
-            daysUntilDeadline: item.daysUntilDeadline,
-            savedAt: item.savedAt,
-          })) || [];
+        // const formattedJobs =
+        //   savedJobs?.map((item) => ({
+        //     ...item.job, // Extract job info
+        //     savedId: item.id,
+        //     deadlineWarning: item.deadlineWarning,
+        //     daysUntilDeadline: item.daysUntilDeadline,
+        //     savedAt: item.savedAt,
+        //   })) || [];
+
+        // if (pageNum === 1) {
+        //   setJobs(formattedJobs);
+        // } else {
+        //   setJobs((prev) => [...prev, ...formattedJobs]);
+        // }
 
         if (pageNum === 1) {
-          setJobs(formattedJobs);
+          setJobs(savedJobs);
         } else {
-          setJobs((prev) => [...prev, ...formattedJobs]);
+          setJobs((prev) => [...prev, ...savedJobs]);
         }
 
         setHasMore(pagination?.page < pagination?.totalPages);

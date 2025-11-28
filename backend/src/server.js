@@ -10,6 +10,7 @@ import CommonRouters from "./Routes/commonRoutes.js";
 import LoginRouters from "./Routes/loginRoutes.js";
 import VendorRoutes from "./Routes/vendorRoutes.js";
 import VerificationRoutes from "./Routes/verificationRoutes.js";
+import CVRouters from "./Routes/cvRankerRoutes.js";
 
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use(JobRouters)
 app.use(CommonRouters)
 app.use('/vendor',VendorRoutes)
 app.use("/verification", VerificationRoutes);
+app.use(CVRouters);
 
 
 

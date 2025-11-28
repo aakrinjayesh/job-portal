@@ -159,7 +159,7 @@ const CandidateJobDetails = () => {
           loading={ApplyLoading}
           disabled={isApplied || type === "apply"}
         >
-          {isApplied || type === "apply" ? "Already Applied" : "Apply Now"}
+          {isApplied || type === "apply" ? "Applied" : "Apply Now"}
         </Button>
       </Card>
     </div>

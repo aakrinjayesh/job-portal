@@ -373,6 +373,17 @@ export async function uploadProfilePicture(formData) {
 }
 
 
+export async function CVEligibility(payload) {
+  try {
+    const response = await axiosInstance.post("/check-eligibility", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
+  }
+}
+
+
 
 
 

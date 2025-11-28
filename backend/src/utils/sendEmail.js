@@ -14,7 +14,7 @@ const sendEmail = (options) => {
     //   rejectUnauthorized: false
     // },
     debug: true, // show debug output
-    logger: true // log information in console
+    logger: false // log information in console
   });
 
   const mailOptions = {

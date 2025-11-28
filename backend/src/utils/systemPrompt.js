@@ -294,3 +294,59 @@ Only valid, machine-readable JSON is accepted.
 ${text}
 `;
 
+
+export const cvRankerPrompt = (jobDescription, candidate) => {
+  // Minify JSON to save tokens and reduce parsing noise
+  const jobStr = JSON.stringify(jobDescription);
+  const candStr = JSON.stringify(candidate);
+
+  return `
+You are an expert ATS (Applicant Tracking System) AI. Your task is to evaluate a candidate against a job description objectively.
+
+### INPUT DATA
+JOB_DESCRIPTION: ${jobStr}
+CANDIDATE_PROFILE: ${candStr}
+
+### SCORING RULES
+1. **Fit Percentage (0-100):**
+   - 90-100: Perfect match (All required skills + exact experience level + industry match).
+   - 75-89: Strong match (Missing only nice-to-haves or slightly under experience).
+   - 50-74: Moderate match (Has core skills but lacks experience or domain knowledge).
+   - < 50: Weak match (Missing critical skills or irrelevant background).
+
+2. **Boolean Logic:**
+   - "education_match": True if degree/field matches or is equivalent.
+   - "experience_match": True if candidate's years of exp >= job requirement.
+
+### OUTPUT INSTRUCTIONS
+Return **ONLY** a raw JSON object.  
+- DO NOT return markdown formatting (no \`\`\`json).  
+- DO NOT return any introductory/explanatory text.  
+- Ensure "total_experience_years" is a real number extracted from candidate data.
+
+### REQUIRED JSON STRUCTURE
+{
+  "key_gap_skills": ["List missing required skills"],
+  "key_gap_clouds": ["List missing cloud experience or platform gaps"],
+  "key_match_skills": ["List skills that match job requirements"],
+  "key_match_clouds": ["List cloud platforms/tools that match job requirements"],
+
+  "fit_percentage": 0,
+  "total_experience_years": 0,
+
+  "scoring_breakdown": {
+      "education_match": false,
+      "experience_match": false,
+      "deal_breakers_missed": 0,
+      "nice_to_have_matched": 0,
+      "required_skills_missed": 0,
+      "required_skills_matched": 0,
+      "required_coluds_missed": 0,
+      "required_clouds_matched": 0
+  }
+}
+`;
+};
+
+
+

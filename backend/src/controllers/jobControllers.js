@@ -4,128 +4,152 @@ import puppeteer from 'puppeteer';
 import { generateResumeHTML } from "../utils/resumeTemplate.js";
 import fs from 'fs'
 import path from 'path'
+import { extractResumeSections } from "../utils/llmTextExtractor.js";
 
 
 // User applies for a job
+
+
 const userApplyJob = async (req, res) => {
   try {
     const { jobId } = req.body;
-    const userId = req.user.id; // From auth middleware
+    const userId = req.user.id; 
 
-    // Validate inputs
     if (!jobId) {
-      return res.status(200).json({
-        status: "failed",
-        message: "Job ID is required"
-      });
+      return res.status(200).json({ status: "failed", message: "Job ID is required" });
     }
 
-    // Check if job exists and is open
+    // 1. Fetch Job
     const job = await prisma.job.findUnique({
-      where: { id: jobId },
+      where: { id: jobId, isDeleted: false },
       include: {
-        postedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
+        postedBy: { select: { id: true, name: true, email: true } }
       }
     });
 
-    if (!job) {
-      return res.status(404).json({
-        status: "failed",
-        message: "Job not found"
-      });
-    }
+    if (!job) return res.status(404).json({ status: "failed", message: "Job not found" });
+    if (job.status !== 'Open') return res.status(200).json({ status: "failed", message: "Job closed" });
 
-    if (job.status !== 'Open') {
-      return res.status(200).json({
-        status: "failed",
-        message: "This job is no longer accepting applications"
-      });
-    }
-
-    if (job.isDeleted) {
-      return res.status(200).json({
-        status: "failed",
-        message: "This job has been deleted"
-      });
-    }
-
-    // Check if user already applied
+    // 2. Check Existing Application
     const existingApplication = await prisma.jobApplication.findUnique({
-      where: {
-        jobId_userId: {
-          jobId,
-          userId
-        }
-      }
+      where: { jobId_userId: { jobId, userId } }
     });
+    if (existingApplication) return res.status(200).json({ status: "failed", message: "Already applied" });
 
-    if (existingApplication) {
-      return res.status(200).json({
-        status: "failed",
-        message: "You have already applied to this job"
-      });
-    }
-
-    // Get user details with profile
+    // 3. Fetch User Profile
     const user = await prisma.users.findUnique({
       where: { id: userId },
-      include: {
-        CandidateProfile: true
-      }
+      include: { CandidateProfile: true }
     });
 
-    if (!user) {
-      return res.status(404).json({
-        status: "failed",
-        message: "User not found"
-      });
+    if (!user) return res.status(404).json({ status: "failed", message: "User not found" });
+
+    // ============================================================
+    // STEP 4: AI ANALYSIS (Real-time)
+    // ============================================================
+    let aiAnalysisResult = null;
+    
+    const jobDescription = {
+      job_id: job?.id,
+      role: job?.role,
+      description: job?.description || "",
+      employmentType: job?.employmentType || "FullTime",
+      skills: job?.skills || [],
+      clouds: job?.clouds || [],
+      salary: job?.salary,
+      companyName: job?.companyName,
+      responsibilities: job?.responsibilities || [],
+      qualifications: job?.qualifications || [],
+      experience: job?.experience || "",
+      experienceLevel: job?.experienceLevel || "",
+      location: job?.location || "",
+      companyName: job?.companyName || ""
+    };
+
+    const profile = user.CandidateProfile;
+
+    const candidateDetails = {
+      // id: profile?.id,
+      userId: profile?.userId,
+      profilePicture: profile?.profilePicture || null,
+      title: profile?.title || "",
+      name: profile?.name || "",
+      phoneNumber: profile?.phoneNumber || "",
+      email: profile?.email || "",
+      currentLocation: profile?.currentLocation || "",
+      preferredLocation: profile?.preferredLocation || [],
+      portfolioLink: profile?.portfolioLink || "",
+      preferredJobType: profile?.preferredJobType || [],
+      currentCTC: profile?.currentCTC || "",
+      expectedCTC: profile?.expectedCTC || "",
+      rateCardPerHour: profile?.rateCardPerHour || {},
+      joiningPeriod: profile.joiningPeriod || "",
+      totalExperience: profile?.totalExperience || "",
+      relevantSalesforceExperience: profile?.relevantSalesforceExperience || "",
+      skills: profile?.skillsJson || [],
+      primaryClouds: profile?.primaryClouds || [],
+      secondaryClouds: profile?.secondaryClouds || [],
+      certifications: profile?.certifications || [],
+      workExperience: profile?.workExperience || [],
+      education: profile?.education || [],
+      linkedInUrl: profile?.linkedInUrl || null,
+      trailheadUrl: profile?.trailheadUrl || null
+    };
+
+    // Only run AI if candidate has a profile
+    if (user.CandidateProfile) {
+        aiAnalysisResult = await extractResumeSections("CV_RANKING","cvranker",{jobDescription, candidateDetails});
+        console.log('aicvranker', aiAnalysisResult)
     }
 
-    // Create job application
-    const application = await prisma.jobApplication.create({
-      data: {
-        jobId,
-        userId,
-        status: 'Pending'
-      }
-    });
-
-    // Generate resume HTML
-    const resumeHTML = generateResumeHTML(user, user.CandidateProfile, job);
-
-    // Convert HTML to PDF
-    let pdfBuffer;
-    try {
-      const browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      const page = await browser.newPage();
-      await page.setContent(resumeHTML, { waitUntil: 'networkidle0' });
-      pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '0',
-          right: '0',
-          bottom: '0',
-          left: '0'
+    // ============================================================
+    // STEP 5: SAVE TO DB (Transaction)
+    // ============================================================
+    const application = await prisma.$transaction(async (tx) => {
+      // A. Create the base Application
+      const newApp = await tx.jobApplication.create({
+        data: {
+          jobId,
+          userId,
+          status: 'Pending'
         }
       });
+
+      // B. Create the Analysis (if AI succeeded)
+      if (aiAnalysisResult) {
+        await tx.applicationAnalysis.create({
+          data: {
+            jobApplicationId: newApp.id,
+            fitPercentage: aiAnalysisResult.fit_percentage || 0,
+            details: aiAnalysisResult, // Stores the full JSON
+            status: 'COMPLETED'
+          }
+        });
+      }
+
+      return newApp;
+    });
+
+    // ============================================================
+    // STEP 6: POST-PROCESSING (PDF & Emails) - Kept original logic
+    // ============================================================
+    
+    // Generate resume HTML
+    const resumeHTML = generateResumeHTML(user, user.CandidateProfile, job);
+    let pdfBuffer;
+    
+    try {
+      const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
+      const page = await browser.newPage();
+      await page.setContent(resumeHTML, { waitUntil: 'networkidle0' });
+      pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
       await browser.close();
     } catch (pdfError) {
       console.error('PDF Generation Error:', pdfError);
-      // Continue without PDF if generation fails
     }
 
-    // Send email to job poster
-    if (job.postedBy && job.postedBy.email) {
+    // Send Email to Recruiter
+    if (job.postedBy?.email) {
       try {
         await sendEmail({
           to: job.postedBy.email,
@@ -176,11 +200,10 @@ const userApplyJob = async (req, res) => {
         });
       } catch (emailError) {
         console.error('Error sending email to poster:', emailError);
-        // Don't fail the application if email fails
       }
     }
 
-    // Send confirmation email to candidate
+    // Send Email to Candidate
     try {
       await sendEmail({
         to: user.email,
@@ -226,7 +249,8 @@ const userApplyJob = async (req, res) => {
           id: application.id,
           jobId: application.jobId,
           status: application.status,
-          appliedAt: application.appliedAt
+          // Return the score to the frontend immediately if you want
+          matchScore: aiAnalysisResult?.fit_percentage
         }
       }
     });
@@ -236,10 +260,12 @@ const userApplyJob = async (req, res) => {
     return res.status(500).json({
       status: "failed",
       message: "Failed to submit application",
-      error: error.message || "Internal server error"
+      error: error.message
     });
   }
 };
+
+
 
 const userAllApplyedJobs = async (req, res) => {
   try {
@@ -397,6 +423,7 @@ const userSaveJob = async (req, res) => {
 
 const userUnsaveJob = async (req, res) => {
   try {
+    console.log("unsave clicked")
     const { jobId } = req.body;
     const userId = req.user.id;
 
@@ -438,6 +465,85 @@ const userUnsaveJob = async (req, res) => {
 };
 
 
+// const userAllSavedJobs = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const { page = 1, limit = 10 } = req.query;
+
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+
+//     // Get saved jobs with job details
+//     const [savedJobs, total] = await Promise.all([
+//       prisma.savedJob.findMany({
+//         where: { userId },
+//         include: {
+//           job: {
+//             select: {
+//               id: true,
+//               role: true,
+//               companyName: true,
+//               location: true,
+//               salary: true,
+//               employmentType: true,
+//               experience: true,
+//               skills: true,
+//               description: true,
+//               status: true,
+//               applicationDeadline: true,
+//               createdAt: true
+//             }
+//           }
+//         },
+//         orderBy: {
+//           savedAt: 'desc'
+//         },
+//         skip,
+//         take: parseInt(limit)
+//       }),
+//       prisma.savedJob.count({ where: { userId } })
+//     ]);
+
+//     // Check for deadline approaching (within 7 days)
+//     const jobsWithDeadlineWarning = savedJobs.map(saved => {
+//       const deadlineDate = new Date(saved.job.applicationDeadline);
+//       const today = new Date();
+//       const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+      
+//       return {
+//         ...saved,
+//         deadlineWarning: daysUntilDeadline <= 7 && daysUntilDeadline > 0,
+//         daysUntilDeadline
+//       };
+//     });
+
+//     return res.status(200).json({
+//       status: "success",
+//       data: {
+//         savedJobs: jobsWithDeadlineWarning,
+//         pagination: {
+//           total,
+//           page: parseInt(page),
+//           limit: parseInt(limit),
+//           totalPages: Math.ceil(total / parseInt(limit))
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("userAllSavedJobs Error:", error);
+//     return res.status(500).json({
+//       status: "failed",
+//       message: "Failed to fetch saved jobs",
+//       error: error.message || "Internal server error"
+//     });
+//   }
+// };
+
+
+
+
+
+
 const userAllSavedJobs = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -468,7 +574,7 @@ const userAllSavedJobs = async (req, res) => {
           }
         },
         orderBy: {
-          savedAt: 'desc'
+          savedAt: "desc"
         },
         skip,
         take: parseInt(limit)
@@ -476,15 +582,20 @@ const userAllSavedJobs = async (req, res) => {
       prisma.savedJob.count({ where: { userId } })
     ]);
 
-    // Check for deadline approaching (within 7 days)
-    const jobsWithDeadlineWarning = savedJobs.map(saved => {
+    // Format response + add deadline warning + add isSaved flag
+    const formattedJobs = savedJobs.map(saved => {
       const deadlineDate = new Date(saved.job.applicationDeadline);
       const today = new Date();
-      const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
-      
+      const daysUntilDeadline = Math.ceil(
+        (deadlineDate - today) / (1000 * 60 * 60 * 24)
+      );
+
       return {
-        ...saved,
-        deadlineWarning: daysUntilDeadline <= 7 && daysUntilDeadline > 0,
+        ...saved.job,            // flatten job details
+        isSaved: true,           // ADD THIS → unify with getJobList
+        savedAt: saved.savedAt,  // keep saved timestamp if needed
+        deadlineWarning:
+          daysUntilDeadline <= 7 && daysUntilDeadline > 0,
         daysUntilDeadline
       };
     });
@@ -492,7 +603,7 @@ const userAllSavedJobs = async (req, res) => {
     return res.status(200).json({
       status: "success",
       data: {
-        savedJobs: jobsWithDeadlineWarning,
+        savedJobs: formattedJobs,
         pagination: {
           total,
           page: parseInt(page),
@@ -514,7 +625,6 @@ const userAllSavedJobs = async (req, res) => {
 
 
 
-// User withdraws job application
 const userWithdrawJob = async (req, res) => {
   try {
     // TODO: Implement withdraw application logic
@@ -594,26 +704,45 @@ const getJobList = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
+ 
+    const userId = req.user?.id; // user may be optional (if public list)
+ 
     const [jobs, totalCount] = await Promise.all([
       prisma.job.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        where:{
+        where: {
           isDeleted: false
-        }
+        },
+        include: userId
+          ? {
+              savedBy: {
+                where: { userId },
+                select: { id: true }
+              }
+            }
+          : false
       }),
-      prisma.job.count(),
+      prisma.job.count({
+        where: { isDeleted: false }
+      })
     ]);
-
+ 
+    // Add isSaved flag
+    const jobsWithSavedStatus = jobs.map(job => ({
+      ...job,
+      isSaved: job.savedBy && job.savedBy.length > 0
+    }));
+ 
     return res.status(200).json({
       status: "Success",
-      jobs,
+      jobs: jobsWithSavedStatus,
       totalCount,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
     });
+ 
   } catch (error) {
     console.error("getJobList Error:", error);
     return res.status(500).json({
@@ -869,26 +998,76 @@ const getJobDetails = async (req, res) => {
 };
 
 
+// const getApplicantsByJobId = async (req, res) => {
+//   try {
+//     const { jobId } = req.body;
+
+//     // Validate jobId
+//     if (!jobId) {
+//       return res.status(400).json({ message: "jobId is required" });
+//     }
+
+//     // Check if job exists
+//     const jobExists = await prisma.job.findUnique({
+//       where: { id: jobId },
+//       select: { id: true },
+//     });
+
+//     if (!jobExists) {
+//       return res.status(404).json({ message: "Job not found" });
+//     }
+
+//     // Fetch all job applications with user details
+//     const applicants = await prisma.jobApplication.findMany({
+//       where: { jobId },
+//       include: {
+//         user: {
+//           include: {
+//             CandidateProfile: true,
+//           },
+//         },
+//       },
+//       orderBy: { appliedAt: "desc" },
+//     });
+
+//     // If no applicants found
+//     if (applicants.length === 0) {
+//       return res.status(200).json({ message: "No applications found", data: [] });
+//     }
+
+//     // Format response (optional, for cleaner frontend usage)
+//     const formattedApplicants = applicants.map((app) => ({
+//       applicationId: app.id,
+//       status: app.status,
+//       appliedAt: app.appliedAt,
+//       userId: app.user.id,
+//       name: app.user.name,
+//       email: app.user.email,
+//       profile: app.user.CandidateProfile,
+//     }));
+
+//     return res.status(200).json({
+//       message: "Applicants fetched successfully",
+//       count: formattedApplicants.length,
+//       data: formattedApplicants,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching applicants:", error);
+//     return res.status(500).json({
+//       message: "Internal server error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
 const getApplicantsByJobId = async (req, res) => {
   try {
-    const { jobId } = req.body;
+    const { jobId } = req.body; // Ideally this should be req.params or req.query for a GET
 
-    // Validate jobId
-    if (!jobId) {
-      return res.status(400).json({ message: "jobId is required" });
-    }
+    if (!jobId) return res.status(400).json({ message: "jobId is required" });
 
-    // Check if job exists
-    const jobExists = await prisma.job.findUnique({
-      where: { id: jobId },
-      select: { id: true },
-    });
-
-    if (!jobExists) {
-      return res.status(404).json({ message: "Job not found" });
-    }
-
-    // Fetch all job applications with user details
+    // Fetch applications with AI Analysis included
     const applicants = await prisma.jobApplication.findMany({
       where: { jobId },
       include: {
@@ -897,16 +1076,35 @@ const getApplicantsByJobId = async (req, res) => {
             CandidateProfile: true,
           },
         },
+        // Include the AI rank details
+        analysis: {
+          select: {
+            fitPercentage: true,
+            details: true,
+            status: true
+          }
+        }
       },
-      orderBy: { appliedAt: "desc" },
+      // SORTING LOGIC: Highest Match First
+      orderBy: [
+        {
+          analysis: {
+            fitPercentage: 'desc' 
+          }
+        },
+        {
+          appliedAt: 'desc' // Fallback for equal scores or missing analysis
+        }
+      ]
     });
 
-    // If no applicants found
+    console.log('applicants',applicants)
+
     if (applicants.length === 0) {
       return res.status(200).json({ message: "No applications found", data: [] });
     }
 
-    // Format response (optional, for cleaner frontend usage)
+    // Format response for Frontend
     const formattedApplicants = applicants.map((app) => ({
       applicationId: app.id,
       status: app.status,
@@ -915,6 +1113,10 @@ const getApplicantsByJobId = async (req, res) => {
       name: app.user.name,
       email: app.user.email,
       profile: app.user.CandidateProfile,
+      
+      // AI Ranking Data
+      matchScore: app.analysis?.fitPercentage || 0,
+      aiAnalysis: app.analysis?.details || null
     }));
 
     return res.status(200).json({
@@ -922,6 +1124,7 @@ const getApplicantsByJobId = async (req, res) => {
       count: formattedApplicants.length,
       data: formattedApplicants,
     });
+
   } catch (error) {
     console.error("Error fetching applicants:", error);
     return res.status(500).json({

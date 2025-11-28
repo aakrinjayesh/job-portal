@@ -34,7 +34,8 @@ import {
   getJobDetails,
   checkIfJobSaved,
   getApplicantsByJobId,
-  getUserAppliedJobsId 
+  getUserAppliedJobsId, 
+  userUnsaveJob
 } from '../controllers/jobControllers.js'
 import { validateInput } from '../Middleware/inputValidator.js'
 import { authenticateToken } from '../Middleware/authMiddleware.js'
@@ -75,9 +76,9 @@ JobRouters.post('/jobs/save',
   // validateInput(saveJobValidator), 
   authenticateToken, userSaveJob)
 
-JobRouters.delete('/jobs/unsave', 
+JobRouters.post('/jobs/unsave', 
   // validateInput(removeSavedJobValidator),
-   authenticateToken, userRemovedSavedJob)
+   authenticateToken, userUnsaveJob)
 JobRouters.get('/jobs/saved', authenticateToken, userAllSavedJobs)
 JobRouters.get('/saved/:jobId', authenticateToken, checkIfJobSaved);
 

@@ -26,6 +26,7 @@ model Users {
   Job              Job[]            @relation("UserPostedJobs")
   JobApplications  JobApplication[]
   SavedJobs        SavedJob[]
+  courses          Course[]
 }
 
 enum Role {
@@ -181,9 +182,40 @@ model JobApplication {
   job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  analysis ApplicationAnalysis?
+
   @@unique([jobId, userId]) // Prevent duplicate applications
   @@index([userId])
   @@index([jobId])
+}
+
+model ApplicationAnalysis {
+  id               String @id @default(uuid())
+  jobApplicationId String @unique // 1:1 Relation
+
+  // Extracted Score for fast sorting (0 to 100)
+  fitPercentage Int @default(0)
+
+  // The detailed AI response
+  // Stores: key_gaps, key_matches, scoring_breakdown, etc.
+  details Json
+
+  // Track status in case AI fails or is processing
+  status AnalysisStatus @default(COMPLETED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobApplication JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+
+  @@index([fitPercentage]) // Critical for sorting candidates by rank
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 model SavedJob {
@@ -225,4 +257,36 @@ model State {
   code      String?
   countryId String
   country   Country @relation(fields: [countryId], references: [id])
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  price       Float    @default(0)
+  currency    String?
+  createdAt   DateTime @default(now())
+  userId      String
+  courseType  String?
+  instructor  Users    @relation(fields: [userId], references: [id])
+  classes     Class[] // renamed relation
+
+  @@index([userId])
+}
+
+model Class {
+  id          String   @id @default(uuid())
+  fileName    String
+  url         String // Multer uploaded file URL
+  type        String // "video", "pdf", "image"
+  title       String // Class title
+  description String? // Optional class description
+  size        Int? // File size in bytes
+  duration    Int? // Video duration in seconds
+  metaData    Json? // Optional additional metadata
+  createdAt   DateTime @default(now())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+
+  @@index([courseId])
 }

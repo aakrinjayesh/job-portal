@@ -40,7 +40,7 @@ const ReusableSelect = ({
     };
 
     fetchItems();
-  }, [fetchFunction]);
+  }, []);
 
   const onNameChange = (event) => {
     setName(event.target.value);
@@ -54,13 +54,15 @@ const ReusableSelect = ({
       return;
     }
 
-        // Allow A-Z, a-z, 0-9, space, dot, comma, hyphen, ampersand
-const isValid = /^[A-Za-z0-9 .,&-]+$/.test(name.trim());
+    // Allow A-Z, a-z, 0-9, space, dot, comma, hyphen, ampersand
+    const isValid = /^[A-Za-z0-9 .,&-]+$/.test(name.trim());
 
-if (!isValid) {
-  message.error("Only letters, numbers, spaces, '.', ',', '-' and '&' are allowed!");
-  return;
-}
+    if (!isValid) {
+      message.error(
+        "Only letters, numbers, spaces, '.', ',', '-' and '&' are allowed!"
+      );
+      return;
+    }
 
     if (!addFunction) {
       messageAPI.error("Add function not provided");

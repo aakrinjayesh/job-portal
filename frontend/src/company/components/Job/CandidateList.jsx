@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Spin, message, Button, Table, Space, Popconfirm } from "antd";
+import { Spin, message, Button, Table, Space, Popconfirm, Tag } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GetCandidateDeatils } from "../../api/api"; // ✅ Correct API import
@@ -42,6 +42,24 @@ const CandidateList = () => {
 
   // ✅ Table Columns
   const columns = [
+    {
+      title: "Fit Score",
+      dataIndex: "matchScore",
+      key: "matchScore",
+      sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (score) => {
+        if (score == null) return <Tag color="default">N/A</Tag>;
+
+        let color = "default";
+
+        if (score >= 80) color = "green";
+        else if (score >= 60) color = "blue";
+        else if (score >= 40) color = "orange";
+        else color = "red";
+
+        return <Tag color={color}>{score}%</Tag>;
+      },
+    },
     {
       title: "Name",
       dataIndex: "name",
@@ -93,7 +111,7 @@ const CandidateList = () => {
           >
             View
           </Button>
-          <Popconfirm
+          {/* <Popconfirm
             title="Are you sure you want to delete this candidate?"
             okText="Yes"
             cancelText="No"
@@ -106,7 +124,7 @@ const CandidateList = () => {
             <Button type="link" danger onClick={(e) => e.stopPropagation()}>
               Delete
             </Button>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       ),
     },
