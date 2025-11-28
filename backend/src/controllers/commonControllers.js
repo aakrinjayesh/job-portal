@@ -136,6 +136,38 @@ const addCloud = async (req, res) => {
 };
 
 
+const getAllRole = async (req, res) => {
+  try {
+    const clouds = await prisma.companyRole.findMany({
+      where: { isVerified: true },
+      orderBy: { name: 'asc' },
+    });
+    return res.status(200).json({ status: 'success', data: clouds });
+  } catch (err) {
+    return res.status(500).json({ status: 'failed', message: err.message });
+  }
+};
+
+// Add a cloud
+const addRole = async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(200).json({ status: 'failed', message: "Cloud name is required" });
+  }
+  try {
+    const check = await prisma.companyRole.findUnique({ where: { name } });
+    if (check) {
+      return res.status(200).json({ status: 'failed', message: "Cloud already exists" });
+    }
+    const newCloud = await prisma.cloud.create({
+      data: { name, isVerified: false },
+    });
+    return res.status(200).json({ status: 'success', id: newCloud.id });
+  } catch (error) {
+    return res.status(200).json({ status: 'failed', message: "Cloud already exists or something went wrong" });
+  }
+};
+
 export {
   getAllSkills,
   updateSkills,
@@ -144,5 +176,7 @@ export {
   getAllLocations,
   updateLocation,
   getAllClouds,
-  addCloud
+  addCloud,
+  getAllRole,
+  addRole
 }

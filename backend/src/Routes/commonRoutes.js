@@ -2,7 +2,7 @@ import express from 'express'
 
 import { validateInput } from '../Middleware/inputValidator.js'
 import { authenticateToken } from '../Middleware/authMiddleware.js';
-import { getAllSkills,updateSkills, getAllCertifications, updateCertifications, getAllLocations, updateLocation, getAllClouds, addCloud} from '../controllers/commonControllers.js';
+import { getAllSkills,updateSkills, getAllCertifications, updateCertifications, getAllLocations, updateLocation, getAllClouds, addCloud,addRole,getAllRole} from '../controllers/commonControllers.js';
 import { updateSkillsValidator,updateCertificationsValidator,updateLocationValidator ,addCloudValidator } from '../validators/userValidators.js';
 
 
@@ -26,6 +26,9 @@ CommonRouters.post('/locations', validateInput(updateLocationValidator),authenti
 // clouds routes(salesforce clouds)
 CommonRouters.get('/clouds', getAllClouds);
 CommonRouters.post('/clouds', validateInput(addCloudValidator),authenticateToken, addCloud);
+
+CommonRouters.get('/role', getAllRole);
+CommonRouters.post('/role', validateInput(addCloudValidator),authenticateToken, addRole);
 
 
 

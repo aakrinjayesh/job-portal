@@ -13,7 +13,7 @@ import {
   Col,
   Divider,
   Checkbox,
-  Switch
+  Switch,
 } from "antd";
 import { UploadOutlined, UserOutlined } from "@ant-design/icons";
 import {
@@ -28,7 +28,7 @@ import {
   PostLocations,
   GetClouds,
   PostClouds,
-  uploadProfilePicture ,
+  uploadProfilePicture,
 } from "../api/api";
 import GenerateResume from "../components/UserProfile/GenerateResume";
 import ReusableSelect from "../components/UserProfile/ReusableSelect";
@@ -54,7 +54,6 @@ const UpdateUserProfile = ({
   const [showContact, setShowContact] = useState(false);
   const [fileList, setFileList] = useState([]);
 
-
   console.log("Recivied Role", Reciviedrole);
   console.log("edit", editRecord);
 
@@ -67,12 +66,6 @@ const UpdateUserProfile = ({
   const [experienceList, setExperienceList] = useState([]);
 
   const role = localStorage.getItem("role");
-
-
- 
-
-
-
 
   useEffect(() => {
     if (editRecord && Reciviedrole) {
@@ -138,19 +131,18 @@ const UpdateUserProfile = ({
       });
 
       // SHOW EXISTING IMAGE IN UPLOAD PREVIEW
-if (editRecord?.profilePicture) {
-  setFileList([
-    {
-      uid: "-1",
-      name: "profile.jpg",
-      status: "done",
-      url: editRecord.profilePicture,
-    }
-  ]);
-} else {
-  setFileList([]); // no image
-}
-
+      if (editRecord?.profilePicture) {
+        setFileList([
+          {
+            uid: "-1",
+            name: "profile.jpg",
+            status: "done",
+            url: editRecord.profilePicture,
+          },
+        ]);
+      } else {
+        setFileList([]); // no image
+      }
     } else {
       console.log("edit false");
     }
@@ -383,245 +375,142 @@ if (editRecord?.profilePicture) {
     form.setFieldsValue({ workExperience: updatedExperience });
   };
 
-  // const onFinish = async (values) => {
-  //   try {
-  //     setSubmitLoading(true);
-
-  //      let profilePicUrl = null;
-
-  //   // ----------------------------------
-  //   // 1️⃣ Upload profile picture IF new file selected
-  //   // ----------------------------------
-  //   if (values?.profilePicture instanceof File) {
-  //     const fd = new FormData();
-  //     fd.append("file", values.profilePicture);
-
-  //     const uploadRes = await uploadProfilePicture(fd);  // separate API call
-
-  //     if (uploadRes?.status === "success") {
-  //       profilePicUrl = uploadRes.url;
-  //     } else {
-  //       messageAPI.error("Failed to upload profile picture");
-  //       setSubmitLoading(false);
-  //       return;
-  //     }
-  //   } else {
-  //     // keep old image when editing
-  //     profilePicUrl = editRecord?.profilePicture || null;
-  //   }
-
-
-  //     // Compose skillsJson from state (not form values)
-  //     const skillsJson = [
-  //       ...primarySkills.map((s) => ({
-  //         name: s?.name,
-  //         experience: Number(s?.experience ?? 0),
-  //         level: "primary",
-  //       })),
-  //       ...secondarySkills.map((s) => ({
-  //         name: s.name,
-  //         experience: Number(s?.experience ?? 0),
-  //         level: "secondary",
-  //       })),
-  //     ];
-
-  //     const payload = {
-  //       name: values?.name,
-  //       phoneNumber: values?.phoneNumber,
-  //       email: values?.email,
-  //       portfolioLink: values?.portfolioLink,
-  //       // profilePicture: values?.profilePicture || null,
-  //        profilePicture: profilePicUrl,
-  //       title: values?.title || null,
-  //       currentCTC: values?.currentCTC || null,
-  //       expectedCTC: values?.expectedCTC || null,
-  //       joiningPeriod: values?.joiningPeriod || null,
-  //       totalExperience: String(values?.totalExperience) || null,
-  //       relevantSalesforceExperience:
-  //         String(values?.relevantSalesforceExperience) || null,
-  //       linkedInUrl: values?.linkedInUrl || null,
-  //       trailheadUrl: values?.trailheadUrl || null,
-  //       preferredLocation: values?.preferredLocation || [],
-  //       currentLocation: values?.currentLocation || null,
-  //       preferredJobType: values?.preferredJobType || [],
-  //       skillsJson,
-  //       primaryClouds: primaryClouds,
-  //       secondaryClouds: secondaryClouds,
-  //       certifications: values?.certifications || [],
-  //       // workExperience: values?.workExperience || [],
-  //       workExperience: experienceList,
-  //       education: educationList,
-  //       rateCardPerHour: values.rateCardPerHour || {},
-  //     };
-  //     if (Reciviedrole) {
-  //       handleFormDetails(payload);
-  //       setModalVisible(false);
-  //       form.resetFields(); // ✅ clears all fields
-  //       setPrimarySkills([]);
-  //       setSecondarySkills([]);
-  //       setPrimaryClouds([]);
-  //       setSecondaryClouds([]);
-  //       setEducationList([]);
-  //       setExperienceList([]);
-  //       return;
-  //     }
-
-      
-  //     console.log("Submitting payload of user form:", payload);
-  //     const response = await profiledata(payload);
-  //     if (response?.status === "success") {
-  //       messageAPI.success("Profile updated successfully!");
-  //     } else {
-  //       messageAPI.error("Failed to update profile. Please try again.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Profile update error:", error);
-  //     messageAPI.error("Failed to update profile. Please try again.");
-  //   } finally {
-  //     setSubmitLoading(false);
-  //   }
-  // };
-
-
   const onFinish = async (values) => {
-  try {
-    setSubmitLoading(true);
+    try {
+      setSubmitLoading(true);
 
-    // -------------------------------
-    // 1️⃣ HANDLE PROFILE PICTURE UPLOAD
-    // -------------------------------
-    let profilePicUrl = null;
-    const fileObj = values?.profilePicture;
+      // -------------------------------
+      // 1️⃣ HANDLE PROFILE PICTURE UPLOAD
+      // -------------------------------
+      let profilePicUrl = null;
+      const fileObj = values?.profilePicture;
 
-    const isNewFile =
-      fileObj instanceof File ||
-      fileObj instanceof Blob ||
-      (fileObj && fileObj.uid && fileObj.originFileObj instanceof File);
+      const isNewFile =
+        fileObj instanceof File ||
+        fileObj instanceof Blob ||
+        (fileObj && fileObj.uid && fileObj.originFileObj instanceof File);
 
-    if (isNewFile) {
-      const realFile = fileObj.originFileObj || fileObj;
+      if (isNewFile) {
+        const realFile = fileObj.originFileObj || fileObj;
 
-      const fd = new FormData();
-      fd.append("file", realFile);
+        const fd = new FormData();
+        fd.append("file", realFile);
 
-      // const uploadRes = await uploadProfilePicture(fd);
+        // const uploadRes = await uploadProfilePicture(fd);
 
-      // if (uploadRes?.data?.status === "success") {
-      //   // profilePicUrl = uploadRes.data.url;   // <--- VERY IMPORTANT
-      //   profilePicUrl = uploadRes.url;   // FIXED
-      // } else {
-      //   messageAPI.error("Failed to upload profile picture");
-      //   setSubmitLoading(false);
-      //   return;
-      // }
+        // if (uploadRes?.data?.status === "success") {
+        //   // profilePicUrl = uploadRes.data.url;   // <--- VERY IMPORTANT
+        //   profilePicUrl = uploadRes.url;   // FIXED
+        // } else {
+        //   messageAPI.error("Failed to upload profile picture");
+        //   setSubmitLoading(false);
+        //   return;
+        // }
 
-      const uploadRes = await uploadProfilePicture(fd);
-console.log("UPLOAD RESPONSE:", uploadRes);
+        const uploadRes = await uploadProfilePicture(fd);
+        console.log("UPLOAD RESPONSE:", uploadRes);
 
-const profilePicUrlFromRes =
-  uploadRes?.url ?? 
-  uploadRes?.data?.url ?? 
-  uploadRes?.data?.location ?? 
-  null;
+        const profilePicUrlFromRes =
+          uploadRes?.url ??
+          uploadRes?.data?.url ??
+          uploadRes?.data?.location ??
+          null;
 
-if (!profilePicUrlFromRes) {
-  messageAPI.error("Failed to upload profile picture");
-  setSubmitLoading(false);
-  return;
-}
+        if (!profilePicUrlFromRes) {
+          messageAPI.error("Failed to upload profile picture");
+          setSubmitLoading(false);
+          return;
+        }
 
-profilePicUrl = profilePicUrlFromRes;
+        profilePicUrl = profilePicUrlFromRes;
+      } else {
+        profilePicUrl = editRecord?.profilePicture || null;
+      }
 
+      // -------------------------------
+      // 2️⃣ BUILD SKILLS JSON
+      // -------------------------------
+      const skillsJson = [
+        ...primarySkills.map((s) => ({
+          name: s.name,
+          experience: Number(s.experience ?? 0),
+          level: "primary",
+        })),
+        ...secondarySkills.map((s) => ({
+          name: s.name,
+          experience: Number(s.experience ?? 0),
+          level: "secondary",
+        })),
+      ];
 
-    } else {
-      profilePicUrl = editRecord?.profilePicture || null;
-    }
+      // -------------------------------
+      // 3️⃣ FINAL PAYLOAD
+      // -------------------------------
+      const payload = {
+        name: values?.name,
+        phoneNumber: values?.phoneNumber,
+        email: values?.email,
+        portfolioLink: values?.portfolioLink,
+        profilePicture: profilePicUrl, // <---- SAVED
+        title: values?.title || null,
+        currentCTC: String(values?.currentCTC) || null,
+        expectedCTC: String(values?.expectedCTC) || null,
+        joiningPeriod: values?.joiningPeriod || null,
+        totalExperience: String(values?.totalExperience) || null,
+        relevantSalesforceExperience:
+          String(values?.relevantSalesforceExperience) || null,
+        linkedInUrl: values?.linkedInUrl || null,
+        trailheadUrl: values?.trailheadUrl || null,
+        preferredLocation: values?.preferredLocation || [],
+        currentLocation: values?.currentLocation || null,
+        preferredJobType: values?.preferredJobType || [],
+        skillsJson,
+        primaryClouds,
+        secondaryClouds,
+        certifications: values?.certifications || [],
+        workExperience: experienceList,
+        education: educationList,
+        rateCardPerHour: values.rateCardPerHour || {},
+      };
 
-    // -------------------------------
-    // 2️⃣ BUILD SKILLS JSON
-    // -------------------------------
-    const skillsJson = [
-      ...primarySkills.map((s) => ({
-        name: s.name,
-        experience: Number(s.experience ?? 0),
-        level: "primary",
-      })),
-      ...secondarySkills.map((s) => ({
-        name: s.name,
-        experience: Number(s.experience ?? 0),
-        level: "secondary",
-      })),
-    ];
+      // ⭐⭐⭐ ADD THIS ⭐⭐⭐
+      if (editRecord && editRecord.id) {
+        payload.id = editRecord.id;
+      }
 
-    // -------------------------------
-    // 3️⃣ FINAL PAYLOAD
-    // -------------------------------
-    const payload = {
-      name: values?.name,
-      phoneNumber: values?.phoneNumber,
-      email: values?.email,
-      portfolioLink: values?.portfolioLink,
-      profilePicture: profilePicUrl,   // <---- SAVED
-      title: values?.title || null,
-      currentCTC: String(values?.currentCTC) || null,
-      expectedCTC: String(values?.expectedCTC) || null,
-      joiningPeriod: values?.joiningPeriod || null,
-      totalExperience: String(values?.totalExperience) || null,
-      relevantSalesforceExperience:
-        String(values?.relevantSalesforceExperience) || null,
-      linkedInUrl: values?.linkedInUrl || null,
-      trailheadUrl: values?.trailheadUrl || null,
-      preferredLocation: values?.preferredLocation || [],
-      currentLocation: values?.currentLocation || null,
-      preferredJobType: values?.preferredJobType || [],
-      skillsJson,
-      primaryClouds,
-      secondaryClouds,
-      certifications: values?.certifications || [],
-      workExperience: experienceList,
-      education: educationList,
-      rateCardPerHour: values.rateCardPerHour || {},
-    };
+      // -------------------------------
+      // 4️⃣ FOR VENDOR POPUP MODE
+      // -------------------------------
+      if (Reciviedrole) {
+        handleFormDetails(payload);
+        setModalVisible(false);
+        form.resetFields();
+        setPrimarySkills([]);
+        setSecondarySkills([]);
+        setPrimaryClouds([]);
+        setSecondaryClouds([]);
+        setEducationList([]);
+        setExperienceList([]);
+        return;
+      }
 
-    // ⭐⭐⭐ ADD THIS ⭐⭐⭐
-if (editRecord && editRecord.id) {
-  payload.id = editRecord.id;
-}
+      // -------------------------------
+      // 5️⃣ SAVE TO BACKEND
+      // -------------------------------
+      const response = await profiledata(payload);
 
-    // -------------------------------
-    // 4️⃣ FOR VENDOR POPUP MODE
-    // -------------------------------
-    if (Reciviedrole) {
-      handleFormDetails(payload);
-      setModalVisible(false);
-      form.resetFields();
-      setPrimarySkills([]);
-      setSecondarySkills([]);
-      setPrimaryClouds([]);
-      setSecondaryClouds([]);
-      setEducationList([]);
-      setExperienceList([]);
-      return;
-    }
-
-    // -------------------------------
-    // 5️⃣ SAVE TO BACKEND
-    // -------------------------------
-    const response = await profiledata(payload);
-
-    if (response?.status === "success") {
-      messageAPI.success("Profile updated successfully!");
-    } else {
+      if (response?.status === "success") {
+        messageAPI.success("Profile updated successfully!");
+      } else {
+        messageAPI.error("Failed to update profile. Please try again.");
+      }
+    } catch (error) {
+      console.error("Profile update error:", error);
       messageAPI.error("Failed to update profile. Please try again.");
+    } finally {
+      setSubmitLoading(false);
     }
-  } catch (error) {
-    console.error("Profile update error:", error);
-    messageAPI.error("Failed to update profile. Please try again.");
-  } finally {
-    setSubmitLoading(false);
-  }
-};
-
+  };
 
   const onFinishFailed = (errorInfo) => {
     console.log("Failed:", errorInfo);
@@ -658,110 +547,109 @@ if (editRecord && editRecord.id) {
           <Row gutter={16}>
             {/* Profile Picture */}
             <Col span={24}>
-              <Form.Item label="Upload Profile Picture .Jpg,.Png,.Jpeg" name="profilePicture">
+              <Form.Item
+                label="Upload Profile Picture .Jpg,.Png,.Jpeg"
+                name="profilePicture"
+              >
                 <Upload
                   listType="picture-card"
-                    style={{ 
-    borderRadius: "50%",       // 👉 makes the upload area circular
-    overflow: "hidden",        // 👉 keeps uploaded photo inside circle
-    width: 120, 
-    height: 120 
-  }}
+                  style={{
+                    borderRadius: "50%", // 👉 makes the upload area circular
+                    overflow: "hidden", // 👉 keeps uploaded photo inside circle
+                    width: 120,
+                    height: 120,
+                  }}
                   fileList={fileList}
                   maxCount={1}
-                   accept=".jpg,.jpeg,.png"
+                  accept=".jpg,.jpeg,.png"
+                  previewFile={(file) => {
+                    return Promise.resolve(URL.createObjectURL(file));
+                  }}
+                  showUploadList={{
+                    showPreviewIcon: true,
+                    showRemoveIcon: true,
+                    itemRender: (originNode, file, fileList, actions) => (
+                      <div
+                        style={{
+                          width: 120,
+                          height: 120,
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          position: "relative",
+                        }}
+                      >
+                        <img
+                          src={file.thumbUrl || file.url}
+                          alt="profile"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "50%",
+                          }}
+                        />
 
-                   previewFile={file => {
-  return Promise.resolve(URL.createObjectURL(file));
-}}
-showUploadList={{
-  showPreviewIcon: true,
-  showRemoveIcon: true,
-  itemRender: (originNode, file, fileList, actions) => (
-    <div style={{
-      width: 120,
-      height: 120,
-      borderRadius: "50%",
-      overflow: "hidden",
-      position: "relative"
-    }}>
-      <img
-        src={file.thumbUrl || file.url}
-        alt="profile"
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          borderRadius: "50%"
-        }}
-      />
+                        {/* eye icon */}
+                        <span
+                          onClick={() => window.open(file.thumbUrl || file.url)}
+                          style={{
+                            position: "absolute",
+                            bottom: 8,
+                            left: 8,
+                            background: "rgba(0,0,0,0.6)",
+                            color: "#fff",
+                            borderRadius: "50%",
+                            padding: "2px 6px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                          }}
+                        >
+                          👁
+                        </span>
 
-      {/* eye icon */}
-      <span
-        onClick={() => window.open(file.thumbUrl || file.url)}
-        style={{
-          position: "absolute",
-          bottom: 8,
-          left: 8,
-          background: "rgba(0,0,0,0.6)",
-          color: "#fff",
-          borderRadius: "50%",
-          padding: "2px 6px",
-          cursor: "pointer",
-          fontSize: "12px"
-        }}
-      >
-        👁
-      </span>
-
-      {/* delete icon */}
-      <span
-        onClick={actions.remove}
-        style={{
-          position: "absolute",
-          bottom: 8,
-          right: 8,
-          background: "rgba(0,0,0,0.6)",
-          color: "#fff",
-          borderRadius: "50%",
-          padding: "2px 6px",
-          cursor: "pointer",
-          fontSize: "12px"
-        }}
-      >
-        ✖
-      </span>
-    </div>
-  )
-}}
-
+                        {/* delete icon */}
+                        <span
+                          onClick={actions.remove}
+                          style={{
+                            position: "absolute",
+                            bottom: 8,
+                            right: 8,
+                            background: "rgba(0,0,0,0.6)",
+                            color: "#fff",
+                            borderRadius: "50%",
+                            padding: "2px 6px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                          }}
+                        >
+                          ✖
+                        </span>
+                      </div>
+                    ),
+                  }}
                   // beforeUpload={() => false}
                   beforeUpload={(file) => {
-  const allowed = ["image/jpeg", "image/png", "image/jpg"];
-  if (!allowed.includes(file.type)) {
-    message.error("Only JPG, JPEG, PNG images are allowed!");
-    return Upload.LIST_IGNORE; 
-  }
-  const maxSize = 2 * 1024 * 1024;
+                    const allowed = ["image/jpeg", "image/png", "image/jpg"];
+                    if (!allowed.includes(file.type)) {
+                      message.error("Only JPG, JPEG, PNG images are allowed!");
+                      return Upload.LIST_IGNORE;
+                    }
+                    const maxSize = 2 * 1024 * 1024;
 
-if (file.size > maxSize) {
-  message.error("Image must be smaller than 2MB!");
-  return Upload.LIST_IGNORE;
-}
+                    if (file.size > maxSize) {
+                      message.error("Image must be smaller than 2MB!");
+                      return Upload.LIST_IGNORE;
+                    }
 
-  return false;
-}}
-
+                    return false;
+                  }}
                   onChange={(info) => {
                     // form.setFieldsValue({ profilePicture: info.file });
                     // form.setFieldsValue({ profilePicture: info.file.originFileObj });
-                    setFileList(info.fileList); 
+                    setFileList(info.fileList);
                     form.setFieldsValue({ profilePicture: info.file });
                   }}
-
-                  
                 >
-            
                   <div>
                     <UserOutlined />
                     <div style={{ marginTop: 8 }}>Upload</div>
@@ -770,25 +658,24 @@ if (file.size > maxSize) {
               </Form.Item>
             </Col>
 
-            
-
             {/* Name, Phone, Email */}
             <Col xs={24} sm={12} md={12}>
               <Form.Item
                 label="Full Name"
                 name="name"
-                rules={[{ required: true, message: "Please enter full name" },
-                   {
-      pattern: /^[A-Za-z ]+$/,
-      message: "Only letters and spaces are allowed",
-    },
+                rules={[
+                  { required: true, message: "Please enter full name" },
+                  {
+                    pattern: /^[A-Za-z ]+$/,
+                    message: "Only letters and spaces are allowed",
+                  },
                 ]}
               >
                 <Input placeholder="Enter full name" />
               </Form.Item>
             </Col>
 
-   {Reciviedrole && (
+            {Reciviedrole && (
               <Form.Item
                 name="hideContact"
                 label="Hide Contact Details"
@@ -799,107 +686,97 @@ if (file.size > maxSize) {
             )}
 
             <Col xs={24} sm={12} md={12}>
-  <Form.Item
-    label="Phone Number"
-    name="phoneNumber"
-    rules={[
-      { 
-        required: true,
-         message: "Please enter phone number" },
-      {
-        pattern: /^[0-9]{10}$/,
-        message: "Format: 9876543210",
-      },
-    ]}
-  >
-    {/* <Input placeholder="Enter 10-digit phone number" maxLength={10} 
-     onKeyPress={(e) => {
-    if (!/[0-9]/.test(e.key)) {
-      e.preventDefault();
-    }
-  }}/> */}
-  <Input
-  addonBefore={
-    <Select defaultValue="+91" style={{ width: 160 }}>
-      <Select.Option value="+91">🇮🇳 +91</Select.Option>
-      <Select.Option value="+1">🇺🇸 +1</Select.Option>
-      <Select.Option value="+44">🇬🇧 +44</Select.Option>
-      <Select.Option value="+61">🇦🇺 +61</Select.Option>
-      <Select.Option value="+971">🇦🇪 +971</Select.Option>
-    </Select>
-  }
-  placeholder="Enter 10-digit phone number"
-  maxLength={10}
-  onKeyPress={(e) => {
-    if (!/[0-9]/.test(e.key)) {
-      e.preventDefault();
-    }
-  }}
-/>
+              <Form.Item
+                label="Phone Number"
+                name="phoneNumber"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter phone number",
+                  },
+                  {
+                    pattern: /^[0-9]{10}$/,
+                    message: "Format: 9XXXXXXXX2",
+                  },
+                ]}
+              >
+                <Input
+                  addonBefore={
+                    <Select defaultValue="+91">
+                      <Select.Option value="+91">🇮🇳 +91</Select.Option>
+                      <Select.Option value="+1">🇺🇸 +1</Select.Option>
+                      <Select.Option value="+44">🇬🇧 +44</Select.Option>
+                      <Select.Option value="+61">🇦🇺 +61</Select.Option>
+                      <Select.Option value="+971">🇦🇪 +971</Select.Option>
+                    </Select>
+                  }
+                  placeholder="Enter 10-digit phone number"
+                  maxLength={10}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </Form.Item>
+            </Col>
 
-  </Form.Item>
-</Col>
+            <Col xs={24} sm={12} md={12}>
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Enter valid email" },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.reject("Email is required");
+                      if (!Reciviedrole) {
+                        const allowedDomains = [
+                          "gmail.com",
+                          "yahoo.com",
+                          "outlook.com",
+                          "hotmail.com",
+                          "protonmail.com",
+                          "icloud.com",
+                          "aol.com",
+                          "zoho.com",
+                          "yandex.com",
+                        ];
 
+                        const emailDomain = value.toLowerCase().split("@")[1];
+                        if (allowedDomains.includes(emailDomain)) {
+                          return Promise.resolve();
+                        }
 
-  <Col xs={24} sm={12} md={12}>
-  <Form.Item
-    label="Email"
-    name="email"
-    rules={[
-      { required: true, message: "Please enter email" },
-      { type: "email", message: "Enter valid email" },
-      {
-        validator: (_, value) => {
-          if (!value) return Promise.reject("Email is required");
-          if (!Reciviedrole) {
-                const allowedDomains = [
-             "gmail.com",
-  "yahoo.com",
-  "outlook.com",
-  "hotmail.com",
-  "protonmail.com",
-  "icloud.com",
-  "aol.com",
-  "zoho.com",
-  "yandex.com",
-          ];
+                        return Promise.reject("Please provide a personal ID.");
+                      }
 
-          const emailDomain = value.toLowerCase().split("@")[1];
-          if (allowedDomains.includes(emailDomain)) {
-            return Promise.resolve();
-          }
+                      const allowedDomains = [
+                        "gmail.com",
+                        "yahoo.com",
+                        "outlook.com",
+                        "hotmail.com",
+                        "protonmail.com",
+                        "icloud.com",
+                        "aol.com",
+                        "zoho.com",
+                        "yandex.com",
+                      ];
 
-          return Promise.reject("Please provide a personal ID.");
-      
-    }
+                      const emailDomain = value.toLowerCase().split("@")[1];
+                      if (!allowedDomains.includes(emailDomain)) {
+                        return Promise.resolve();
+                      }
 
-          const allowedDomains = [
-             "gmail.com",
-  "yahoo.com",
-  "outlook.com",
-  "hotmail.com",
-  "protonmail.com",
-  "icloud.com",
-  "aol.com",
-  "zoho.com",
-  "yandex.com",
-          ];
-
-          const emailDomain = value.toLowerCase().split("@")[1];
-          if (!allowedDomains.includes(emailDomain)) {
-            return Promise.resolve();
-          }
-
-          return Promise.reject("Please provide a work email ID.");
-        },
-      },
-
-    ]}
-    
-  >
-    <Input placeholder="e.g., user@aakrin.com" />
-  </Form.Item>
-</Col>
+                      return Promise.reject("Please provide a work email ID.");
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="e.g., user@aakrin.com" />
+              </Form.Item>
+            </Col>
 
             {/* Title / Role */}
             <Col xs={24} sm={12}>
@@ -910,40 +787,48 @@ if (file.size > maxSize) {
                   {
                     required: true,
                     message: "Please enter the candidate's role!",
-                    
                   },
-                   {
-pattern: /^[A-Za-z ]+$/,
-  message: "Only letters spaces are allowed!",
-}
+                  {
+                    pattern: /^[A-Za-z ]+$/,
+                    message: "Only letters spaces are allowed!",
+                  },
                 ]}
               >
                 {/* <Input placeholder="e.g., Salesforce Developer" /> */}
-             <Select
- 
-  placeholder="e.g., Salesforce Developer"
-  tokenSeparators={[","]}
-  value={form.getFieldValue("title")}
-  onChange={(val) => {
-    // ❌ Allow only one role
-    // const onlyOne = val.slice(0, 1);
-    form.setFieldsValue({ title: val });
-  }}
-  onInputKeyDown={(e) => {
-    // ❌ Block numbers and special characters
-    if (!/^[A-Za-z ]$/.test(e.key) && e.key !== "Backspace" && e.key !== " ") {
-      e.preventDefault();
-    }
-  }}
->
-  <Select.Option value="Salesforce Developer">Salesforce Developer</Select.Option>
-  <Select.Option value="Salesforce Admin">Salesforce Admin</Select.Option>
-  <Select.Option value="Apex Developer">Apex Developer</Select.Option>
-  <Select.Option value="QA Engineer">QA Engineer</Select.Option>
-  <Select.Option value="Frontend Developer">Frontend Developer</Select.Option>
-</Select>
-
-
+                <Select
+                  placeholder="e.g., Salesforce Developer"
+                  tokenSeparators={[","]}
+                  value={form.getFieldValue("title")}
+                  onChange={(val) => {
+                    // ❌ Allow only one role
+                    // const onlyOne = val.slice(0, 1);
+                    form.setFieldsValue({ title: val });
+                  }}
+                  onInputKeyDown={(e) => {
+                    // ❌ Block numbers and special characters
+                    if (
+                      !/^[A-Za-z ]$/.test(e.key) &&
+                      e.key !== "Backspace" &&
+                      e.key !== " "
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  <Select.Option value="Salesforce Developer">
+                    Salesforce Developer
+                  </Select.Option>
+                  <Select.Option value="Salesforce Admin">
+                    Salesforce Admin
+                  </Select.Option>
+                  <Select.Option value="Apex Developer">
+                    Apex Developer
+                  </Select.Option>
+                  <Select.Option value="QA Engineer">QA Engineer</Select.Option>
+                  <Select.Option value="Frontend Developer">
+                    Frontend Developer
+                  </Select.Option>
+                </Select>
               </Form.Item>
             </Col>
 
@@ -979,7 +864,6 @@ pattern: /^[A-Za-z ]+$/,
               </Form.Item>
             </Col>
 
-           
             {/* Current/Expected CTC or Rate Card */}
             {!Reciviedrole ? (
               <>
@@ -1108,42 +992,41 @@ pattern: /^[A-Za-z ]+$/,
                 />
               </Form.Item>
             </Col> */}
-            <Col span={24}>
-  <Form.Item
-    label="Primary Skills"
-    name="primarySkills"
-    rules={[
-      {
-        required: true,
-        
-      },
-      {
-        validator: (_, value) => {
-          if (!value || value.length === 0) {
-            return Promise.reject("Please add at least one primary skill!");
-          }
-          return Promise.resolve();
-        },
-      },
-    ]}
-  >
-    <SkillManagerCard
-      title="Primary Skills"
-      skills={primarySkills}
-      onSkillsChange={handlePrimarySkillsChange}
-      fetchFunction={GetSkills}
-      addFunction={PostSkills}
-    />
-  </Form.Item>
-</Col>
-
-          </Row>
-
-          <Divider />
-
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item  name="secondarySkills" noStyle>
+            <Col span={12}>
+              <Form.Item
+                label="Primary Skills"
+                name="primarySkills"
+                rules={[
+                  {
+                    required: true,
+                  },
+                  {
+                    validator: (_, value) => {
+                      if (!value || value.length === 0) {
+                        return Promise.reject(
+                          "Please add at least one primary skill!"
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <SkillManagerCard
+                  title="Primary Skills"
+                  skills={primarySkills}
+                  onSkillsChange={handlePrimarySkillsChange}
+                  fetchFunction={GetSkills}
+                  addFunction={PostSkills}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Secondary Skills"
+                name="secondarySkills"
+                // noStyle
+              >
                 <SkillManagerCard
                   title="Secondary Skills"
                   skills={secondarySkills}
@@ -1171,37 +1054,38 @@ pattern: /^[A-Za-z ]+$/,
               </Form.Item>
             </Col> */}
             <Col span={12}>
-  <Form.Item
-    label="Primary Clouds"
-    name="primaryClouds"
-    rules={[
-      {
-        required: true,
-        message: "Please add at least one primary cloud!",
-      },
-      {
-        validator: (_, value) => {
-          if (!value || value.length === 0) {
-            return Promise.reject("Please add at least one primary cloud!");
-          }
-          return Promise.resolve();
-        },
-      },
-    ]}
-  >
-    <SkillManagerCard
-      title="Primary Clouds"
-      skills={primaryClouds}
-      onSkillsChange={handlePrimaryCloudsChange}
-      fetchFunction={GetClouds}
-      addFunction={PostClouds}
-    />
-  </Form.Item>
-</Col>
-
+              <Form.Item
+                label="Primary Clouds"
+                name="primaryClouds"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please add at least one primary cloud!",
+                  },
+                  {
+                    validator: (_, value) => {
+                      if (!value || value.length === 0) {
+                        return Promise.reject(
+                          "Please add at least one primary cloud!"
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <SkillManagerCard
+                  title="Primary Clouds"
+                  skills={primaryClouds}
+                  onSkillsChange={handlePrimaryCloudsChange}
+                  fetchFunction={GetClouds}
+                  addFunction={PostClouds}
+                />
+              </Form.Item>
+            </Col>
 
             <Col span={12}>
-              <Form.Item name="secondaryClouds" noStyle>
+              <Form.Item label="Secondary Clouds" name="secondaryClouds">
                 <SkillManagerCard
                   title="Secondary Clouds"
                   skills={secondaryClouds}
@@ -1244,13 +1128,11 @@ pattern: /^[A-Za-z ]+$/,
                 name="certifications"
                 rules={[
                   { required: true, message: "Please enter certifications!" },
-
                 ]}
               >
                 <ReusableSelect
                   placeholder="Select or add certifications"
                   fetchFunction={GetCertifications}
-                  
                   addFunction={PostCertifications}
                   single={false}
                 />
@@ -1267,9 +1149,10 @@ pattern: /^[A-Za-z ]+$/,
                 label="Work Experience"
                 name="workExperience"
                 rules={[
-                  { 
-                    required: true, 
-                    message: "Please enter work experience!" },
+                  {
+                    required: true,
+                    message: "Please enter work experience!",
+                  },
                 ]}
               >
                 <ExperienceCard
@@ -1297,7 +1180,8 @@ pattern: /^[A-Za-z ]+$/,
                 rules={[
                   { required: true, message: "Please enter LinkedIn URL!" },
                   {
-                   pattern: /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
+                    pattern:
+                      /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
 
                     message:
                       "Please enter a valid LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourprofile)",
@@ -1313,15 +1197,17 @@ pattern: /^[A-Za-z ]+$/,
                 label="Trailhead URL"
                 name="trailheadUrl"
                 rules={[
-                  { 
-                    // required: true, 
-                    message: "Please enter Trailhead URL!" },
+                  {
+                    // required: true,
+                    message: "Please enter Trailhead URL!",
+                  },
                   {
                     // pattern:
                     //   /^https:\/\/(www\.)?trailblazer\.me\/id\/[A-Za-z0-9_-]+\/?$/,
-                     pattern: /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
+                    pattern:
+                      /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
                     message:
-                       "Please enter a valid Trailhead URL (e.g. https://www.salesforce.com/trailblazer/yourprofile)",
+                      "Please enter a valid Trailhead URL (e.g. https://www.salesforce.com/trailblazer/yourprofile)",
                   },
                 ]}
               >
@@ -1332,13 +1218,19 @@ pattern: /^[A-Za-z ]+$/,
 
           {/* Submit + Generate Resume */}
           <Form.Item style={{ marginTop: 24 }}>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "12px",
+              }}
+            >
               <Button
                 type="primary"
                 htmlType="submit"
                 size="large"
                 // style={{ flex: 1 }}
-                 style={{ width: "150px" }}  
+                style={{ width: "150px" }}
                 loading={submitLoading}
               >
                 Submit
@@ -1353,4 +1245,3 @@ pattern: /^[A-Za-z ]+$/,
 };
 
 export default UpdateUserProfile;
-

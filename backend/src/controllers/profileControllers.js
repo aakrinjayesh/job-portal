@@ -87,9 +87,9 @@ const updateProfiledetails = async (req, res) => {
       update: {
         profilePicture,
         name ,
-      phoneNumber ,
-      portfolioLink ,
-      email,
+        phoneNumber ,
+        portfolioLink,
+        email,
         preferredLocation,
         preferredJobType,
         currentCTC,
@@ -136,7 +136,7 @@ const updateProfiledetails = async (req, res) => {
         title,
       }
     })
-    console.log('upded db useeprofile',upserted)
+    console.log('upded db useeprofile',upserted);
     return res.status(200).json({ status: 'success', data: upserted.userId })
   } catch (err) {
     console.error('Error saving user profile:', err)

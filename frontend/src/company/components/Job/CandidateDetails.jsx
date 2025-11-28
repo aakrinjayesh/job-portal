@@ -21,7 +21,8 @@ const CandidateDetails = () => {
     <div style={{ padding: "20px" }}>
       {/* Back Button */}
       <Button
-        type="link"
+        type="text"
+        style={{ marginBottom: 5 }}
         onClick={() =>
           navigate("/company/candidates", { state: { id: jobId } })
         }

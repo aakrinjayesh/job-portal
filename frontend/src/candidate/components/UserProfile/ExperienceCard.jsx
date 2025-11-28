@@ -18,6 +18,15 @@ import {
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import ReusableSelect from "./ReusableSelect";
+import {
+  GetClouds,
+  GetRole,
+  GetSkills,
+  PostClouds,
+  PostRole,
+  PostSkills,
+} from "../../api/api";
 
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
@@ -32,6 +41,7 @@ const ExperienceCard = ({
   const [form] = Form.useForm();
   const [experiences, setExperiences] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
 
   useEffect(() => {
     if (apidata && Array.isArray(apidata)) {
@@ -52,7 +62,6 @@ const ExperienceCard = ({
           dateRange: [dayjs(exp.startDate), dayjs(exp.endDate)],
           payrollCompanyName: exp.payrollCompanyName,
           role: exp.role,
-
 
           projects: exp.projects.map((p) => ({
             projectName: p.projectName,
@@ -86,19 +95,22 @@ const ExperienceCard = ({
     try {
       const values = await form.validateFields();
       console.log("values", values);
-      const { dateRange, payrollCompanyName, 
+      const {
+        dateRange,
+        payrollCompanyName,
         role,
-        
-         projects } = values;
+
+        projects,
+      } = values;
 
       const newExperience = {
         // startDate: dateRange[0].format("YYYY-MM"),
         // endDate: dateRange[1].format("YYYY-MM"),
-         startDate: dateRange[0].format("MM-YYYY"),
-  endDate: dateRange[1].format("MM-YYYY"),
+        startDate: dateRange[0].format("MM-YYYY"),
+        endDate: dateRange[1].format("MM-YYYY"),
         payrollCompanyName: payrollCompanyName || "",
         role: role || "",
-        
+
         projects: (projects || []).map((p) => ({
           projectName: p.projectName || "",
           cloudUsed: p.cloudUsed || "",
@@ -140,6 +152,18 @@ const ExperienceCard = ({
     message.success("Experience deleted!");
     if (onExperienceChange) onExperienceChange(updated);
   };
+
+  const RoleOptions = [
+    "Integration Developer",
+    "Apex Developer",
+    "LWC Developer",
+    "Salesforce Architect",
+    "Salesforce Consultant",
+    "Salesforce Administrator",
+    "Salesforce Developer",
+  ];
+
+  // const filteredOptions = RoleOptions.filter((o) => !RoleOptions.includes(o));
 
   return (
     <Card
@@ -195,14 +219,14 @@ const ExperienceCard = ({
                         <Text strong>Role:</Text> {item.role || "-"}
                       </div> */}
                       <div style={{ marginTop: 4 }}>
-  <div>
-    <Text strong>Company:</Text> {item.payrollCompanyName || "-"}
-  </div>
-  <div>
-    <Text strong>Role:</Text> {item.role || "-"}
-  </div>
-</div>
-
+                        <div>
+                          <Text strong>Company:</Text>{" "}
+                          {item.payrollCompanyName || "-"}
+                        </div>
+                        <div>
+                          <Text strong>Role:</Text> {item.role || "-"}
+                        </div>
+                      </div>
                     </>
                   }
                   description={
@@ -215,19 +239,19 @@ const ExperienceCard = ({
                           </div> */}
 
                           <div style={{ marginTop: 6 }}>
-  <div>
-    <Text strong>Project:</Text> {p.projectName || "-"}
-  </div>
-  {p.cloudUsed && (
-    <div>
-      <Text strong>Cloud:</Text>{" "}
-      {Array.isArray(p.cloudUsed)
-        ? p.cloudUsed.join(", ")
-        : p.cloudUsed}
-    </div>
-  )}
-</div>
-
+                            <div>
+                              <Text strong>Project:</Text>{" "}
+                              {p.projectName || "-"}
+                            </div>
+                            {p.cloudUsed && (
+                              <div>
+                                <Text strong>Cloud:</Text>{" "}
+                                {Array.isArray(p.cloudUsed)
+                                  ? p.cloudUsed.join(", ")
+                                  : p.cloudUsed}
+                              </div>
+                            )}
+                          </div>
 
                           <div>
                             <Text strong>Skills:</Text>{" "}
@@ -294,56 +318,55 @@ const ExperienceCard = ({
               <Form.Item
                 name="payrollCompanyName"
                 label="Payroll Company"
-                rules={[{ required: true, message: "Enter company" },
-    //                 {
-    //  pattern: /^[A-Za-z0-9 .,'/-]+$/,
-    //   message: "Only letters, numbers, are allowed!",
-    // },
+                rules={[
+                  { required: true, message: "Company Name Required" },
+                  {
+                    pattern: /^[A-Za-z0-9 .,'/-]+$/,
+                    message: "Only letters, numbers, are allowed!",
+                  },
                 ]}
               >
                 <Input placeholder="e.g. TCS" />
               </Form.Item>
             </Col>
-            
-    <Col span={7}>
-  <Form.Item
-  name="role"
-  label="Role"
-  rules={[{ required: true, message: "Enter role" },
-                    {
-      pattern: /^[A-Za-z0-9 ]+$/,
-      message: "Only letters, numbers, are allowed!",
-     },
-  ]}
->
-  <Select
-    mode="tags"
-    maxTagCount={1}
-    placeholder="Select or type a role"
-    showSearch
-    allowClear
-    onChange={(values) => {
-      // Allow only one role
-      if (Array.isArray(values) && values.length > 1) {
-        values.splice(0, values.length - 1); // Keep latest only
-      }
-    }}
-  >
-    <Select.Option value="Salesforce Developer">Salesforce Developer</Select.Option>
-    <Select.Option value="Salesforce Administrator">Salesforce Administrator</Select.Option>
-    <Select.Option value="Salesforce Consultant">Salesforce Consultant</Select.Option>
-    <Select.Option value="Salesforce Architect">Salesforce Architect</Select.Option>
-    <Select.Option value="LWC Developer">LWC Developer</Select.Option>
-    <Select.Option value="Apex Developer">Apex Developer</Select.Option>
-    <Select.Option value="Integration Developer">Integration Developer</Select.Option>
-  </Select>
-</Form.Item>
 
-</Col>
-
-
-
-
+            <Col span={7}>
+              <Form.Item
+                name="role"
+                label="Role"
+                rules={[
+                  { required: true, message: "Enter role" },
+                  {
+                    pattern: /^[A-Za-z0-9 ]+$/,
+                    message: "Only letters, numbers, are allowed!",
+                  },
+                ]}
+              >
+                {/* <Select
+                  // mode="tags"
+                  // maxTagCount={1}
+                  placeholder="Select or type a role"
+                  showSearch
+                  allowClear
+                  // onChange={(values) => {
+                  //   // Allow only one role
+                  //   if (Array.isArray(values) && values.length > 1) {
+                  //     values.splice(0, values.length - 1); // Keep latest only
+                  //   }
+                  // }}
+                  options={RoleOptions.map((item) => ({
+                    label: item,
+                    value: item,
+                  }))}
+                /> */}
+                <ReusableSelect
+                  placeholder="Select Role"
+                  fetchFunction={GetRole}
+                  addFunction={PostRole}
+                  single={true}
+                />
+              </Form.Item>
+            </Col>
           </Row>
 
           <Divider />
@@ -368,25 +391,28 @@ const ExperienceCard = ({
                           name={[name, "projectName"]}
                           label={`Project Name ${idx + 1}`}
                           rules={[
-                            { 
-                              required: true, 
-                              message: "Enter project name" },
-                               {
-      pattern: /^[A-Za-z ]+$/,
-      message: "Only letters, numbers, are allowed!",
-     },
+                            {
+                              required: true,
+                              message: "Enter project name",
+                            },
+                            {
+                              pattern: /^[A-Za-z0-9 ]+$/,
+                              message: "Only letters, numbers, are allowed!",
+                            },
                           ]}
                         >
                           <Input placeholder="Project name" />
                         </Form.Item>
                       </Col>
-                      <Col span={6}>
+                    </Row>
+                    <Row gutter={12}>
+                      <Col span={12}>
                         <Form.Item
                           {...restField}
                           name={[name, "cloudUsed"]}
                           label="Cloud Used"
                         >
-                          <Select
+                          {/* <Select
                             showSearch
                             placeholder="e.g. AWS"
                             mode="multiple"
@@ -396,10 +422,17 @@ const ExperienceCard = ({
                               { value: "Azure" },
                               { value: "GCP" },
                             ]}
+                          /> */}
+                          <ReusableSelect
+                            placeholder="Select or add Clouds"
+                            fetchFunction={GetClouds}
+                            addFunction={PostClouds}
+                            single={false}
                           />
                         </Form.Item>
                       </Col>
-                      <Col span={6}>
+
+                      <Col span={12}>
                         <Form.Item
                           {...restField}
                           name={[name, "skillsUsed"]}
@@ -411,9 +444,15 @@ const ExperienceCard = ({
                             },
                           ]}
                         >
-                          <Select
+                          {/* <Select
                             mode="tags"
                             placeholder="Add skills (type and press enter)"
+                          /> */}
+                          <ReusableSelect
+                            placeholder="Select or add Skills"
+                            fetchFunction={GetSkills}
+                            addFunction={PostSkills}
+                            single={false}
                           />
                         </Form.Item>
                       </Col>
@@ -502,20 +541,19 @@ const ExperienceCard = ({
                   </Button> */}
 
                   <Button
-  type="dashed"
-  onClick={() => {
-    if (fields.length >= 10) {
-      message.error("You can add up to 10 projects only!");
-      return;
-    }
-    add();
-  }}
-  block
-  icon={<PlusOutlined />}
->
-  Add Project
-</Button>
-
+                    type="dashed"
+                    onClick={() => {
+                      if (fields.length >= 10) {
+                        message.error("You can add up to 10 projects only!");
+                        return;
+                      }
+                      add();
+                    }}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    Add Project
+                  </Button>
                 </Form.Item>
               </>
             )}

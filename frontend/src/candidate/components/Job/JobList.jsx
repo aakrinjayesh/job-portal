@@ -28,7 +28,7 @@ dayjs.extend(relativeTime);
 
 const { Text, Title, Paragraph } = Typography;
 
-const JobList = ({ jobs, lastJobRef, type, jobids, portal }) => {
+const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
   const navigate = useNavigate();
   const [sortedJobs, setSortedJobs] = useState(jobs);
   const [savedJobIds, setSavedJobIds] = useState(jobids || []);
@@ -86,6 +86,9 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal }) => {
         const resp = await UnSaveJob({ jobId });
         if (resp?.status !== "success") throw new Error();
         messageApi.success("Job removed from saved list!");
+        if (type === "save" && onUnsave) {
+          onUnsave(jobId);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -133,6 +136,8 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal }) => {
           ...prev,
           [id]: resp.data,
         }));
+      } else {
+        messageApi.error("Could not analyze eligibility");
       }
     } catch (error) {
       console.log(error);

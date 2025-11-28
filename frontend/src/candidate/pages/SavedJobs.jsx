@@ -93,6 +93,10 @@ function SavedJobs() {
     if (page > 1) fetchSavedJobs(page);
   }, [page, fetchSavedJobs]);
 
+  const handleRemoveJob = (jobId) => {
+    setJobs((prev) => prev.filter((j) => j.id !== jobId));
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       {loading && page === 1 ? (
@@ -106,6 +110,7 @@ function SavedJobs() {
           type="save"
           jobids={ids}
           portal={"candidate"}
+          onUnsave={handleRemoveJob}
         />
       ) : (
         <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>

@@ -53,29 +53,25 @@ const Bench = () => {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
-  const [timer, setTimer] = useState(0); 
-const [isCounting, setIsCounting] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [isCounting, setIsCounting] = useState(false);
 
+  useEffect(() => {
+    let interval = null;
 
+    if (isCounting && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
 
+    if (timer === 0 && isCounting) {
+      setIsCounting(false);
+      setOtpExpired(true); // mark OTP expired
+    }
 
-
-useEffect(() => {
-  let interval = null;
-
-  if (isCounting && timer > 0) {
-    interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
-    }, 1000);
-  }
-
-  if (timer === 0 && isCounting) {
-    setIsCounting(false);
-    setOtpExpired(true); // mark OTP expired
-  }
-
-  return () => clearInterval(interval);
-}, [isCounting, timer]);
+    return () => clearInterval(interval);
+  }, [isCounting, timer]);
 
   // const filteredCandidates = candidates
   //   ?.map((item) => ({
@@ -85,23 +81,23 @@ useEffect(() => {
   //   .sort((a, b) => b.isMatch - a.isMatch); // matched items go to top
 
   const filteredCandidates = candidates
-  ?.map((item) => {
-    const text = searchText.toLowerCase();
+    ?.map((item) => {
+      const text = searchText.toLowerCase();
 
-    const nameMatch = item.name?.toLowerCase().includes(text);
-    const roleMatch = item.title?.toLowerCase().includes(text);
-    const cloudNames = Array.isArray(item.primaryClouds)
-      ? item.primaryClouds.map((c) => c.name?.toLowerCase())
-      : [];
+      const nameMatch = item.name?.toLowerCase().includes(text);
+      const roleMatch = item.title?.toLowerCase().includes(text);
+      const cloudNames = Array.isArray(item.primaryClouds)
+        ? item.primaryClouds.map((c) => c.name?.toLowerCase())
+        : [];
 
-    const cloudMatch = cloudNames.some((c) => c.includes(text));
+      const cloudMatch = cloudNames.some((c) => c.includes(text));
 
-    return {
-      ...item,
-      isMatch: nameMatch || roleMatch || cloudMatch,
-    };
-  })
-  .sort((a, b) => b.isMatch - a.isMatch);
+      return {
+        ...item,
+        isMatch: nameMatch || roleMatch || cloudMatch,
+      };
+    })
+    .sort((a, b) => b.isMatch - a.isMatch);
 
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
@@ -137,7 +133,7 @@ useEffect(() => {
   const showModal = () => {
     form.resetFields();
     setEditRecord(null);
-   
+
     setIsModalVisible(true);
   };
 
@@ -212,31 +208,30 @@ useEffect(() => {
         // }
 
         const res = await CreateVendorCandidate(data);
-if (res?.status === "success") {
-  message.success("Candidate added successfully!");
+        if (res?.status === "success") {
+          message.success("Candidate added successfully!");
 
-  // REFRESH from backend so we get the exact saved fields (incl. profilePicture URL)
-  await fetchCandidates();
+          // REFRESH from backend so we get the exact saved fields (incl. profilePicture URL)
+          await fetchCandidates();
 
-  // optionally: if you want to open the newly created candidate immediately,
-  // find it in the updated list and setSelectedCandidate.
-  // const created = res?.data;
-  // if (created) {
-  //   setSelectedCandidate(createdFromServer); // after fetchCandidates you can look up the id
-  // }
+          // optionally: if you want to open the newly created candidate immediately,
+          // find it in the updated list and setSelectedCandidate.
+          // const created = res?.data;
+          // if (created) {
+          //   setSelectedCandidate(createdFromServer); // after fetchCandidates you can look up the id
+          // }
 
-  // update counters (safer to recalc after fetchCandidates, but keep this for speed)
-  if (res?.data) {
-    if (res.data.isVerified) {
-      setVerifiedCount((v) => v + 1);
-    } else {
-      setUnverifiedCount((u) => u + 1);
-    }
-  }
-} else {
-  message.error(res?.message || "Failed to add candidate");
-}
-
+          // update counters (safer to recalc after fetchCandidates, but keep this for speed)
+          if (res?.data) {
+            if (res.data.isVerified) {
+              setVerifiedCount((v) => v + 1);
+            } else {
+              setUnverifiedCount((u) => u + 1);
+            }
+          }
+        } else {
+          message.error(res?.message || "Failed to add candidate");
+        }
       }
 
       setIsModalVisible(false);
@@ -268,15 +263,13 @@ if (res?.status === "success") {
         userProfileId: verifyCandidate.id,
       });
 
-
       if (res?.status === "success") {
         message.success(`OTP sent to ${verifyCandidate.email}`);
 
-    setOtp("");          
-  setOtpExpired(false);  
-  setTimer(60);
-  setIsCounting(true);
-
+        setOtp("");
+        setOtpExpired(false);
+        setTimer(60);
+        setIsCounting(true);
       } else {
         message.error(res?.message || "Failed to send OTP");
       }
@@ -503,6 +496,17 @@ if (res?.status === "success") {
     setHotlistFile(null);
   };
 
+  const handleChange = (e) => {
+    const inputValue = e.target.value;
+
+    // allow only alphabets, numbers & spaces
+    const reg = /^[A-Za-z0-9 ]*$/;
+
+    if (reg.test(inputValue) || inputValue === "") {
+      setSearchText(inputValue);
+    }
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 16 }}>Vendor Candidate List</h2>
@@ -642,52 +646,45 @@ if (res?.status === "success") {
           </Button>
 
           <Button
-  type={activeTab === "all" ? "primary" : "default"}
-  onClick={() => setActiveTab("all")}
->
-  All
-</Button>
+            type={activeTab === "all" ? "primary" : "default"}
+            onClick={() => setActiveTab("all")}
+          >
+            All
+          </Button>
         </div>
       </div>
 
       <Spin spinning={loading}>
         {/* 🔍 SEARCH INPUT */}
-      
-         <Input
-    // placeholder="Search by name..."
-    placeholder="Search by name or role or cloud ..."
 
-    value={searchText}
-    onChange={(e) => setSearchText(e.target.value)}
-    style={{
-      width: 250,
-      marginBottom: 16,
-      height: 35,
-      borderRadius: 6,
-    }}
-  />
+        <Input
+          // placeholder="Search by name..."
+          placeholder="Search by name or role or cloud ..."
+          value={searchText}
+          // onChange={(e) => setSearchText(e.target.value)}
+          onChange={handleChange}
+          style={{
+            width: 250,
+            marginBottom: 16,
+            height: 35,
+            borderRadius: 6,
+          }}
+        />
 
-        
-         <Table
+        <Table
           columns={columns}
-      
-dataSource={
-  activeTab === "all"
-    ? filteredCandidates
-    : activeTab === "active"
-      ? filteredCandidates.filter(c => c.status !== "inactive")
-      : filteredCandidates.filter(c => c.status === "inactive")
-}
-
-
-   
-
-
+          dataSource={
+            activeTab === "all"
+              ? filteredCandidates
+              : activeTab === "active"
+              ? filteredCandidates.filter((c) => c.status !== "inactive")
+              : filteredCandidates.filter((c) => c.status === "inactive")
+          }
           rowKey={(record) => record.id || record.name}
           bordered
           // pagination={{ pageSize: 10 }}
           pagination={false}
-           scroll={{ x: 1000 }}  
+          scroll={{ x: 1000 }}
           style={{ cursor: "pointer" }}
           onRow={(record) => ({
             onClick: () => {
@@ -726,7 +723,6 @@ dataSource={
         width={900}
       >
         <UpdateUserProfile
-    
           handleFormDetails={handleFormDetails}
           Reciviedrole={"candidate"}
           setModalVisible={setIsModalVisible}
@@ -805,126 +801,125 @@ dataSource={
       </Modal>
 
       {/* ✅ Enhanced Verification Modal */}
-   
 
       <Modal
-  title={
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span
-        style={{
-          background: "#1677ff",
-          color: "white",
-          borderRadius: "50%",
-          width: 30,
-          height: 30,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontWeight: "bold",
-        }}
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span
+              style={{
+                background: "#1677ff",
+                color: "white",
+                borderRadius: "50%",
+                width: 30,
+                height: 30,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontWeight: "bold",
+              }}
+            >
+              🔐
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 600 }}>
+              Verify Candidate
+            </span>
+          </div>
+        }
+        open={verifyModalVisible}
+        onCancel={() => setVerifyModalVisible(false)}
+        footer={null}
+        centered
+        bodyStyle={{ padding: "24px 32px" }}
       >
-        🔐
-      </span>
-      <span style={{ fontSize: 18, fontWeight: 600 }}>Verify Candidate</span>
-    </div>
-  }
-  open={verifyModalVisible}
-  onCancel={() => setVerifyModalVisible(false)}
-  footer={null}
-  centered
-  bodyStyle={{ padding: "24px 32px" }}
->
-  <div
-    style={{
-      background: "#f8f9fa",
-      padding: "16px 20px",
-      borderRadius: 10,
-      marginBottom: 20,
-      border: "1px solid #e5e5e5",
-    }}
-  >
-    <p style={{ marginBottom: 0, fontSize: 15 }}>
-      <b>Email:</b>{" "}
-      <span style={{ color: "#1677ff", fontWeight: 500 }}>
-        {verifyCandidate?.email || "-"}
-      </span>
-    </p>
-  </div>
+        <div
+          style={{
+            background: "#f8f9fa",
+            padding: "16px 20px",
+            borderRadius: 10,
+            marginBottom: 20,
+            border: "1px solid #e5e5e5",
+          }}
+        >
+          <p style={{ marginBottom: 0, fontSize: 15 }}>
+            <b>Email:</b>{" "}
+            <span style={{ color: "#1677ff", fontWeight: 500 }}>
+              {verifyCandidate?.email || "-"}
+            </span>
+          </p>
+        </div>
 
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      gap: 16,
-    }}
-  >
-   
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <Button
+            type="primary"
+            icon={<i className="ri-mail-send-line" />}
+            onClick={handleSendOtp}
+            loading={otpSending}
+            disabled={otpSending || isCounting}
+            style={{
+              width: "100%",
+              height: 40,
+              fontWeight: 600,
+              fontSize: 15,
+            }}
+          >
+            {otpSending
+              ? "Sending..."
+              : isCounting
+              ? `Resend OTP in ${timer}s`
+              : "Send OTP"}
+          </Button>
 
-    <Button
-  type="primary"
-  icon={<i className="ri-mail-send-line" />}
-  onClick={handleSendOtp}
-  loading={otpSending}
-  disabled={otpSending || isCounting}
-  style={{
-    width: "100%",
-    height: 40,
-    fontWeight: 600,
-    fontSize: 15,
-  }}
->
-  {otpSending
-    ? "Sending..."
-    : isCounting
-    ? `Resend OTP in ${timer}s`
-    : "Send OTP"}
-</Button>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+            }}
+          >
+            <Input
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+              style={{
+                flex: 1,
+                height: 40,
+                borderRadius: 6,
+                fontSize: 15,
+                textAlign: "center",
+                letterSpacing: 3,
+              }}
+            />
 
-
-    <div
-      style={{
-        display: "flex",
-        gap: 10,
-        alignItems: "center",
-      }}
-    >
-      <Input
-        placeholder="Enter 6-digit OTP"
-        value={otp}
-        onChange={(e) => setOtp(e.target.value)}
-        maxLength={6}
-        style={{
-          flex: 1,
-          height: 40,
-          borderRadius: 6,
-          fontSize: 15,
-          textAlign: "center",
-          letterSpacing: 3,
-        }}
-      />
-    
-      <Button
-  type="primary"
-  onClick={handleVerifyOtp}
-  loading={otpVerifying}
-  disabled={!otp || otpVerifying || otpExpired}   // ⬅ IMPORTANT
-  style={{
-    width: 100,
-    height: 40,
-    fontWeight: 600,
-    fontSize: 15,
-  }}
->
-  {otpExpired ? "Expired" : otpVerifying ? "Verifying..." : "Verify"}
-</Button>
-
-    </div>
-  </div>
-</Modal>
+            <Button
+              type="primary"
+              onClick={handleVerifyOtp}
+              loading={otpVerifying}
+              disabled={!otp || otpVerifying || otpExpired} // ⬅ IMPORTANT
+              style={{
+                width: 100,
+                height: 40,
+                fontWeight: 600,
+                fontSize: 15,
+              }}
+            >
+              {otpExpired
+                ? "Expired"
+                : otpVerifying
+                ? "Verifying..."
+                : "Verify"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export default Bench;
-
-

@@ -112,6 +112,7 @@ const ReusableSelect = ({
       <Select
         mode={single === false && "multiple"}
         style={style}
+        placement={"bottomRight"}
         className={className}
         placeholder={placeholder}
         value={value}

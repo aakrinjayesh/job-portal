@@ -250,6 +250,32 @@ export async function PostClouds(payload) {
 }
 
 
+export async function GetRole() {
+  try {
+    const response = await axiosInstance.get("/role", {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching clouds:", error);
+    throw error;
+  }
+}
+
+export async function PostRole(payload) {
+  try {
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/role", data, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error adding cloud:", error);
+    throw error;
+  }
+}
+
+
 export async function ApplyJob(payload) {
   try {
       let data = JSON.stringify(payload)
@@ -375,7 +401,8 @@ export async function uploadProfilePicture(formData) {
 
 export async function CVEligibility(payload) {
   try {
-    const response = await axiosInstance.post("/check-eligibility", payload);
+    const data = JSON.stringify(payload)
+    const response = await axiosInstance.post("/check-eligibility", data);
     return response.data;
   } catch (error) {
     console.error("Error in ResetPassword:", error);

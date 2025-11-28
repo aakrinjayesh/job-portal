@@ -69,7 +69,8 @@ const JobDetails = () => {
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
       <Button
-        type="link"
+        type="text"
+        style={{ marginBottom: 5 }}
         onClick={handleBackButton}
         icon={<ArrowLeftOutlined />}
       >

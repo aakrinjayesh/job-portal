@@ -87,7 +87,8 @@ const CandidateJobDetails = () => {
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
       {contextHolder}
       <Button
-        type="link"
+        type="text"
+        style={{ marginBottom: 5 }}
         onClick={() =>
           navigate(
             // type === "save" ? "/candidate/jobs/saved" : "/candidate/jobs"

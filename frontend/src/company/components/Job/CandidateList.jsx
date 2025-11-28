@@ -137,10 +137,10 @@ const CandidateList = () => {
   return (
     <div style={{ padding: "20px" }}>
       <Button
-        type="link"
+        type="text"
         onClick={() => navigate("/company/jobs")}
         icon={<ArrowLeftOutlined />}
-        style={{ marginBottom: "16px" }}
+        style={{ marginBottom: 5 }}
       >
         Back
       </Button>

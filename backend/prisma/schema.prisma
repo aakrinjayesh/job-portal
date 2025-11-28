@@ -110,6 +110,12 @@ model Cloud {
   isVerified Boolean @default(false)
 }
 
+model CompanyRole {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  isVerified Boolean @default(false)
+}
+
 enum EmploymentType {
   FullTime
   PartTime
