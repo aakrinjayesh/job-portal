@@ -8,14 +8,14 @@ import CommonRouters from "./Routes/commonRoutes.js";
 import LoginRouters from "./Routes/loginRoutes.js";
 import VendorRoutes from "./Routes/vendorRoutes.js";
 import courseRoutes from "./Routes/course.routes.js";
-import classRoutes from "./Routes/class.routes.js";
+
 const __dirname = path.resolve();
 
 dotenv.config();
 
 
 const app = express();
-app.use(express.urlencoded({ extended: true }));
+
 app.use(cors())
 app.use(express.json());
 app.use(cors({
@@ -24,12 +24,14 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"], // <-- important for auth
   credentials: true
 }));
-app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
-
+app.use(
+  "/videos",
+  express.static(path.join(__dirname, "src", "uploads", "videos"))
+);
  app.use( userRouter)
 app.use(LoginRouters)
 app.use("/api/course", courseRoutes);
-app.use("/api/classes", classRoutes);
+
 // app.use(userRouter)
 app.use(JobRouters)
 app.use(CommonRouters)

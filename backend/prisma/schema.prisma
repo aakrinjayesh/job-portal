@@ -1,5 +1,12 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -11,52 +18,72 @@ model Users {
   id               String           @id @default(uuid())
   name             String
   email            String           @unique
-  createdAt        DateTime         @default(now())
   role             Role             @default(candidate)
   password         String?
-  courses          Course[]
+  createdAt        DateTime         @default(now())
+  CandidateProfile UserProfile?     @relation("CandidateUserProfile")
+  VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
   Job              Job[]            @relation("UserPostedJobs")
   JobApplications  JobApplication[]
   SavedJobs        SavedJob[]
-  CandidateProfile UserProfile?     @relation("CandidateUserProfile")
-  VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
+ courses          Course[]         // NEW: One user can have many courses
+}
+
+enum Role {
+  candidate
+  company
+  admin
+}
+
+enum JobType {
+  FullTime
+  Contract
+  Freelance
 }
 
 model UserProfile {
-  id                           String    @id @default(uuid())
-  userId                       String?   @unique
+  id       String  @id @default(uuid())
+  userId   String? @unique
+  vendorId String?
+  user     Users?  @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
+  vendor   Users?  @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
+
+  // venderId                     String?
   profilePicture               String?
+  title                        String?
+  name                         String?
+  phoneNumber                  String?
+  email                        String?
+  portfolioLink                String?
   preferredLocation            String[]
+  currentLocation              String?
   preferredJobType             JobType[]
   currentCTC                   String?
   expectedCTC                  String?
+  rateCardPerHour              Json?
   joiningPeriod                String?
   totalExperience              String?
   relevantSalesforceExperience String?
-  certifications               String[]
-  createdAt                    DateTime  @default(now())
-  updatedAt                    DateTime  @updatedAt
-  linkedInUrl                  String?
-  skillsJson                   Json?
-  title                        String?
-  trailheadUrl                 String?
-  currentLocation              String?
-  education                    Json?
-  workExperience               Json?
-  primaryClouds                Json?
-  secondaryClouds              Json?
-  vendorId                     String?
-  email                        String?
-  name                         String?
-  phoneNumber                  String?
-  portfolioLink                String?
-  rateCardPerHour              Json?
-  isVerified                   Boolean   @default(false)
-  otpExpiry                    DateTime?
-  verificationOtp              String?
-  address                      Address?
-  user                         Users?    @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
-  vendor                       Users?    @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
+
+  skillsJson      Json? // e.g. [{ name: "Apex", experience: 3, level: "primary" }]
+  primaryClouds   Json?
+  secondaryClouds Json?
+
+  certifications String[]
+  workExperience Json?
+  education      Json?
+
+  address Address?
+
+  linkedInUrl  String?
+  trailheadUrl String?
+
+  isVerified      Boolean   @default(false)
+  verificationOtp String?
+  otpExpiry       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Skills {
@@ -83,32 +110,65 @@ model Cloud {
   isVerified Boolean @default(false)
 }
 
+enum EmploymentType {
+  FullTime
+  PartTime
+  Internship
+  Contract
+  Freelance
+}
+
+enum ExperienceLevel {
+  Internship
+  EntryLevel
+  Mid
+  Senior
+  Lead
+}
+
+enum JobStatus {
+  Open
+  Closed
+  Draft
+}
+
 model Job {
   id                  String           @id @default(uuid())
-  experience          String?
-  location            String?
-  description         String?
-  skills              String[]
-  updatedAt           DateTime         @updatedAt
-  applicationDeadline String
-  companyName         String?
-  createdAt           DateTime         @default(now())
-  employmentType      EmploymentType
-  experienceLevel     ExperienceLevel?
-  jobType             String
-  postedById          String?
-  qualifications      String[]
-  responsibilities    String[]
   role                String
-  salary              Int
-  status              JobStatus        @default(Open)
-  deletedAt           DateTime?
-  deletedReason       String?
-  isDeleted           Boolean          @default(false)
+  description         String?
+  employmentType      EmploymentType
+  experience          String?
+  experienceLevel     ExperienceLevel?
+  location            String?
+  skills              String[] // Array of Json Skills
   clouds              String[]
-  postedBy            Users?           @relation("UserPostedJobs", fields: [postedById], references: [id])
-  applications        JobApplication[]
-  savedBy             SavedJob[]
+  salary              Int
+  companyName         String?
+  responsibilities    String[]
+  qualifications      String[]
+  jobType             String
+  status              JobStatus        @default(Open)
+  applicationDeadline String
+  isDeleted           Boolean          @default(false)
+  deletedReason       String?
+  deletedAt           DateTime?
+
+  postedById String?
+  postedBy   Users?  @relation("UserPostedJobs", fields: [postedById], references: [id])
+
+  applications JobApplication[]
+  savedBy      SavedJob[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ApplicationStatus {
+  Pending
+  Reviewed
+  Shortlisted
+  Rejected
+  Hired
 }
 
 model JobApplication {
@@ -118,10 +178,11 @@ model JobApplication {
   status    ApplicationStatus @default(Pending)
   appliedAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
-  job       Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  user      Users             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([jobId, userId])
+  job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId]) // Prevent duplicate applications
   @@index([userId])
   @@index([jobId])
 }
@@ -131,10 +192,11 @@ model SavedJob {
   jobId   String
   userId  String
   savedAt DateTime @default(now())
-  job     Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  user    Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([jobId, userId])
+  job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId]) // Prevent duplicate saves
   @@index([userId])
   @@index([jobId])
 }
@@ -165,77 +227,32 @@ model State {
   countryId String
   country   Country @relation(fields: [countryId], references: [id])
 }
-
 model Course {
   id          String   @id @default(uuid())
   title       String
   description String?
   price       Float    @default(0)
-  currency    String?
   createdAt   DateTime @default(now())
-  userId      String
-  courseType  String?
+
+  // Relations
   instructor  Users    @relation(fields: [userId], references: [id])
-  classes     Class[]  // renamed relation
+  userId      String
+  videos      Video[]
 
   @@index([userId])
 }
+model Video {
+  id         String   @id @default(uuid())
+  fileName   String
+  url        String
+  size       Int?
+  duration   Int?
+  metaData   Json?    // optional: store backend raw info if needed
+  createdAt  DateTime @default(now())
 
-model Class {
-  id          String   @id @default(uuid())
-  fileName    String
-  url         String   // Multer uploaded file URL
-  type        String   // "video", "pdf", "image"
-  title       String   // Class title
-  description String?  // Optional class description
-  size        Int?     // File size in bytes
-  duration    Int?     // Video duration in seconds
-  metaData    Json?    // Optional additional metadata
-  createdAt   DateTime @default(now())
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id])
+  // Relations
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   String
 
   @@index([courseId])
-}
-
-enum Role {
-  candidate
-  company
-  admin
-}
-
-enum JobType {
-  FullTime
-  Contract
-  Freelance
-}
-
-enum EmploymentType {
-  FullTime
-  PartTime
-  Internship
-  Contract
-  Freelance
-}
-
-enum ExperienceLevel {
-  Internship
-  EntryLevel
-  Mid
-  Senior
-  Lead
-}
-
-enum JobStatus {
-  Open
-  Closed
-  Draft
-}
-
-enum ApplicationStatus {
-  Pending
-  Reviewed
-  Shortlisted
-  Rejected
-  Hired
 }
