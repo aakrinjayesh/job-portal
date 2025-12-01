@@ -278,7 +278,11 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
               {/* EXPERIENCE / LOCATION / SALARY */}
               <div style={{ marginTop: 12 }}>
                 <Space split={<Divider type="vertical" />} wrap>
-                  {job.experience && <Text>{job.experience}</Text>}
+                  {job.experience && (
+                    <Text>
+                      {job.experience.number} {job.experience.type}
+                    </Text>
+                  )}
 
                   {job.location && (
                     <Space>

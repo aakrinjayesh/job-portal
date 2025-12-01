@@ -192,107 +192,125 @@ ${text}
 
 
 
+
 export const recruiterSysPrompt = (text) => `
 You are extracting structured recruiter-related information from a resume text. Parse the text and return **ONLY valid JSON**...
-### **Required JSON Schema & Data Type Compliance**
 
-| Key | Data Type | Notes & Normalization Rules | Default Value (If Not Found) |
+### **Updated JSON Schema & Data Type Compliance**
+
+| Key | Data Type | Notes & Normalization Rules | Default Value |
 | :--- | :--- | :--- | :--- |
-| **role** | \`string | null\` | Job title or designation (e.g., "Machine Learning Engineer"). | \`null\` |
+| **role** | \`string | null\` | Job title or designation and **remove all special characters** (only letters, numbers, spaces allowed)| \`null\` |
 | **description** | \`string | null\` | Full job description text. | \`null\` |
-| **employmentType** | \`string | null\` | Normalize into one of: **"FullTime"**, **"PartTime"**, or **"Contract"**. | \`null\` |
-| **experience** | \`string | null\` | Text form of required experience (e.g., "3 years", "2-5 years"). | \`null\` |
-| **experienceLevel** | \`string | null\` | Normalize into one of: **"Internship"**, **"EntryLevel"**, **"Mid"**, **"Senior"**, or **"Lead"**. | \`null\` |
-| **location** | \`string | null\` | Job location (e.g., "Bangalore, India"). | \`null\` |
-| **skills** | \`string[]\` | List of skills mentioned (e.g., ["Python", "TensorFlow", "SQL"]). | \`[]\` |
-| **salary** | \`number | 0\` | Annual salary (numeric only). Remove symbols like ₹ or $, e.g., "₹12,00,000" → 1200000. | \`0\` |
-| **companyName** | \`string | null\` | Name of the hiring company. | \`null\` |
-| **responsibilities** | \`string[]\` | List of job responsibilities. | \`[]\` |
-| **qualifications** | \`string[]\` | Required educational or professional qualifications. | \`[]\` |
-| **jobType** | \`string | null\` | Work type: one of **"Onsite"**, **"Remote"**, or **"Hybrid"**. | \`null\` |
-| **status** | \`string | null\` | Job posting status (e.g., "Open", "Closed", "Draft"). | \`"Open"\` |
-| **applicationDeadline** | \`string | null\` | Deadline date for applications in **YYYY-MM-DD** format if possible. | \`null\` |
+| **employmentType** | \`string | null\` | Normalize into: **"FullTime"**, **"PartTime"**, **"Contract"**. | \`null\` |
+| **experience** | \`object | null\` | Must contain: **number: int**, **type: "year" | "month"** | \`{ "number": 0, "type": year }\` |
+| **experienceLevel** | \`string | null\` | One of: **"Internship"**, **"EntryLevel"**, **"Mid"**, **"Senior"**, **"Lead"** | \`null\` |
+| **location** | \`string | null\` | Job location | \`null\` |
+| **skills** | \`string[]\` | List of skills | \`[]\` |
+| **salary** | \`number\` | Numeric annual salary | \`0\` |
+| **companyName** | \`string | null\` | Hiring company | \`null\` |
+| **responsibilities** | \`string | null\` | A single concatenated string of responsibilities | \`null\` |
+| **qualifications** | \`string[]\` | Required qualifications | \`[]\` |
+| **jobType** | \`string | null\` | One of **"Onsite"**, **"Remote"**, **"Hybrid"** | \`null\` |
+| **status** | \`string | null\` | Default = "Open" | \`"Open"\` |
+| **applicationDeadline** | \`string | null\` | Format: YYYY-MM-DD | \`null\` |
 
 ---
 
 ### **Extraction & Normalization Rules**
 
 1. **Output Format:**  
-   - Return **only the JSON object**, no markdown code fences (\`\`\`), no text before or after.  
-   - Example ✅  
-     \`\`\`json
-     {"role": "Machine Learning Engineer", "skills": ["Python", "TensorFlow"]}
-     \`\`\`
-     ❌ Wrong → "Here is your JSON output"
+   - Return **only the JSON object**, no markdown, no explanation.
 
 2. **Default Values:**  
-   - If a field is missing, use the provided default value from the table above.
+   - Missing fields must use defaults defined above.
 
-3. **Normalization Rules:**
-   - **employmentType:**  
-  Normalize using these rules:
-  - "full time", "permanent", "regular", "ft" → **"FullTime"**
-  - "part time", "pt" → **"PartTime"**
-  - "contract", "contractual", "consultant", "temp", "temporary" → **"Contract"**
+3. ** ROLE (UPDATED RULE)**
+- Extract the job title  
+- **Remove all special characters**  
+- Keep **only letters, numbers, spaces**  
+- Collapse multiple spaces into a single space  
+- Trim leading/trailing spaces 
 
-   
-   - **experienceLevel:**  
-  Normalize into one of **"Internship"**, **"EntryLevel"**, **"Mid"**, **"Senior"**, or **"Lead"**.  
-  Rules:
-  - If text includes "intern", "internship" → **"Internship"**  
-  - If text includes "fresher", "junior", "entry", "entry-level", "<3 years", "0-2 years" → **"EntryLevel"**  
-  - If text includes "mid", "mid-level", "intermediate", "3-6 years" → **"Mid"**  
-  - If text includes "senior", "7+ years", "sr.", "sr" → **"Senior"**  
-  - If text includes "lead", "team lead", "technical lead", "principal" → **"Lead"**  
+4. **Experience Parsing (UPDATED):**
+   - Extract experience like:  
+     - "3 years" → \`{ "number": 3, "type": "year" }\`
+     - "5 months" → \`{ "number": 5, "type": "month" }\`
+     - "2-5 years" → number = lower bound → \`{ "number": 2, "type": "year" }\`
+   - If unit not clear: default \`type = "year"\`
+   - If nothing found:  
+     \`{ "number": 0, "type": null }\`
+
+5. **Responsibilities (UPDATED):**
+   - **Extract the responsibilities block EXACTLY as found**  
+   - Preserve:
+     - Bullet points  
+     - New lines  
+     - Hyphens  
+     - Formatting  
+     - Capitalization  
+   - No splitting, no merging, no cleaning.
+
+6. Extract only education-related requirements, such as:
+   - Degrees (B.Tech, M.Tech, BSc, MSc, PhD)
+   - Fields of study (Computer Science, Electrical Engineering)
+   - Minimum education requirement (Bachelor’s required)
+   - GPA requirements
+   - Graduation year requirements
+   - Academic eligibility criteria
+
+    ❌ Do NOT include:
+   - Skills
+   - Responsibilities
+   - Tools
+   - Certifications
+
+7. **Normalization Rules:**
+
+   **employmentType:**  
+   - "full time", "permanent", "regular", "ft" → **"FullTime"**  
+   - "part time", "pt" → **"PartTime"**  
+   - "contract", "contractual", "consultant", "temp" → **"Contract"**
+
+   **experienceLevel:**  
+   - "intern" → **Internship**  
+   - "entry", "junior", "fresher", "<3 years" → **EntryLevel**  
+   - "mid", "3-6 years" → **Mid**  
+   - "senior", "7+ years" → **Senior**  
+   - "lead", "principal" → **Lead**
+
+   **jobType:**  
+   Normalize to **"Onsite"**, **"Remote"**, or **"Hybrid"**
+
+   **salary:**  
+   - Remove ₹, $, commas, "LPA", etc.
+   - Extract digits only.
+
+   **applicationDeadline:**  
+   - If partial, convert to closest valid date  
+   - Else → null
 
 
-   - **jobType:**  
-     Normalize to **"Onsite"**, **"Remote"**, or **"Hybrid"**.
+8. **Skills Extraction:**  
+   - Extract all technical terms  
+   - No duplicates  
+   - Clean array of strings
 
-   - **salary:**  
-     Extract only numbers, remove currency symbols or text like "LPA", "per annum", etc.
-
-   - **applicationDeadline:**  
-     - If only month/year found, format as "YYYY-MM" or "YYYY-MM-01".  
-     - If no valid date is found, set as \`null\`.
-
-4. **Responsibilities & Qualifications:**  
-   - Must be arrays of strings.  
-   - If given as a paragraph, split by bullet points or sentences.
-
-5. **Experience Parsing:**  
-   - Keep as readable text, don’t convert to a number (e.g., “3 years” → **3 years**).  
-   - If range like “2–5 years”, keep it as is.
-
-6. **Skills Extraction:**  
-   - Extract all technical, domain, or software-related terms.  
-   - Convert them into a clean array of strings.  
-   - Avoid duplicates, symbols, or phrases like "knowledge of".
-
-7. **Status Field:**  
-   - Default = "Open" unless text says "Closed", "Expired", or similar.
+9. **Status:**  
+   - Default = "Open"
 
 ---
 
-### **Additional Notes**
-- If any key information (like companyName or salary) is missing, still include the key with its default value.
-- The JSON must be **valid, parseable, and syntactically correct**.
-- No markdown, explanations, or surrounding text — only JSON.
+### **STRICT OUTPUT RULE**
+Return **only valid JSON**.  
+No markdown. No commentary.
 
 ---
 
-### **Final Output Rule (Strict)**
-⚠️ Return **only** the JSON object.
-Do **not** include markdown formatting (\`\`\`), explanations, or text around it.
-Only valid, machine-readable JSON is accepted.
-
----
-
-### **Job Post Text (Unstructured):**
---- 
-// Resume Text (Unstructured):  
+### **Resume Text (Unstructured):**
 ${text}
 `;
+
 
 
 export const cvRankerPrompt = (jobDescription, candidate) => {

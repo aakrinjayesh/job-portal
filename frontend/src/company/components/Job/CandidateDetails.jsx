@@ -64,7 +64,12 @@ const CandidateDetails = () => {
               {profile.preferredJobType?.join(", ")}
             </p>
             <p>
-              <strong>Total Experience:</strong> {profile.totalExperience} years
+              <strong>Total Experience:</strong>{" "}
+              {job.experience && (
+                <Text>
+                  {job.experience.number} {job.experience.type}
+                </Text>
+              )}
             </p>
             <p>
               <strong>Expected CTC:</strong> {profile.expectedCTC} LPA

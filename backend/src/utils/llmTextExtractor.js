@@ -51,7 +51,7 @@ export const extractResumeSections = async (text, role, extra = {}) => {
     prompt = getSysPrompt(text);
 
   // Recruiter prompt
-  } else if (role === "recruiter") {
+  } else if (role === "company") {
     prompt = recruiterSysPrompt(text);
 
   // NEW: CV RANKER LOGIC
