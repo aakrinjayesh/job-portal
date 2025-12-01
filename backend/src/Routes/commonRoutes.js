@@ -2,8 +2,8 @@ import express from 'express'
 
 import { validateInput } from '../Middleware/inputValidator.js'
 import { authenticateToken } from '../Middleware/authMiddleware.js';
-import { getAllSkills,updateSkills, getAllCertifications, updateCertifications, getAllLocations, updateLocation, getAllClouds, addCloud,addRole,getAllRole} from '../controllers/commonControllers.js';
-import { updateSkillsValidator,updateCertificationsValidator,updateLocationValidator ,addCloudValidator } from '../validators/userValidators.js';
+import { getAllSkills,updateSkills, getAllCertifications, updateCertifications, getAllLocations, updateLocation, getAllClouds, addCloud,addRole,getAllRole, getAllQualification, addQualification} from '../controllers/commonControllers.js';
+import { updateSkillsValidator,updateCertificationsValidator,updateLocationValidator ,addCloudValidator, addQualificationValidator } from '../validators/userValidators.js';
 
 
 
@@ -29,6 +29,9 @@ CommonRouters.post('/clouds', validateInput(addCloudValidator),authenticateToken
 
 CommonRouters.get('/role', getAllRole);
 CommonRouters.post('/role', validateInput(addCloudValidator),authenticateToken, addRole);
+
+CommonRouters.get('/qualification', getAllQualification);
+CommonRouters.post('/qualification', validateInput(addQualificationValidator),authenticateToken, addQualification);
 
 
 

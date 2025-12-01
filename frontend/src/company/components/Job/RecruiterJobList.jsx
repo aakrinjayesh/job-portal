@@ -21,15 +21,16 @@ import {
   Form,
 } from "antd";
 import {
- 
   GetSkills,
   PostSkills,
- 
   GetLocations,
   PostLocations,
   GetClouds,
   PostClouds,
-  
+  GetRole,
+  PostRole,
+  GetQualification,
+  PostQualification,
 } from "../../../candidate/api/api";
 import ReusableSelect from "../../../candidate/components/UserProfile/ReusableSelect";
 
@@ -175,9 +176,9 @@ const RecruiterJobList = () => {
         jobType: values.jobType,
         applicationDeadline: values.applicationDeadline
           ? values.applicationDeadline.toISOString()
-          : null,
+          : "",
       };
-       console.log("Payload",payload)
+      console.log("Payload", payload);
       if (isEditing) {
         // ✅ Add job ID to payload
         payload.id = editingJob.id;
@@ -207,8 +208,6 @@ const RecruiterJobList = () => {
       setPostLoading(false);
     }
   };
-
-  
 
   const handleFileUpload = async ({ file }) => {
     setUploadLoading(true);
@@ -287,6 +286,17 @@ const RecruiterJobList = () => {
 
   if (loading) return <Spin size="large" style={{ marginTop: 100 }} />;
 
+  const Experienceoptions = [
+    {
+      value: "year",
+      label: "Year",
+    },
+    {
+      value: "month",
+      label: "Month",
+    },
+  ];
+
   return (
     <>
       {/* ✅ Delete Selected Button */}
@@ -297,8 +307,12 @@ const RecruiterJobList = () => {
           marginBottom: 16,
         }}
       >
-        <Button type="primary" onClick={showCreateModal}>
-          + Post a Job
+        <Button
+          type="primary"
+          style={{ marginRight: 10 }}
+          onClick={showCreateModal}
+        >
+          + Post Job
         </Button>
 
         <Button
@@ -438,12 +452,11 @@ const RecruiterJobList = () => {
                 {/* Company Info */}
                 <Space align="center" style={{ marginTop: 6 }}>
                   <Text strong style={{ color: "#1890ff" }}>
-                    {/* {job.company}
-                  {job.role} */}
+                    {job.companyName}
                   </Text>
-                  <StarFilled style={{ color: "#faad14" }} />
+                  {/* <StarFilled style={{ color: "#faad14" }} />
                   <Text>{job.rating}</Text>
-                  <Text type="secondary">{`${job.reviews || 0} Reviews`}</Text>
+                  <Text type="secondary">{`${job.reviews || 0} Reviews`}</Text> */}
                 </Space>
 
                 {/* Job Details */}
@@ -456,7 +469,9 @@ const RecruiterJobList = () => {
                     }}
                   >
                     <Space>
-                      <Text>{job.experience}</Text>
+                      <Text>
+                        {job?.experience?.number} {job?.experience?.type}
+                      </Text>
                     </Space>
                     <Space>
                       <EnvironmentOutlined />
@@ -577,7 +592,7 @@ const RecruiterJobList = () => {
       >
         <Form form={form} layout="vertical" name="jobForm">
           {/* ❌ Upload field — NO REQUIRED RULE ADDED */}
-          <Form.Item label="Upload Job Description (PDF/DOCX)">
+          <Form.Item label="Upload Job Description (PDF)">
             <Upload
               customRequest={handleFileUpload}
               accept=".pdf"
@@ -592,13 +607,24 @@ const RecruiterJobList = () => {
 
           {/* ALL BELOW HAVE rules={[{ required: true }]} */}
 
-          <Form.Item name="role" label="Role" rules={[{ required: true },
-             {
-      pattern: /^[A-Za-z0-9 ]+$/,
-      message: "Only letters, numbers, and spaces are allowed",
-    },
-          ]}>
-            <Input placeholder="e.g. Machine Learning Engineer" />
+          <Form.Item
+            name="role"
+            label="Role"
+            rules={[
+              { required: true },
+              {
+                pattern: /^[A-Za-z0-9 ]+$/,
+                message: "Only letters, numbers, and spaces are allowed",
+              },
+            ]}
+          >
+            {/* <Input placeholder="e.g. Machine Learning Engineer" /> */}
+            <ReusableSelect
+              placeholder="Select or add Role"
+              fetchFunction={GetRole}
+              addFunction={PostRole}
+              single={true}
+            />
           </Form.Item>
 
           <Form.Item
@@ -610,6 +636,21 @@ const RecruiterJobList = () => {
           </Form.Item>
 
           <Form.Item
+            name="responsibilities"
+            label="Roles & Responsibilities"
+            rules={[
+              { required: true },
+              // {
+              //   pattern: /^[A-Za-z0-9 ]+$/,
+              //   message: "Only letters, numbers, and spaces are allowed",
+              // },
+            ]}
+          >
+            {/* <Select mode="tags" placeholder="Add responsibilities" /> */}
+            <TextArea rows={3} />
+          </Form.Item>
+
+          <Form.Item
             name="employmentType"
             label="Employment Type"
             rules={[{ required: true }]}
@@ -618,22 +659,51 @@ const RecruiterJobList = () => {
               <Option value="FullTime">Full Time</Option>
               <Option value="PartTime">Part Time</Option>
               <Option value="Contract">Contract</Option>
+              <Option value="Freelancer">Freelancer</Option>
             </Select>
           </Form.Item>
           <Form.Item
-            name="experience"
+            // name="experience"
             label="Experience"
-            rules={[{ required: true }, {
-      pattern: /^[A-Za-z0-9 ]+$/,
-      message: "Only letters, numbers, and spaces are allowed",
-    },]}
           >
-            <Input placeholder="e.g. 3 years" />
+            {/* <Input placeholder="e.g. 3 years" /> */}
+
+            <Space.Compact>
+              <Form.Item
+                name={["experience", "number"]}
+                noStyle
+                rules={[
+                  { required: true, message: "Experience is Required!" },
+                  {
+                    pattern: /^[0-9]+$/,
+                    message: "Only numbers are allowed",
+                  },
+                ]}
+              >
+                <InputNumber
+                  min={0}
+                  style={{ width: "80%" }}
+                  placeholder="e.g 3"
+                />
+              </Form.Item>
+              <Form.Item
+                name={["experience", "type"]}
+                noStyle
+                rules={[{ required: true }]}
+              >
+                <Select
+                  style={{ width: "40%" }}
+                  // defaultSelectedKeys={["1"]}
+
+                  options={Experienceoptions}
+                />
+              </Form.Item>
+            </Space.Compact>
           </Form.Item>
           <Form.Item
             name="experienceLevel"
             label="Experience Level"
-            rules={[{ required: true }]}
+            // rules={[{ required: true }]}
           >
             <Select>
               <Option value="Internship">Internship</Option>
@@ -642,98 +712,6 @@ const RecruiterJobList = () => {
               <Option value="Senior">Senior</Option>
               <Option value="Lead">Lead</Option>
             </Select>
-          </Form.Item>
-          <Form.Item
-            name="location"
-            label="Location"
-            rules={[{ required: true }]}
-          >
-              <ReusableSelect
-                  single={true}
-                  placeholder="Select Current Job Location"
-                  fetchFunction={GetLocations}
-                  addFunction={PostLocations}
-                />
-          </Form.Item>
-          <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
-            {/* <Select
-              mode="tags"
-              allowClear
-              style={{ width: "100%" }}
-              placeholder="Type and press Enter to add clouds"
-              tokenSeparators={[","]}
-            /> */}
-            <ReusableSelect
-                  single={false}
-                  placeholder="select Cloud"
-                  fetchFunction={GetClouds}
-                  addFunction={PostClouds}
-                />
-          </Form.Item>
-          <Form.Item name="skills" label="Skills"  rules={[{ required: true }]}>
-            {/* <Select
-              mode="tags"
-              style={{ width: "100%" }}
-              placeholder="Add skills (press Enter)"
-            /> */}
-            <ReusableSelect
-                  single={false}
-                  placeholder="select skills"
-                  fetchFunction={GetSkills}
-                  addFunction={PostSkills}
-                />
-          </Form.Item>
-
-          <Form.Item name="salary" label="Salary" rules={[{ required: true },
-            
-          ]}>
-            <InputNumber
-              style={{ width: "100%" }}
-              min={0}
-              formatter={(value) => `₹ ${value}`}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="companyName"
-            label="Company Name"
-            rules={[{ required: true },
-               {
-      pattern: /^[A-Za-z0-9 ]+$/,
-      message: "Only letters, numbers, and spaces are allowed",
-    },
-            ]}
-          >
-            <Input placeholder="Company Name" />
-          </Form.Item>
-
-          <Form.Item
-            name="responsibilities"
-            
-            label="Responsibilities"
-            rules={[{ required: true },
-              {
-      pattern: /^[A-Za-z0-9 ]+$/,
-      message: "Only letters, numbers, and spaces are allowed",
-    },
-            ]}
-          >
-            <Select mode="tags" placeholder="Add responsibilities" />
-          </Form.Item>
-
-          
-
-          <Form.Item
-            name="qualifications"
-            label="Qualifications"
-            rules={[{ required: true },
-              {
-      pattern: /^[A-Za-z0-9 ]+$/,
-      message: "Only letters, numbers, and spaces are allowed",
-    },
-            ]}
-          >
-            <Select mode="tags" placeholder="Add qualifications" />
           </Form.Item>
 
           <Form.Item
@@ -748,12 +726,96 @@ const RecruiterJobList = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+          <Form.Item
+            name="location"
+            label="Location"
+            rules={[{ required: true }]}
+          >
+            <ReusableSelect
+              single={true}
+              placeholder="Select Current Job Location"
+              fetchFunction={GetLocations}
+              addFunction={PostLocations}
+            />
+          </Form.Item>
+          <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
+            {/* <Select
+              mode="tags"
+              allowClear
+              style={{ width: "100%" }}
+              placeholder="Type and press Enter to add clouds"
+              tokenSeparators={[","]}
+            /> */}
+            <ReusableSelect
+              single={false}
+              placeholder="Select Cloud"
+              fetchFunction={GetClouds}
+              addFunction={PostClouds}
+            />
+          </Form.Item>
+          <Form.Item name="skills" label="Skills" rules={[{ required: true }]}>
+            {/* <Select
+              mode="tags"
+              style={{ width: "100%" }}
+              placeholder="Add skills (press Enter)"
+            /> */}
+            <ReusableSelect
+              single={false}
+              placeholder="Select skills"
+              fetchFunction={GetSkills}
+              addFunction={PostSkills}
+            />
+          </Form.Item>
+
+          <Form.Item name="salary" label="Salary" rules={[{ required: true }]}>
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+              // formatter={(value) => `₹ ${value}`}
+              placeholder="e.g. 500000 PA"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="companyName"
+            label="Company Name"
+            rules={[
+              { required: true },
+              {
+                pattern: /^[A-Za-z0-9 ]+$/,
+                message: "Only letters, numbers, and spaces are allowed",
+              },
+            ]}
+          >
+            <Input placeholder="Company Name" />
+          </Form.Item>
+
+          <Form.Item
+            name="qualifications"
+            label="Qualifications"
+            rules={[
+              { required: true },
+              {
+                pattern: /^[A-Za-z0-9 ]+$/,
+                message: "Only letters, numbers, and spaces are allowed",
+              },
+            ]}
+          >
+            {/* <Select mode="tags"  placeholder="Add qualifications" /> */}
+            <ReusableSelect
+              placeholder="Select or add Role"
+              fetchFunction={GetQualification}
+              addFunction={PostQualification}
+              single={false}
+            />
+          </Form.Item>
+
+          {/* <Form.Item name="status" label="Status" rules={[{ required: true }]}>
             <Select>
               <Option value="Open">Open</Option>
               <Option value="Closed">Closed</Option>
             </Select>
-          </Form.Item>
+          </Form.Item> */}
 
           <Form.Item
             name="applicationDeadline"

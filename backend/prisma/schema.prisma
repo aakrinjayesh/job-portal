@@ -116,6 +116,12 @@ model CompanyRole {
   isVerified Boolean @default(false)
 }
 
+model Qualification {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  isVerified Boolean @default(false)
+}
+
 enum EmploymentType {
   FullTime
   PartTime
@@ -141,16 +147,17 @@ enum JobStatus {
 model Job {
   id                  String           @id @default(uuid())
   role                String
-  description         String?
+  description         String
   employmentType      EmploymentType
-  experience          String?
+  tenure              String?
+  experience          Json?
   experienceLevel     ExperienceLevel?
   location            String?
   skills              String[] // Array of Json Skills
   clouds              String[]
   salary              Int
   companyName         String?
-  responsibilities    String[]
+  responsibilities    String
   qualifications      String[]
   jobType             String
   status              JobStatus        @default(Open)

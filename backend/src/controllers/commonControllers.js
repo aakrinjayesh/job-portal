@@ -31,7 +31,7 @@ const updateSkills = async (req, res) => {
     });
     return res.status(200).json({status:'success', id: newSkill.id });
   } catch (error) {
-    res.status(200).json({success:'failed', message: "Skill already exists or something went wrong" });
+    res.status(500).json({success:'failed', message: `something went wrong ${error.message}` });
   }
 }
 
@@ -63,7 +63,7 @@ const updateCertifications = async (req, res) => {
     });
     return res.status(200).json({status:'success', id: newSkill.id });
   } catch (error) {
-    return res.status(200).json({status: 'failed', message: "Certification already exists or something went wrong" });
+    return res.status(500).json({status: 'failed', message: `something went wrong ${error.message}` });
   }
 }
 
@@ -96,7 +96,7 @@ const updateLocation = async (req, res) => {
     });
     return res.status(200).json({status:'success', id: newSkill.id });
   } catch (error) {
-    return res.status(200).json({status:'failed', message: "Location already exists or something went wrong" });
+    return res.status(200).json({status:'failed', message: `something went wrong ${error.message}` });
   }
 }
 
@@ -131,18 +131,18 @@ const addCloud = async (req, res) => {
     });
     return res.status(200).json({ status: 'success', id: newCloud.id });
   } catch (error) {
-    return res.status(200).json({ status: 'failed', message: "Cloud already exists or something went wrong" });
+    return res.status(500).json({ status: 'failed', message: `something went wrong ${error.message}` });
   }
 };
 
 
 const getAllRole = async (req, res) => {
   try {
-    const clouds = await prisma.companyRole.findMany({
+    const roles = await prisma.companyRole.findMany({
       where: { isVerified: true },
       orderBy: { name: 'asc' },
     });
-    return res.status(200).json({ status: 'success', data: clouds });
+    return res.status(200).json({ status: 'success', data: roles });
   } catch (err) {
     return res.status(500).json({ status: 'failed', message: err.message });
   }
@@ -152,19 +152,52 @@ const getAllRole = async (req, res) => {
 const addRole = async (req, res) => {
   const { name } = req.body;
   if (!name) {
-    return res.status(200).json({ status: 'failed', message: "Cloud name is required" });
+    return res.status(200).json({ status: 'failed', message: "Role name is required" });
   }
   try {
     const check = await prisma.companyRole.findUnique({ where: { name } });
     if (check) {
-      return res.status(200).json({ status: 'failed', message: "Cloud already exists" });
+      return res.status(200).json({ status: 'failed', message: "Role already exists" });
     }
-    const newCloud = await prisma.cloud.create({
+    const newCloud = await prisma.companyRole.create({
       data: { name, isVerified: false },
     });
     return res.status(200).json({ status: 'success', id: newCloud.id });
   } catch (error) {
-    return res.status(200).json({ status: 'failed', message: "Cloud already exists or something went wrong" });
+    return res.status(500).json({ status: 'failed', message: `something went wrong ${error.message}` });
+  }
+};
+
+
+const getAllQualification = async (req, res) => {
+  try {
+    const qualification = await prisma.qualification.findMany({
+      where: { isVerified: true },
+      orderBy: { name: 'asc' },
+    });
+    return res.status(200).json({ status: 'success', data: qualification });
+  } catch (err) {
+    return res.status(500).json({ status: 'failed', message: err.message });
+  }
+};
+
+// Add a cloud
+const addQualification = async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(200).json({ status: 'failed', message: "qualification name is required" });
+  }
+  try {
+    const check = await prisma.qualification.findUnique({ where: { name } });
+    if (check) {
+      return res.status(200).json({ status: 'failed', message: "qualification already exists" });
+    }
+    const newCloud = await prisma.qualification.create({
+      data: { name, isVerified: false },
+    });
+    return res.status(200).json({ status: 'success', id: newCloud.id });
+  } catch (error) {
+    return res.status(500).json({ status: 'failed', message: `something went wrong ${error.message}` });
   }
 };
 
@@ -178,5 +211,7 @@ export {
   getAllClouds,
   addCloud,
   getAllRole,
-  addRole
+  addRole,
+  getAllQualification,
+  addQualification
 }

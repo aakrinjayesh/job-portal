@@ -1,4 +1,4 @@
-import {  z } from 'zod'
+import {  number, z } from 'zod'
 
 
 
@@ -87,6 +87,10 @@ const addCloudValidator = z.object({
   name: z.string()
 })
 
+const addQualificationValidator = z.object({
+  name: z.string()
+})
+
 
 // Job listing validators
 const getJobListValidator = z.object({
@@ -98,7 +102,10 @@ const postJobValidator = z.object({
   description: z.string(),
   employmentType: z
     .enum(["FullTime", "PartTime", "Internship", "Contract", "Freelance"]),
-  experience: z.string(),
+  experience: z.object({
+    number: z.number(),
+    type: z.enum(["year","month"])
+  }),
   experienceLevel: z
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
   location: z.string(),
@@ -109,7 +116,7 @@ const postJobValidator = z.object({
     .int()
     .nonnegative(),
   companyName: z.string(),
-  responsibilities: z.array(z.string()),
+   responsibilities: z.string(),
   qualifications: z.array(z.string()),
   jobType: z.string().optional(),
   status: z.enum(["Open", "Closed", "Draft"]).optional(),
@@ -142,7 +149,10 @@ const editJobValidator = z.object({
   description: z.string(),
   employmentType: z
     .enum(["FullTime", "PartTime", "Internship", "Contract", "Freelance"]),
-  experience: z.string(),
+  experience: z.object({
+    number: z.number(),
+    type: z.enum(["year","month"])
+  }),
   experienceLevel: z
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
   location: z.string(),
@@ -153,7 +163,7 @@ const editJobValidator = z.object({
     .int()
     .nonnegative(),
   companyName: z.string(),
-  responsibilities: z.array(z.string()),
+  responsibilities: z.string(),
   qualifications: z.array(z.string()),
   jobType: z.string().optional(),
   status: z.enum(["Open", "Closed", "Draft"]).optional(),
@@ -191,6 +201,7 @@ export {
   updateCertificationsValidator,
   updateLocationValidator,
   addCloudValidator,
+  addQualificationValidator,
   getJobListValidator,
   postJobValidator,
   applyJobValidator,
