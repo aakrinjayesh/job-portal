@@ -439,6 +439,23 @@ export async function CVEligibility(payload) {
   }
 }
 
+export async function GenerateJobDescription(payload) {
+  try {
+    const data = JSON.stringify(payload)
+    const response = await axiosInstance.post("/generate-jd", data, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
+  }
+}
+
+
+
 
 
 

@@ -20,6 +20,7 @@ model Users {
   email            String           @unique
   role             Role             @default(candidate)
   password         String?
+  chatuserid       String?
   createdAt        DateTime         @default(now())
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
@@ -149,7 +150,7 @@ model Job {
   role                String
   description         String
   employmentType      EmploymentType
-  tenure              String?
+  tenure              Json?
   experience          Json?
   experienceLevel     ExperienceLevel?
   location            String?
@@ -158,10 +159,10 @@ model Job {
   salary              Int
   companyName         String?
   responsibilities    String
-  qualifications      String[]
+  certifications      String[]
   jobType             String
   status              JobStatus        @default(Open)
-  applicationDeadline String
+  applicationDeadline String?
   isDeleted           Boolean          @default(false)
   deletedReason       String?
   deletedAt           DateTime?

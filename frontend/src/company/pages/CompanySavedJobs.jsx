@@ -20,19 +20,19 @@ function CompanySavedJobs() {
         const { savedJobs, pagination } = resp.data || {};
 
         // Flatten nested job structure
-        const formattedJobs =
-          savedJobs?.map((item) => ({
-            ...item.job, // Extract job info
-            savedId: item.id,
-            deadlineWarning: item.deadlineWarning,
-            daysUntilDeadline: item.daysUntilDeadline,
-            savedAt: item.savedAt,
-          })) || [];
+        // const formattedJobs =
+        //   savedJobs?.map((item) => ({
+        //     ...item.job, // Extract job info
+        //     savedId: item.id,
+        //     deadlineWarning: item.deadlineWarning,
+        //     daysUntilDeadline: item.daysUntilDeadline,
+        //     savedAt: item.savedAt,
+        //   })) || [];
 
         if (pageNum === 1) {
-          setJobs(formattedJobs);
+          setJobs(savedJobs);
         } else {
-          setJobs((prev) => [...prev, ...formattedJobs]);
+          setJobs((prev) => [...prev, ...savedJobs]);
         }
 
         setHasMore(pagination?.page < pagination?.totalPages);
@@ -87,6 +87,10 @@ function CompanySavedJobs() {
     if (page > 1) fetchSavedJobs(page);
   }, [page, fetchSavedJobs]);
 
+  const handleRemoveJob = (jobId) => {
+    setJobs((prev) => prev.filter((j) => j.id !== jobId));
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       {loading && page === 1 ? (
@@ -100,6 +104,7 @@ function CompanySavedJobs() {
           type="save"
           jobids={ids}
           portal={"company"}
+          onUnsave={handleRemoveJob}
         />
       ) : (
         <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>

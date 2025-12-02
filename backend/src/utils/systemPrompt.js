@@ -367,4 +367,55 @@ Return **ONLY** a raw JSON object.
 };
 
 
+export const generateJobDescriptionPrompt = (jobdetails) => {
+  return `
+You are an expert Salesforce HR job description writer.  
+Generate a complete, professional Job Description based strictly on the jobdetails provided below.
+
+---------------------------------------
+JOB DETAILS (INPUT JSON)
+${JSON.stringify(jobdetails, null, 2)}
+---------------------------------------
+
+### IMPORTANT INSTRUCTIONS
+1. Use ONLY the jobdetails provided above to craft the JD.
+2. "description" MUST be a well-written paragraph (3–5 lines).
+3. "responsibilities" MUST be a well-written paragraph (3–5 lines).
+4. "skills" MUST include Salesforce-related skills such as Apex, Visualforce, LWC, SOQL, integrations, etc.
+5. "clouds" MUST list Salesforce clouds such as Sales Cloud, Service Cloud, Marketing Cloud, Experience Cloud, etc. (if relevant).
+6. "qualifications" MUST be simple, such as:
+   - "BTech (any degree)"
+   - "BTech in Computer Science or related field"
+   - "Any relevant bachelor's degree"
+7. "certifications" MUST be Salesforce certifications only (if not applicable, return an empty array).
+8. Do NOT include any special characters other than standard punctuation.
+9. KEEP OUTPUT STRICTLY JSON — no explanations, no markdown, no extra text.
+
+### OUTPUT JSON FORMAT (MANDATORY)
+
+{
+  "role": "string",
+  "description": "paragraph text",
+  "responsibilities": "paragraph text",
+  "skills": ["skill 1", "skill 2", "..."],
+  "clouds": ["cloud 1", "cloud 2", "..."],
+  "qualifications": ["qualification 1", "qualification 2"],
+  "certifications": ["certification 1", "certification 2"]
+}
+
+### RULES FOR OUTPUT
+- ALWAYS return valid JSON only.
+- Do NOT wrap response in code blocks.
+- Ensure description and responsibilities are paragraphs, not lists.
+- Skills and clouds must be different categories.
+- Infer missing details intelligently but realistically.
+- Do NOT hallucinate company names or salaries.
+- Keep paragraphs clean, professional, and concise.
+
+Now generate the final JSON output based on the provided jobdetails.
+  `;
+};
+
+
+
 

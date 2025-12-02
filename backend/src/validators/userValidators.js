@@ -103,12 +103,12 @@ const postJobValidator = z.object({
   employmentType: z
     .enum(["FullTime", "PartTime", "Internship", "Contract", "Freelance"]),
   experience: z.object({
-    number: z.number(),
+    number: z.string(),
     type: z.enum(["year","month"])
   }),
   experienceLevel: z
-    .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
-  location: z.string(),
+    .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]).optional(),
+  location: z.string().optional(),
   skills: z.array(z.string()),
   clouds: z.array(z.string()),
   salary: z
@@ -117,11 +117,11 @@ const postJobValidator = z.object({
     .nonnegative(),
   companyName: z.string(),
    responsibilities: z.string(),
-  qualifications: z.array(z.string()),
+  certifications: z.array(z.string()),
   jobType: z.string().optional(),
   status: z.enum(["Open", "Closed", "Draft"]).optional(),
   applicationDeadline: z
-    .string()
+    .string().optional()
 })
 
 // Job application validators
@@ -150,12 +150,12 @@ const editJobValidator = z.object({
   employmentType: z
     .enum(["FullTime", "PartTime", "Internship", "Contract", "Freelance"]),
   experience: z.object({
-    number: z.number(),
+    number: z.string(),
     type: z.enum(["year","month"])
   }),
   experienceLevel: z
-    .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]),
-  location: z.string(),
+    .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"]).optional(),
+  location: z.string().optional(),
   skills: z.array(z.string()),
   clouds: z.array(z.string()),
   salary: z
@@ -163,12 +163,12 @@ const editJobValidator = z.object({
     .int()
     .nonnegative(),
   companyName: z.string(),
-  responsibilities: z.string(),
-  qualifications: z.array(z.string()),
+   responsibilities: z.string(),
+  certifications: z.array(z.string()),
   jobType: z.string().optional(),
   status: z.enum(["Open", "Closed", "Draft"]).optional(),
   applicationDeadline: z
-    .string()
+    .string().optional()
 })
 
 const deleteJobValidator = z.object({

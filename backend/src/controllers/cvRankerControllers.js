@@ -120,6 +120,44 @@ const cvEligibilityCheck = async (req, res) => {
   }
 };
 
+const generateJobDescription = async (req, res) => {
+  try {
+    const jobdetails = req.body.jobdetails;
+
+    if (!jobdetails) {
+      return res.status(400).json({
+        success: false,
+        message: "jobdetails field is required",
+      });
+    }
+
+    // Call the LLM extractor
+    const jd = await extractResumeSections("JD", "generatejd", { jobdetails });
+
+    if (!jd) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate job description",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      jobDescription: jd,
+    });
+
+  } catch (error) {
+    console.error("Error generating JD:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 export {
-  cvEligibilityCheck
+  cvEligibilityCheck,
+  generateJobDescription
 }

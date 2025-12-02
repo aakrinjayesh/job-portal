@@ -33,7 +33,7 @@
 
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getSysPrompt, recruiterSysPrompt, cvRankerPrompt } from "./systemPrompt.js";
+import { getSysPrompt, recruiterSysPrompt, cvRankerPrompt, generateJobDescriptionPrompt } from "./systemPrompt.js";
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -58,6 +58,10 @@ export const extractResumeSections = async (text, role, extra = {}) => {
   } else if (role === "cvranker") {
     const { jobDescription, candidateDetails } = extra;
     prompt = cvRankerPrompt(jobDescription, candidateDetails);
+
+  } else if (role === "generatejd") {
+    const { jobdetails } = extra;
+    prompt = generateJobDescriptionPrompt(jobdetails);
 
   } else {
     throw new Error("Invalid role passed to extractResumeSections()");

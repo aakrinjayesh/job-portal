@@ -29,8 +29,9 @@ import {
   PostClouds,
   GetRole,
   PostRole,
-  GetQualification,
-  PostQualification,
+  GetCertifications,
+  PostCertifications,
+  GenerateJobDescription,
 } from "../../../candidate/api/api";
 import ReusableSelect from "../../../candidate/components/UserProfile/ReusableSelect";
 
@@ -40,6 +41,7 @@ import {
   CloudOutlined,
   FileTextOutlined,
   DeleteOutlined,
+  OpenAIOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import {
@@ -76,6 +78,11 @@ const RecruiterJobList = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [postLoading, setPostLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [showTenure, setShowTenure] = useState(false);
+  const [showLocation, setShowLocation] = useState(true);
+  const [aiModalVisible, setAiModalVisible] = useState(false);
+  const [aiForm] = Form.useForm();
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     fetchJobs();
@@ -166,17 +173,16 @@ const RecruiterJobList = () => {
         employmentType: values.employmentType,
         experience: values.experience,
         experienceLevel: values.experienceLevel,
+        tenure: values.tenure,
         location: values.location,
         skills: values.skills || [], // array
         clouds: values.clouds || [],
         salary: Number(values.salary) || 0,
         companyName: values.companyName,
         responsibilities: values.responsibilities || [], // array
-        qualifications: values.qualifications || [], // array
+        certifications: values.certifications || [],
         jobType: values.jobType,
-        applicationDeadline: values.applicationDeadline
-          ? values.applicationDeadline.toISOString()
-          : "",
+        applicationDeadline: values?.applicationDeadline?.toISOString(),
       };
       console.log("Payload", payload);
       if (isEditing) {
@@ -193,12 +199,8 @@ const RecruiterJobList = () => {
         setPostLoading(false);
         messageApi.success(response.message || "Job created successfully");
       }
-
-      // ✅ Refresh the job list after update or create
-      await fetchJobs();
-
-      // ✅ Close modal and reset form
       setIsModalVisible(false);
+      await fetchJobs();
       form.resetFields();
     } catch (error) {
       console.error("Error saving job:", error);
@@ -225,15 +227,16 @@ const RecruiterJobList = () => {
         role: extracted.role || "",
         description: extracted.description || "",
         employmentType: extracted.employmentType || "FullTime",
-        experience: extracted.experience || "",
+        experience: extracted.experience || null,
         experienceLevel: extracted.experienceLevel || "",
         location: extracted.location || "",
+        tenure: extracted?.tenure || null,
         skills: extracted.skills || [],
         clouds: extracted.clouds || [],
         salary: extracted.salary || 0,
         companyName: extracted.companyName || "",
         responsibilities: extracted.responsibilities || [],
-        qualifications: extracted.qualifications || [],
+        certifications: extracted.certifications || [],
         jobType: extracted.jobType || "Hybrid",
         status: extracted.status || "Open",
         // applicationDeadline: extracted.applicationDeadline
@@ -249,6 +252,48 @@ const RecruiterJobList = () => {
       setUploadLoading(false);
     } finally {
       setUploadLoading(false);
+    }
+  };
+
+  const handleAiGenerateJD = async (values) => {
+    try {
+      setAiLoading(true);
+
+      const payload = {
+        jobdetails: {
+          role: values.role,
+          experience: values.experience,
+          experienceLevel: values.experienceLevel,
+          instructions: values.instructions || "",
+        },
+      };
+
+      const res = await GenerateJobDescription(payload);
+
+      if (res.success === true) {
+        messageApi.success("JD generated successfully!");
+        // auto-fill fields in main form
+        form.setFieldsValue({
+          role: res?.jobDescription?.role,
+          experience: values?.experience,
+          experienceLevel: values?.experienceLevel,
+          description: res?.jobDescription?.description || "",
+          responsibilities: res?.jobDescription?.responsibilities || "",
+          skills: res?.jobDescription?.skills || [],
+          clouds: res?.jobDescription?.clouds || [],
+          // qualifications: res?.jobDescription?.qualifications || [],
+        });
+
+        setAiModalVisible(false);
+      } else {
+        messageApi.error("Failed to generate JD");
+      }
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Error generating JD");
+    } finally {
+      setAiLoading(false);
+      aiForm.resetFields();
     }
   };
 
@@ -590,7 +635,19 @@ const RecruiterJobList = () => {
         }}
         style={{ top: 40 }}
       >
-        <Form form={form} layout="vertical" name="jobForm">
+        <Form
+          form={form}
+          layout="vertical"
+          name="jobForm"
+          initialValues={{
+            experience: {
+              type: "year",
+            },
+            tenure: {
+              type: "year",
+            },
+          }}
+        >
           {/* ❌ Upload field — NO REQUIRED RULE ADDED */}
           <Form.Item label="Upload Job Description (PDF)">
             <Upload
@@ -603,6 +660,13 @@ const RecruiterJobList = () => {
                 Upload JD
               </Button>
             </Upload>
+            <Button
+              icon={<OpenAIOutlined />}
+              style={{ marginLeft: 10 }}
+              onClick={() => setAiModalVisible(true)}
+            >
+              Generate JD using AI
+            </Button>
           </Form.Item>
 
           {/* ALL BELOW HAVE rules={[{ required: true }]} */}
@@ -612,10 +676,10 @@ const RecruiterJobList = () => {
             label="Role"
             rules={[
               { required: true },
-              {
-                pattern: /^[A-Za-z0-9 ]+$/,
-                message: "Only letters, numbers, and spaces are allowed",
-              },
+              // {
+              //    pattern: /^[A-Za-z][A-Za-z0-9 \-]*$/,
+              //   message: "Only letters, numbers, and spaces are allowed",
+              // },
             ]}
           >
             {/* <Input placeholder="e.g. Machine Learning Engineer" /> */}
@@ -632,7 +696,12 @@ const RecruiterJobList = () => {
             label="Description"
             rules={[{ required: true }]}
           >
-            <TextArea rows={3} placeholder="Job Description" />
+            <TextArea
+              rows={3}
+              // maxLength={1000}
+              // showCount
+              placeholder="Job Description"
+            />
           </Form.Item>
 
           <Form.Item
@@ -647,7 +716,12 @@ const RecruiterJobList = () => {
             ]}
           >
             {/* <Select mode="tags" placeholder="Add responsibilities" /> */}
-            <TextArea rows={3} />
+            <TextArea
+              rows={3}
+              // maxLength={1000}
+              // showCount
+              placeholder="Roles & Responsibilities"
+            />
           </Form.Item>
 
           <Form.Item
@@ -655,34 +729,88 @@ const RecruiterJobList = () => {
             label="Employment Type"
             rules={[{ required: true }]}
           >
-            <Select>
+            <Select
+              onChange={(value) => {
+                // Show Tenure for Part Time, Contract, Freelancer
+                setShowTenure(
+                  ["Contract", "PartTime", "Freelancer"].includes(value)
+                );
+
+                if (!["Contract", "PartTime", "Freelancer"].includes(value)) {
+                  form.setFieldsValue({ tenure: undefined }); // clear if not needed
+                }
+              }}
+            >
               <Option value="FullTime">Full Time</Option>
               <Option value="PartTime">Part Time</Option>
               <Option value="Contract">Contract</Option>
               <Option value="Freelancer">Freelancer</Option>
             </Select>
           </Form.Item>
+
+          {showTenure && (
+            <Form.Item label="Tenure" required>
+              <Space.Compact style={{ width: "100%" }}>
+                <Form.Item
+                  name={["tenure", "number"]} //  changed from experience → tenure
+                  noStyle
+                  rules={[
+                    {
+                      required: true,
+                      message: "Tenure is Required!",
+                    },
+                    {
+                      pattern: /^[0-9]+(\.[0-9]+)?$/,
+                      message: "Only Positive Numbers Are Allowed",
+                    },
+                  ]}
+                >
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="e.g. 6"
+                    style={{ width: "70%" }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name={["tenure", "type"]}
+                  noStyle
+                  // rules={[{
+                  //   // required: true,
+                  //   message: "Select unit" }]}
+                >
+                  <Select style={{ width: "30%" }}>
+                    <Option value="month">Month</Option>
+                    <Option value="year">Year</Option>
+                  </Select>
+                </Form.Item>
+              </Space.Compact>
+            </Form.Item>
+          )}
+
           <Form.Item
             // name="experience"
             label="Experience"
+            rules={[{ required: true }]}
           >
-            {/* <Input placeholder="e.g. 3 years" /> */}
-
-            <Space.Compact>
+            <Space.Compact style={{ width: "100%" }}>
               <Form.Item
                 name={["experience", "number"]}
                 noStyle
                 rules={[
                   { required: true, message: "Experience is Required!" },
                   {
-                    pattern: /^[0-9]+$/,
-                    message: "Only numbers are allowed",
+                    pattern: /^[0-9]+(\.[0-9]+)?$/,
+
+                    message: "Only Positive Numbers Are Allowed",
                   },
                 ]}
               >
-                <InputNumber
+                <Input
+                  type="number"
                   min={0}
-                  style={{ width: "80%" }}
+                  style={{ width: "70%" }}
                   placeholder="e.g 3"
                 />
               </Form.Item>
@@ -691,12 +819,7 @@ const RecruiterJobList = () => {
                 noStyle
                 rules={[{ required: true }]}
               >
-                <Select
-                  style={{ width: "40%" }}
-                  // defaultSelectedKeys={["1"]}
-
-                  options={Experienceoptions}
-                />
+                <Select style={{ width: "30%" }} options={Experienceoptions} />
               </Form.Item>
             </Space.Compact>
           </Form.Item>
@@ -714,7 +837,7 @@ const RecruiterJobList = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item
+          {/* <Form.Item
             name="jobType"
             label="Job Type"
             rules={[{ required: true }]}
@@ -724,21 +847,60 @@ const RecruiterJobList = () => {
               <Option value="Onsite">Onsite</Option>
               <Option value="Hybrid">Hybrid</Option>
             </Select>
-          </Form.Item>
-
+          </Form.Item> */}
           <Form.Item
-            name="location"
-            label="Location"
+            name="jobType"
+            label="Job Type"
             rules={[{ required: true }]}
           >
-            <ReusableSelect
-              single={true}
-              placeholder="Select Current Job Location"
-              fetchFunction={GetLocations}
-              addFunction={PostLocations}
-            />
+            <Select
+              onChange={(value) => {
+                const isRemote = value === "Remote";
+                setShowLocation(!isRemote);
+
+                if (isRemote) {
+                  form.setFieldsValue({ location: undefined }); // clear location when hidden
+                }
+              }}
+            >
+              <Option value="Remote">Remote</Option>
+              <Option value="Onsite">Onsite</Option>
+              <Option value="Hybrid">Hybrid</Option>
+            </Select>
           </Form.Item>
-          <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
+
+          {showLocation && (
+            <Form.Item
+              name="location"
+              label="Location"
+              rules={[
+                { required: true, message: "Location is required" },
+                // {
+                //   pattern: /^[A-Za-z ]+$/,
+                //   message: "Only letters and spaces are allowed",
+                // },
+              ]}
+            >
+              <ReusableSelect
+                single={true}
+                placeholder="Select Current Job Location"
+                fetchFunction={GetLocations}
+                addFunction={PostLocations}
+              />
+            </Form.Item>
+          )}
+
+          <Form.Item
+            name="clouds"
+            label="Clouds"
+            rules={[
+              { required: true },
+              //          {
+              //   pattern: /^[A-Za-z ]+$/,
+              //   message: "Only letters and spaces are allowed",
+              // },
+            ]}
+          >
             {/* <Select
               mode="tags"
               allowClear
@@ -753,7 +915,17 @@ const RecruiterJobList = () => {
               addFunction={PostClouds}
             />
           </Form.Item>
-          <Form.Item name="skills" label="Skills" rules={[{ required: true }]}>
+          <Form.Item
+            name="skills"
+            label="Skills"
+            rules={[
+              { required: true },
+              //          {
+              //    pattern: /^[A-Za-z][A-Za-z0-9 \-]*$/,
+              //   message: "Only letters and spaces are allowed",
+              // },
+            ]}
+          >
             {/* <Select
               mode="tags"
               style={{ width: "100%" }}
@@ -767,7 +939,11 @@ const RecruiterJobList = () => {
             />
           </Form.Item>
 
-          <Form.Item name="salary" label="Salary" rules={[{ required: true }]}>
+          <Form.Item
+            name="salary"
+            label="Salary Per Annum"
+            rules={[{ required: true }]}
+          >
             <InputNumber
               style={{ width: "100%" }}
               min={0}
@@ -791,21 +967,21 @@ const RecruiterJobList = () => {
           </Form.Item>
 
           <Form.Item
-            name="qualifications"
-            label="Qualifications"
+            name="certifications"
+            label="Certifications"
             rules={[
               { required: true },
-              {
-                pattern: /^[A-Za-z0-9 ]+$/,
-                message: "Only letters, numbers, and spaces are allowed",
-              },
+              //             {
+              //      pattern: /^[A-Za-z .,\/-]+[0-9]*$/,
+              //   message: "Must start with letters. Numbers allowed only at the end.",
+              // },
             ]}
           >
             {/* <Select mode="tags"  placeholder="Add qualifications" /> */}
             <ReusableSelect
               placeholder="Select or add Role"
-              fetchFunction={GetQualification}
-              addFunction={PostQualification}
+              fetchFunction={GetCertifications}
+              addFunction={PostCertifications}
               single={false}
             />
           </Form.Item>
@@ -822,8 +998,76 @@ const RecruiterJobList = () => {
             label="Application Deadline"
             // rules={[{ required: true }]}
           >
-            <DatePicker style={{ width: "100%" }} />
+            <DatePicker
+              style={{ width: "100%" }}
+              disabledDate={(current) =>
+                current && current < dayjs().startOf("day")
+              }
+            />
           </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Generate Job Description using AI"
+        open={aiModalVisible}
+        onCancel={() =>
+          aiModalVisible && !aiLoading && setAiModalVisible(false)
+        }
+        footer={null}
+        destroyOnHidden
+      >
+        <Form layout="vertical" form={aiForm} onFinish={handleAiGenerateJD}>
+          <Form.Item
+            label="Job Title(role)"
+            name="role"
+            rules={[{ required: true, message: "Job title is required" }]}
+          >
+            <Input placeholder="e.g. SalesForce sales Developer" />
+          </Form.Item>
+
+          <Form.Item
+            label="Experience (Years)"
+            name="experience"
+            rules={[{ required: true, message: "Experience is required" }]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="e.g. 3"
+              min={0}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Experience Level"
+            name="experienceLevel"
+            // rules={[{ required: true}]}
+          >
+            <Select>
+              <Option value="Internship">Internship</Option>
+              <Option value="EntryLevel">Entry Level</Option>
+              <Option value="Mid">Mid</Option>
+              <Option value="Senior">Senior</Option>
+              <Option value="Lead">Lead</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Extra Instructions (Optional)" name="instructions">
+            <Input.TextArea
+              rows={3}
+              placeholder="Anything special you want to include?"
+            />
+          </Form.Item>
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={aiLoading}
+            block
+            disabled={aiLoading}
+          >
+            Generate JD
+          </Button>
         </Form>
       </Modal>
     </>
