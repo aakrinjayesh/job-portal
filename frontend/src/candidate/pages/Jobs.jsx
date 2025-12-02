@@ -86,23 +86,18 @@ function Jobs() {
   const filterJobs = useCallback((filters, allJobs) => {
     return allJobs.filter((job) => {
       // --- EXPERIENCE FILTER ---
-      if (filters.experience && filters.experience !== "Any") {
-  const jobExp = job.experience?.toString().toLowerCase() || "";
+     if (
+  filters.experience !== null &&
+  filters.experience !== undefined &&
+  filters.experience !== "Any"
+) {
+  const enteredExp = parseInt(filters.experience);
+  const jobExp = parseInt(job.experience?.number);  // FIXED
 
-  // convert array → string
-  const filterExp = (Array.isArray(filters.experience)
-    ? filters.experience[0]
-    : filters.experience
-  ).toString().toLowerCase();
-
-        // Regex: match "3", "3 years", "3+ years", etc.
-        const expRegex = new RegExp(
-          `\\b${filterExp.replace("+", "\\+")}\\b`,
-          "i"
-        );
-        if (!expRegex.test(jobExp)) return false;
-      }
-
+  if (!isNaN(enteredExp) && !isNaN(jobExp)) {
+    if (jobExp !== enteredExp) return false;  
+  }
+}
       // --- SALARY FILTER ---
       if (filters.salary && filters.salary.length > 0) {
         // Convert job.salary (number) to lakhs for easier comparison

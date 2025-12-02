@@ -36,16 +36,16 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
 
-  const sortOptions = [
-    {
-      value: "createdAt",
-      label: "Posted Date Time",
-      children: [
-        { value: "asc", label: "Ascending" },
-        { value: "desc", label: "Descending" },
-      ],
-    },
-  ];
+ const sortOptions = [
+  {
+    value: "createdAt",
+    label: "Posted Time",
+    children: [
+      { value: "asc", label: "Oldest First" },
+      { value: "desc", label: "Recently Posted First" },
+    ],
+  },
+];
 
   useEffect(() => {
     setSortedJobs(jobs);
@@ -209,6 +209,7 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
             placeholder="Sort Jobs"
             style={{ width: 250 }}
             allowClear
+            
           />
         </div>
       </Col>

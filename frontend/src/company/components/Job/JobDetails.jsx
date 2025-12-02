@@ -109,7 +109,12 @@ const JobDetails = () => {
         </Paragraph>
 
         <Paragraph>
-          <Text strong>Experience Required:</Text> {job.experience}
+          <Text strong>Experience Required:</Text> 
+          {job.experience && (
+                    <Text>
+                      {job.experience.number} {job.experience.type}
+                    </Text>
+                  )}
         </Paragraph>
 
         <Paragraph>

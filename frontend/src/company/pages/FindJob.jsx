@@ -86,18 +86,20 @@ function FindJob() {
   const filterJobs = useCallback((filters, allJobs) => {
     return allJobs.filter((job) => {
       // --- EXPERIENCE FILTER ---
-      if (
-        filters.experience !== null &&
-        filters.experience !== undefined &&
-        filters.experience !== "Any"
-      ) {
-        const enteredExp = parseInt(filters.experience);
-        const jobExp = parseInt(job.experience);
+      // --- EXPERIENCE FILTER (Exact Match) ---
+if (
+  filters.experience !== null &&
+  filters.experience !== undefined &&
+  filters.experience !== "Any"
+) {
+  const enteredExp = parseInt(filters.experience);
+  const jobExp = parseInt(job.experience?.number);  // FIXED
 
-        if (!isNaN(enteredExp) && !isNaN(jobExp)) {
-          if (jobExp < enteredExp) return false;
-        }
-      }
+  if (!isNaN(enteredExp) && !isNaN(jobExp)) {
+    if (jobExp !== enteredExp) return false;  
+  }
+}
+
 
       // --- SKILLS FILTER ---
       if (filters.skills && filters.skills.length > 0) {
