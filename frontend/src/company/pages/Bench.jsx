@@ -9,6 +9,7 @@ import {
   Spin,
   Upload,
   Popconfirm,
+  Typography,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import {
@@ -55,6 +56,8 @@ const Bench = () => {
 
   const [timer, setTimer] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
+
+  const { Title } = Typography;
 
   useEffect(() => {
     let interval = null;
@@ -499,8 +502,8 @@ const Bench = () => {
   const handleChange = (e) => {
     const inputValue = e.target.value;
 
-    // allow only alphabets, numbers & spaces
-    const reg = /^[A-Za-z0-9 ]*$/;
+    // allow only alphabets & spaces
+     const reg = /^[A-Za-z\s]*$/;
 
     if (reg.test(inputValue) || inputValue === "") {
       setSearchText(inputValue);
@@ -509,7 +512,13 @@ const Bench = () => {
 
   return (
     <div style={{ padding: 24 }}>
-      <h2 style={{ marginBottom: 16 }}>Vendor Candidate List</h2>
+      {/* <h2 style={{ marginBottom: 16 }}>Vendor Candidate List</h2> */}
+      <Title
+  level={4}
+  style={{ color: "rgba(0,0,0,0.75)", marginBottom: 16 }}
+>
+  Vendor Candidate List
+</Title>
 
       <div
         style={{
@@ -528,9 +537,9 @@ const Bench = () => {
             Add Candidate
           </Button>
           <Button onClick={fetchCandidates}>Refresh</Button>
-        </div>
+         </div>
 
-        <div
+         <div
           style={{
             display: "flex",
             gap: 24,
@@ -538,13 +547,13 @@ const Bench = () => {
             justifyContent: "center",
             flex: 1,
           }}
-        >
+         >
           {/* <div style={{ fontWeight: 600 }}>
-       Verified: <span style={{ color: "#52c41a" }}>{verifiedCount}</span>
-    </div> */}
+          Verified: <span style={{ color: "#52c41a" }}>{verifiedCount}</span>
+         </div> */}
           <div
             style={{
-              fontWeight: 800,
+              fontWeight: 500,
               color: "#000",
               display: "flex",
               alignItems: "center",
@@ -556,8 +565,8 @@ const Bench = () => {
               style={{
                 background: "#52c41a",
                 color: "white",
-                width: 28,
-                height: 28,
+                width: 22,
+                height: 22,
                 borderRadius: "50%",
                 display: "flex",
                 justifyContent: "center",
@@ -571,11 +580,11 @@ const Bench = () => {
           </div>
 
           {/* <div style={{ fontWeight: 600 }}>
-       Not Verified: <span style={{ color: "#ff4d4f" }}>{unverifiedCount}</span>
-    </div> */}
+         Not Verified: <span style={{ color: "#ff4d4f" }}>{unverifiedCount}</span>
+         </div> */}
           <div
             style={{
-              fontWeight: 800,
+              fontWeight: 500,
               color: "#000",
               display: "flex",
               alignItems: "center",
@@ -587,8 +596,8 @@ const Bench = () => {
               style={{
                 background: "#ff4d4f",
                 color: "white",
-                width: 28,
-                height: 28,
+                width: 22,
+                height: 22,
                 borderRadius: "50%",
                 display: "flex",
                 justifyContent: "center",
@@ -604,7 +613,7 @@ const Bench = () => {
           {/* Total Candidates */}
           <div
             style={{
-              fontWeight: 800,
+              fontWeight: 500,
               color: "#000",
               display: "flex",
               alignItems: "center",
@@ -616,8 +625,8 @@ const Bench = () => {
               style={{
                 background: "#1677ff",
                 color: "white",
-                width: 28,
-                height: 28,
+                width: 22,
+                height: 22,
                 borderRadius: "50%",
                 display: "flex",
                 justifyContent: "center",
@@ -663,6 +672,9 @@ const Bench = () => {
           value={searchText}
           // onChange={(e) => setSearchText(e.target.value)}
           onChange={handleChange}
+
+          
+          
           style={{
             width: 250,
             marginBottom: 16,

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { PlusOutlined } from "@ant-design/icons";
-import { Button, Divider, Input, Select, Space, message } from "antd";
+import { Button, Divider, Input, Select, Space, message ,Typography} from "antd";
 
 const ReusableSelect = ({
   value,
@@ -19,6 +19,8 @@ const ReusableSelect = ({
   const [name, setName] = useState("");
   const [messageAPI, contextHolder] = message.useMessage();
   const inputRef = useRef(null);
+  const { Text } = Typography;
+const [error, setError] = useState(""); 
 
   // Fetch items on component mount
   useEffect(() => {
@@ -42,9 +44,28 @@ const ReusableSelect = ({
     fetchItems();
   }, []);
 
+  // const onNameChange = (event) => {
+  //   setName(event.target.value);
+  // };
+
   const onNameChange = (event) => {
-    setName(event.target.value);
-  };
+  const val = event.target.value;
+
+  // Allow only valid characters
+  const regex = /^[A-Za-z][A-Za-z0-9 .,\/-]*$/;
+
+ if (val === "" || regex.test(val)) {
+      setName(val);
+      // clear error as soon as input becomes valid
+      if (error) setError("");
+    } else {
+      // do not update name if invalid char typed, but show inline error
+      setError(
+        "Special Characters Are Not Allowed!"
+      );
+    }
+};
+
 
   const addItem = async (e) => {
     e.preventDefault();
@@ -63,6 +84,17 @@ const ReusableSelect = ({
     //   );
     //   return;
     // }
+      // ⭐ ADD THIS BLOCK HERE (VALIDATION)
+  //     const trimmed = name.trim();
+
+  // const isValid = /^[A-Za-z][A-Za-z0-9 .,\-\/]*$/.test(trimmed);
+
+  // if (!isValid) {
+  //   messageAPI.error(
+  //     "Invalid format. Must start with a letter and can contain letters, numbers, space, '.', ',', '/', '-'"
+  //   );
+  //   return;
+  // }
 
     if (!addFunction) {
       messageAPI.error("Add function not provided");
@@ -146,6 +178,12 @@ const ReusableSelect = ({
                 Add
               </Button>
             </Space>
+
+             {error ? (
+              <div style={{ padding: "4px 12px 12px", width: "100%" }}>
+                <Text type="danger">{error}</Text>
+              </div>
+            ) : null}
           </>
         )}
         options={items.map((item) => ({
