@@ -3,15 +3,30 @@ import { Input, Tag, AutoComplete } from "antd";
 
 const AddSkillInput = ({ label, values, onChange, suggestions = [] }) => {
   const [inputValue, setInputValue] = useState("");
+  const [error, setError] = useState("");
+
+  // Validation pattern
+  const pattern = /^[A-Za-z][A-Za-z0-9./\-\s]*$/; // only letters + dot + space
+
+  const validate = (val) => {
+    if (!pattern.test(val)) {
+      setError("Only letters,numbers,dot,space,hypen,slash are allowed");
+      return false;
+    }
+    setError("");
+    return true;
+  };
 
   const addValue = () => {
-    if (!inputValue.trim()) return;
-
     const newValue = inputValue.trim();
+    if (!newValue) return;
+
+    if (!validate(newValue)) return;
 
     if (!values.includes(newValue)) {
       onChange([...values, newValue]);
     }
+
     setInputValue("");
   };
 
@@ -21,39 +36,48 @@ const AddSkillInput = ({ label, values, onChange, suggestions = [] }) => {
     <div>
       <p style={{ marginBottom: 6, fontWeight: 600 }}>{label}</p>
 
-      {/* AutoComplete for suggestions */}
       <AutoComplete
-  style={{ width: "100%" }}
-  options={options}
-  value={inputValue}
-  onChange={setInputValue}
+        style={{ width: "100%" }}
+        options={options}
+        value={inputValue}
+        onChange={(val) => {
+          setInputValue(val);
+          validate(val); // live validation
+        }}
+        filterOption={(input, option) =>
+          option.value.toLowerCase().includes(input.toLowerCase())
+        }
+        onSelect={(val) => {
+          setInputValue(val);
+          addValue();
+        }}
+      >
+        <Input
+          placeholder={`Add ${label}`}
+          onPressEnter={addValue}
+          status={error ? "error" : ""}     // ⭐ RED BORDER
+        />
+      </AutoComplete>
 
-  // ⭐ ADD THIS
-  filterOption={(input, option) =>
-    option.value.toLowerCase().includes(input.toLowerCase())
-  }
+      {/* ⭐ AntD-style helper text */}
+      {error && (
+        <div
+          style={{
+            color: "red",
+            fontSize: 12,
+            marginTop: 3,
+          }}
+        >
+          {error}
+        </div>
+      )}
 
-  onSelect={(val) => {
-    setInputValue(val);
-    addValue();
-  }}
->
-  <Input
-    placeholder={`Add ${label}`}
-    onPressEnter={addValue}
-  />
-</AutoComplete>
-
-
-      {/* Chips */}
       <div style={{ marginTop: 10 }}>
         {values.map((item, index) => (
           <Tag
             key={index}
             closable
-            onClose={() =>
-              onChange(values.filter((v) => v !== item))
-            }
+            onClose={() => onChange(values.filter((v) => v !== item))}
             style={{ marginBottom: 6 }}
           >
             {item}

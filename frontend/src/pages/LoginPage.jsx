@@ -67,7 +67,7 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error("validate login error", err);
-      messageApi.error("Something went wrong");
+      messageApi.error(err.response.data.message || "Login failed");
     } finally {
       setSubmitting(false);
     }
@@ -85,11 +85,33 @@ const LoginPage = () => {
             style={{ width: "100%" }}
           >
             <Form.Item
-              name="email"
-              rules={[{ required: true, message: "Please enter your email" }]}
-            >
-              <Input placeholder="Email" size="large" />
-            </Form.Item>
+  name="email"
+  rules={[
+    { required: true, message: "Please enter your email" },
+    {
+      validator: (_, value) => {
+        if (!value) return Promise.resolve();
+
+        if (role === "candidate" && !isPersonalEmail(value)) {
+          return Promise.reject(
+            "Please use a personal email (gmail, yahoo, outlook, icloud)"
+          );
+        }
+
+        if (role === "company" && !isCompanyEmail(value)) {
+          return Promise.reject(
+            "Please use a company email"
+          );
+        }
+
+        return Promise.resolve();
+      },
+    },
+  ]}
+>
+  <Input placeholder="Email" size="large" />
+</Form.Item>
+
 
             <Form.Item
               name="password"
@@ -143,6 +165,37 @@ const LoginPage = () => {
     const role = activeTab;
     navigate("/forgotpassword", { state: { role } });
   };
+
+  // Check if company email
+const isCompanyEmail = (email) => {
+  const personalDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "rediffmail.com"
+  ];
+
+  const domain = email.split("@")[1]?.toLowerCase();
+  return domain && !personalDomains.includes(domain);
+};
+
+// Check if personal email
+const isPersonalEmail = (email) => {
+  const personalDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "rediffmail.com"
+  ];
+
+  const domain = email.split("@")[1]?.toLowerCase();
+  return domain && personalDomains.includes(domain);
+};
+
 
   return (
     <div

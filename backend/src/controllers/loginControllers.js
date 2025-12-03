@@ -12,12 +12,12 @@ const otpStore = new Map();
  */
 const userOtpGenerate = async (req, res) => {
   try {
-    const { email, role } = req.body;
+    const { email, role,name } = req.body;
     let user = await prisma.users.findUnique({ where: { email } });
 
     // If user not found, create it
     if (!user) {
-      const name = email.split("@")[0];
+      //const name = email.split("@")[0];
       user = await prisma.users.create({
         data: { name, email, role },
       });

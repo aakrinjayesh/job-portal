@@ -138,7 +138,7 @@ const RecruiterJobList = () => {
       console.log("Jobs with applicant counts:", jobsWithCounts);
     } catch (error) {
       console.error("Error fetching jobs:", error);
-      messageApi.error("Failed to fetch jobs");
+      messageApi.error("Failed to fetch jobs:"+error.response.data.message);
     } finally {
       setLoading(false);
     }
@@ -204,7 +204,7 @@ const RecruiterJobList = () => {
       form.resetFields();
     } catch (error) {
       console.error("Error saving job:", error);
-      messageApi.error("Failed to save job");
+      messageApi.error("Failed to save job:"+error.response.data.message);
       setPostLoading(false);
     } finally {
       setPostLoading(false);
@@ -248,7 +248,7 @@ const RecruiterJobList = () => {
       messageApi.success("JD uploaded and fields auto-filled!");
     } catch (error) {
       console.error(error);
-      messageApi.error("Upload failed. Try again.");
+      messageApi.error("Upload failed. Try again:"+error.response.data.message);
       setUploadLoading(false);
     } finally {
       setUploadLoading(false);
@@ -290,7 +290,7 @@ const RecruiterJobList = () => {
       }
     } catch (err) {
       console.error(err);
-      messageApi.error("Error generating JD");
+      messageApi.error("Error generating JD:"+err.response.data.message);
     } finally {
       setAiLoading(false);
       aiForm.resetFields();
@@ -322,7 +322,7 @@ const RecruiterJobList = () => {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error deleting jobs:", error);
-      messageApi.error("Failed to delete jobs");
+      messageApi.error("Failed to delete jobs:"+error.response.data.message);
       setDeleteLoading(false);
     } finally {
       setDeleteLoading(false);

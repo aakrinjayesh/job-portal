@@ -58,7 +58,7 @@ const Signup = () => {
       }
     } catch (err) {
       console.log("validate otp error", err);
-      messageApi.error("Something went wrong");
+      messageApi.error("Something went wrong:"+err.response.data.message);
     } finally {
       setSubmitLoading(false);
     }
@@ -68,12 +68,16 @@ const Signup = () => {
   const handleGenerateOtp = async () => {
     try {
       const email = form.getFieldValue("email");
+      const firstname = form.getFieldValue("fname");
+      const lastname = form.getFieldValue("lname");
       if (!email) {
         messageApi.warning("Please enter email first");
         return;
       }
+      const name=`${firstname} ${lastname}`
       setGenerateLoading(true);
-      const res = await GenerateOtp({ email, role });
+      
+      const res = await GenerateOtp({ email, role,name });
       if (res.status === "success") {
         messageApi.success("OTP sent to your email");
         setTimer(60); // ⏱️ start 60s countdown
@@ -82,7 +86,7 @@ const Signup = () => {
         messageApi.error(res.message || "Failed to send OTP");
       }
     } catch (e) {
-      messageApi.error("Failed to send OTP");
+      messageApi.error("Failed to send OTP:"+e.response.data.message);
     } finally {
       setGenerateLoading(false);
     }
@@ -157,11 +161,46 @@ const Signup = () => {
           name="signup"
           onFinish={onFinish}
           style={{ width: "100%" }}
+
         >
-          <Form.Item
-            name="email"
+           <Form.Item
+            name="fname"
             style={{ marginBottom: "18px" }}
-            rules={[{ required: true, message: "Please enter your email" }]}
+            rules={[{ required: true, message: "Please enter your firstname" }]}
+          >
+            <Input placeholder="FirstName" size="large" />
+          </Form.Item>
+           <Form.Item
+            name="lname"
+            style={{ marginBottom: "18px" }}
+            rules={[{ required: true, message: "Please enter your last name" }]}
+          >
+            <Input placeholder="Lastname" size="large" />
+          </Form.Item>
+           <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Please enter your email" },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+          
+                  if (role === "candidate" && !isPersonalEmail(value)) {
+                    return Promise.reject(
+                      "Please use a personal email (gmail, yahoo, outlook, icloud)"
+                    );
+                  }
+          
+                  if (role === "company" && !isCompanyEmail(value)) {
+                    return Promise.reject(
+                      "Please use a company email (no gmail/yahoo)"
+                    );
+                  }
+          
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
             <Input placeholder="Email" size="large" />
           </Form.Item>

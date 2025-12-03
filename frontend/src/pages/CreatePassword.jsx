@@ -58,8 +58,7 @@ const CreatePassword = () => {
         messageApi.error(res.message || "Failed to set password");
       }
     } catch (err) {
-      console.log("Set password error:", err);
-      messageApi.error("Something went wrong");
+      messageApi.error("Something went wrong:"+ err.response.data.message);
     } finally {
       setPasswordLoading(false);
     }

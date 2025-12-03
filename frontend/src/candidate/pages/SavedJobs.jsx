@@ -47,7 +47,7 @@ function SavedJobs() {
       }
     } catch (error) {
       console.error("Error fetching saved job list:", error);
-      message.error("Error fetching saved jobs");
+      message.error("Error fetching saved jobs:"+error.response.data.message);
     } finally {
       setLoading(false);
     }

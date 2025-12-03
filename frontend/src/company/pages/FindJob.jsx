@@ -36,7 +36,7 @@ function FindJob() {
       }
     } catch (error) {
       console.error("Error fetching jobs:", error);
-      message.error("Failed to fetch jobs");
+      message.error("Failed to fetch jobs:"+error.response.data.message);
     } finally {
       setLoading(false);
     }
