@@ -96,6 +96,37 @@ const Signup = () => {
     navigate("/login");
   };
 
+  // Check if company email
+const isCompanyEmail = (email) => {
+  const personalDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "rediffmail.com"
+  ];
+
+  const domain = email.split("@")[1]?.toLowerCase();
+  return domain && !personalDomains.includes(domain);
+};
+
+// Check if personal email
+const isPersonalEmail = (email) => {
+  const personalDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "rediffmail.com"
+  ];
+
+  const domain = email.split("@")[1]?.toLowerCase();
+  return domain && personalDomains.includes(domain);
+};
+
+
   return (
     <div
       style={{
