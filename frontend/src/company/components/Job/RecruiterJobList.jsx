@@ -84,6 +84,8 @@ const RecruiterJobList = () => {
   const [aiForm] = Form.useForm();
   const [aiLoading, setAiLoading] = useState(false);
 
+  const [isSalaryRange, setIsSalaryRange] = useState(false);
+
   useEffect(() => {
     fetchJobs();
   }, []);
@@ -92,15 +94,45 @@ const RecruiterJobList = () => {
     setIsEditing(false);
     form.resetFields();
     setIsModalVisible(true);
+    setShowTenure(false);
   };
 
   const showEditModal = (job) => {
     setIsEditing(true);
     setEditingJob(job);
+    if (job.jobType === "Remote") {
+      setShowLocation(false);
+    } else {
+      setShowLocation(true);
+    }
     setIsModalVisible(true);
+
+    let salaryValues = {};
+
+    // If salary contains a range: "300000-400000"
+    if (job.salary.includes("-")) {
+      const [min, max] = job.salary.split("-").map(Number);
+
+      salaryValues = {
+        salary: {
+          min,
+          max,
+        },
+      };
+
+      setIsSalaryRange(true); // toggle UI to range mode
+    } else {
+      // Normal salary: "500000"
+      salaryValues = {
+        salary: Number(job.salary),
+      };
+
+      setIsSalaryRange(false); // toggle UI to single salary mode
+    }
 
     form.setFieldsValue({
       ...job,
+      ...salaryValues,
       applicationDeadline: job.applicationDeadline
         ? dayjs(job.applicationDeadline)
         : null,
@@ -138,7 +170,7 @@ const RecruiterJobList = () => {
       console.log("Jobs with applicant counts:", jobsWithCounts);
     } catch (error) {
       console.error("Error fetching jobs:", error);
-      messageApi.error("Failed to fetch jobs:"+error.response.data.message);
+      messageApi.error("Failed to fetch jobs:" + error.response.data.message);
     } finally {
       setLoading(false);
     }
@@ -162,24 +194,64 @@ const RecruiterJobList = () => {
     setIsModalOpen(true);
   };
 
+  const cleanNumber = (val) => {
+    if (val === undefined || val === null) return 0;
+    return Number(String(val).replace(/,/g, ""));
+  };
+
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
       setPostLoading(true);
       // ✅ Convert date to proper format (if needed)
+      // let finalSalary = "";
+
+      // if (!isSalaryRange) {
+      //   // NORMAL SALARY
+      //   finalSalary = String(values.salary);
+      // } else {
+      //   // RANGE SALARY
+      //   const min = values.salary.min;
+      //   const max = values.salary.max;
+
+      //   finalSalary = `${min}-${max}`;
+      // }
+      let finalSalary = "";
+
+      if (!isSalaryRange) {
+        finalSalary = String(cleanNumber(values.salary)); // convert to string
+      } else {
+        const min = cleanNumber(values.salary.min);
+        const max = cleanNumber(values.salary.max);
+        finalSalary = `${min}-${max}`; // string format
+      }
+
       let payload = {
         role: values.role,
         description: values.description,
         employmentType: values.employmentType,
-        experience: values.experience,
+        // experience: values.experience,
+        experience: {
+          number: String(values.experience.number),
+          type: values.experience.type,
+        },
         experienceLevel: values.experienceLevel,
-        tenure: values.tenure,
-        location: values.location,
+        // tenure: values.tenure,
+        tenure: values.tenure
+          ? {
+              number: String(values.tenure.number),
+              type: values.tenure.type,
+            }
+          : undefined,
+        // location: values.location,
+        location: values.location || "Remote",
         skills: values.skills || [], // array
         clouds: values.clouds || [],
-        salary: Number(values.salary) || 0,
+        // salary: Number(values.salary) || 0,
+        // salary: isSalaryRange ? Number(values.salary) : Number(values.salary),
+        salary: finalSalary,
         companyName: values.companyName,
-        responsibilities: values.responsibilities || [], // array
+        responsibilities: values.responsibilities || "", // string
         certifications: values.certifications || [],
         jobType: values.jobType,
         applicationDeadline: values?.applicationDeadline?.toISOString(),
@@ -204,7 +276,7 @@ const RecruiterJobList = () => {
       form.resetFields();
     } catch (error) {
       console.error("Error saving job:", error);
-      messageApi.error("Failed to save job:"+error.response.data.message);
+      messageApi.error("Failed to save job:" + error.response.data.message);
       setPostLoading(false);
     } finally {
       setPostLoading(false);
@@ -233,7 +305,7 @@ const RecruiterJobList = () => {
         tenure: extracted?.tenure || null,
         skills: extracted.skills || [],
         clouds: extracted.clouds || [],
-        salary: extracted.salary || 0,
+        salary: extracted.salary || "",
         companyName: extracted.companyName || "",
         responsibilities: extracted.responsibilities || [],
         certifications: extracted.certifications || [],
@@ -248,7 +320,9 @@ const RecruiterJobList = () => {
       messageApi.success("JD uploaded and fields auto-filled!");
     } catch (error) {
       console.error(error);
-      messageApi.error("Upload failed. Try again:"+error.response.data.message);
+      messageApi.error(
+        "Upload failed. Try again:" + error.response.data.message
+      );
       setUploadLoading(false);
     } finally {
       setUploadLoading(false);
@@ -290,7 +364,7 @@ const RecruiterJobList = () => {
       }
     } catch (err) {
       console.error(err);
-      messageApi.error("Error generating JD:"+err.response.data.message);
+      messageApi.error("Error generating JD:" + err.response.data.message);
     } finally {
       setAiLoading(false);
       aiForm.resetFields();
@@ -322,7 +396,7 @@ const RecruiterJobList = () => {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error deleting jobs:", error);
-      messageApi.error("Failed to delete jobs:"+error.response.data.message);
+      messageApi.error("Failed to delete jobs:" + error.response.data.message);
       setDeleteLoading(false);
     } finally {
       setDeleteLoading(false);
@@ -341,6 +415,12 @@ const RecruiterJobList = () => {
       label: "Month",
     },
   ];
+
+  const formatter = (value) => {
+    const [start, end] = `${value}`.split(".") || [];
+    const v = `${start}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return `${end ? `${v}.${end}` : `${v}`}`;
+  };
 
   return (
     <>
@@ -694,7 +774,14 @@ const RecruiterJobList = () => {
           <Form.Item
             name="description"
             label="Description"
-            rules={[{ required: true }]}
+            rules={[
+              { required: true },
+              {
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)]+$/,
+                message:
+                  "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+              },
+            ]}
           >
             <TextArea
               rows={3}
@@ -708,11 +795,16 @@ const RecruiterJobList = () => {
             name="responsibilities"
             label="Roles & Responsibilities"
             rules={[
-              { required: true },
+              // { required: true },
               // {
               //   pattern: /^[A-Za-z0-9 ]+$/,
               //   message: "Only letters, numbers, and spaces are allowed",
               // },
+              {
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)]+$/,
+                message:
+                  "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+              },
             ]}
           >
             {/* <Select mode="tags" placeholder="Add responsibilities" /> */}
@@ -789,11 +881,9 @@ const RecruiterJobList = () => {
             </Form.Item>
           )}
 
-          <Form.Item
-            // name="experience"
-            label="Experience"
-            rules={[{ required: true }]}
-          >
+          <Form.Item label="Experience">
+            {" "}
+            {/* no name, no rules here */}
             <Space.Compact style={{ width: "100%" }}>
               <Form.Item
                 name={["experience", "number"]}
@@ -802,7 +892,6 @@ const RecruiterJobList = () => {
                   { required: true, message: "Experience is Required!" },
                   {
                     pattern: /^[0-9]+(\.[0-9]+)?$/,
-
                     message: "Only Positive Numbers Are Allowed",
                   },
                 ]}
@@ -814,15 +903,17 @@ const RecruiterJobList = () => {
                   placeholder="e.g 3"
                 />
               </Form.Item>
+
               <Form.Item
                 name={["experience", "type"]}
                 noStyle
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "Select unit" }]}
               >
                 <Select style={{ width: "30%" }} options={Experienceoptions} />
               </Form.Item>
             </Space.Compact>
           </Form.Item>
+
           <Form.Item
             name="experienceLevel"
             label="Experience Level"
@@ -836,18 +927,6 @@ const RecruiterJobList = () => {
               <Option value="Lead">Lead</Option>
             </Select>
           </Form.Item>
-
-          {/* <Form.Item
-            name="jobType"
-            label="Job Type"
-            rules={[{ required: true }]}
-          >
-            <Select>
-              <Option value="Remote">Remote</Option>
-              <Option value="Onsite">Onsite</Option>
-              <Option value="Hybrid">Hybrid</Option>
-            </Select>
-          </Form.Item> */}
           <Form.Item
             name="jobType"
             label="Job Type"
@@ -890,24 +969,7 @@ const RecruiterJobList = () => {
             </Form.Item>
           )}
 
-          <Form.Item
-            name="clouds"
-            label="Clouds"
-            rules={[
-              { required: true },
-              //          {
-              //   pattern: /^[A-Za-z ]+$/,
-              //   message: "Only letters and spaces are allowed",
-              // },
-            ]}
-          >
-            {/* <Select
-              mode="tags"
-              allowClear
-              style={{ width: "100%" }}
-              placeholder="Type and press Enter to add clouds"
-              tokenSeparators={[","]}
-            /> */}
+          <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
             <ReusableSelect
               single={false}
               placeholder="Select Cloud"
@@ -915,22 +977,7 @@ const RecruiterJobList = () => {
               addFunction={PostClouds}
             />
           </Form.Item>
-          <Form.Item
-            name="skills"
-            label="Skills"
-            rules={[
-              { required: true },
-              //          {
-              //    pattern: /^[A-Za-z][A-Za-z0-9 \-]*$/,
-              //   message: "Only letters and spaces are allowed",
-              // },
-            ]}
-          >
-            {/* <Select
-              mode="tags"
-              style={{ width: "100%" }}
-              placeholder="Add skills (press Enter)"
-            /> */}
+          <Form.Item name="skills" label="Skills" rules={[{ required: true }]}>
             <ReusableSelect
               single={false}
               placeholder="Select skills"
@@ -938,19 +985,73 @@ const RecruiterJobList = () => {
               addFunction={PostSkills}
             />
           </Form.Item>
-
-          <Form.Item
-            name="salary"
-            label="Salary Per Annum"
-            rules={[{ required: true }]}
+          <Checkbox
+            checked={isSalaryRange}
+            onChange={(e) => {
+              setIsSalaryRange(e.target.checked);
+              form.setFieldsValue({ salary: null }); // clear old salary
+            }}
           >
-            <InputNumber
-              style={{ width: "100%" }}
-              min={0}
-              // formatter={(value) => `₹ ${value}`}
-              placeholder="e.g. 500000 PA"
-            />
-          </Form.Item>
+            Use Salary Range
+          </Checkbox>
+
+          {!isSalaryRange ? (
+            <Form.Item
+              name="salary"
+              label="Salary Per Annum"
+              rules={[{ required: true }]}
+            >
+              <InputNumber
+                formatter={formatter}
+                style={{ width: "100%" }}
+                min={0}
+                placeholder="e.g. 500000 PA"
+              />
+            </Form.Item>
+          ) : (
+            <Form.Item label="Salary Range (Per Annum)">
+              <Space.Compact style={{ width: "100%" }}>
+                <Form.Item
+                  name={["salary", "min"]}
+                  noStyle
+                  rules={[{ required: true, message: "Min salary required" }]}
+                >
+                  <InputNumber
+                    formatter={formatter}
+                    placeholder="Min"
+                    min={0}
+                    style={{ width: "50%" }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name={["salary", "max"]}
+                  noStyle
+                  rules={[
+                    { required: true, message: "Max salary required" },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        const min = getFieldValue(["salary", "min"]);
+                        if (min && value && value < min) {
+                          return Promise.reject(
+                            "Max salary must be greater than Min salary"
+                          );
+                        }
+                        return Promise.resolve();
+                      },
+                    }),
+                  ]}
+                >
+                  <InputNumber
+                    formatter={formatter}
+                    placeholder="Max"
+                    min={0}
+                    style={{ width: "50%" }}
+                  />
+                </Form.Item>
+              </Space.Compact>
+            </Form.Item>
+          )}
 
           <Form.Item
             name="companyName"
@@ -966,32 +1067,14 @@ const RecruiterJobList = () => {
             <Input placeholder="Company Name" />
           </Form.Item>
 
-          <Form.Item
-            name="certifications"
-            label="Certifications"
-            rules={[
-              { required: true },
-              //             {
-              //      pattern: /^[A-Za-z .,\/-]+[0-9]*$/,
-              //   message: "Must start with letters. Numbers allowed only at the end.",
-              // },
-            ]}
-          >
-            {/* <Select mode="tags"  placeholder="Add qualifications" /> */}
+          <Form.Item name="certifications" label="Certifications">
             <ReusableSelect
-              placeholder="Select or add Role"
+              placeholder="Select or add Certificate"
               fetchFunction={GetCertifications}
               addFunction={PostCertifications}
               single={false}
             />
           </Form.Item>
-
-          {/* <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-            <Select>
-              <Option value="Open">Open</Option>
-              <Option value="Closed">Closed</Option>
-            </Select>
-          </Form.Item> */}
 
           <Form.Item
             name="applicationDeadline"
@@ -1021,7 +1104,13 @@ const RecruiterJobList = () => {
           <Form.Item
             label="Job Title(role)"
             name="role"
-            rules={[{ required: true, message: "Job title is required" }]}
+            rules={[
+              { required: true, message: "Job title is required" },
+              {
+                pattern: /^[A-Za-z][A-Za-z0-9 .,\/-]*$/,
+                message: "Special Characters are not allowed.",
+              },
+            ]}
           >
             <Input placeholder="e.g. SalesForce sales Developer" />
           </Form.Item>
@@ -1029,7 +1118,13 @@ const RecruiterJobList = () => {
           <Form.Item
             label="Experience (Years)"
             name="experience"
-            rules={[{ required: true, message: "Experience is required" }]}
+            rules={[
+              { required: true, message: "Experience is required" },
+              {
+                pattern: /^[0-9]+(\.[0-9]+)?$/,
+                message: "Only numbers and decimal are allowed!",
+              },
+            ]}
           >
             <InputNumber
               style={{ width: "100%" }}
@@ -1052,7 +1147,17 @@ const RecruiterJobList = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item label="Extra Instructions (Optional)" name="instructions">
+          <Form.Item
+            label="Extra Instructions (Optional)"
+            name="instructions"
+            rules={[
+              {
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)']*$/,
+                message:
+                  "Only letters, numbers, space, and , . / - ( ) ' are allowed!",
+              },
+            ]}
+          >
             <Input.TextArea
               rows={3}
               placeholder="Anything special you want to include?"

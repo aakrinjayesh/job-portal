@@ -112,10 +112,7 @@ const postJobValidator = z.object({
   location: z.string().optional(),
   skills: z.array(z.string()),
   clouds: z.array(z.string()),
-  salary: z
-    .number({ invalid_type_error: "salary must be a number" })
-    .int()
-    .nonnegative(),
+  salary: z.string(),
   companyName: z.string(),
    responsibilities: z.string(),
   certifications: z.array(z.string()),
@@ -159,10 +156,7 @@ const editJobValidator = z.object({
   location: z.string().optional(),
   skills: z.array(z.string()),
   clouds: z.array(z.string()),
-  salary: z
-    .number({ invalid_type_error: "salary must be a number" })
-    .int()
-    .nonnegative(),
+  salary: z.string(),
   companyName: z.string(),
    responsibilities: z.string(),
   certifications: z.array(z.string()),
