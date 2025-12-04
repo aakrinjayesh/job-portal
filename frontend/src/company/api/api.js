@@ -196,11 +196,12 @@ export async function  UserJobsids() {
 
 export async function  UpdateVendorCandidateStatus( payload) {
   try {
-      const response = await axiosInstance.post(`/vendor/candidate/update-status`, {
+    // const data=JSON.stringify(payload)
+      const response = await axiosInstance.post(`/vendor/candidate/update-status`, payload,{
         headers:{
           "Content-Type": "application/json"
         },
-         payload
+         
       })
       return response.data
   } catch (error) {

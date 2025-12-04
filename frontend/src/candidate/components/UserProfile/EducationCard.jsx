@@ -161,7 +161,7 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
             rules={[
               { required: true, message: "Please enter education name" },
               {
-                pattern: /^[A-Za-z ]+$/,
+                pattern: /^[A-Za-z .]+$/,
                 message: "Only letters spaces are allowed!",
               },
             ]}
@@ -183,7 +183,7 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
             rules={[
               { required: true, message: "Please enter education type" },
               {
-                pattern: /^[A-Za-z .,&-]+$/,
+                pattern: /^[A-Za-z .,&\-\/']+$/,
                 message: "Only letters and spaces are allowed!",
               },
             ]}

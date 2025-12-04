@@ -144,7 +144,7 @@ const [error, setError] = useState("");
       <Select
         mode={single === false && "multiple"}
         style={style}
-        placement={"bottomRight"}
+        placement={"topLeft"}
         className={className}
         placeholder={placeholder}
         value={value}

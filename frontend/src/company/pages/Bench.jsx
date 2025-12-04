@@ -17,7 +17,8 @@ import {
   CreateVendorCandidate,
   UpdateVendorCandidate,
   DeleteVendorCandidate,
-  //  UpdateVendorCandidateStatus ,
+   UpdateVendorCandidateStatus ,
+  //  UpdateCandidateStatus
 } from "../api/api";
 import UpdateUserProfile from "../../candidate/pages/UpdateUserProfile";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
@@ -329,17 +330,35 @@ const Bench = () => {
     }
   };
 
-  const updateStatus = (status) => {
-    const updated = candidates.map((c) =>
-      selectedRowKeys.includes(c.id) ? { ...c, status } : c
-    );
+const updateStatus = async (status) => {
+    try {
+      // backend update
+      const payload = {
+        candidateIds: selectedRowKeys,
+        status: status,
+      };
+      const resp = await UpdateVendorCandidateStatus(payload);
+      if (resp.status !== "success") {
+        return message.error("Failed to update status. Try again.");
+      }
+      // frontend update
+      const updated = candidates.map((c) =>
+        selectedRowKeys.includes(c.id)
+          ? { ...c, status: status === "active" } // convert to boolean
+          : c
+      );
 
-    setCandidates(updated);
-    setSelectedRowKeys([]);
+      setCandidates(updated);
+      setSelectedRowKeys([]);
 
-    message.success(
-      status === "active" ? "Moved to Active!" : "Moved to Inactive!"
-    );
+      message.success(
+        status === "active" ? "Moved to Active!" : "Moved to Inactive!"
+      );
+      fetchCandidates()
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to update status. Try again.");
+    }
   };
 
   // 🔹 Table Columns
@@ -692,6 +711,13 @@ const Bench = () => {
               ? filteredCandidates.filter((c) => c.status !== "inactive")
               : filteredCandidates.filter((c) => c.status === "inactive")
           }
+          // dataSource={
+          //   activeTab === "all"
+          //     ? filteredCandidates
+          //     : activeTab === "active"
+          //     ? filteredCandidates.filter((c) => c.status === "active")
+          //     : filteredCandidates.filter((c) => c.status === "inactive")
+          // }
           rowKey={(record) => record.id || record.name}
           bordered
           // pagination={{ pageSize: 10 }}

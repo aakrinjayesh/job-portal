@@ -15,6 +15,7 @@ import {
   Col,
   Select,
   Divider,
+  Checkbox,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -42,6 +43,9 @@ const ExperienceCard = ({
   const [experiences, setExperiences] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
+
+  const [isCurrent, setIsCurrent] = useState(false);
+
 
   useEffect(() => {
     if (apidata && Array.isArray(apidata)) {
@@ -103,11 +107,19 @@ const ExperienceCard = ({
         projects,
       } = values;
 
+      let start = dateRange[0];
+let end = dateRange[1];
+
+if (start?.format) start = start.format("MM-YYYY");
+if (end?.format) end = end.format("MM-YYYY");
+
       const newExperience = {
         // startDate: dateRange[0].format("YYYY-MM"),
         // endDate: dateRange[1].format("YYYY-MM"),
-        startDate: dateRange[0].format("MM-YYYY"),
-        endDate: dateRange[1].format("MM-YYYY"),
+        // startDate: dateRange[0].format("MM-YYYY"),
+        // endDate: dateRange[1].format("MM-YYYY"),
+         startDate: start,
+  endDate: end,
         payrollCompanyName: payrollCompanyName || "",
         role: role || "",
 
@@ -299,7 +311,7 @@ const ExperienceCard = ({
       >
         <Form form={form} layout="vertical">
           <Row gutter={16}>
-            <Col span={12}>
+            {/* <Col span={12}>
               <Form.Item
                 name="dateRange"
                 label="Date Range"
@@ -313,7 +325,76 @@ const ExperienceCard = ({
                   style={{ width: "100%" }}
                 />
               </Form.Item>
-            </Col>
+            </Col> */}
+     <Col span={12}>
+  <Form.Item
+    name="dateRange"
+    label="Date Range"
+    rules={[
+      { required: true, message: "Please select date range" },
+      {
+        validator: (_, value) => {
+          if (!isCurrent && (!value || value.length !== 2)) {
+            return Promise.reject("Please select start and end month");
+          }
+          if (isCurrent && (!value || value.length < 1)) {
+            return Promise.reject("Please select start month");
+          }
+          return Promise.resolve();
+        },
+      },
+    ]}
+  >
+    <>
+      {/* Checkbox */}
+      <div style={{ marginBottom: 8 }}>
+        <Checkbox
+          checked={isCurrent}
+          onChange={(e) => setIsCurrent(e.target.checked)}
+        >
+          I am currently working here
+        </Checkbox>
+      </div>
+
+      {/* When ongoing → only start month picker */}
+      {isCurrent ? (
+        <DatePicker
+          picker="month"
+          format="MMM YYYY"
+          style={{ width: "100%" }}
+          onChange={(date) => {
+            // store start + "Present"
+            const start = date?.format("YYYY-MM") || null;
+            form.setFieldsValue({
+              dateRange: start ? [start, "Present"] : [],
+            });
+          }}
+        />
+      ) : (
+        // Normal range picker
+        <RangePicker
+          picker="month"
+          format="MMM YYYY"
+          style={{ width: "100%" }}
+          onChange={(dates) => {
+            if (!dates) {
+              form.setFieldsValue({ dateRange: [] });
+              return;
+            }
+            form.setFieldsValue({
+              dateRange: [
+                dates[0].format("YYYY-MM"),
+                dates[1].format("YYYY-MM"),
+              ],
+            });
+          }}
+        />
+      )}
+    </>
+  </Form.Item>
+</Col>
+
+
             <Col span={5}>
               <Form.Item
                 name="payrollCompanyName"
@@ -396,8 +477,8 @@ const ExperienceCard = ({
                               message: "Enter project name",
                             },
                             {
-                              pattern: /^[A-Za-z0-9 ]+$/,
-                              message: "Only letters, numbers, are allowed!",
+                              pattern: /^[A-Za-z ]+$/,
+                              message: "Only letters are allowed!",
                             },
                           ]}
                         >

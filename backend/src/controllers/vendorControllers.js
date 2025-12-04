@@ -228,40 +228,39 @@ const deleteVendorCandidate = async (req, res) => {
 };
 
 
-// ✅ Update status (active / inactive)
-const updateCandidateStatus = async (req, res) => {
-  try {
-    const userAuth = req.user;
-    const { ids, status } = req.body; // expect: { ids: [...], status: 'inactive' }
 
-    if (userAuth.role !== "company") {
-      return res.status(200).json({
+
+ const updateCandidateStatus = async (req, res) => {
+  try {
+    const { candidateIds, status } = req.body;
+
+    if (!candidateIds?.length || !status) {
+      return res.status(400).json({
         status: "failed",
-        message: "Access denied.",
+        message: "candidateIds and status are required",
       });
     }
 
-    // Update all selected candidates
+    // ⚡ Update all selected candidates
     await prisma.userProfile.updateMany({
-      where: {
-        id: { in: ids },
-        vendorId: userAuth.id
-      },
-      data: { status },
+      where: { id: { in: candidateIds } },
+      data: { status: status   }, // Boolean -> true/false
     });
 
     return res.status(200).json({
       status: "success",
-      message: `Updated to ${status} successfully`,
+      message: "Candidate status updated successfully",
     });
-  } catch (err) {
-    console.error("Error updating status:", err);
-    return res.status(200).json({
+
+  } catch (error) {
+    console.error("STATUS UPDATE ERROR:", error);
+    return res.status(500).json({
       status: "failed",
-      message: "Error updating status",
+      message: "Internal server error",
     });
   }
 };
+
 
 
 // // ✅ Update status (active / inactive)
