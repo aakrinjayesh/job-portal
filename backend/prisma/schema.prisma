@@ -62,7 +62,7 @@ model UserProfile {
   currentCTC                   String?
   expectedCTC                  String?
   rateCardPerHour              Json?
-  status                       Boolean?
+  status                       String?
   joiningPeriod                String?
   totalExperience              String?
   relevantSalesforceExperience String?
