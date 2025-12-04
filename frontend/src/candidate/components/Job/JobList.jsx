@@ -10,12 +10,14 @@ import {
   Divider,
   Cascader,
   message,
-  Button,
+  Button
 } from "antd";
 import {
   StarFilled,
   StarOutlined,
   EnvironmentOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
 
@@ -28,7 +30,16 @@ dayjs.extend(relativeTime);
 
 const { Text, Title, Paragraph } = Typography;
 
-const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
+const JobList = ({
+  jobs,
+  lastJobRef,
+  type,
+  jobids,
+  portal,
+  onUnsave,
+  isFilterOpen,
+  toggleFilter,
+}) => {
   const navigate = useNavigate();
   const [sortedJobs, setSortedJobs] = useState(jobs);
   const [savedJobIds, setSavedJobIds] = useState(jobids || []);
@@ -36,16 +47,16 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
 
- const sortOptions = [
-  {
-    value: "createdAt",
-    label: "Posted Time",
-    children: [
-      { value: "asc", label: "Oldest First" },
-      { value: "desc", label: "Recently Posted First" },
-    ],
-  },
-];
+  const sortOptions = [
+    {
+      value: "createdAt",
+      label: "Posted Time",
+      children: [
+        { value: "asc", label: "Oldest First" },
+        { value: "desc", label: "Recently Posted First" },
+      ],
+    },
+  ];
 
   useEffect(() => {
     setSortedJobs(jobs);
@@ -59,11 +70,9 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
     const jobIndex = sortedJobs.findIndex((job) => job.id === jobId);
     if (jobIndex === -1) return;
 
-    // Backup originals
     const originalJobs = [...sortedJobs];
     const originalSavedIds = [...savedJobIds];
 
-    // 1️⃣ Optimistic UI update
     const newJobs = [...sortedJobs];
     const willBeSaved = !newJobs[jobIndex].isSaved;
     newJobs[jobIndex].isSaved = willBeSaved;
@@ -77,7 +86,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
     }
 
     try {
-      // 2️⃣ Call API
       if (willBeSaved) {
         const resp = await SaveJob({ jobId });
         if (resp?.status !== "success") throw new Error();
@@ -85,19 +93,16 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
       } else {
         const resp = await UnSaveJob({ jobId });
         if (resp?.status !== "success") throw new Error();
-        messageApi.success("Job removed from saved list!");
+        messageApi.success("Job removed!");
         if (type === "save" && onUnsave) {
           onUnsave(jobId);
         }
       }
     } catch (err) {
       console.error(err);
-
-      // 3️⃣ Revert UI on failure
       setSortedJobs(originalJobs);
       setSavedJobIds(originalSavedIds);
-
-      messageApi.error("Something went wrong! Action reverted.");
+      messageApi.error("Something went wrong!");
     }
   };
 
@@ -114,8 +119,10 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
           : new Date(b.createdAt) - new Date(a.createdAt);
       });
     }
+
     setSortedJobs(sorted);
   };
+
   const handleCardClick = (id) => {
     if (portal === "company") {
       navigate(`/company/job/${id}`, { state: { type, jobids, portal } });
@@ -177,8 +184,7 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
         </div>
 
         <div>
-          <Text type="secondary">Experience:</Text> {a.total_experience_years}{" "}
-          yr
+          <Text type="secondary">Experience:</Text> {a.total_experience_years} yr
         </div>
 
         <div>
@@ -193,23 +199,40 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
     <Row gutter={[16, 16]}>
       {contextHolder}
 
-      {/* SORT DROPDOWN */}
+      {/* ⭐ TOP ROW — LEFT FILTER TOGGLE + RIGHT SORT OPTION */}
       <Col xs={24}>
         <div
           style={{
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
+            alignItems: "center",
             marginBottom: 16,
           }}
         >
-          {/* You can keep your Cascader here if needed */}
+          {/* LEFT — FILTER BUTTON */}
+          <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
+          <Button
+  type="text"
+  onClick={toggleFilter}
+  style={{ fontSize: 20 }}
+  icon={
+    isFilterOpen ? (
+      <MenuFoldOutlined />
+    ) : (
+      <MenuUnfoldOutlined />
+    )
+  }
+/>
+</Tooltip>
+
+
+          {/* RIGHT — SORT */}
           <Cascader
             options={sortOptions}
             onChange={handleSort}
             placeholder="Sort Jobs"
             style={{ width: 250 }}
             allowClear
-            
           />
         </div>
       </Col>
@@ -230,7 +253,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}
             >
-              {/* ROLE + SAVE STAR */}
               <div
                 style={{
                   display: "flex",
@@ -248,13 +270,13 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
 
                 <span
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent card click
+                    e.stopPropagation();
                     handleSaveToggle(job.id);
                   }}
                   style={{ cursor: "pointer", fontSize: 20 }}
                 >
-                  <Tooltip title={job.isSaved ? "Already Saved" : "Save Job"}>
-                    {job.isSaved ? (
+                  <Tooltip title={isSaved ? "Saved" : "Save Job"}>
+                    {isSaved ? (
                       <StarFilled style={{ color: "#faad14" }} />
                     ) : (
                       <StarOutlined />
@@ -263,7 +285,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                 </span>
               </div>
 
-              {/* COMPANY + RATING */}
               <Space align="center" style={{ marginTop: 6 }}>
                 <Text strong style={{ color: "#1890ff" }}>
                   {job.companyName}
@@ -276,7 +297,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                 )}
               </Space>
 
-              {/* EXPERIENCE / LOCATION / SALARY */}
               <div style={{ marginTop: 12 }}>
                 <Space split={<Divider type="vertical" />} wrap>
                   {job.experience && (
@@ -294,13 +314,10 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                     </Space>
                   )}
 
-                  {job.salary && (
-                    <Text>₹{Number(job.salary).toLocaleString()} PA</Text>
-                  )}
+                 {job.salary && <Text>₹ {job.salary} Lacs PA</Text>}
                 </Space>
               </div>
 
-              {/* DESCRIPTION */}
               {job.description && (
                 <Space
                   align="start"
@@ -318,7 +335,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                 </Space>
               )}
 
-              {/* CLOUDS */}
               <div style={{ marginTop: 12 }}>
                 {job.clouds?.map((cloud, idx) => (
                   <Tag color="gray" key={idx} style={{ borderRadius: 20 }}>
@@ -327,7 +343,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                 ))}
               </div>
 
-              {/* SKILLS */}
               {job.skills?.length > 0 && (
                 <div style={{ marginTop: 12 }}>
                   {job.skills.map((skill, i) => (
@@ -338,8 +353,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                 </div>
               )}
 
-              {/* POSTED DATE */}
-              {/* BOTTOM ROW: Posted Date (Left) + Check Eligibility (Right) */}
               <div
                 style={{
                   marginTop: 12,
@@ -348,7 +361,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                   alignItems: "center",
                 }}
               >
-                {/* POSTED DATE */}
                 {job.createdAt && (
                   <Text type="secondary">
                     Posted {dayjs(job.createdAt).fromNow()} (
@@ -356,7 +368,6 @@ const JobList = ({ jobs, lastJobRef, type, jobids, portal, onUnsave }) => {
                   </Text>
                 )}
 
-                {/* ELIGIBILITY BUTTON */}
                 {eligibilityByJob[job.id] ? (
                   <CompactAnalytics data={eligibilityByJob[job.id]} />
                 ) : (

@@ -197,14 +197,24 @@ const isPersonalEmail = (email) => {
            <Form.Item
             name="fname"
             style={{ marginBottom: "18px" }}
-            rules={[{ required: true, message: "Please enter your firstname" }]}
+            rules={[{ required: true, message: "Please enter your firstname" },
+              {
+                pattern: /^[A-Za-z][A-Za-z\s]*$/,
+                message: "Only letters are allowed!",
+              },
+            ]}
           >
             <Input placeholder="FirstName" size="large" />
           </Form.Item>
            <Form.Item
             name="lname"
             style={{ marginBottom: "18px" }}
-            rules={[{ required: true, message: "Please enter your last name" }]}
+            rules={[{ required: true, message: "Please enter your last name" },
+              {
+                pattern: /^[A-Za-z][A-Za-z\s]*$/,
+                message: "Only letters are allowed!",
+              },
+            ]}
           >
             <Input placeholder="Lastname" size="large" />
           </Form.Item>

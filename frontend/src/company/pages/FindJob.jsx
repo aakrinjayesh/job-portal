@@ -14,12 +14,13 @@ function FindJob() {
   const observer = useRef();
   const [ids, setIds] = useState();
 
+  // ⭐ filter open / close
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
+
   const fetchJobs = useCallback(async (pageNum = 1) => {
     setLoading(true);
     try {
-      console.log("api call#############", pageNum);
       const response = await GetJobsList(pageNum, 10);
-      console.log("API Response:", response); // Add this to debug
       const newJobs = response?.jobs || [];
 
       if (pageNum === 1) {
@@ -30,24 +31,20 @@ function FindJob() {
         setJobs((prev) => [...prev, ...newJobs]);
       }
 
-      // check if more pages exist
-      if (pageNum >= response.totalPages) {
-        setHasMore(false);
-      }
+      if (pageNum >= response.totalPages) setHasMore(false);
     } catch (error) {
       console.error("Error fetching jobs:", error);
-      message.error("Failed to fetch jobs:"+error.response.data.message);
+      message.error("Failed to fetch jobs: " + error?.response?.data?.message);
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array
+  }, []);
 
   useEffect(() => {
-    console.log("Component mounted, fetching jobs..."); // Add this
     fetchJobs(1);
   }, [fetchJobs]);
 
-  // Infinite scroll observer
+  // Infinite scroll
   const lastJobRef = useCallback(
     (node) => {
       if (loading) return;
@@ -75,7 +72,6 @@ function FindJob() {
         console.log("error", error);
       }
     };
-
     fetch();
   }, []);
 
@@ -83,22 +79,23 @@ function FindJob() {
     if (page > 1) fetchJobs(page);
   }, [page]);
 
+  // FILTERING
   const filterJobs = useCallback((filters, allJobs) => {
     return allJobs.filter((job) => {
       // --- EXPERIENCE FILTER ---
       // --- EXPERIENCE FILTER (Exact Match) ---
-if (
-  filters.experience !== null &&
+      if (
+        filters.experience !== null &&
   filters.experience !== undefined &&
   filters.experience !== "Any"
-) {
-  const enteredExp = parseInt(filters.experience);
+      ) {
+        const enteredExp = parseInt(filters.experience);
   const jobExp = parseInt(job.experience?.number);  // FIXED
 
-  if (!isNaN(enteredExp) && !isNaN(jobExp)) {
-    if (jobExp !== enteredExp) return false;  
-  }
-}
+        if (!isNaN(enteredExp) && !isNaN(jobExp)) {
+          if (jobExp !== enteredExp) return false;
+        }
+      }
 
 
       // --- SKILLS FILTER ---
@@ -181,12 +178,7 @@ if (
     });
   }, []);
 
-  // const handleFiltersChange = (filters) => {
-  //   console.log("Received in jobs.jsx:", filters);
-  // };
-
   const handleFiltersChange = (filters) => {
-    console.log("Received filters:", filters);
     const filtered = filterJobs(filters, allJobs);
     setJobs(filtered);
   };
@@ -202,19 +194,16 @@ if (
       }}
     >
       <Row gutter={[16, 16]} style={{ flex: 1, height: "100%" }}>
-        {/* Sidebar */}
-        <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
-          <FiltersPanel onFiltersChange={handleFiltersChange} />
-        </Col>
+        
+        {/* Filter Sidebar */}
+        {isFilterOpen && (
+          <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
+            <FiltersPanel onFiltersChange={handleFiltersChange} />
+          </Col>
+        )}
 
-        {/* Main Content */}
-        <Col
-          span={18}
-          style={{
-            height: "100%",
-            overflowY: "auto",
-          }}
-        >
+        {/* Main Job List */}
+        <Col span={isFilterOpen ? 18 : 24} style={{ height: "100%" }}>
           <Card
             style={{
               height: "100%",
@@ -229,14 +218,18 @@ if (
               jobs={jobs}
               lastJobRef={lastJobRef}
               jobids={ids}
-              type={"find"}
-              portal={"company"}
+              type="find"
+              portal="company"
+              isFilterOpen={isFilterOpen}
+              toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
             />
+
             {loading && (
               <div style={{ textAlign: "center", marginTop: 16 }}>
                 <Spin />
               </div>
             )}
+
             {!hasMore && !loading && (
               <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
                 You’ve reached the end!

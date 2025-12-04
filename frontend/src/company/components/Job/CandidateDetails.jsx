@@ -65,9 +65,9 @@ const CandidateDetails = () => {
             </p>
             <p>
               <strong>Total Experience:</strong>{" "}
-              {job.experience && (
+              {profile.experience && (
                 <Text>
-                  {job.experience.number} {job.experience.type}
+                  {profile?.experience?.number} {profile?.experience?.type}
                 </Text>
               )}
             </p>

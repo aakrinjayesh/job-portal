@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Spin, message, Button, Table, Space, Popconfirm, Tag } from "antd";
+import { Spin, message, Button, Table, Tag } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GetCandidateDeatils } from "../../api/api"; // ✅ Correct API import
+import { GetCandidateDeatils } from "../../api/api";
 
 const CandidateList = () => {
   const location = useLocation();
@@ -40,18 +40,18 @@ const CandidateList = () => {
     if (jobId) fetchCandidates();
   }, [jobId, page, pageSize]);
 
-  // ✅ Table Columns
+  // TABLE COLUMNS
   const columns = [
     {
       title: "Fit Score",
       dataIndex: "matchScore",
       key: "matchScore",
-      sorter: (a, b) => a.name.localeCompare(b.name),
+      //width: 200,
+      fixed: "left",
       render: (score) => {
         if (score == null) return <Tag color="default">N/A</Tag>;
 
         let color = "default";
-
         if (score >= 80) color = "green";
         else if (score >= 60) color = "blue";
         else if (score >= 40) color = "orange";
@@ -60,79 +60,150 @@ const CandidateList = () => {
         return <Tag color={color}>{score}%</Tag>;
       },
     },
+
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      //width: 200,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
+
+    {
+      title: "Key Match Skills",
+      //width: 200,
+      key: "keyMatchSkills",
+      render: (_, record) => {
+        const list = record?.aiAnalysis?.key_match_skills || [];
+        return (
+          <div style={{ maxHeight: 80, overflowY: "auto" }}>
+            {list.length > 0 ? (
+              list.map((s) => (
+                <Tag color="green" key={s} style={{ marginBottom: 4 }}>
+                  {s}
+                </Tag>
+              ))
+            ) : (
+              <Tag>N/A</Tag>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Key Gap Skills",
+      width: 200,
+      key: "keyGapSkills",
+      render: (_, record) => {
+        const list = record?.aiAnalysis?.key_gap_skills || [];
+        return (
+          <div style={{ maxHeight: 80, overflowY: "auto", scrollbarWidth: "none" }}>
+            {list.length > 0 ? (
+              list.map((s) => (
+                <Tag color="red" key={s} style={{ marginBottom: 4 }}>
+                  {s}
+                </Tag>
+              ))
+            ) : (
+              <Tag>N/A</Tag>
+            )}
+          </div>
+        );
+      },
+    },
+
+
+    {
+      title: "Key Match Clouds",
+      width: 200,
+      key: "keyMatchClouds",
+      render: (_, record) => {
+        const list = record?.aiAnalysis?.key_match_clouds || [];
+        return (
+          <div style={{ maxHeight: 80, overflowY: "auto" }}>
+            {list.length > 0 ? (
+              list.map((c) => (
+                <Tag color="blue" key={c} style={{ marginBottom: 4 }}>
+                  {c}
+                </Tag>
+              ))
+            ) : (
+              <Tag>N/A</Tag>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Key Gap Clouds",
+      width: 200,
+      key: "keyGapClouds",
+      render: (_, record) => {
+        const list = record?.aiAnalysis?.key_gap_clouds || [];
+        return (
+          <div style={{ maxHeight: 80, overflowY: "auto" }}>
+            {list.length > 0 ? (
+              list.map((c) => (
+                <Tag color="orange" key={c} style={{ marginBottom: 4 }}>
+                  {c}
+                </Tag>
+              ))
+            ) : (
+              <Tag>N/A</Tag>
+            )}
+          </div>
+        );
+      },
+    },
+
+    // RIGHT FIXED COLUMNS
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      //width: 200,
       sorter: (a, b) => a.email.localeCompare(b.email),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
+     // width: 200,
     },
     {
       title: "Applied On",
       dataIndex: "appliedAt",
       key: "appliedAt",
+     // width: 200,
       render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
-    },
-    {
-      title: "Title",
-      dataIndex: ["profile", "title"],
-      key: "title",
-      render: (text) => text || "N/A",
     },
     {
       title: "Location",
       dataIndex: ["profile", "currentLocation"],
       key: "currentLocation",
+      //width: 200,
       render: (text) => text || "N/A",
     },
     {
       title: "Actions",
       key: "actions",
+      //width: 100,
+      fixed: "right",
       render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/company/candidate/${record.userId}`, {
-                state: { candidate: record, jobId },
-              });
-            }}
-          >
-            View
-          </Button>
-          {/* <Popconfirm
-            title="Are you sure you want to delete this candidate?"
-            okText="Yes"
-            cancelText="No"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              handleDelete(record);
-            }}
-            onCancel={(e) => e?.stopPropagation()}
-          >
-            <Button type="link" danger onClick={(e) => e.stopPropagation()}>
-              Delete
-            </Button>
-          </Popconfirm> */}
-        </Space>
+        <Button
+          type="link"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/company/candidate/${record.userId}`, {
+              state: { candidate: record, jobId },
+            });
+          }}
+        >
+          View
+        </Button>
       ),
     },
   ];
-
-  const handleDelete = (record) => {
-    message.info(`Delete clicked for ${record.name}`);
-  };
 
   return (
     <div style={{ padding: "20px" }}>
@@ -146,29 +217,25 @@ const CandidateList = () => {
       </Button>
 
       <Spin spinning={loading}>
-        <Table
-          columns={columns}
-          dataSource={candidates}
-          rowKey={(record) => record.id || record.userId}
-          bordered
-          pagination={{
-            current: page,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            onChange: (newPage, newPageSize) => {
-              setPage(newPage);
-              setPageSize(newPageSize);
-            },
-          }}
-          onRow={(record) => ({
-            onClick: () =>
-              navigate(`/company/candidate/${record.userId}`, {
-                state: { candidate: record, jobId },
-              }),
-          })}
-          style={{ cursor: "pointer" }}
-        />
+        <div style={{ width: "100%", overflowX: "auto" }}>
+          <Table
+            columns={columns}
+            dataSource={candidates}
+            rowKey={(record) => record.id || record.userId}
+            bordered
+            scroll={{ x: "max-content" }} // FIXED SCROLL
+            pagination={{
+              current: page,
+              pageSize,
+              total,
+              showSizeChanger: true,
+              onChange: (newPage, newPageSize) => {
+                setPage(newPage);
+                setPageSize(newPageSize);
+              },
+            }}
+          />
+        </div>
       </Spin>
     </div>
   );
