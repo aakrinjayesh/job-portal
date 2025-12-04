@@ -14,8 +14,10 @@ import {
   Divider,
   Checkbox,
   Switch,
+
 } from "antd";
-import { UploadOutlined, UserOutlined } from "@ant-design/icons";
+
+import { UploadOutlined, UserOutlined ,InfoCircleOutlined} from "@ant-design/icons";
 import {
   UploadPdf,
   profiledata,
@@ -51,7 +53,7 @@ const UpdateUserProfile = ({
   const [form] = Form.useForm();
   const [messageAPI, contextHolder] = message.useMessage();
 
-  const [showContact, setShowContact] = useState(false);
+  const [showContact, setShowContact] = useState(true);
   const [fileList, setFileList] = useState([]);
 
   console.log("Recivied Role", Reciviedrole);
@@ -128,6 +130,7 @@ const UpdateUserProfile = ({
         secondarySkills: secs,
         primaryClouds: primClouds,
         secondaryClouds: secClouds,
+        isContactDetails: editRecord?.isContactDetails || true,
       });
 
       // SHOW EXISTING IMAGE IN UPLOAD PREVIEW
@@ -148,6 +151,14 @@ const UpdateUserProfile = ({
     }
     return () => {
       form.resetFields();
+       setPrimarySkills([]);
+      setSecondarySkills([]);
+      setPrimaryClouds([]);
+      setSecondaryClouds([]);
+      setEducationList([]);
+      setExperienceList([]);
+      setFileList([]);
+      setShowContact(true);
       // if (setEditRecord) {
       //   setEditRecord(null);
       // }
@@ -471,6 +482,7 @@ const UpdateUserProfile = ({
         workExperience: experienceList,
         education: educationList,
         rateCardPerHour: values.rateCardPerHour || {},
+        isContactDetails: showContact 
       };
 
       // ⭐⭐⭐ ADD THIS ⭐⭐⭐
@@ -685,8 +697,11 @@ const UpdateUserProfile = ({
               // </Form.Item>
               <Form.Item
   name="hideContact"
-  label="Hide Contact Details?"
-  valuePropName="checked"
+  label="Hide Contact Details ?"
+  tooltip={{
+  title: "When turned off, your bench contact details will be visible to other users.",
+  icon: <InfoCircleOutlined />
+}}
 >
   <Switch
     checkedChildren="ON"
@@ -733,7 +748,7 @@ const UpdateUserProfile = ({
               </Form.Item>
                </Col> */}
 
-              {!showContact && (
+              {/* {!showContact && ( */}
   <Col xs={24} sm={12} md={12}>
     <Form.Item
       label="Phone Number"
@@ -768,7 +783,7 @@ const UpdateUserProfile = ({
       />
     </Form.Item>
   </Col>
-)}
+{/* )} */}
 
            
 
@@ -829,7 +844,7 @@ const UpdateUserProfile = ({
               </Form.Item>
             </Col> */}
 
-            {!showContact && (
+            {/* {!showContact && ( */}
   <Col xs={24} sm={12} md={12}>
     <Form.Item
       label="Email"
@@ -886,7 +901,7 @@ const UpdateUserProfile = ({
       <Input placeholder="e.g., user@aakrin.com" />
     </Form.Item>
   </Col>
-)}
+{/* )} */}
 
 
             {/* Title / Role */}
