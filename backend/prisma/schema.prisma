@@ -62,6 +62,7 @@ model UserProfile {
   currentCTC                   String?
   expectedCTC                  String?
   rateCardPerHour              Json?
+  status                       Boolean?
   joiningPeriod                String?
   totalExperience              String?
   relevantSalesforceExperience String?
@@ -70,11 +71,11 @@ model UserProfile {
   primaryClouds   Json?
   secondaryClouds Json?
 
-  certifications String[]
-  workExperience Json?
-  education      Json?
-
-  address Address?
+  certifications   String[]
+  workExperience   Json?
+  education        Json?
+  isContactDetails Boolean?
+  address          Address?
 
   linkedInUrl  String?
   trailheadUrl String?
@@ -156,7 +157,7 @@ model Job {
   location            String?
   skills              String[] // Array of Json Skills
   clouds              String[]
-  salary              Int
+  salary              String
   companyName         String?
   responsibilities    String
   certifications      String[]
