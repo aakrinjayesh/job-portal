@@ -126,16 +126,16 @@ const CandidateJobDetails = () => {
         </Paragraph>
 
         <Paragraph>
-          <Text strong>Experience Required:</Text> 
+          <Text strong>Experience Required:</Text>
           {job.experience && (
-                    <Text>
-                      {job.experience.number} {job.experience.type}
-                    </Text>
-                  )}
+            <Text>
+              {job.experience.number} {job.experience.type}
+            </Text>
+          )}
         </Paragraph>
 
         <Paragraph>
-          <Text strong>Salary:</Text> ₹{job.salary}
+          <Text strong>Salary:</Text> ₹ {job.salary}
         </Paragraph>
 
         <Paragraph>

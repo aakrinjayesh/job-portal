@@ -102,9 +102,7 @@ const AppliedJobsList = ({ applications }) => {
                 <div style={{ marginTop: 10 }}>
                   <Space split={<Divider type="vertical" />} wrap>
                     {job?.experience && <Text>{job?.experience}</Text>}
-                    {job?.salary && (
-                      <Text>₹{Number(job?.salary).toLocaleString()} PA</Text>
-                    )}
+                    {job?.salary && <Text>₹ {job?.salary} Lacs PA</Text>}
                     {job?.employmentType && <Text>{job?.employmentType}</Text>}
                   </Space>
                 </div>
