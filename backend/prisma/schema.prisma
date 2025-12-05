@@ -20,7 +20,6 @@ model Users {
   email            String           @unique
   role             Role             @default(candidate)
   password         String?
-  chatuserid       String?
   createdAt        DateTime         @default(now())
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
@@ -28,6 +27,7 @@ model Users {
   JobApplications  JobApplication[]
   SavedJobs        SavedJob[]
   courses          Course[]
+  dashboards       Dashboard[]
 }
 
 enum Role {
@@ -43,11 +43,12 @@ enum JobType {
 }
 
 model UserProfile {
-  id       String  @id @default(uuid())
-  userId   String? @unique
-  vendorId String?
-  user     Users?  @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
-  vendor   Users?  @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
+  id         String  @id @default(uuid())
+  userId     String? @unique
+  vendorId   String?
+  chatuserid String?
+  user       Users?  @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
+  vendor     Users?  @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
 
   // venderId                     String?
   profilePicture               String?
@@ -304,4 +305,70 @@ model Class {
   course      Course   @relation(fields: [courseId], references: [id])
 
   @@index([courseId])
+}
+
+enum DatasetType {
+  JOBS
+  APPLICATIONS
+  APPLICATION_ANALYSIS
+}
+
+enum ChartType {
+  LINE
+  COLUMN
+  BAR
+  PIE
+  DONUT
+  SCATTER
+  AREA
+  MULTI_LINE
+  STACK_AREA
+  STACKED_COLUMN
+  GROUPED_COLUMN
+  GROUP_AND_STACK_COLUMN
+  NUMBER_CARD
+}
+
+enum MetricType {
+  COUNT
+  AVG
+  MIN
+  MAX
+}
+
+model Dashboard {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  owner       Users             @relation(fields: [ownerId], references: [id])
+  widgets     DashboardWidget[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([ownerId])
+}
+
+model DashboardWidget {
+  id          String    @id @default(uuid())
+  dashboardId String
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id])
+
+  title         String
+  dataset       DatasetType
+  chartType     ChartType
+  metricType    MetricType
+  metricField   String? // e.g. "fitPercentage" for AVG
+  xField        String? // e.g. "status", "createdAt"
+  categoryField String? // e.g. "status" or "employmentType" for color/category split
+  timeBucket    String? // "day" | "week" | "month"
+
+  filters Json? // [{ field, operator, value }]
+  sort    Json? // { field, direction }
+  display Json? // UI-only settings
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dashboardId])
 }
