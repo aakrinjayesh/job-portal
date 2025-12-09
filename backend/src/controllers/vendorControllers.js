@@ -261,6 +261,114 @@ const deleteVendorCandidate = async (req, res) => {
   }
 };
 
+// =======================================
+// GET ALL UNIQUE VENDOR CANDIDATES
+// =======================================
+
+// const getAllVendorCandidates = async (req, res) => {
+//   try {
+//     const userAuth = req.user;
+
+//     if (userAuth.role !== "company") {
+//       return res.status(403).json({
+//         status: "failed",
+//         message: "Access denied.",
+//       });
+//     }
+
+//     // 💥 Fetch all candidates that belong to THIS vendor (company)
+//     const candidates = await prisma.userProfile.findMany({
+//       where: {
+//         vendorId: {
+//           not: null,   // fetch only profiles with vendorId
+//         }
+//       },
+//       orderBy: { createdAt: "desc" },
+//     });
+
+//     // Remove duplicates by ID
+//     const unique = {};
+//     candidates.forEach((c) => (unique[c.id] = c));
+
+//     return res.status(200).json({
+//       status: "success",
+//       count: Object.values(unique).length,
+//       data: candidates
+//     });
+
+//   } catch (error) {
+//     console.error("getAllVendorCandidates Error:", error);
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Failed to fetch vendor candidates",
+//     });
+//   }
+// };
+
+
+const getAllVendorCandidates = async (req, res) => {
+  try {
+    const userAuth = req.user;
+
+    if (userAuth.role !== "company") {
+      return res.status(403).json({
+        status: "failed",
+        message: "Access denied.",
+      });
+    }
+
+    // --- PAGINATION ---
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // --- FETCH CANDIDATES FOR THIS VENDOR ---
+    const [candidates, totalCount] = await Promise.all([
+      prisma.userProfile.findMany({
+        where: {
+          vendorId: {
+            not: null, // only vendor-owned profiles
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+
+      prisma.userProfile.count({
+        where: {
+          vendorId: {
+            not: null,
+          }
+        }
+      })
+    ]);
+
+    // --- REMOVE DUPLICATES ---
+    const unique = {};
+    candidates.forEach((c) => (unique[c.id] = c));
+    const finalCandidates = Object.values(unique);
+
+    return res.status(200).json({
+      status: "Success",
+      candidates: finalCandidates,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    });
+
+  } catch (error) {
+    console.error("getAllVendorCandidates Error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch vendor candidates",
+    });
+  }
+};
+
+
+
+
 
 
 // // ✅ Update status (active / inactive)
@@ -304,4 +412,5 @@ export {
   updateVendorCandidate,
   deleteVendorCandidate,
    updateCandidateStatus,
+   getAllVendorCandidates
 };

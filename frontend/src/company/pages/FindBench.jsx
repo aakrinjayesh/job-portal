@@ -1,57 +1,72 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Spin, Tag } from "antd";
+import React, { useCallback, useEffect, useState, useRef } from "react";
+import { Col, Row, Card, message, Spin, Modal } from "antd";
 import FiltersPanel from "../../candidate/components/Job/FilterPanel";
+import BenchList from "../components/Bench/BenchList";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
-import { GetVendorCandidates } from "../api/api";
+import { GetAllVendorCandidates } from "../api/api";
 
 function FindBench() {
-  const [allCandidates, setAllCandidates] = useState([]);
-  const [candidates, setCandidates] = useState([]);
+  const [allBench, setAllBench] = useState([]);
+  const [bench, setBench] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
+
   const observer = useRef();
+
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
+
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
 
-  // ✅ Fetch bench candidates (paginated)
-  const fetchCandidates = useCallback(async (pageNum = 1) => {
-    setLoading(true);
-    try {
-      const response = await GetVendorCandidates(pageNum, 10);
-      const list = Array.isArray(response?.data)
-        ? response.data
-        : response || [];
 
-      if (pageNum === 1) {
-        setAllCandidates(list);
-        setCandidates(list);
-      } else {
-        setAllCandidates((prev) => [...prev, ...list]);
-        setCandidates((prev) => [...prev, ...list]);
-      }
 
-      setHasMore(list.length > 0);
-    } catch (error) {
-      console.error("Error fetching bench candidates:", error);
-      message.error("Failed to fetch bench candidates");
-    } finally {
-      setLoading(false);
+  const fetchBench = useCallback(async (pageNum = 1) => {
+  setLoading(true);
+  try {
+    const res = await GetAllVendorCandidates(pageNum, 10);
+
+    // Backend returns ---> res.candidates
+    const newList = res?.candidates || [];
+
+    if (pageNum === 1) {
+      setAllBench(newList);
+      setBench(newList);
+    } else {
+      setAllBench((prev) => [...prev, ...newList]);
+      setBench((prev) => [...prev, ...newList]);
     }
-  }, []);
 
+    // Stop loading more when last page reached
+    if (pageNum >= res.totalPages) {
+      setHasMore(false);
+    }
+  } catch (error) {
+    console.error(error);
+    message.error("Failed to load bench candidates.");
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+
+  // Initial load
   useEffect(() => {
-    fetchCandidates(1);
-  }, [fetchCandidates]);
+    fetchBench(1);
+  }, [fetchBench]);
 
-  // ✅ Infinite scroll observer
-  const lastCandidateRef = useCallback(
+  // ===============================
+  // INFINITE SCROLL OBSERVER
+  // ===============================
+  const lastBenchRef = useCallback(
     (node) => {
       if (loading) return;
       if (observer.current) observer.current.disconnect();
 
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
+          setPage((prev) => prev + 1);
         }
       });
 
@@ -60,38 +75,95 @@ function FindBench() {
     [loading, hasMore]
   );
 
+  // Load more when page increases
   useEffect(() => {
-    if (page > 1) fetchCandidates(page);
-  }, [page]);
+    if (page > 1) fetchBench(page);
+  }, [page, fetchBench]);
 
-  // ✅ Filter logic (using FiltersPanel)
-  const handleFiltersChange = (filters) => {
-    const filtered = allCandidates.filter((cand) => {
-      // Filter by location
-      if (filters.location && filters.location.length > 0) {
-        const candLoc = (cand.preferredLocation || []).join(", ").toLowerCase();
-        const matches = filters.location.some((loc) =>
-          candLoc.includes(loc.toLowerCase())
-        );
-        if (!matches) return false;
+  // ===============================
+  // FILTERING
+  // ===============================
+  const filterBench = useCallback((filters, items) => {
+    if (!items) return [];
+
+    return items.filter((cand) => {
+      // EXPERIENCE (Exact Match)
+      if (
+        filters.experience !== null &&
+        filters.experience !== undefined &&
+        filters.experience !== "Any"
+      ) {
+        const exp =
+          (!isNaN(parseInt(cand.totalExperience)) && parseInt(cand.totalExperience)) ??
+          (!isNaN(parseInt(cand.relevantSalesforceExperience)) &&
+            parseInt(cand.relevantSalesforceExperience)) ??
+          (!isNaN(parseInt(cand.experience)) && parseInt(cand.experience));
+
+        const entered = parseInt(filters.experience);
+
+        if (!isNaN(exp) && !isNaN(entered) && exp !== entered) return false;
       }
 
-      // Filter by skills
-      if (filters.skills && filters.skills.length > 0) {
+      // SKILLS FILTER
+      if (filters.skills?.length > 0) {
         const candSkills =
-          cand.skillsJson?.map((s) => s.name.toLowerCase()) ||
-          cand.skills?.map((s) => s.toLowerCase()) ||
-          [];
-        const matches = filters.skills.some((skill) =>
-          candSkills.includes(skill.toLowerCase())
+          cand.skillsJson?.map((s) => (s.name || s).toLowerCase()) || [];
+
+        const matches = filters.skills.some((sk) =>
+          candSkills.some((cs) => cs.includes(sk.toLowerCase()))
         );
+
         if (!matches) return false;
       }
+
+      // CLOUDS FILTER
+      if (filters.clouds?.length > 0) {
+        const candClouds =
+          cand.primaryClouds?.map((c) => (c.name || c).toLowerCase()) || [];
+
+        const matches = filters.clouds.some((cl) =>
+          candClouds.some((cc) => cc.includes(cl.toLowerCase()))
+        );
+
+        if (!matches) return false;
+      }
+
+      // LOCATION FILTER
+      if (filters.location?.length > 0) {
+        const prefs =
+          cand.preferredLocation?.map((p) => p.toLowerCase()) || [];
+
+        const matches = filters.location.some((loc) =>
+          prefs.some((p) => p.includes(loc.toLowerCase()))
+        );
+
+        if (!matches) return false;
+      }
+
+      // JOINING PERIOD FILTER (Single Select)
+if (filters.joiningPeriod) {
+  const candJoining = cand.joiningPeriod?.toLowerCase() || "";
+  const selectedJoining = filters.joiningPeriod.toLowerCase();
+
+  if (candJoining !== selectedJoining) return false;
+}
+
 
       return true;
     });
+  }, []);
 
-    setCandidates(filtered);
+  const handleFiltersChange = (filters) => {
+    const filtered = filterBench(filters, allBench);
+    setBench(filtered);
+  };
+
+  // ===============================
+  // VIEW DETAILS
+  // ===============================
+  const openDetails = (candidate) => {
+    setSelectedCandidate(candidate);
+    setDetailsModalVisible(true);
   };
 
   return (
@@ -105,13 +177,17 @@ function FindBench() {
       }}
     >
       <Row gutter={[16, 16]} style={{ flex: 1, height: "100%" }}>
-        {/* Sidebar */}
-        <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
-          <FiltersPanel onFiltersChange={handleFiltersChange} />
-        </Col>
+        {/* Filter Sidebar */}
+        {isFilterOpen && (
+          <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
+            {/* <FiltersPanel onFiltersChange={handleFiltersChange} /> */}
+            <FiltersPanel onFiltersChange={handleFiltersChange} hideJobFilters={true} showJoiningFilter={true}   />
 
-        {/* Main Candidate List */}
-        <Col span={18} style={{ height: "100%", overflowY: "auto" }}>
+          </Col>
+        )}
+
+        {/* Main Bench List */}
+        <Col span={isFilterOpen ? 18 : 24} style={{ height: "100%" }}>
           <Card
             style={{
               height: "100%",
@@ -122,72 +198,33 @@ function FindBench() {
             }}
             bodyStyle={{ padding: "16px 24px" }}
           >
-            <Row gutter={[16, 16]}>
-              {candidates.map((cand, index) => {
-                const isLast = index === candidates.length - 1;
-                return (
-                  <Col span={24} key={cand.id || index}>
-                    <Card
-                      hoverable
-                      ref={isLast ? lastCandidateRef : null}
-                      onClick={() => setSelectedCandidate(cand)}
-                      style={{
-                        transition: "0.3s",
-                        cursor: "pointer",
-                        borderRadius: 10,
-                      }}
-                    >
-                      <h3 style={{ marginBottom: 8 }}>
-                        {cand.name || "Unnamed Candidate"}
-                      </h3>
-                      <p style={{ margin: "4px 0", color: "#666" }}>
-                        {cand.title || "No Title"}
-                      </p>
-                      <p style={{ margin: "4px 0", color: "#888" }}>
-                        📍 {(cand.preferredLocation || []).join(", ") || "-"}
-                      </p>
-                      <div style={{ marginTop: 8 }}>
-                        {(cand.skillsJson?.slice(0, 3) || []).map((s, i) => (
-                          <Tag color="blue" key={i}>
-                            {s.name}
-                          </Tag>
-                        ))}
-                        {cand.skillsJson?.length > 3 && (
-                          <Tag>+{cand.skillsJson.length - 3}</Tag>
-                        )}
-                      </div>
-                    </Card>
-                  </Col>
-                );
-              })}
-            </Row>
+            <BenchList
+              bench={bench}
+              lastBenchRef={lastBenchRef}
+              isFilterOpen={isFilterOpen}
+              toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+              onViewDetails={openDetails}
+            />
 
             {loading && (
               <div style={{ textAlign: "center", marginTop: 16 }}>
                 <Spin />
               </div>
             )}
-            {!hasMore && !loading && (
-              <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
-                 You’ve reached the end!
-              </p>
-            )}
-            {!loading && candidates.length === 0 && (
-              <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
-                No bench candidates found.
-              </p>
-            )}
           </Card>
         </Col>
       </Row>
 
-      {/* Candidate Details Modal */}
-      {selectedCandidate && (
-        <BenchCandidateDetails
-          selectedCandidate={selectedCandidate}
-          onClose={() => setSelectedCandidate(null)}
-        />
-      )}
+      {/* Details Modal */}
+      <Modal
+        open={detailsModalVisible}
+        onCancel={() => setDetailsModalVisible(false)}
+        footer={null}
+        width={900}
+        title="Candidate Details"
+      >
+        <BenchCandidateDetails hideContact={true} selectedCandidate={selectedCandidate} />
+      </Modal>
     </div>
   );
 }

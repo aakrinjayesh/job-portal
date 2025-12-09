@@ -208,3 +208,27 @@ export async function  UpdateVendorCandidateStatus( payload) {
     console.log("error duing appling job", error);
   } 
 }
+
+// export const GetAllVendorCandidates = async () => {
+//   try {
+//     const response = await axiosInstance.get("/vendor/candidates/all", {
+//       headers: { "Content-Type": "application/json" },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("GetAllVendorCandidates Error:", error);
+//     throw error;
+//   }
+// };
+export async function GetAllVendorCandidates(page = 1, limit = 10) {
+  try {
+    const response = await axiosInstance.get(
+      `/vendor/candidates/all?page=${page}&limit=${limit}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor candidates:", error);
+    throw error;
+  }
+}
+

@@ -21,7 +21,7 @@ import {
 
 const { Title, Text } = Typography;
 
-const BenchCandidateDetails = ({ selectedCandidate }) => {
+const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
   if (!selectedCandidate) {
     return (
       <Card
@@ -78,17 +78,7 @@ const BenchCandidateDetails = ({ selectedCandidate }) => {
     >
       {/* Header Section */}
       <Row align="middle" gutter={16}>
-        {/* <Col flex="80px">
-          <Avatar
-            size={80}
-            icon={<UserOutlined />}
-            style={{
-              backgroundColor: "#1677ff",
-              color: "#fff",
-              fontSize: 28,
-            }}
-          />
-        </Col> */}
+      
 
         <Col flex="80px">
   <Avatar
@@ -136,7 +126,7 @@ const BenchCandidateDetails = ({ selectedCandidate }) => {
       <Divider />
 
       {/* Contact Info */}
-      <Row justify="start" gutter={[24, 12]}>
+      {/* <Row justify="start" gutter={[24, 12]}>
         {email && (
           <Col>
             <MailOutlined />{" "}
@@ -155,7 +145,41 @@ const BenchCandidateDetails = ({ selectedCandidate }) => {
             <EnvironmentOutlined /> {currentLocation}
           </Col>
         )}
-      </Row>
+      </Row> */}
+
+      {/* CONTACT INFO */}
+
+{/* CONTACT DETAILS — hide only email + phone */}
+<Row justify="start" gutter={[24, 12]}>
+  
+  {/* Email – hide when hideContact = true */}
+  {!hideContact && email && (
+    <Col>
+      <MailOutlined />{" "}
+      <a href={`mailto:${email}`} style={{ color: "#1677ff" }}>
+        {email}
+      </a>
+    </Col>
+  )}
+
+  {/* Phone – hide when hideContact = true */}
+  {!hideContact && phoneNumber && (
+    <Col>
+      <PhoneOutlined /> {phoneNumber}
+    </Col>
+  )}
+
+  {/* Location – always visible */}
+  {currentLocation && (
+    <Col>
+      <EnvironmentOutlined /> {currentLocation}
+    </Col>
+  )}
+
+</Row>
+
+
+
 
       <Row gutter={[16, 8]} style={{ marginTop: 8 }}>
         {portfolioLink && (

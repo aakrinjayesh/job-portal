@@ -142,12 +142,16 @@ const [error, setError] = useState("");
     <>
       {contextHolder}
       <Select
-        mode={single === false && "multiple"}
+        // mode={single === false && "multiple"}
+          mode={single === false ? "multiple" : undefined}
+  showSearch   // ⭐ ADD THIS LINE
+  optionFilterProp="label"
         style={style}
         placement={"topLeft"}
         className={className}
         placeholder={placeholder}
-        value={value}
+        // value={value}
+        value={value || []}  
         onChange={onSelectChange}
         disabled={disabled}
         loading={loading}

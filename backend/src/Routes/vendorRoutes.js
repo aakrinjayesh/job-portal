@@ -6,6 +6,7 @@ import {
   updateVendorCandidate,
   deleteVendorCandidate,
    updateCandidateStatus ,
+   getAllVendorCandidates,
  
 } from "../controllers/vendorControllers.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -34,6 +35,11 @@ VendorRoutes.post(
   updateCandidateStatus
 );
 
+VendorRoutes.get(
+  "/candidates/all",
+  authenticateToken,
+  getAllVendorCandidates
+);
 
 
 
