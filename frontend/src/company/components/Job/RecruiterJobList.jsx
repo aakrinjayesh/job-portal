@@ -203,19 +203,7 @@ const RecruiterJobList = () => {
     try {
       const values = await form.validateFields();
       setPostLoading(true);
-      // ✅ Convert date to proper format (if needed)
-      // let finalSalary = "";
-
-      // if (!isSalaryRange) {
-      //   // NORMAL SALARY
-      //   finalSalary = String(values.salary);
-      // } else {
-      //   // RANGE SALARY
-      //   const min = values.salary.min;
-      //   const max = values.salary.max;
-
-      //   finalSalary = `${min}-${max}`;
-      // }
+     
       let finalSalary = "";
 
       if (!isSalaryRange) {
@@ -244,7 +232,11 @@ const RecruiterJobList = () => {
             }
           : undefined,
         // location: values.location,
-        location: values.location || "Remote",
+        // location: values.location || "Remote",
+        location: Array.isArray(values.location)
+  ? values.location.join(", ")
+  : values.location || "Remote",
+
         skills: values.skills || [], // array
         clouds: values.clouds || [],
         // salary: Number(values.salary) || 0,
@@ -781,7 +773,8 @@ const RecruiterJobList = () => {
             rules={[
               { required: true },
               {
-                pattern: /^[A-Za-z0-9 .,\/\-\(\)]+$/,
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+
                 message:
                   "Only letters, numbers, spaces and . , / - ( ) are allowed!",
               },
@@ -805,7 +798,8 @@ const RecruiterJobList = () => {
               //   message: "Only letters, numbers, and spaces are allowed",
               // },
               {
-                pattern: /^[A-Za-z0-9 .,\/\-\(\)]+$/,
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+
                 message:
                   "Only letters, numbers, spaces and . , / - ( ) are allowed!",
               },
@@ -896,14 +890,15 @@ const RecruiterJobList = () => {
                 rules={[
                   { required: true, message: "Experience is Required!" },
                   {
-                    pattern: /^[0-9]+(\.[0-9]+)?$/,
-                    message: "Only Positive Numbers Are Allowed",
+                    pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
+                    message: "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
                   },
                 ]}
               >
                 <Input
                   type="number"
                   min={0}
+                  step="0.01"
                   style={{ width: "70%" }}
                   placeholder="e.g 3"
                 />
@@ -953,7 +948,7 @@ const RecruiterJobList = () => {
             </Select>
           </Form.Item>
 
-          {showLocation && (
+          {/* {showLocation && (
             <Form.Item
               name="location"
               label="Location"
@@ -966,13 +961,39 @@ const RecruiterJobList = () => {
               ]}
             >
               <ReusableSelect
-                single={true}
+                single={false}
                 placeholder="Select Current Job Location"
                 fetchFunction={GetLocations}
                 addFunction={PostLocations}
               />
             </Form.Item>
-          )}
+          )} */}
+
+          {showLocation && (
+  <Form.Item
+    name="location"
+    label="Location"
+    rules={[
+      { required: true, message: "Location is required" },
+      {
+        validator: (_, value) => {
+          if (value && value.length > 3) {
+            return Promise.reject("You can select up to 3 locations only");
+          }
+          return Promise.resolve();
+        },
+      },
+    ]}
+  >
+    <ReusableSelect
+      single={false}                     // MULTIPLE LOCATIONS
+      placeholder="Select up to 3 Locations"
+      fetchFunction={GetLocations}
+      addFunction={PostLocations}
+    />
+  </Form.Item>
+)}
+
 
           <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
             <ReusableSelect
@@ -1126,8 +1147,9 @@ const RecruiterJobList = () => {
             rules={[
               { required: true, message: "Experience is required" },
               {
-                pattern: /^[0-9]+(\.[0-9]+)?$/,
-                message: "Only numbers and decimal are allowed!",
+                pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
+
+                message: "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
               },
             ]}
           >
@@ -1135,6 +1157,7 @@ const RecruiterJobList = () => {
               style={{ width: "100%" }}
               placeholder="e.g. 3"
               min={0}
+              stringMode
             />
           </Form.Item>
 
@@ -1157,7 +1180,7 @@ const RecruiterJobList = () => {
             name="instructions"
             rules={[
               {
-                pattern: /^[A-Za-z0-9 .,\/\-\(\)']*$/,
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)'":\n]*$/,
                 message:
                   "Only letters, numbers, space, and , . / - ( ) ' are allowed!",
               },

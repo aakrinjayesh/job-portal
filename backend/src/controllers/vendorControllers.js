@@ -261,49 +261,7 @@ const deleteVendorCandidate = async (req, res) => {
   }
 };
 
-// =======================================
-// GET ALL UNIQUE VENDOR CANDIDATES
-// =======================================
 
-// const getAllVendorCandidates = async (req, res) => {
-//   try {
-//     const userAuth = req.user;
-
-//     if (userAuth.role !== "company") {
-//       return res.status(403).json({
-//         status: "failed",
-//         message: "Access denied.",
-//       });
-//     }
-
-//     // 💥 Fetch all candidates that belong to THIS vendor (company)
-//     const candidates = await prisma.userProfile.findMany({
-//       where: {
-//         vendorId: {
-//           not: null,   // fetch only profiles with vendorId
-//         }
-//       },
-//       orderBy: { createdAt: "desc" },
-//     });
-
-//     // Remove duplicates by ID
-//     const unique = {};
-//     candidates.forEach((c) => (unique[c.id] = c));
-
-//     return res.status(200).json({
-//       status: "success",
-//       count: Object.values(unique).length,
-//       data: candidates
-//     });
-
-//   } catch (error) {
-//     console.error("getAllVendorCandidates Error:", error);
-//     return res.status(500).json({
-//       status: "error",
-//       message: "Failed to fetch vendor candidates",
-//     });
-//   }
-// };
 
 
 const getAllVendorCandidates = async (req, res) => {
@@ -371,40 +329,6 @@ const getAllVendorCandidates = async (req, res) => {
 
 
 
-// // ✅ Update status (active / inactive)
-// const updateCandidateStatus = async (req, res) => {
-//   try {
-//     const userAuth = req.user;
-//     const { ids, status } = req.body; // expect: { ids: [...], status: 'inactive' }
-
-//     if (userAuth.role !== "company") {
-//       return res.status(200).json({
-//         status: "failed",
-//         message: "Access denied.",
-//       });
-//     }
-
-//     // Update all selected candidates
-//     await prisma.userProfile.updateMany({
-//       where: {
-//         id: { in: ids },
-//         vendorId: userAuth.id
-//       },
-//       data: { status },
-//     });
-
-//     return res.status(200).json({
-//       status: "success",
-//       message: `Updated to ${status} successfully`,
-//     });
-//   } catch (err) {
-//     console.error("Error updating status:", err);
-//     return res.status(200).json({
-//       status: "failed",
-//       message: "Error updating status",
-//     });
-//   }
-// };
 
 export {
   getVendorCandidates,
