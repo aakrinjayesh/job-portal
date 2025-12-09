@@ -19,6 +19,8 @@ const Signup = () => {
   const [bgIndex, setBgIndex] = useState(0);
   const [timer, setTimer] = useState(0); // 🔥 timer for resend
   const [isResendDisabled, setIsResendDisabled] = useState(true);
+  const [isFormReady, setIsFormReady] = useState(false);
+
   const location = useLocation();
   const role = location?.state?.role;
 
@@ -65,32 +67,52 @@ const Signup = () => {
   };
 
   // 🔁 Generate / Resend OTP
-  const handleGenerateOtp = async () => {
-    try {
-      const email = form.getFieldValue("email");
-      const firstname = form.getFieldValue("fname");
-      const lastname = form.getFieldValue("lname");
-      if (!email) {
-        messageApi.warning("Please enter email first");
-        return;
-      }
-      const name=`${firstname} ${lastname}`
-      setGenerateLoading(true);
-      
-      const res = await GenerateOtp({ email, role,name });
-      if (res.status === "success") {
-        messageApi.success("OTP sent to your email");
-        setTimer(60); // ⏱️ start 60s countdown
-        setIsResendDisabled(true);
-      } else {
-        messageApi.error(res.message || "Failed to send OTP");
-      }
-    } catch (e) {
-      messageApi.error("Failed to send OTP:"+e.response.data.message);
-    } finally {
-      setGenerateLoading(false);
+ const handleGenerateOtp = async () => {
+  const email = form.getFieldValue("email");
+  const firstname = form.getFieldValue("fname");
+  const lastname = form.getFieldValue("lname");
+
+  // 🔴 Check empty fields
+  if (!firstname) {
+    messageApi.warning("Please enter your first name");
+    return;
+  }
+  if (!lastname) {
+    messageApi.warning("Please enter your last name");
+    return;
+  }
+  if (!email) {
+    messageApi.warning("Please enter your email");
+    return;
+  }
+
+  // 🔴 Run email validation based on role
+  try {
+    await form.validateFields(["email"]);
+  } catch {
+    return; // Stop if email invalid
+  }
+
+  const name = `${firstname} ${lastname}`;
+
+  try {
+    setGenerateLoading(true);
+    const res = await GenerateOtp({ email, role, name });
+
+    if (res.status === "success") {
+      messageApi.success("OTP sent to your email");
+      setTimer(60);
+      setIsResendDisabled(true);
+    } else {
+      messageApi.error(res.message || "Failed to send OTP");
     }
-  };
+  } catch (e) {
+    messageApi.error("Failed to send OTP: " + e.response?.data?.message);
+  } finally {
+    setGenerateLoading(false);
+  }
+};
+
 
   const handleLoginRedirect = () => {
     navigate("/login");
@@ -104,7 +126,8 @@ const isCompanyEmail = (email) => {
     "outlook.com",
     "hotmail.com",
     "icloud.com",
-    "rediffmail.com"
+    "rediffmail.com",
+    "zohomail.com"
   ];
 
   const domain = email.split("@")[1]?.toLowerCase();
@@ -192,6 +215,17 @@ const isPersonalEmail = (email) => {
           name="signup"
           onFinish={onFinish}
           style={{ width: "100%" }}
+          onValuesChange={() => {
+    const fname = form.getFieldValue("fname");
+    const lname = form.getFieldValue("lname");
+    const email = form.getFieldValue("email");
+
+    if (fname && lname && email) {
+      setIsFormReady(true);
+    } else {
+      setIsFormReady(false);
+    }
+  }}
 
         >
            <Form.Item
@@ -246,25 +280,20 @@ const isPersonalEmail = (email) => {
             <Input placeholder="Email" size="large" />
           </Form.Item>
 
-          <Button
-            onClick={handleGenerateOtp}
-            type="primary"
-            block
-            loading={generateLoading}
-            size="large"
-            disabled={timer !== 0}
-            style={{
+        <Button
+  onClick={handleGenerateOtp}
+  type="primary"
+  block
+  loading={generateLoading}
+  size="large"
+  style={{
               marginBottom: "18px",
-              // backgroundColor: timer > 0 ? "#999" : "",   // Disabled color
-              color: "white",
-              // borderColor: timer > 0 ? "#999" : "",
-              // pointerEvents: timer > 0 ? "none" : "auto",  // disable click
-              // opacity: 1, // remove AntD fade effect
-              // cursor: timer > 0 ? "not-allowed" : "pointer"
+              color: "white"
             }}
-          >
-            {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
-          </Button>
+  disabled={timer !== 0 || !isFormReady}
+>
+  {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
+</Button>
 
           <Form.Item
             name="otp"

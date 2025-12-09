@@ -498,6 +498,10 @@ const RecruiterJobList = () => {
                   name="customReason"
                   rules={[
                     { required: true, message: "Please enter your reason" },
+                    {
+                pattern: /^[A-Za-z][A-Za-z0-9 \-]*$/,
+                message: "Only letters, numbers, and spaces are allowed",
+               },
                   ]}
                 >
                   <Input.TextArea
@@ -837,6 +841,7 @@ const RecruiterJobList = () => {
               <Option value="PartTime">Part Time</Option>
               <Option value="Contract">Contract</Option>
               <Option value="Freelancer">Freelancer</Option>
+              <Option value="Internship">Internship</Option>
             </Select>
           </Form.Item>
 
@@ -1018,7 +1023,7 @@ const RecruiterJobList = () => {
                 >
                   <InputNumber
                     formatter={formatter}
-                    placeholder="Min"
+                    placeholder="Min e.g. 500000 PA"
                     min={0}
                     style={{ width: "50%" }}
                   />
@@ -1044,7 +1049,7 @@ const RecruiterJobList = () => {
                 >
                   <InputNumber
                     formatter={formatter}
-                    placeholder="Max"
+                    placeholder="Max e.g. 800000 PA"
                     min={0}
                     style={{ width: "50%" }}
                   />

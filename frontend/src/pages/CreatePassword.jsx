@@ -134,9 +134,9 @@ const CreatePassword = () => {
             rules={[
               { required: true, message: "Please enter your password" },
               {
-                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/,
                 message:
-                  "Password must be at least 8 characters, include uppercase, lowercase, number & special character",
+                  "Password must be 8–16 chars with uppercase, lowercase, number & special symbol."
               },
             ]}
             style={{ color: "white" }}

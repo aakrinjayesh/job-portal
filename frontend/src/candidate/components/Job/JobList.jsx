@@ -275,8 +275,8 @@ const JobList = ({
                   }}
                   style={{ cursor: "pointer", fontSize: 20 }}
                 >
-                  <Tooltip title={isSaved ? "Saved" : "Save Job"}>
-                    {isSaved ? (
+                  <Tooltip title={!job.isSaved ? "Save Job" : "Unsave Job"}>
+                    {job.isSaved ? (
                       <StarFilled style={{ color: "#faad14" }} />
                     ) : (
                       <StarOutlined />

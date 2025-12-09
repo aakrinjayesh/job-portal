@@ -174,7 +174,8 @@ const isCompanyEmail = (email) => {
     "outlook.com",
     "hotmail.com",
     "icloud.com",
-    "rediffmail.com"
+    "rediffmail.com",
+    "zohomail.com"
   ];
 
   const domain = email.split("@")[1]?.toLowerCase();
