@@ -30,6 +30,8 @@ const ApplyBenchJob = ({ jobId }) => {
 
     try {
       setLoading(true);
+       console.log("SelectedRowKeys:", selectedRowKeys);
+console.log("Candidates list:", candidates);
       const res = await ApplyBenchCandidate(payload);
       message.success("Applied successfully");
       messageApi.success("✅ Candidates applied successfully!"); 
@@ -100,7 +102,7 @@ const ApplyBenchJob = ({ jobId }) => {
       <Table
         columns={columns}
         dataSource={candidates}
-       rowKey="userId"
+       rowKey="id"
         scroll={{ x: 1200, y: 500 }}
       />
 

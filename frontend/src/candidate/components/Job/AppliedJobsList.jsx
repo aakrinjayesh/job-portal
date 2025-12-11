@@ -101,7 +101,9 @@ const AppliedJobsList = ({ applications }) => {
                 {/* Experience and salary */}
                 <div style={{ marginTop: 10 }}>
                   <Space split={<Divider type="vertical" />} wrap>
-                    {job?.experience && <Text>{job?.experience}</Text>}
+                     <Text>
+                        {job?.experience?.number} {job?.experience?.type}
+                      </Text>
                     {job?.salary && <Text>₹ {job?.salary} Lacs PA</Text>}
                     {job?.employmentType && <Text>{job?.employmentType}</Text>}
                   </Space>

@@ -14,6 +14,7 @@ import axios from "axios";
 import { ArrowLeftOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import { GetJobDetails } from "../../api/api";
 import { useLocation } from "react-router-dom";
+import ApplyBenchJob from "../../pages/ApplyBenchJob";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -67,7 +68,7 @@ const JobDetails = () => {
   if (!job) return <Text type="danger">Job not found</Text>;
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>
       <Button
         type="text"
         style={{ marginBottom: 5 }}
@@ -82,13 +83,13 @@ const JobDetails = () => {
       >
         <Title level={3}>
           {job.role}{" "}
-          <Button
+          {/* <Button
             type="primary"
             onClick={handleViewCandidates}
             style={{ float: "right" }}
           >
             View Candidates
-          </Button>
+          </Button> */}
         </Title>
 
         <Text strong>{job.companyName}</Text>
@@ -98,11 +99,6 @@ const JobDetails = () => {
         </Space>
 
         <Divider />
-
-        <Paragraph>
-          <Text strong>Description:</Text> <br />
-          {job.description}
-        </Paragraph>
 
         <Paragraph>
           <Text strong>Employment Type:</Text> {job.employmentType}
@@ -129,6 +125,11 @@ const JobDetails = () => {
           <Text strong>Status:</Text> {job.status}
         </Paragraph>
 
+        <Paragraph>
+          <Text strong>Description:</Text> <br />
+          {job.description}
+        </Paragraph>
+
         <Divider />
 
         <Text strong>Skills Required:</Text>
@@ -140,8 +141,18 @@ const JobDetails = () => {
           ))}
         </div>
 
+        <Text strong>Clouds Required:</Text>
+        <div style={{ marginTop: 8 }}>
+          {job.clouds?.map((cloud, idx) => (
+            <Tag color="blue" key={idx}>
+              {cloud}
+            </Tag>
+          ))}
+        </div>
+
         <Divider />
       </Card>
+      <ApplyBenchJob jobId={id} />
     </div>
   );
 };
