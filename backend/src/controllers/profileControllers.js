@@ -3,65 +3,71 @@ import extractTextFromBase64 from '../utils/extractText.js'
 import { extractResumeSections } from '../utils/llmTextExtractor.js'
 import fs from "fs";
 import path from "path";
-
-
+import { logger } from '../utils/logger.js';
 
 
 
 // for uploading pdf and extracting all the details from it for both vendor and candidate
 const UploadResume = async (req, res) => {
   try {
-    console.log('inside file');
- 
+    logger.info("UploadResume API hit");
+
     if (!req.file) {
+      logger.warn("No file uploaded");
       return res.status(400).json({ error: "No file uploaded" });
     }
+
     const { role } = req.body;
- 
+    logger.info(`File received: ${req.file.originalname}, Role: ${role}`);
+
     const pdfBuffer = req.file.buffer;
-   
     const text = await extractTextFromBase64(pdfBuffer)
- 
-    const structuredData = await extractResumeSections(text,role);
- 
+
+    logger.info("Extracted text from PDF");
+
+    const structuredData = await extractResumeSections(text, role);
     res.status(200).json({
       message: "File received successfully",
       fileName: req.file.originalname,
       mimeType: req.file.mimetype,
       size: req.file.size,
-       extracted: structuredData,
+      extracted: structuredData,
     });
- 
+
   } catch (err) {
-    console.error("Error in userUploadTicket:", err);
+    logger.error("Error in UploadResume:", JSON.stringify(err.message,null,2));
     res.status(500).json({ error: "Something went wrong while uploading" });
   }
 };
 
+
+
 // add or update profile details for both vendor and candidate
 const updateProfiledetails = async (req, res) => {
   try {
-    console.log('inisde user profile update')
-    if(!req.body){
+    logger.info("updateProfiledetails API hit");
+
+    if (!req.body) {
+      logger.warn("No body found in request");
       return res.status(400).json({ message: "No body found" })
     }
+
     const userFromToken = req.user
-    // if (!userFromToken?.email) {
-    //   return res.status(401).json({ message: "Unauthorized" })
-    // }
+    logger.info(`Update for user: ${userFromToken?.email}`);
 
     const user = await prisma.users.findUnique({ where: { email: userFromToken.email } })
+
     if (!user) {
+      logger.warn("User not found in DB");
       return res.status(404).json({ message: "User not found" })
     }
 
     const {
-
       profilePicture,
       name = null,
       phoneNumber = null,
       portfolioLink = null,
-      email= null,
+      email = null,
       preferredLocation = [],
       preferredJobType = [],
       currentLocation = null,
@@ -86,8 +92,8 @@ const updateProfiledetails = async (req, res) => {
       where: { userId: user.id },
       update: {
         profilePicture,
-        name ,
-        phoneNumber ,
+        name,
+        phoneNumber,
         portfolioLink,
         email,
         preferredLocation,
@@ -112,10 +118,10 @@ const updateProfiledetails = async (req, res) => {
       create: {
         userId: user.id,
         profilePicture,
-         name ,
-      phoneNumber ,
-      portfolioLink ,
-      email,
+        name,
+        phoneNumber,
+        portfolioLink,
+        email,
         preferredLocation,
         preferredJobType,
         currentCTC,
@@ -136,10 +142,13 @@ const updateProfiledetails = async (req, res) => {
         title,
       }
     })
-    console.log('upded db useeprofile',upserted);
+
+    logger.info("Profile updated successfully", { userId: upserted.userId });
+
     return res.status(200).json({ status: 'success', data: upserted.userId })
+
   } catch (err) {
-    console.error('Error saving user profile:', err)
+    logger.error("Error saving user profile:", JSON.stringify(err.message,null,2));
     return res.status(500).json({ status: 'failed', message: 'Could not save profile' })
   }
 }
@@ -148,35 +157,43 @@ const updateProfiledetails = async (req, res) => {
 
 const getUserProfileDetails = async (req, res) => {
   try {
-    // The JWT middleware puts user info here
-    const { id } = req.user;  
+    logger.info("getUserProfileDetails API hit");
+
+    const { id } = req.user;
 
     if (!id) {
+      logger.warn("User ID missing in token");
       return res.status(400).json({ message: "User ID missing in token" });
     }
 
-    // Fetch user details from DB
+    logger.info(`Fetching profile for User ID: ${id}`);
+
     const user = await prisma.userProfile.findUnique({
       where: { userId: id }
     });
-      console.log("useers data", user)
+
     if (!user) {
+      logger.warn("User profile not found");
       return res.status(200).json({ status: "failed", message: "User not found" });
     }
 
+    logger.info("User profile fetched successfully");
+
     return res.status(200).json({ success: "true", user });
+
   } catch (error) {
-    console.error("Error fetching profile:", error);
-    return res.status(200).json({status: "failed", message: "Internal server error" });
+    logger.error("Error fetching profile:", JSON.stringify(error.message,null,2));
+    return res.status(200).json({ status: "failed", message: "Internal server error" });
   }
 };
 
 // NEW: Upload Profile Picture
 const uploadProfilePicture = async (req, res) => {
   try {
-    console.log("📸 Upload API hit. File:", req.file);
+    logger.info("uploadProfilePicture API hit");
 
     if (!req.file) {
+      logger.warn("No file uploaded for profile picture");
       return res.status(400).json({
         status: "failed",
         message: "No file uploaded",
@@ -188,13 +205,14 @@ const uploadProfilePicture = async (req, res) => {
 
     const uploadDir = path.join(process.cwd(), "uploads");
 
-    // Ensure folder exists
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir);
+      logger.info("Uploads directory created");
     }
 
     const savePath = path.join(uploadDir, fileName);
     fs.writeFileSync(savePath, req.file.buffer);
+    logger.info("Profile picture saved to disk");
 
     const fileUrl = `${process.env.BASE_URL}/uploads/${fileName}`;
 
@@ -204,7 +222,7 @@ const uploadProfilePicture = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Profile Picture Upload Error:", error);
+    logger.error("Profile Picture Upload Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
       status: "failed",
       message: "Upload failed",
@@ -212,6 +230,9 @@ const uploadProfilePicture = async (req, res) => {
   }
 };
 
-export { 
-  // userRegister, userLogin, 
-  UploadResume, updateProfiledetails, getUserProfileDetails,uploadProfilePicture}
+export {
+  UploadResume,
+  updateProfiledetails,
+  getUserProfileDetails,
+  uploadProfilePicture
+}

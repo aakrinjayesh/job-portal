@@ -14,10 +14,13 @@ import {
   Divider,
   Checkbox,
   Switch,
-
 } from "antd";
 
-import { UploadOutlined, UserOutlined ,InfoCircleOutlined} from "@ant-design/icons";
+import {
+  UploadOutlined,
+  UserOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 import {
   UploadPdf,
   profiledata,
@@ -151,7 +154,7 @@ const UpdateUserProfile = ({
     }
     return () => {
       form.resetFields();
-       setPrimarySkills([]);
+      setPrimarySkills([]);
       setSecondarySkills([]);
       setPrimaryClouds([]);
       setSecondaryClouds([]);
@@ -407,8 +410,6 @@ const UpdateUserProfile = ({
         const fd = new FormData();
         fd.append("file", realFile);
 
-     
-
         const uploadRes = await uploadProfilePicture(fd);
         console.log("UPLOAD RESPONSE:", uploadRes);
 
@@ -473,7 +474,7 @@ const UpdateUserProfile = ({
         workExperience: experienceList,
         education: educationList,
         rateCardPerHour: values.rateCardPerHour || {},
-        isContactDetails: showContact 
+        isContactDetails: showContact,
       };
 
       // ⭐⭐⭐ ADD THIS ⭐⭐⭐
@@ -679,126 +680,119 @@ const UpdateUserProfile = ({
             </Col>
 
             {Reciviedrole && (
-              
               <Form.Item
-  name="hideContact"
-  label="Hide Contact Details "
-  tooltip={{
-  title: "When turned off, your bench contact details will be visible to other users.",
-  icon: <InfoCircleOutlined />
-}}
->
-  <Switch
-    checkedChildren="ON"
-    unCheckedChildren="OFF"
-    onChange={(checked) => setShowContact(checked)}
-  />
-</Form.Item>
-
+                name="hideContact"
+                label="Hide Contact Details "
+                tooltip={{
+                  title:
+                    "When turned off, your bench contact details will be visible to other users.",
+                  icon: <InfoCircleOutlined />,
+                }}
+              >
+                <Switch
+                  checkedChildren="ON"
+                  unCheckedChildren="OFF"
+                  onChange={(checked) => setShowContact(checked)}
+                />
+              </Form.Item>
             )}
 
-            
-
-              {/* {!showContact && ( */}
-  <Col xs={24} sm={12} md={12}>
-    <Form.Item
-      label="Phone Number"
-      name="phoneNumber"
-      rules={[
-        {
-          //  required: true,
-           message: "Please enter phone number" },
-        {
-          pattern: /^[0-9]{10}$/,
-          message: "Format: 9XXXXXXXX2",
-        },
-      ]}
-    >
-      <Input
-        addonBefore={
-          <Select defaultValue="+91">
-            <Select.Option value="+91">🇮🇳 +91</Select.Option>
-            <Select.Option value="+1">🇺🇸 +1</Select.Option>
-            <Select.Option value="+44">🇬🇧 +44</Select.Option>
-            <Select.Option value="+61">🇦🇺 +61</Select.Option>
-            <Select.Option value="+971">🇦🇪 +971</Select.Option>
-          </Select>
-        }
-        placeholder="Enter 10-digit phone number"
-        maxLength={10}
-        onKeyPress={(e) => {
-          if (!/[0-9]/.test(e.key)) {
-            e.preventDefault();
-          }
-        }}
-      />
-    </Form.Item>
-  </Col>
-{/* )} */}
-
-           
-
-            
+            {/* {!showContact && ( */}
+            <Col xs={24} sm={12} md={12}>
+              <Form.Item
+                label="Phone Number"
+                name="phoneNumber"
+                rules={[
+                  {
+                    //  required: true,
+                    message: "Please enter phone number",
+                  },
+                  {
+                    pattern: /^[0-9]{10}$/,
+                    message: "Format: 9XXXXXXXX2",
+                  },
+                ]}
+              >
+                <Input
+                  addonBefore={
+                    <Select defaultValue="+91">
+                      <Select.Option value="+91">🇮🇳 +91</Select.Option>
+                      <Select.Option value="+1">🇺🇸 +1</Select.Option>
+                      <Select.Option value="+44">🇬🇧 +44</Select.Option>
+                      <Select.Option value="+61">🇦🇺 +61</Select.Option>
+                      <Select.Option value="+971">🇦🇪 +971</Select.Option>
+                    </Select>
+                  }
+                  placeholder="Enter 10-digit phone number"
+                  maxLength={10}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </Form.Item>
+            </Col>
+            {/* )} */}
 
             {/* {!showContact && ( */}
-  <Col xs={24} sm={12} md={12}>
-    <Form.Item
-      label="Email"
-      name="email"
-      rules={[
-        { required: true, message: "Please enter email" },
-        { type: "email", message: "Enter valid email" },
-        {
-          validator: (_, value) => {
-            if (!value) return Promise.reject("Email is required");
-            if (!Reciviedrole) {
-              const allowedDomains = [
-                "gmail.com",
-                "yahoo.com",
-                "outlook.com",
-                "hotmail.com",
-                "protonmail.com",
-                "icloud.com",
-                "aol.com",
-                "zoho.com",
-                "yandex.com",
-              ];
+            <Col xs={24} sm={12} md={12}>
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Enter valid email" },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.reject("Email is required");
+                      if (!Reciviedrole) {
+                        const allowedDomains = [
+                          "gmail.com",
+                          "yahoo.com",
+                          "outlook.com",
+                          "hotmail.com",
+                          "protonmail.com",
+                          "icloud.com",
+                          "aol.com",
+                          "zoho.com",
+                          "yandex.com",
+                        ];
 
-              const emailDomain = value.toLowerCase().split("@")[1];
-              if (allowedDomains.includes(emailDomain)) {
-                return Promise.resolve();
-              }
+                        const emailDomain = value.toLowerCase().split("@")[1];
+                        if (allowedDomains.includes(emailDomain)) {
+                          return Promise.resolve();
+                        }
 
-              return Promise.reject("Please provide a personal ID.");
-            }
+                        return Promise.reject("Please provide a personal ID.");
+                      }
 
-            const allowedDomains = [
-              "gmail.com",
-              "yahoo.com",
-              "outlook.com",
-              "hotmail.com",
-              "protonmail.com",
-              "icloud.com",
-              "aol.com",
-              "zoho.com",
-              "yandex.com",
-            ];
+                      const allowedDomains = [
+                        "gmail.com",
+                        "yahoo.com",
+                        "outlook.com",
+                        "hotmail.com",
+                        "protonmail.com",
+                        "icloud.com",
+                        "aol.com",
+                        "zoho.com",
+                        "yandex.com",
+                      ];
 
-            const emailDomain = value.toLowerCase().split("@")[1];
-            if (!allowedDomains.includes(emailDomain)) {
-              return Promise.resolve();
-            }
+                      const emailDomain = value.toLowerCase().split("@")[1];
+                      if (!allowedDomains.includes(emailDomain)) {
+                        return Promise.resolve();
+                      }
 
-            return Promise.reject("Please provide a work email ID.");
-          },
-        },
-      ]}
-    >
-      <Input placeholder="e.g., user@aakrin.com" />
-    </Form.Item>
-  </Col>
-{/* )} */}
-
+                      return Promise.reject("Please provide a work email ID.");
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="e.g., user@aakrin.com" />
+              </Form.Item>
+            </Col>
+            {/* )} */}
 
             {/* Title / Role */}
             <Col xs={24} sm={12}>
@@ -895,10 +889,10 @@ const UpdateUserProfile = ({
                     name="currentCTC"
                     rules={[
                       { required: true, message: "Please enter current CTC!" },
-                       {
-        pattern: /^[0-9]+(\.[0-9]+)?$/,
-        message: "Only positive numbers are allowed!",
-      },
+                      {
+                        pattern: /^[0-9]+(\.[0-9]+)?$/,
+                        message: "Only positive numbers are allowed!",
+                      },
                     ]}
                   >
                     <Input type="number" min={0} placeholder="e.g.,800000" />
@@ -910,10 +904,10 @@ const UpdateUserProfile = ({
                     name="expectedCTC"
                     rules={[
                       { required: true, message: "Please enter expected CTC!" },
-                       {
-        pattern: /^[0-9]+(\.[0-9]+)?$/,
-        message: "Only positive numbers are allowed!",
-      },
+                      {
+                        pattern: /^[0-9]+(\.[0-9]+)?$/,
+                        message: "Only positive numbers are allowed!",
+                      },
                     ]}
                   >
                     <Input type="number" min={1} placeholder="e.g., 1200000" />
@@ -933,24 +927,29 @@ const UpdateUserProfile = ({
                     <Form.Item
                       name={["rateCardPerHour", "value"]}
                       noStyle
-                      rules={[{ required: true, message: "Enter rate value" },
-                       {
-      validator: (_, value) => {
-        if (value === undefined || value === null || value === "") {
-          return Promise.resolve();
-        }
-        if (/^[0-9]+$/.test(String(value))) {
-          return Promise.resolve();
-        }
-        return Promise.reject("Only numbers are allowed!");
-      },
-    }, 
+                      rules={[
+                        { required: true, message: "Enter rate value" },
+                        {
+                          validator: (_, value) => {
+                            if (
+                              value === undefined ||
+                              value === null ||
+                              value === ""
+                            ) {
+                              return Promise.resolve();
+                            }
+                            if (/^[0-9]+$/.test(String(value))) {
+                              return Promise.resolve();
+                            }
+                            return Promise.reject("Only numbers are allowed!");
+                          },
+                        },
                       ]}
                     >
                       <InputNumber
                         style={{ width: "70%" }}
                         placeholder="Enter rate per Month"
-                         parser={(val) => val.replace(/[^0-9]/g, "")} 
+                        parser={(val) => val.replace(/[^0-9]/g, "")}
                       />
                     </Form.Item>
 
@@ -997,13 +996,19 @@ const UpdateUserProfile = ({
                 name="totalExperience"
                 rules={[
                   { required: true, message: "Please enter total experience!" },
-                    {
-        pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-        message: "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
-      },
+                  {
+                    pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
+                    message:
+                      "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
+                  },
                 ]}
               >
-                <Input type="number" min={0} step="0.01" placeholder="e.g., 6 , 6.2 " />
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="e.g., 6 , 6.2 "
+                />
               </Form.Item>
             </Col>
 
@@ -1017,20 +1022,26 @@ const UpdateUserProfile = ({
                     required: true,
                     message: "Please enter Salesforce experience!",
                   },
-                   {
-        pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-        message: "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
-      },
+                  {
+                    pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
+                    message:
+                      "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
+                  },
                 ]}
               >
-                <Input type="number" min={0} step="0.01" placeholder="e.g., 4 years" />
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="e.g., 4 years"
+                />
               </Form.Item>
             </Col>
           </Row>
 
           <Divider />
 
-           {/* Portfolio, LinkedIn, Trailhead */}
+          {/* Portfolio, LinkedIn, Trailhead */}
           <Row gutter={16}>
             <Col xs={24} sm={8}>
               <Form.Item label="Portfolio Link" name="portfolioLink">
@@ -1043,8 +1054,8 @@ const UpdateUserProfile = ({
                 label="LinkedIn URL"
                 name="linkedInUrl"
                 rules={[
-                  // { 
-                  //   required: true, 
+                  // {
+                  //   required: true,
                   //   message: "Please enter LinkedIn URL!" },
                   {
                     pattern:
@@ -1083,7 +1094,7 @@ const UpdateUserProfile = ({
             </Col>
           </Row>
 
-            <Divider />
+          <Divider />
 
           {/* Skills */}
           <Row gutter={16}>

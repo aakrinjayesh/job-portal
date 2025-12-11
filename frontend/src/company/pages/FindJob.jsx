@@ -79,31 +79,105 @@ function FindJob() {
     if (page > 1) fetchJobs(page);
   }, [page]);
 
+  const fuzzyMatch = (a, b) => {
+    if (!a || !b) return false;
+
+    a = a.toLowerCase().trim();
+    b = b.toLowerCase().trim();
+
+    // 1. Direct substring check
+    if (a.includes(b) || b.includes(a)) return true;
+
+    // 2. Regex partial match (checks large similar segments)
+    const pattern = b.split("").join(".*");
+    const regex = new RegExp(pattern, "i");
+    if (regex.test(a)) return true;
+
+    // 3. Similarity score
+    let matches = 0;
+    for (let char of b) {
+      if (a.includes(char)) matches++;
+    }
+    const score = matches / Math.max(a.length, b.length);
+    return score >= 0.6; // tuning threshold
+  };
+
   // FILTERING
+
+  const levenshtein = (a, b) => {
+    if (!a || !b) return Infinity;
+
+    const m = a.length,
+      n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (a[i - 1] === b[j - 1]) dp[i][j] = dp[i - 1][j - 1];
+        else {
+          dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+    }
+    return dp[m][n];
+  };
+
+  const smartMatch = (text, search) => {
+    if (!text || !search) return false;
+
+    text = text.toLowerCase();
+    search = search.toLowerCase();
+
+    const words = text.split(/\s+/); // tokenization
+
+    // 1. Exact token match
+    if (words.includes(search)) return true;
+
+    // 2. Levenshtein on each token
+    for (const word of words) {
+      const dist = levenshtein(word, search);
+
+      if (dist <= 2) return true; // allows misspellings
+    }
+
+    // 3. Prefix match (hyd → hyderabad)
+    for (const word of words) {
+      if (word.startsWith(search) || search.startsWith(word)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const filterJobs = useCallback((filters, allJobs) => {
+    console.log("filters", filters);
     return allJobs.filter((job) => {
       // --- EXPERIENCE FILTER ---
       // --- EXPERIENCE FILTER (Exact Match) ---
       if (
         filters.experience !== null &&
-  filters.experience !== undefined &&
-  filters.experience !== "Any"
+        filters.experience !== undefined &&
+        filters.experience !== "Any"
       ) {
         const enteredExp = parseInt(filters.experience);
-  const jobExp = parseInt(job.experience?.number);  // FIXED
+        const jobExp = parseInt(job.experience?.number); // FIXED
 
         if (!isNaN(enteredExp) && !isNaN(jobExp)) {
           if (jobExp !== enteredExp) return false;
         }
       }
 
-
       // --- SKILLS FILTER ---
       if (filters.skills && filters.skills.length > 0) {
         const jobSkills = (job.skills || []).map((s) => s.toLowerCase());
 
         const matches = filters.skills.every((skill) =>
-          jobSkills.includes(skill.toLowerCase())
+          // jobSkills.includes(skill.toLowerCase())
+          jobSkills.some((js) => smartMatch(js, skill))
         );
 
         if (!matches) return false;
@@ -114,7 +188,8 @@ function FindJob() {
         const jobClouds = (job.clouds || []).map((s) => s.toLowerCase());
 
         const matches = filters.clouds.every((cloud) =>
-          jobClouds.includes(cloud.toLowerCase())
+          // jobClouds.includes(cloud.toLowerCase())
+          jobClouds.some((jc) => smartMatch(jc, cloud))
         );
 
         if (!matches) return false;
@@ -148,8 +223,9 @@ function FindJob() {
       if (filters.location && filters.location.length > 0) {
         const jobLocation = job.location?.toLowerCase() || "";
         const matches = filters.location.some((loc) => {
-          const regex = new RegExp(loc.toLowerCase(), "i");
-          return regex.test(jobLocation);
+          // const regex = new RegExp(loc.toLowerCase(), "i");
+          // return regex.test(jobLocation);
+          return fuzzyMatch(jobLocation, loc);
         });
         if (!matches) return false;
       }
@@ -183,6 +259,10 @@ function FindJob() {
     setJobs(filtered);
   };
 
+  const handleClearFilters = () => {
+    setJobs(allJobs);
+  };
+
   return (
     <div
       style={{
@@ -194,11 +274,13 @@ function FindJob() {
       }}
     >
       <Row gutter={[16, 16]} style={{ flex: 1, height: "100%" }}>
-        
         {/* Filter Sidebar */}
         {isFilterOpen && (
           <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
-            <FiltersPanel onFiltersChange={handleFiltersChange} />
+            <FiltersPanel
+              onFiltersChange={handleFiltersChange}
+              handleClearFilters={handleClearFilters}
+            />
           </Col>
         )}
 

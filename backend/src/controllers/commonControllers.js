@@ -1,4 +1,5 @@
 import prisma from '../config/prisma.js'
+import { logger } from '../utils/logger.js';
 
 
 
@@ -12,26 +13,30 @@ const getAllSkills = async (req, res) => {
     });
     return res.status(200).json({ status: 'success', data: skills });
   } catch (err) {
-    return res.status(500).json({ status: 'failed', message: err.message });
+    logger.error("getAllSkills Error:", JSON.stringify(err.message,null,2));
+    return res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
 const updateSkills = async (req, res) => {
   const { name } = req.body;
   if(!name){
-    return res.status(200).json({ status:'failed', message: "Skill name is required" });
+    logger.warn("Skill name missing");
+    return res.status(400).json({ status:'error', message: "Skill name is required" });
   }
   try {
     const check = await prisma.skills.findUnique({ where: { name } });
     if(check){
-      return res.status(200).json({ status:'failed', message: "Skill already exists" });
+      logger.warn(`Skill already exists: ${name}`);
+      return res.status(409).json({ status:'error', message: "Skill already exists" });
     }
     const newSkill = await prisma.skills.create({
       data: { name, isVerified: false },
     });
-    return res.status(200).json({status:'success', id: newSkill.id });
+    return res.status(201).json({status:'success', id: newSkill.id });
   } catch (error) {
-    res.status(500).json({success:'failed', message: `something went wrong ${error.message}` });
+    logger.error("updateSkills Error:", JSON.stringify(error.message,null,2));
+    res.status(500).json({status:'error', message: `Something Went Wrong ${error.message}` });
   }
 }
 
@@ -44,26 +49,30 @@ const getAllCertifications = async (req, res) => {
     });
     res.status(200).json({ status: 'success', data: certifications });
   } catch (err) {
-    res.status(500).json({ status: 'failed', message: err.message });
+    logger.error("getAllCertifications Error:", JSON.stringify(err.message,null,2));
+    res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
 const updateCertifications = async (req, res) => {
   const { name } = req.body;
   if(!name){
-   return res.status(200).json({ status:'failed', message: "Certification name is required" });
+    logger.warn("Certification name missing");
+    return res.status(400).json({ status:'error', message: "Certification name is required" });
   }
   try {
     const check = await prisma.certification.findUnique({ where: { name } });
     if(check){
-      return res.status(200).json({ status:'failed', message: "Certification already exists" });
+      logger.warn(`Certification already exists: ${name}`);
+      return res.status(409).json({ status:'error', message: "Certification already exists" });
     }
     const newSkill = await prisma.certification.create({
       data: { name, isVerified: false },
     });
-    return res.status(200).json({status:'success', id: newSkill.id });
+    return res.status(201).json({status:'success', id: newSkill.id });
   } catch (error) {
-    return res.status(500).json({status: 'failed', message: `something went wrong ${error.message}` });
+    logger.error("updateCertifications Error:", JSON.stringify(error.message,null,2));
+    return res.status(500).json({status: 'error', message: `Something Went Wrong: ${error.message}` });
   }
 }
 
@@ -76,7 +85,8 @@ const getAllLocations = async (req, res) => {
     });
     res.status(200).json({ status: 'success', data: locations });
   } catch (err) {
-    res.status(500).json({ status: 'failed', message: err.message });
+    logger.error("getAllLocations Error:", JSON.stringify(err.message,null,2));
+    res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
@@ -84,19 +94,22 @@ const getAllLocations = async (req, res) => {
 const updateLocation = async (req, res) => {
   const { name } = req.body;
   if(!name){
-    return res.status(200).json({ status:'failed', message: "Location name is required" });
+    logger.warn("Location name missing");
+    return res.status(400).json({ status:'error', message: "Location name is required" });
   }
   try {
     const check = await prisma.location.findUnique({ where: { name } });
     if(check){
-      return res.status(200).json({ status:'failed', message: "Location already exists" });
+      logger.warn(`Location already exists: ${name}`);
+      return res.status(409).json({ status:'error', message: "Location already exists" });
     }
     const newSkill = await prisma.location.create({
       data: { name, isVerified: false },
     });
-    return res.status(200).json({status:'success', id: newSkill.id });
+    return res.status(201).json({status:'success', id: newSkill.id });
   } catch (error) {
-    return res.status(200).json({status:'failed', message: `something went wrong ${error.message}` });
+    logger.error("updateLocation Error:", JSON.stringify(error.message,null,2));
+    return res.status(500).json({status:'error', message: `something went wrong ${error.message}` });
   }
 }
 
@@ -111,7 +124,8 @@ const getAllClouds = async (req, res) => {
     });
     return res.status(200).json({ status: 'success', data: clouds });
   } catch (err) {
-    return res.status(500).json({ status: 'failed', message: err.message });
+    logger.error("getAllClouds Error:", JSON.stringify(err.message,null,2));
+    return res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
@@ -119,19 +133,22 @@ const getAllClouds = async (req, res) => {
 const addCloud = async (req, res) => {
   const { name } = req.body;
   if (!name) {
-    return res.status(200).json({ status: 'failed', message: "Cloud name is required" });
+    logger.warn("Cloud name missing");
+    return res.status(400).json({ status: 'error', message: "Cloud name is required" });
   }
   try {
     const check = await prisma.cloud.findUnique({ where: { name } });
     if (check) {
-      return res.status(200).json({ status: 'failed', message: "Cloud already exists" });
+      logger.warn(`Cloud already exists: ${name}`);
+      return res.status(409).json({ status: 'error', message: "Cloud already exists" });
     }
     const newCloud = await prisma.cloud.create({
       data: { name, isVerified: false },
     });
-    return res.status(200).json({ status: 'success', id: newCloud.id });
+    return res.status(201).json({ status: 'success', id: newCloud.id });
   } catch (error) {
-    return res.status(500).json({ status: 'failed', message: `something went wrong ${error.message}` });
+    logger.error("addCloud Error:", JSON.stringify(error.message,null,2));
+    return res.status(500).json({ status: 'error', message: `something went wrong ${error.message}` });
   }
 };
 
@@ -144,7 +161,8 @@ const getAllRole = async (req, res) => {
     });
     return res.status(200).json({ status: 'success', data: roles });
   } catch (err) {
-    return res.status(500).json({ status: 'failed', message: err.message });
+    logger.error("getAllRole Error:", JSON.stringify(err.message,null,2));
+    return res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
@@ -152,19 +170,22 @@ const getAllRole = async (req, res) => {
 const addRole = async (req, res) => {
   const { name } = req.body;
   if (!name) {
-    return res.status(200).json({ status: 'failed', message: "Role name is required" });
+    logger.warn("Role name missing");
+    return res.status(400).json({ status: 'error', message: "Role name is required" });
   }
   try {
     const check = await prisma.companyRole.findUnique({ where: { name } });
     if (check) {
-      return res.status(200).json({ status: 'failed', message: "Role already exists" });
+      logger.warn(`Role already exists: ${name}`);
+      return res.status(409).json({ status: 'error', message: "Role already exists" });
     }
     const newCloud = await prisma.companyRole.create({
       data: { name, isVerified: false },
     });
-    return res.status(200).json({ status: 'success', id: newCloud.id });
+    return res.status(201).json({ status: 'success', id: newCloud.id });
   } catch (error) {
-    return res.status(500).json({ status: 'failed', message: `something went wrong ${error.message}` });
+    logger.error("addRole Error:", JSON.stringify(error.message,null,2));
+    return res.status(500).json({ status: 'error', message: `something went wrong ${error.message}` });
   }
 };
 
@@ -177,7 +198,8 @@ const getAllQualification = async (req, res) => {
     });
     return res.status(200).json({ status: 'success', data: qualification });
   } catch (err) {
-    return res.status(500).json({ status: 'failed', message: err.message });
+    logger.error("getAllQualification Error:", JSON.stringify(err.message,null,2));
+    return res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
@@ -185,19 +207,22 @@ const getAllQualification = async (req, res) => {
 const addQualification = async (req, res) => {
   const { name } = req.body;
   if (!name) {
-    return res.status(200).json({ status: 'failed', message: "qualification name is required" });
+    logger.warn("Qualification name missing");
+    return res.status(400).json({ status: 'error', message: "qualification name is required" });
   }
   try {
     const check = await prisma.qualification.findUnique({ where: { name } });
     if (check) {
-      return res.status(200).json({ status: 'failed', message: "qualification already exists" });
+      logger.warn(`Qualification already exists: ${name}`);
+      return res.status(409).json({ status: 'error', message: "qualification already exists" });
     }
     const newCloud = await prisma.qualification.create({
       data: { name, isVerified: false },
     });
-    return res.status(200).json({ status: 'success', id: newCloud.id });
+    return res.status(201).json({ status: 'success', id: newCloud.id });
   } catch (error) {
-    return res.status(500).json({ status: 'failed', message: `something went wrong ${error.message}` });
+    logger.error("addQualification Error:", JSON.stringify(error.message,null,2));
+    return res.status(500).json({ status: 'error', message: `something went wrong ${error.message}` });
   }
 };
 

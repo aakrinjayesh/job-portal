@@ -5,6 +5,7 @@ import { generateResumeHTML } from "../utils/resumeTemplate.js";
 import fs from 'fs'
 import path from 'path'
 import { extractResumeSections } from "../utils/llmTextExtractor.js";
+import { logger } from "../utils/logger.js";
 
 
 // User applies for a job
@@ -16,25 +17,35 @@ const userApplyJob = async (req, res) => {
     const userId = req.user.id; 
 
     if (!jobId) {
-      return res.status(200).json({ status: "failed", message: "Job ID is required" });
+      logger.warn("Job ID missing in userApplyJob");
+      return res.status(400).json({ status: "error", message: "Job ID is required" });
     }
 
     // 1. Fetch Job
-    const job = await prisma.job.findUnique({
+    const job = await prisma.job.findFirst({
       where: { id: jobId, isDeleted: false },
       include: {
         postedBy: { select: { id: true, name: true, email: true } }
       }
     });
 
-    if (!job) return res.status(404).json({ status: "failed", message: "Job not found" });
-    if (job.status !== 'Open') return res.status(200).json({ status: "failed", message: "Job closed" });
+    if (!job) {
+      logger.warn(`Job not found - ID: ${jobId}`);
+      return res.status(404).json({ status: "error", message: "Job not found" });
+    }
+    if (job.status !== 'Open') {
+      logger.warn(`Job closed - ID: ${jobId}`);
+      return res.status(400).json({ status: "error", message: "Job closed" });
+    }
 
     // 2. Check Existing Application
     const existingApplication = await prisma.jobApplication.findUnique({
       where: { jobId_userId: { jobId, userId } }
     });
-    if (existingApplication) return res.status(200).json({ status: "failed", message: "Already applied" });
+    if (existingApplication) {
+      logger.warn(`User already applied - jobId: ${jobId}, userId: ${userId}`);
+      return res.status(409).json({ status: "error", message: "Already applied" });
+    }
 
     // 3. Fetch User Profile
     const user = await prisma.users.findUnique({
@@ -42,7 +53,17 @@ const userApplyJob = async (req, res) => {
       include: { CandidateProfile: true }
     });
 
-    if (!user) return res.status(404).json({ status: "failed", message: "User not found" });
+    if (!user) {
+      logger.warn(`User not found - ID: ${userId}`);
+      return res.status(404).json({ status: "error", message: "User not found" });
+    }
+
+    if(!user.CandidateProfile){
+      return res.status(404).json({
+        status:"error",
+        message: "Fill The Candidate Details First!"
+      })
+    }
 
     // ============================================================
     // STEP 4: AI ANALYSIS (Real-time)
@@ -68,6 +89,7 @@ const userApplyJob = async (req, res) => {
 
     const profile = user.CandidateProfile;
 
+
     const candidateDetails = {
       // id: profile?.id,
       userId: profile?.userId,
@@ -83,7 +105,7 @@ const userApplyJob = async (req, res) => {
       currentCTC: profile?.currentCTC || "",
       expectedCTC: profile?.expectedCTC || "",
       rateCardPerHour: profile?.rateCardPerHour || {},
-      joiningPeriod: profile.joiningPeriod || "",
+      joiningPeriod: profile?.joiningPeriod || "",
       totalExperience: profile?.totalExperience || "",
       relevantSalesforceExperience: profile?.relevantSalesforceExperience || "",
       skills: profile?.skillsJson || [],
@@ -99,7 +121,7 @@ const userApplyJob = async (req, res) => {
     // Only run AI if candidate has a profile
     if (user.CandidateProfile) {
         aiAnalysisResult = await extractResumeSections("CV_RANKING","cvranker",{jobDescription, candidateDetails});
-        console.log('aicvranker', aiAnalysisResult)
+        logger.info('aicvranker', JSON.stringify(aiAnalysisResult,null,2))
     }
 
     // ============================================================
@@ -145,7 +167,7 @@ const userApplyJob = async (req, res) => {
       pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
       await browser.close();
     } catch (pdfError) {
-      console.error('PDF Generation Error:', pdfError);
+      logger.error('PDF Generation Error:', JSON.stringify(pdfError.message,null,2));
     }
 
     // Send Email to Recruiter
@@ -199,7 +221,7 @@ const userApplyJob = async (req, res) => {
           }] : []
         });
       } catch (emailError) {
-        console.error('Error sending email to poster:', emailError);
+        logger.error('Error sending email to poster:', JSON.stringify(emailError.message,null,2));
       }
     }
 
@@ -238,7 +260,7 @@ const userApplyJob = async (req, res) => {
         `
       });
     } catch (emailError) {
-      console.error('Error sending confirmation email:', emailError);
+      logger.error('Error sending confirmation email:', JSON.stringify(emailError.message,null,2));
     }
 
     return res.status(201).json({
@@ -256,11 +278,10 @@ const userApplyJob = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("userApplyJob Error:", error);
+    logger.error("userApplyJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      message: "Failed to submit application",
-      error: error.message
+      status: "error",
+      message: "Failed to submit application:" + error.message,
     });
   }
 };
@@ -327,11 +348,10 @@ const userAllApplyedJobs = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("userAllAppliedJobs Error:", error);
+    logger.error("userAllAppliedJobs Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      message: "Failed to fetch applied jobs",
-      error: error.message || "Internal server error"
+      status: "error",
+      message: "Failed to fetch applied jobs"+ error.message,
     });
   }
 };
@@ -355,15 +375,17 @@ const userSaveJob = async (req, res) => {
     });
 
     if (!job) {
+      logger.warn(`Job not found while saving - ID: ${jobId}`);
       return res.status(404).json({
-        status: "failed",
+        status: "error",
         message: "Job not found"
       });
     }
 
     if (job.isDeleted) {
-      return res.status(200).json({
-        status: "failed",
+      logger.warn(`Attempt to save deleted job - ID: ${jobId}`);
+      return res.status(400).json({
+        status: "error",
         message: "This job has been deleted"
       });
     }
@@ -379,8 +401,9 @@ const userSaveJob = async (req, res) => {
     });
 
     if (existingSave) {
-      return res.status(200).json({
-        status: "failed",
+      logger.warn(`Job already saved - jobId: ${jobId}, userId: ${userId}`);
+      return res.status(409).json({
+        status: "error",
         message: "Job already saved"
       });
     }
@@ -411,11 +434,10 @@ const userSaveJob = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("userSaveJob Error:", error);
+    logger.error("userSaveJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      message: "Failed to save job",
-      error: error.message || "Internal server error"
+      status: "error",
+      message: "Failed to save job" +  error.message,
     });
   }
 };
@@ -423,13 +445,14 @@ const userSaveJob = async (req, res) => {
 
 const userUnsaveJob = async (req, res) => {
   try {
-    console.log("unsave clicked")
+    logger.info("unsave clicked")
     const { jobId } = req.body;
     const userId = req.user.id;
 
-    if (!jobId) {
-      return res.status(200).json({
-        status: "failed",
+     if (!jobId) {
+      logger.warn("Job ID missing in userUnsaveJob");
+      return res.status(400).json({
+        status: "error",
         message: "Job ID is required"
       });
     }
@@ -443,8 +466,9 @@ const userUnsaveJob = async (req, res) => {
     });
 
     if (deleted.count === 0) {
+      logger.warn(`Saved job not found - jobId: ${jobId}, userId: ${userId}`);
       return res.status(404).json({
-        status: "failed",
+        status: "error",
         message: "Saved job not found"
       });
     }
@@ -455,93 +479,13 @@ const userUnsaveJob = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("userUnsaveJob Error:", error);
+    logger.error("userUnsaveJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      message: "Failed to unsave job",
-      error: error.message || "Internal server error"
+      status: "error",
+      message: "Failed to unsave job" + error.message,
     });
   }
 };
-
-
-// const userAllSavedJobs = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const { page = 1, limit = 10 } = req.query;
-
-//     const skip = (parseInt(page) - 1) * parseInt(limit);
-
-//     // Get saved jobs with job details
-//     const [savedJobs, total] = await Promise.all([
-//       prisma.savedJob.findMany({
-//         where: { userId },
-//         include: {
-//           job: {
-//             select: {
-//               id: true,
-//               role: true,
-//               companyName: true,
-//               location: true,
-//               salary: true,
-//               employmentType: true,
-//               experience: true,
-//               skills: true,
-//               description: true,
-//               status: true,
-//               applicationDeadline: true,
-//               createdAt: true
-//             }
-//           }
-//         },
-//         orderBy: {
-//           savedAt: 'desc'
-//         },
-//         skip,
-//         take: parseInt(limit)
-//       }),
-//       prisma.savedJob.count({ where: { userId } })
-//     ]);
-
-//     // Check for deadline approaching (within 7 days)
-//     const jobsWithDeadlineWarning = savedJobs.map(saved => {
-//       const deadlineDate = new Date(saved.job.applicationDeadline);
-//       const today = new Date();
-//       const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
-      
-//       return {
-//         ...saved,
-//         deadlineWarning: daysUntilDeadline <= 7 && daysUntilDeadline > 0,
-//         daysUntilDeadline
-//       };
-//     });
-
-//     return res.status(200).json({
-//       status: "success",
-//       data: {
-//         savedJobs: jobsWithDeadlineWarning,
-//         pagination: {
-//           total,
-//           page: parseInt(page),
-//           limit: parseInt(limit),
-//           totalPages: Math.ceil(total / parseInt(limit))
-//         }
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error("userAllSavedJobs Error:", error);
-//     return res.status(500).json({
-//       status: "failed",
-//       message: "Failed to fetch saved jobs",
-//       error: error.message || "Internal server error"
-//     });
-//   }
-// };
-
-
-
-
 
 
 const userAllSavedJobs = async (req, res) => {
@@ -614,11 +558,10 @@ const userAllSavedJobs = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("userAllSavedJobs Error:", error);
+    logger.error("userAllSavedJobs Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      message: "Failed to fetch saved jobs",
-      error: error.message || "Internal server error"
+      status: "error",
+      message: "Failed to fetch saved jobs" + error.message,
     });
   }
 };
@@ -637,66 +580,15 @@ const userWithdrawJob = async (req, res) => {
       message: "User withdraw job functionality pending"
     })
   } catch (error) {
-    console.error("userWithdrawJob Error:", error);
+    logger.error("userWithdrawJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       error: error.message || "Internal server error"
     })
   }
 }
 
 
-
-// User removes saved job
-const userRemovedSavedJob = async (req, res) => {
-  try {
-    // TODO: Implement remove saved job logic
-    // - Extract userId and jobId from req
-    // - Check if saved job exists
-    // - Delete saved job record
-    // - Return success response
-    return res.status(501).json({
-      status: "not_implemented",
-      message: "User remove saved job functionality pending"
-    })
-  } catch (error) {
-    console.error("userRemovedSavedJob Error:", error);
-    return res.status(500).json({
-      status: "failed",
-      error: error.message || "Internal server error"
-    })
-  }
-}
-
-const checkIfJobSaved = async (req, res) => {
-  try {
-    const { jobId } = req.params;
-    const userId = req.user.id;
-
-    const savedJob = await prisma.savedJob.findUnique({
-      where: {
-        jobId_userId: {
-          jobId,
-          userId
-        }
-      }
-    });
-
-    return res.status(200).json({
-      status: "success",
-      data: {
-        isSaved: !!savedJob
-      }
-    });
-
-  } catch (error) {
-    console.error("checkIfJobSaved Error:", error);
-    return res.status(500).json({
-      status: "failed",
-      error: error.message || "Internal server error"
-    });
-  }
-};
 
 
 const getJobList = async (req, res) => {
@@ -736,7 +628,7 @@ const getJobList = async (req, res) => {
     }));
  
     return res.status(200).json({
-      status: "Success",
+      status: "success",
       jobs: jobsWithSavedStatus,
       totalCount,
       currentPage: page,
@@ -744,9 +636,9 @@ const getJobList = async (req, res) => {
     });
  
   } catch (error) {
-    console.error("getJobList Error:", error);
+    logger.error("getJobList Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       error: error.message || "Internal server error",
     });
   }
@@ -775,7 +667,9 @@ const postJob = async (req, res) => {
       jobType,
       applicationDeadline,
     } = req.body;
-    console.log('body ##########',req.body)
+    
+    logger.log('body ##########',JSON.stringify(req.body,null,2));
+
     const userFromAuth = req.user
 
     const job = await prisma.job.create({
@@ -798,15 +692,18 @@ const postJob = async (req, res) => {
         postedById: userFromAuth.id, // optional
       },
     });
+
+    logger.info(`Job posted successfully - jobId: ${job.id}`);
+
     return res.status(201).json({
       status: "success",
       message: "Job posted successfully",
       job,
     });
   } catch (error) {
-    console.error("postJob Error:", error);
+    logger.error("postJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       error: error.message || "Internal server error"
     })
   }
@@ -823,9 +720,10 @@ const postedJobs = async (req, res) => {
     const userFromAuth = req.user
 
     // ❗ Validate userId
-    if (!userFromAuth.id) {
+   if (!userFromAuth.id) {
+      logger.warn("User ID missing in postedJobs");
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "User ID is required"
       });
     }
@@ -854,9 +752,9 @@ const postedJobs = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("postedJobs POST Error:", error);
+    logger.error("postedJobs POST Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       error: error.message || "Internal server error"
     });
   }
@@ -895,16 +793,19 @@ const editJob = async (req, res) => {
     });
 
     if (!existingJob) {
+      logger.warn(`Job not found for update - ID: ${id}`);
       return res.status(404).json({
-        status: "failed",
+        status: "error",
         message: "Job not found",
       });
     }
 
+
     // Optional: check if user is authorized to edit
     if (existingJob.postedById && existingJob.postedById !== userFromAuth.id) {
+      logger.warn(`Unauthorized job edit attempt - jobId: ${id}, userId: ${userFromAuth.id}`);
       return res.status(403).json({
-        status: "failed",
+        status: "error",
         message: "You are not authorized to edit this job",
       });
     }
@@ -933,16 +834,18 @@ const editJob = async (req, res) => {
       },
     });
 
+    logger.info(`Job updated successfully - jobId: ${id}`);
+
     return res.status(200).json({
       status: "success",
       message: "Job updated successfully",
       job: updatedJob,
     });
   } catch (error) {
-    console.error("editJob Error:", error);
+    logger.error("editJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      error: error.message || "Internal server error",
+      status: "error",
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -951,9 +854,9 @@ const editJob = async (req, res) => {
 // shruthi
 // Delete job posted by company or vendor
 const deleteJob = async (req, res) => {
-  console.log("Delete Job API hit");
+  logger.info("Delete Job API hit");
   try {
-    const { jobIds,deletedReason } = req.body;  // For multiple delete
+    const { jobIds, deletedReason } = req.body;  // For multiple delete
  
     if (jobIds && Array.isArray(jobIds) && jobIds.length > 0) {
       await prisma.job.updateMany({
@@ -971,10 +874,10 @@ const deleteJob = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("deleteJob Error:", error);
+    logger.error("deleteJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      error: error.message || "Internal server error",
+      status: "error",
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -982,94 +885,41 @@ const deleteJob = async (req, res) => {
 const getJobDetails = async (req, res) => {
   try{
     const {jobid} = req.body
-    const job= await prisma.job.findUnique({
+    
+    const job= await prisma.job.findFirst({
       where:{id: jobid}
     })
+
     if(!job){
-      return res.status(200).json({message:"Something went wrong"})
+      logger.warn(`Job not found - ID: ${jobid}`);
+      return res.status(404).json({ status:"error", message:"Job not found" })
     }
+
     return res.status(200).json({
       status: "Success",
       job
     })
+
   }catch(error){
-    console.error("userAllSavedJobs Error:", error);
+    logger.error("getJobDetails Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      error: error.message || "Internal server error"
+      status: "error",
+      message: error.message || "Internal server error"
     })
   }
 };
 
 
-// const getApplicantsByJobId = async (req, res) => {
-//   try {
-//     const { jobId } = req.body;
-
-//     // Validate jobId
-//     if (!jobId) {
-//       return res.status(400).json({ message: "jobId is required" });
-//     }
-
-//     // Check if job exists
-//     const jobExists = await prisma.job.findUnique({
-//       where: { id: jobId },
-//       select: { id: true },
-//     });
-
-//     if (!jobExists) {
-//       return res.status(404).json({ message: "Job not found" });
-//     }
-
-//     // Fetch all job applications with user details
-//     const applicants = await prisma.jobApplication.findMany({
-//       where: { jobId },
-//       include: {
-//         user: {
-//           include: {
-//             CandidateProfile: true,
-//           },
-//         },
-//       },
-//       orderBy: { appliedAt: "desc" },
-//     });
-
-//     // If no applicants found
-//     if (applicants.length === 0) {
-//       return res.status(200).json({ message: "No applications found", data: [] });
-//     }
-
-//     // Format response (optional, for cleaner frontend usage)
-//     const formattedApplicants = applicants.map((app) => ({
-//       applicationId: app.id,
-//       status: app.status,
-//       appliedAt: app.appliedAt,
-//       userId: app.user.id,
-//       name: app.user.name,
-//       email: app.user.email,
-//       profile: app.user.CandidateProfile,
-//     }));
-
-//     return res.status(200).json({
-//       message: "Applicants fetched successfully",
-//       count: formattedApplicants.length,
-//       data: formattedApplicants,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching applicants:", error);
-//     return res.status(500).json({
-//       message: "Internal server error",
-//       error: error.message,
-//     });
-//   }
-// };
 
 
 const getApplicantsByJobId = async (req, res) => {
   try {
-    const { jobId } = req.body; // Ideally this should be req.params or req.query for a GET
+    const { jobId } = req.body; 
 
-    if (!jobId) return res.status(400).json({ message: "jobId is required" });
+    if (!jobId) {
+      logger.warn("Missing jobId in getApplicantsByJobId body");
+      return res.status(400).json({ message: "jobId is missing!" });
+    }
 
     // Fetch applications with AI Analysis included
     const applicants = await prisma.jobApplication.findMany({
@@ -1102,10 +952,14 @@ const getApplicantsByJobId = async (req, res) => {
       ]
     });
 
-    console.log('applicants',applicants)
+    logger.info('applicants',applicants)
 
     if (applicants.length === 0) {
-      return res.status(200).json({ message: "No applications found", data: [] });
+      logger.info(`No applicants found for jobId ${jobId}`);
+      return res.status(200).json({ 
+        status:"success", 
+        message:"No applications found", 
+        data: [] });
     }
 
     // Format response for Frontend
@@ -1117,23 +971,22 @@ const getApplicantsByJobId = async (req, res) => {
       name: app.user.name,
       email: app.user.email,
       profile: app.user.CandidateProfile,
-      
-      // AI Ranking Data
       matchScore: app.analysis?.fitPercentage || 0,
       aiAnalysis: app.analysis?.details || null
     }));
 
     return res.status(200).json({
+      status:"success",
       message: "Applicants fetched successfully",
       count: formattedApplicants.length,
       data: formattedApplicants,
     });
 
   } catch (error) {
-    console.error("Error fetching applicants:", error);
+    logger.error("Error fetching applicants:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
+      status:"error",
+      message: "Internal server error"+error.message,
     });
   }
 };
@@ -1151,9 +1004,10 @@ const getUserAppliedJobsId = async (req,res) =>{
     })
 
     if(!userJobid){
-      res.status(200).json({
-        status:"failed",
-        message: "Something went wrong!"
+      logger.warn("User applied jobs fetch failed")
+      return res.status(500).json({
+        status:"error",
+        message: "Could not Fetch Job Details"
       })
     }
 
@@ -1165,8 +1019,9 @@ const getUserAppliedJobsId = async (req,res) =>{
       jobids
     })
   } catch (error) {
-    res.status(200).json({
-        status:"failed",
+    logger.error(`getUserAppliedJobsId Error: ${JSON.stringify(error.message,null,2)}`)
+    return res.status(500).json({
+        status:"error",
         message: `Something went wrong!${error.message}`
       })
   }
@@ -1176,11 +1031,9 @@ export {
   userApplyJob,
   userWithdrawJob,
   userSaveJob,
-  userRemovedSavedJob,
   userAllApplyedJobs,
   userAllSavedJobs,
   userUnsaveJob,
-  checkIfJobSaved,
   getJobList,
   postJob,
   postedJobs,

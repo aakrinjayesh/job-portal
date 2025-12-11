@@ -17,19 +17,23 @@ import {
   CreateVendorCandidate,
   UpdateVendorCandidate,
   DeleteVendorCandidate,
-   UpdateVendorCandidateStatus ,
+  UpdateVendorCandidateStatus,
+  AiCandidateFilter,
   //  UpdateCandidateStatus
 } from "../api/api";
 import UpdateUserProfile from "../../candidate/pages/UpdateUserProfile";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
+import { useCallback } from "react";
 
 import { Input } from "antd";
 import { SendVerificationOtp, VerifyCandidateOtp } from "../api/api";
+import SearchWithTextArea from "../components/Bench/SearchWithTextArea";
 
 const Bench = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [candidates, setCandidates] = useState([]);
+  const [allcandidates, setAllCandidates] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -49,8 +53,6 @@ const Bench = () => {
   // add near other useState() calls
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [unverifiedCount, setUnverifiedCount] = useState(0);
-
-  const [searchText, setSearchText] = useState("");
 
   const [activeTab, setActiveTab] = useState("active");
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -77,40 +79,14 @@ const Bench = () => {
     return () => clearInterval(interval);
   }, [isCounting, timer]);
 
-  // const filteredCandidates = candidates
-  //   ?.map((item) => ({
-  //     ...item,
-  //     isMatch: item?.name?.toLowerCase().includes(searchText.toLowerCase()),
-  //   }))
-  //   .sort((a, b) => b.isMatch - a.isMatch); // matched items go to top
-
-  const filteredCandidates = candidates
-    ?.map((item) => {
-      const text = searchText.toLowerCase();
-
-      const nameMatch = item.name?.toLowerCase().includes(text);
-      const roleMatch = item.title?.toLowerCase().includes(text);
-      const cloudNames = Array.isArray(item.primaryClouds)
-        ? item.primaryClouds.map((c) => c.name?.toLowerCase())
-        : [];
-
-      const cloudMatch = cloudNames.some((c) => c.includes(text));
-
-      return {
-        ...item,
-        isMatch: nameMatch || roleMatch || cloudMatch,
-      };
-    })
-    .sort((a, b) => b.isMatch - a.isMatch);
-
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
     try {
       setLoading(true);
       const res = await GetVendorCandidates();
       const list = Array.isArray(res?.data) && res.data;
+      setAllCandidates(list || []);
       setCandidates(list || []);
-
       // --- NEW: update verified / unverified counts ---
       if (Array.isArray(list)) {
         const verified = list.filter((c) => !!c.isVerified).length;
@@ -184,6 +160,9 @@ const Bench = () => {
         const res = await UpdateVendorCandidate({ ...data, id: editRecord.id });
         if (res?.status === "success") {
           message.success("Candidate updated successfully!");
+          setAllCandidates((prev) =>
+            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand))
+          );
           setCandidates((prev) =>
             prev.map((cand) => (cand.id === editRecord.id ? res.data : cand))
           );
@@ -194,38 +173,11 @@ const Bench = () => {
           message.error(res?.message || "Failed to update candidate");
         }
       } else {
-        // const res = await CreateVendorCandidate(data);
-        // if (res?.status === "success") {
-        //   message.success("Candidate added successfully!");
-        //   setCandidates((prev) => [res.data, ...prev]);
-
-        //   // adjust counts based on new candidate's isVerified flag (default false usually)
-        //   if (res?.data) {
-        //     if (res.data.isVerified) {
-        //       setVerifiedCount((v) => v + 1);
-        //     } else {
-        //       setUnverifiedCount((u) => u + 1);
-        //     }
-        //   }
-        // } else {
-        //   message.error(res?.message || "Failed to add candidate");
-        // }
-
         const res = await CreateVendorCandidate(data);
         if (res?.status === "success") {
           message.success("Candidate added successfully!");
 
-          // REFRESH from backend so we get the exact saved fields (incl. profilePicture URL)
           await fetchCandidates();
-
-          // optionally: if you want to open the newly created candidate immediately,
-          // find it in the updated list and setSelectedCandidate.
-          // const created = res?.data;
-          // if (created) {
-          //   setSelectedCandidate(createdFromServer); // after fetchCandidates you can look up the id
-          // }
-
-          // update counters (safer to recalc after fetchCandidates, but keep this for speed)
           if (res?.data) {
             if (res.data.isVerified) {
               setVerifiedCount((v) => v + 1);
@@ -301,12 +253,16 @@ const Bench = () => {
 
       if (res?.status === "success") {
         message.success("Candidate verified successfully!");
+        setAllCandidates((prev) =>
+          prev.map((c) =>
+            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
+          )
+        );
         setCandidates((prev) =>
           prev.map((c) =>
             c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
           )
         );
-
         // Update counters immediately:
         setVerifiedCount((v) => v + 1);
         setUnverifiedCount((u) => (u > 0 ? u - 1 : 0));
@@ -330,7 +286,7 @@ const Bench = () => {
     }
   };
 
-const updateStatus = async (status) => {
+  const updateStatus = async (status) => {
     try {
       // backend update
       const payload = {
@@ -347,14 +303,14 @@ const updateStatus = async (status) => {
           ? { ...c, status: status === "active" } // convert to boolean
           : c
       );
-
+      setAllCandidates(updated);
       setCandidates(updated);
       setSelectedRowKeys([]);
 
       message.success(
         status === "active" ? "Moved to Active!" : "Moved to Inactive!"
       );
-      fetchCandidates()
+      fetchCandidates();
     } catch (error) {
       console.error(error);
       message.error("Failed to update status. Try again.");
@@ -518,26 +474,136 @@ const updateStatus = async (status) => {
     setHotlistFile(null);
   };
 
-  const handleChange = (e) => {
-    const inputValue = e.target.value;
-
-    // allow only alphabets & spaces
-     const reg = /^[A-Za-z\s]*$/;
-
-    if (reg.test(inputValue) || inputValue === "") {
-      setSearchText(inputValue);
+  const filterCandidates = (filters, allcandidates) => {
+    console.log("filters in filtercandidate:", filters);
+    if (!filters || Object.keys(filters).length === 0) {
+      return allcandidates;
+    } else {
+      console.log("flase");
     }
+
+    return allcandidates.filter((cand) => {
+      const {
+        name,
+        title,
+        skills,
+        clouds,
+        preferredLocation,
+        currentLocation,
+        joiningPeriod,
+        rate,
+      } = filters || {};
+
+      console.log("name", name);
+
+      // --- NAME (substring, case-insensitive) ---
+      if (name && name.trim()) {
+        if (!cand.name?.toLowerCase().includes(name.toLowerCase().trim())) {
+          return false;
+        }
+      }
+
+      // --- TITLE / ROLE (substring) ---
+      if (title && title.trim()) {
+        if (!cand.title?.toLowerCase().includes(title.toLowerCase().trim())) {
+          return false;
+        }
+      }
+
+      // --- SKILLS (skillsJson: [{ name, level, ... }]) ---
+      if (Array.isArray(skills) && skills.length > 0) {
+        const candSkills =
+          cand.skillsJson?.map((s) => s.name.toLowerCase()) || [];
+
+        const hasAllSkills = skills.every((skill) =>
+          candSkills.includes(skill.toLowerCase())
+        );
+
+        if (!hasAllSkills) return false;
+      }
+
+      // --- PRIMARY CLOUDS (primaryClouds: [{ name }]) ---
+      if (Array.isArray(clouds) && clouds.length > 0) {
+        const candClouds =
+          cand.primaryClouds?.map((c) => c.name.toLowerCase()) || [];
+
+        const matchesSomeCloud = clouds.some((cloud) =>
+          candClouds.includes(cloud.toLowerCase())
+        );
+
+        if (!matchesSomeCloud) return false;
+      }
+
+      // --- PREFERRED LOCATION (preferredLocation: string[]) ---
+      if (Array.isArray(preferredLocation) && preferredLocation.length > 0) {
+        const candPrefLocs =
+          cand.preferredLocation?.map((loc) => loc.toLowerCase()) || [];
+
+        const matchesPrefLoc = preferredLocation.some((loc) =>
+          candPrefLocs.includes(loc.toLowerCase())
+        );
+
+        if (!matchesPrefLoc) return false;
+      }
+
+      // --- CURRENT LOCATION (string) ---
+      if (Array.isArray(currentLocation) && currentLocation.length > 0) {
+        const candCurrLoc = (cand.currentLocation || "").toLowerCase();
+
+        const matchesCurrLoc = currentLocation.some((loc) =>
+          candCurrLoc.includes(loc.toLowerCase())
+        );
+
+        if (!matchesCurrLoc) return false;
+      }
+
+      // --- JOINING PERIOD (string matches any) ---
+      if (Array.isArray(joiningPeriod) && joiningPeriod.length > 0) {
+        const candJoin = (cand.joiningPeriod || "").toLowerCase();
+
+        const matchesJoin = joiningPeriod.some((jp) =>
+          candJoin.includes(jp.toLowerCase())
+        );
+
+        if (!matchesJoin) return false;
+      }
+
+      // --- RATE CARD PER HOUR (value, currency) ---
+      if (rate && (rate.min != null || rate.max != null || rate.currency)) {
+        const candRate = parseFloat(cand?.rateCardPerHour?.value || 0);
+        const candCurrency =
+          cand?.rateCardPerHour?.currency?.toUpperCase() || "";
+
+        if (rate.currency && candCurrency !== rate.currency.toUpperCase()) {
+          return false;
+        }
+
+        if (rate.min != null && candRate < rate.min) return false;
+        if (rate.max != null && candRate > rate.max) return false;
+      }
+
+      return true;
+    });
+  };
+
+  const handleFiltersChange = (filters) => {
+    console.log("Received filters:", filters);
+    const filtered = filterCandidates(filters, allcandidates);
+    console.log("filter list", filtered);
+    setCandidates(filtered);
+  };
+
+  const handleClearFilters = () => {
+    console.log("cleared called");
+    setCandidates(allcandidates);
   };
 
   return (
     <div style={{ padding: 24 }}>
       {/* <h2 style={{ marginBottom: 16 }}>Vendor Candidate List</h2> */}
-      <Title
-  level={4}
-  style={{ color: "rgba(0,0,0,0.75)", marginBottom: 16 }}
->
-  Vendor Candidate List
-</Title>
+      <Title level={4} style={{ color: "rgba(0,0,0,0.75)", marginBottom: 16 }}>
+        Vendor Candidate List
+      </Title>
 
       <div
         style={{
@@ -556,9 +622,9 @@ const updateStatus = async (status) => {
             Add Candidate
           </Button>
           <Button onClick={fetchCandidates}>Refresh</Button>
-         </div>
+        </div>
 
-         <div
+        <div
           style={{
             display: "flex",
             gap: 24,
@@ -566,7 +632,7 @@ const updateStatus = async (status) => {
             justifyContent: "center",
             flex: 1,
           }}
-         >
+        >
           {/* <div style={{ fontWeight: 600 }}>
           Verified: <span style={{ color: "#52c41a" }}>{verifiedCount}</span>
          </div> */}
@@ -682,45 +748,26 @@ const updateStatus = async (status) => {
         </div>
       </div>
 
+      <SearchWithTextArea
+        handleFiltersChange={handleFiltersChange}
+        apifunction={AiCandidateFilter}
+        handleClearFilters={handleClearFilters}
+      />
+
       <Spin spinning={loading}>
         {/* 🔍 SEARCH INPUT */}
-
-        <Input
-          // placeholder="Search by name..."
-          placeholder="Search by name or role or cloud ..."
-          value={searchText}
-          // onChange={(e) => setSearchText(e.target.value)}
-          onChange={handleChange}
-
-          
-          
-          style={{
-            width: 250,
-            marginBottom: 16,
-            height: 35,
-            borderRadius: 6,
-          }}
-        />
 
         <Table
           columns={columns}
           dataSource={
             activeTab === "all"
-              ? filteredCandidates
+              ? candidates
               : activeTab === "active"
-              ? filteredCandidates.filter((c) => c.status !== "inactive")
-              : filteredCandidates.filter((c) => c.status === "inactive")
+              ? candidates.filter((c) => c.status !== "inactive")
+              : candidates.filter((c) => c.status === "inactive")
           }
-          // dataSource={
-          //   activeTab === "all"
-          //     ? filteredCandidates
-          //     : activeTab === "active"
-          //     ? filteredCandidates.filter((c) => c.status === "active")
-          //     : filteredCandidates.filter((c) => c.status === "inactive")
-          // }
           rowKey={(record) => record.id || record.name}
           bordered
-          // pagination={{ pageSize: 10 }}
           pagination={false}
           scroll={{ x: 1000 }}
           style={{ cursor: "pointer" }}

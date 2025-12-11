@@ -83,21 +83,21 @@ function Jobs() {
     if (page > 1) fetchJobs(page);
   }, [page]);
 
-  const filterJobs = useCallback((filters, allJobs) => {
+  const filterJobs = (filters, allJobs) => {
     return allJobs.filter((job) => {
       // --- EXPERIENCE FILTER ---
-     if (
-  filters.experience !== null &&
-  filters.experience !== undefined &&
-  filters.experience !== "Any"
-) {
-  const enteredExp = parseInt(filters.experience);
-  const jobExp = parseInt(job.experience?.number);  // FIXED
+      if (
+        filters.experience !== null &&
+        filters.experience !== undefined &&
+        filters.experience !== "Any"
+      ) {
+        const enteredExp = parseInt(filters.experience.number);
+        const jobExp = parseInt(job.experience?.number); // FIXED
 
-  if (!isNaN(enteredExp) && !isNaN(jobExp)) {
-    if (jobExp !== enteredExp) return false;  
-  }
-}
+        if (!isNaN(enteredExp) && !isNaN(jobExp)) {
+          if (jobExp !== enteredExp) return false;
+        }
+      }
       // --- SALARY FILTER ---
       if (filters.salary && filters.salary.length > 0) {
         // Convert job.salary (number) to lakhs for easier comparison
@@ -137,7 +137,7 @@ function Jobs() {
 
       return true;
     });
-  }, []);
+  };
 
   // const handleFiltersChange = (filters) => {
   //   console.log("Received in jobs.jsx:", filters);

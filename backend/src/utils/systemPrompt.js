@@ -417,5 +417,192 @@ Now generate the final JSON output based on the provided jobdetails.
 };
 
 
+export const aiCandidatefilterPrompt = (filterText) => {
+  return `
+You are an advanced AI that extracts ONLY specific candidate filter fields from natural language text.
+
+The user may provide:
+- A full sentence like: "I am looking for a candidate with apex skills and sales cloud experience"
+- Or very short / minimal text like: "shruti", "apex", "service cloud", "rahul lwc"
+Your job is to intelligently determine what type of information the user provided, and map it ONLY to the allowed fields.
+
+Your task is to analyze the text and produce a JSON object containing ONLY the following fields.  
+If a field is not found, set it to null.  
+If the text contains no relevant information at all, return null for every field.
+
+### ALLOWED OUTPUT FIELDS (STRICT)
+{
+  "name": string | null,
+  "title": string | null,
+  "skills": string[] | null,
+  "clouds": string[] | null,
+  "preferredLocation": string[] | null,
+  "joiningPeriod": string | null,
+
+}
+
+### EXTRACTION BEHAVIOR
+
+1. **Extract ONLY these fields. Never add any new fields.**
+
+2. **User may enter a single word or a short phrase.**  
+   You MUST detect whether it represents:
+   - a **name** (e.g., "shruti", "rahul", "jay"),  
+   - a **skill** (e.g., "apex", "lwc", "javascript"),  
+   - a **cloud** (e.g., "sales cloud", "service cloud"),  
+   - a **title** (e.g., "developer", "qa engineer").
+   - a **preferredLocation** (e.g., "bangalore", "hydrabad").   
+
+   Example:  
+   - "shruti" → { name: "shruti" }  
+   - "apex" → { skills: ["apex"] }  
+   - "sales cloud" → { clouds: ["Sales Cloud"] }  
+   - "rahul lwc" → name: "rahul", skills: ["lwc"]
+   - "bangalore" → { preferredLocation: ["bangalore] }
+
+3. **Name**: Extract only if the text clearly refers to a person name (shorthand allowed).
+
+4. **Title**: Extract job titles like "Salesforce Developer", "QA Engineer", etc.
+
+5. **Skills**: Extract skill names (Apex, LWC, SOQL, JavaScript, etc.).  
+   Shorthand allowed: "apex lwc flows" → ["apex", "lwc", "flows"]
+
+6. **Clouds**: Extract clouds (Sales Cloud, Service Cloud, Marketing Cloud, etc.).  
+   Fuzzy matches allowed:  
+   - "salse cloude" → "Sales Cloud"
+
+7. **Preferred Location**: Extract any location the user prefers.
 
 
+8. **Joining Period**: Extract periods like "Immediate", "15 days", "1 week".
+
+
+
+### CRITICAL RULES
+- If nothing relevant is in the text → return ALL FIELDS AS NULL.  
+- Do NOT hallucinate.  
+- Do NOT assume anything not clearly present.  
+- Output **ONLY raw JSON**, no markdown or explanation.
+
+### USER INPUT:
+${filterText}
+`;
+};
+
+
+export const aiJobfilterPrompt = (filterText) => {
+  return `
+You are an advanced AI that extracts ONLY specific job-related filter fields from natural language text.
+
+The user may provide:
+- Full sentences (e.g., "Looking for a Salesforce Developer with 3 years experience and Apex skills")
+- Short or single-word inputs (e.g., "QA", "3 years", "apex", "contract")
+You MUST intelligently identify which job filter fields the text refers to.
+
+Output MUST be a JSON object with the exact fields below.  
+If a field is not found, return it as null.  
+If no relevant information is found → return all fields as null.
+
+------------------------------------------
+### STRICT OUTPUT FIELDS
+{
+  "role": string | null,
+  "employmentType": string | null,      // FullTime, PartTime, Contract, Freelancer
+  "companyName": string | null,
+  "experience": {
+      "type": "year" | "month" | null,
+      "number": string | null
+  },
+  "salary": string | null,             // Always string; if range like "10-20", return "10"
+  "skills": string[] | null,
+  "clouds": string[] | null
+  "location": string | null
+}
+------------------------------------------
+
+### EXTRACTION RULES
+
+1. **ONLY these fields may be returned. Never add new fields.**
+
+2. **Role**
+   - Extract job roles (e.g., “Salesforce Developer”, “QA Engineer”, “Frontend developer”)
+   - Single-word roles like “developer”, “QA”, “tester” are allowed
+   - If multiple appear, choose the strongest match
+
+3. **Employment Type**
+   Allowed values:
+   - FullTime
+   - PartTime
+   - Contract
+   - Freelancer
+
+   Detect variations:
+   - “full time” → FullTime  
+   - “contractual”, “contract basis” → Contract  
+   - “freelance / freelancer” → Freelancer  
+
+4. **Company Name**
+   - Extract ONLY explicit company names (TCS, Accenture, Infosys, Google, etc.)
+   - Do NOT infer names like "MNC" or "startup"
+
+5. **Experience**
+   Format:
+   {
+     "type": "year" | "month",
+     "number": number
+   }
+
+   Rules:
+   - Support "years" & "months"
+   - If a range is given (e.g. "3–5 years"), take ONLY the MIN value → 3
+   - If only "3" is provided but context implies experience → treat as 3 years
+
+6. **Salary**
+   - Always return salary as a string
+   - If range is provided (e.g., "10-20 LPA"), return ONLY the minimum → "10"
+   - If currency appears, KEEP it (“10 LPA”, “5k USD”)
+   - If number only → return number as string
+
+7. **Skills**
+   - Extract individual skills
+   - Split shorthand: "apex lwc soql" → ["apex", "lwc", "soql"]
+   - Auto-correct minor spelling mistakes
+
+8. **Clouds**
+   - Extract clouds like: Sales Cloud, Service Cloud, Marketing Cloud
+   - Auto-correct fuzzy matches:
+     - “salse cloude” → Sales Cloud
+     - “srvc cloud” → Service Cloud
+
+9. **Short or Single-Word Input**
+   Must detect intent:
+   - "apex" → skills
+   - "sales cloud" → clouds
+   - "3 year" → experience
+   - "contract" → employmentType
+   - "tcs" → companyName
+   - "developer" → role
+
+10. **If nothing relevant is found**
+Return:
+
+{
+  "role": null,
+  "employmentType": null,
+  "companyName": null,
+  "experience": { "type": null, "number": null },
+  "salary": null,
+  "skills": null,
+  "clouds": null
+  "location": null
+}
+
+### OUTPUT FORMAT
+- Output ONLY raw JSON, no explanation, no markdown.
+
+------------------------------------------
+### USER INPUT:
+${filterText}
+------------------------------------------
+`;
+};

@@ -232,3 +232,33 @@ export async function GetAllVendorCandidates(page = 1, limit = 10) {
   }
 }
 
+export async function AiCandidateFilter(payload) {
+  try {
+      const response = await axiosInstance.post(`/ai-candidate-filter`, payload,{
+        headers:{
+          "Content-Type": "application/json"
+        },
+         
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+
+export async function ApplyBenchCandidate(payload) {
+  try {
+    const response = await axiosInstance.post(
+      `/vendor/apply-candidate`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in ApplyBenchJob:", error);
+    throw error;
+  }
+}

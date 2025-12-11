@@ -64,6 +64,8 @@ export async function login(payload) {
     throw error;
   }
 }
+
+
 export const SetPassword = async (payload) => {
   try {
     const response = await axiosInstance.post(`/setpassword`, payload, {
@@ -75,6 +77,28 @@ export const SetPassword = async (payload) => {
     return { status: "failed", message: "Something went wrong" };
   }
 };
+
+// Forgot Password
+export async function ForgotPassword(email) {
+  try {
+    const response = await axiosInstance.post("/forgotpassword", { email });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ForgotPassword:", error);
+    throw error;
+  }
+}
+ 
+// Reset Password
+export async function ResetPasswords(payload) {
+  try {
+    const response = await axiosInstance.post("/resetpassword", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
+  }
+}
 
 
 export async function UploadPdf(formdata) {
@@ -384,28 +408,6 @@ export async function  UserJobsids() {
 }
 
 
-// Forgot Password
-export async function ForgotPassword(email) {
-  try {
-    const response = await axiosInstance.post("/forgotpassword", { email });
-    return response.data;
-  } catch (error) {
-    console.error("Error in ForgotPassword:", error);
-    throw error;
-  }
-}
- 
-// Reset Password
-export async function ResetPasswords(payload) {
-  try {
-    const response = await axiosInstance.post("/resetpassword", payload);
-    return response.data;
-  } catch (error) {
-    console.error("Error in ResetPassword:", error);
-    throw error;
-  }
-}
-
 export async function uploadProfilePicture(formData) {
   try {
     const response = await axiosInstance.post(
@@ -441,8 +443,22 @@ export async function CVEligibility(payload) {
 
 export async function GenerateJobDescription(payload) {
   try {
-    const data = JSON.stringify(payload)
-    const response = await axiosInstance.post("/generate-jd", data, {
+    const response = await axiosInstance.post("/generate-jd", payload, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
+  }
+}
+
+
+export async function AiJobFilter(payload) {
+  try {
+    const response = await axiosInstance.post("/ai-job-filter", payload, {
         headers:{
           "Content-Type": "application/json"
         }

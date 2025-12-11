@@ -1,14 +1,18 @@
-import prisma  from "../config/prisma.js";
+import prisma from "../config/prisma.js";
 import { extractResumeSections } from "../utils/llmTextExtractor.js";
+import { logger } from "../utils/logger.js";
 
 const cvEligibilityCheck = async (req, res) => {
-  try {
-    const { jobId } = req.body;
-    const userId = req.user.id; 
+  const { jobId } = req.body;
+  const userId = req.user?.id;
 
+  logger.info("CV Eligibility Check Started", { jobId, userId });
+
+  try {
     if (!jobId) {
+      logger.warn("Job ID missing in request", { userId });
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "Job ID is required",
       });
     }
@@ -19,15 +23,17 @@ const cvEligibilityCheck = async (req, res) => {
     });
 
     if (!job) {
+      logger.warn("Job not found", { jobId });
       return res.status(404).json({
-        status: "failed",
+        status: "error",
         message: "Job not found",
       });
     }
 
     if (job.status !== "Open") {
+      logger.warn("Job is closed", { jobId, status: job.status });
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "Job is closed",
       });
     }
@@ -39,11 +45,14 @@ const cvEligibilityCheck = async (req, res) => {
     });
 
     if (!user || !user.CandidateProfile) {
+      logger.warn("Candidate profile incomplete", { userId });
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "Candidate profile incomplete",
       });
     }
+
+    logger.info("Job & Candidate profile fetched", { jobId, userId });
 
     // Build Job Description Object
     const jobDescription = {
@@ -88,6 +97,7 @@ const cvEligibilityCheck = async (req, res) => {
       linkedInUrl: profile.linkedInUrl,
       trailheadUrl: profile.trailheadUrl,
     };
+    logger.info("Sending data to AI Ranker");
 
     // 3️⃣ Run AI Analyzer (CV Ranker)
     const aiAnalysisResult = await extractResumeSections(
@@ -95,6 +105,7 @@ const cvEligibilityCheck = async (req, res) => {
       "cvranker",
       { jobDescription, candidateDetails }
     );
+    logger.info("AI Analysis Completed", { userId, jobId });
 
     return res.status(200).json({
       status: "success",
@@ -105,15 +116,19 @@ const cvEligibilityCheck = async (req, res) => {
       },
       metadata:{
         jobDescription,
-        candidateDetails
-      }
+        candidateDetails,
+      },
     });
 
   } catch (error) {
-    console.error("cvEligibilityCheck Error:", error);
+    logger.error("cvEligibilityCheck Error", JSON.stringify({
+      error: error.message,
+      userId,
+      jobId,
+    },null,2));
 
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       message: "Could not analyze eligibility",
       error: error.message,
     });
@@ -121,25 +136,29 @@ const cvEligibilityCheck = async (req, res) => {
 };
 
 const generateJobDescription = async (req, res) => {
+  logger.info("Generate JD Called");
   try {
     const jobdetails = req.body.jobdetails;
 
     if (!jobdetails) {
+      logger.warn("jobdetails missing in request");
       return res.status(400).json({
-        success: false,
+        success: "error",
         message: "jobdetails field is required",
       });
     }
 
-    // Call the LLM extractor
+    logger.info("Sending jobdetails to JD Generator");
     const jd = await extractResumeSections("JD", "generatejd", { jobdetails });
 
     if (!jd) {
+      logger.error("JD generation failed");
       return res.status(500).json({
-        success: false,
+        success: "error",
         message: "Failed to generate job description",
       });
     }
+    logger.info("JD Generated Successfully");
 
     return res.status(200).json({
       success: true,
@@ -147,17 +166,106 @@ const generateJobDescription = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error generating JD:", error.message);
+    logger.error("Error generating JD",  JSON.stringify({ error: error.message }, null, 2) );
 
     return res.status(500).json({
-      success: false,
+      success: "error",
       message: "Internal server error",
       error: error.message,
     });
   }
 };
 
+const AICandidateSearch = async (req, res) => {
+  const { JD } = req.body;
+
+  logger.info("AI Candidate Search Request Received");
+
+  try {
+    if (!JD || typeof JD !== "string") {
+      logger.warn("Search text (JD) missing in request");
+      return res.status(400).json({
+        success: "error",
+        message: "Search text is required",
+      });
+    }
+
+    logger.info("Sending search text to AI Filter Extractor");
+
+    // 🔥 Call your AI model with system prompt inside extractResumeSections
+    const aiResult = await extractResumeSections("SEARCH", "aicandidatefilter", { JD });
+
+    if (!aiResult) {
+      logger.error("AI Search returned empty result");
+      return res.status(500).json({
+        success: "error",
+        message: "AI could not process the filter",
+      });
+    }
+
+
+    return res.status(200).json({
+      success: "success",
+      message: "AI Search filter extracted successfully",
+      filter: aiResult,
+    });
+
+  } catch (error) {
+    logger.error("AISearch Error", JSON.stringify(error.message,null,2));
+
+    return res.status(500).json({
+      success: "error",
+      message: "Failed to process AI search",
+      error: error.message,
+    });
+  }
+};
+
+const AIJobSearch = async (req,res) =>{
+  const { JD } = req.body;
+
+  logger.info("AI Job Search Request Received");
+
+  try {
+    if (!JD || typeof JD !== "string") {
+      logger.warn("Search text  missing in request");
+      return res.status(400).json({
+        success: "error",
+        message: "Search text is required",
+      });
+    }
+
+    const aiResult = await extractResumeSections("SEARCH", "aijobfilter", { JD });
+
+    if (!aiResult) {
+      logger.error("AI Search returned empty result");
+      return res.status(500).json({
+        success: "error",
+        message: "AI could not process the filter",
+      });
+    }
+
+
+    return res.status(200).json({
+      success: "success",
+      message: "AI Search filter extracted successfully",
+      filter: aiResult,
+    });
+
+  } catch (error) {
+    logger.error("AISearch Error", JSON.stringify(error.message,null,2));
+
+    return res.status(500).json({
+      success: "error",
+      message: "Failed to process AI search",
+      error: error.message,
+    });
+  }
+}
+
 export {
   cvEligibilityCheck,
-  generateJobDescription
+  generateJobDescription,
+  AICandidateSearch,
+  AIJobSearch
 }

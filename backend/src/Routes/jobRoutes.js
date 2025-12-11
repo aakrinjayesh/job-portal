@@ -1,38 +1,16 @@
-// import express from 'express'
-// import { getJobList,postJob } from '../controllers/jobControllers.js'
-// import { validateInput } from '../Middleware/inputValidator.js'
-// import { authenticateToken } from '../Middleware/authMiddleware.js';
-
-// import { getJobListValidator, postJobValidator } from '../validators/userValidators.js';
-
-// const JobRouters = express.Router()
-
-
-// JobRouters.post('/jobs',validateInput(getJobListValidator), authenticateToken, getJobList)
-// JobRouters.post('/jobs',validateInput(postJobValidator), authenticateToken, postJob)
-
-
-// export default JobRouters
-
-
-
-
-
 import express from 'express'
 import { 
   getJobList, 
   postJob, 
   userApplyJob, 
-  userWithdrawJob, 
+  // userWithdrawJob, 
   userSaveJob, 
-  userRemovedSavedJob, 
   userAllApplyedJobs, 
   userAllSavedJobs, 
   postedJobs, 
   editJob, 
   deleteJob,
   getJobDetails,
-  checkIfJobSaved,
   getApplicantsByJobId,
   getUserAppliedJobsId, 
   userUnsaveJob
@@ -58,9 +36,12 @@ const JobRouters = express.Router()
 // Public job routes
 JobRouters.get('/jobs', 
   // validateInput(getJobListValidator), 
-  authenticateToken,
+  // authenticateToken,
    getJobList)
-JobRouters.post('/job/details',validateInput(getJobDeatilsValidator), authenticateToken, getJobDetails)
+JobRouters.post('/job/details',
+  validateInput(getJobDeatilsValidator), 
+  // authenticateToken, 
+  getJobDetails)
 
 
 // User job application routes
@@ -80,7 +61,7 @@ JobRouters.post('/jobs/unsave',
   // validateInput(removeSavedJobValidator),
    authenticateToken, userUnsaveJob)
 JobRouters.get('/jobs/saved', authenticateToken, userAllSavedJobs)
-JobRouters.get('/saved/:jobId', authenticateToken, checkIfJobSaved);
+
 
 
 

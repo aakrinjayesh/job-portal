@@ -4,6 +4,7 @@ import prisma from "../config/prisma.js";
 import generateToken from "../utils/generateToken.js";
 import axios from "axios";
 import bcrypt from "bcrypt";
+import { logger } from "../utils/logger.js";
 
 const otpStore = new Map();
 
@@ -13,10 +14,10 @@ const otpStore = new Map();
 const userOtpGenerate = async (req, res) => {
   try {
     const { email, role,name } = req.body;
-    let user = await prisma.users.findUnique({ where: { email } });
+    let user = await prisma.users.findFirst({ where: { email } });
 
     // If user not found, create it
-    if (!user) {
+    if (!user) {        
       //const name = email.split("@")[0];
       user = await prisma.users.create({
         data: { name, email, role },
@@ -26,25 +27,24 @@ const userOtpGenerate = async (req, res) => {
     // Generate and store OTP
     const GenerateOtp = generateOtp();
     otpStore.set(email, GenerateOtp);
-    console.log("🗂️ otpStore:", otpStore);
-
+    logger.info("🗂️ otpStore:", otpStore);
+    console.log("otpStore",otpStore)
     // Send OTP to email
-    await sendEmail({
+   const sendmail = await sendEmail({
       to: email,
       subject: "Your OTP Code",
       text: `Hi, Welcome to QuickHireSF
       Your verification code is ${GenerateOtp}`,
     });
-
     return res.status(200).json({
       status: "success",
       message: "OTP sent to email",
     });
   } catch (err) {
-    console.error("Error in userOtpGenerate:", err);
+    logger.error("Error in userOtpGenerate:", JSON.stringify(err.message,null,2));
     return res
-      .status(400)
-      .json({ status: "failed", message: err.message || "Something went wrong" });
+      .status(500)
+      .json({ status: "error", message: err.message || "Something went wrong" });
   }
 };
 
@@ -56,7 +56,7 @@ const userOtpGenerate = async (req, res) => {
 const userOtpValidator = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    console.log("🔍 Validating OTP for:", email);
+    logger.info("🔍 Validating OTP for:", email);
 
     const user = await prisma.users.findUnique({
       where: { email },
@@ -65,7 +65,7 @@ const userOtpValidator = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        status: "failed",
+        status: "error",
         message: "User not found",
       });
     }
@@ -73,25 +73,25 @@ const userOtpValidator = async (req, res) => {
     const savedOtp = otpStore.get(email);
     if (!savedOtp) {
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "OTP expired or not found. Please request a new one.",
       });
     }
 
     // ❌ OTP INVALID
     if (otp !== savedOtp) {
-      console.log("❌ Invalid OTP for:", email);
+      logger.warn("❌ Invalid OTP for:", email);
 
       await prisma.users.delete({ where: { email } });
       otpStore.delete(email);
 
       return res.status(401).json({
-        status: "failed",
+        status: "error",
         message: "Invalid OTP. User has been deleted.",
       });
     }
 
-    console.log(`✅ OTP is correct (Generated: ${savedOtp}, Received: ${otp})`);
+    logger.success(`✅ OTP is correct (Generated: ${savedOtp}, Received: ${otp})`);
     otpStore.delete(email);
 
    
@@ -101,10 +101,10 @@ const userOtpValidator = async (req, res) => {
       message: "OTP verified successfully",
     });
   } catch (err) {
-    console.error("❌ OTP validation error:", err);
+    logger.error("❌ OTP validation error:", JSON.stringify(err.message,null,2));
     return res.status(500).json({
-      status: "failed",
-      message: "An error occurred during validation",
+      status: "error",
+      message: "An error occurred during validation:" + err.message,
     });
   }
 };
@@ -118,7 +118,7 @@ const setPassword = async (req, res) => {
 
     if (!email || !password || !role) {
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "Email, password, and role are required",
       });
     }
@@ -130,14 +130,14 @@ const setPassword = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        status: "failed",
+        status: "error",
         message: "User not found. Please complete OTP verification first.",
       });
     }
 
     if (user.role !== role) {
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "Invalid role for this user",
       });
     }
@@ -165,9 +165,9 @@ const setPassword = async (req, res) => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      console.log("✅ External Register Response:", registerResponse?.data);
+      logger.info("✅ External Register Response:", registerResponse?.data);
     } catch (err) {
-      console.error("⚠️ External registration failed (continuing flow):", err.message);
+      logger.error("⚠️ External registration failed (continuing flow):", JSON.stringify(err.message,null,2));
     }
 
     return res.status(200).json({
@@ -175,9 +175,9 @@ const setPassword = async (req, res) => {
       message: "Password set successfully!",
     });
   } catch (error) {
-    console.error("Error in setPassword:", error);
+    logger.error("Error in setPassword:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       message: "Internal server error",
     });
   }
@@ -187,13 +187,14 @@ const setPassword = async (req, res) => {
  * Local + External login flow
  */
 const login = async (req, res) => {
-  console.log('login route')
+  logger.info("📨 login route called", { body: req.body });
   try {
     const { email, password, role } = req.body;
 
     if (!email || !password || !role) {
+logger.warn("⚠️ Missing login fields");
       return res.status(400).json({
-        status: "failed",
+        status: "error",
         message: "Please provide email, password, and role",
       });
     }
@@ -204,9 +205,10 @@ const login = async (req, res) => {
     });
 
     if (!user) {
+      logger.warn("⚠️ User not found:", email);
       return res.status(404).json({
-        status: "failed",
-        message: "User not found",
+        status: "error",
+        message: "User not found. Please Register First",
       });
     }
 
@@ -214,15 +216,15 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
-        status: "failed",
-        message: "Invalid password",
+        status: "error",
+        message: "Invalid Email or Password",
       });
     }
 
     // Validate role
     if (user.role !== role) {
       return res.status(403).json({
-        status: "failed",
+        status: "error",
         message: `User is not authorized as ${role}`,
       });
     }
@@ -251,9 +253,9 @@ const login = async (req, res) => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      console.log("✅ External Login Response:", loginResponse?.data);
+      logger.info("✅ External Login Response:", JSON.stringify(loginResponse?.data,null,2));
     } catch (err) {
-      console.error("⚠️ External login failed (continuing local flow):", err.message);
+      logger.error("⚠️ External login failed (continuing local flow):", JSON.stringify(err.message,null,2));
     }
 
     // Cookie setup (same as before)
@@ -288,9 +290,9 @@ const login = async (req, res) => {
         : null,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    logger.error("Login error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       message: "Internal server error",
     });
   }
@@ -300,11 +302,12 @@ const login = async (req, res) => {
 
 
 const forgotPassword = async (req, res) => {
+  logger.info("📨 forgotPassword called", JSON.stringify({ body: req.body },null,2));
   try {
     const { email, role } = req.body;
  
     if (!email || !role) {
-      return res.status(400).json({ status: "failed", message: "Email and role are required" });
+      return res.status(400).json({ status: "error", message: "Email and role are required" });
     }
  
     // ✅ Correct Prisma query
@@ -313,7 +316,8 @@ const forgotPassword = async (req, res) => {
     });
  
     if (!user) {
-      return res.status(404).json({ status: "failed", message: "User not found" });
+      logger.warn("⚠️ Forgot password user not found:", email);
+      return res.status(404).json({ status: "error", message: "User not found. Please Register" });
     }
  
     // Generate OTP
@@ -327,16 +331,16 @@ const forgotPassword = async (req, res) => {
     });
  
     // Send email (mock or actual)
-    console.log(`OTP for ${email}: ${otp}`);
+    logger.info(`OTP for ${email}: ${otp}`);
  
     return res.status(200).json({
       status: "success",
       message: "OTP sent successfully to your email",
     });
   } catch (error) {
-    console.error("Forgot password error:", error);
+    logger.error("Forgot password error:", JSON.stringify(error.message,null,2));
     res.status(500).json({
-      status: "failed",
+      status: "error",
       message: error.message || "Internal server error",
     });
   }
@@ -344,13 +348,14 @@ const forgotPassword = async (req, res) => {
  
 
 const resetPassword = async (req, res) => {
+  logger.info("📨 resetPassword called", { body: req.body });
   try {
     const { email, password } = req.body;
  
     const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {
       return res.status(404).json({
-        status: "failed",
+        status: "error",
         message: "User not found",
       });
     }
@@ -366,9 +371,9 @@ const resetPassword = async (req, res) => {
       message: "Password reset successful",
     });
   } catch (error) {
-    console.error("Reset password error:", error);
+    logger.error("Reset password error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
-      status: "failed",
+      status: "error",
       message: "Internal server error",
     });
   }

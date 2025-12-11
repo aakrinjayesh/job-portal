@@ -20,6 +20,8 @@ model Users {
   email            String           @unique
   role             Role             @default(candidate)
   password         String?
+  emailverified    Boolean?
+  isactive         Boolean?
   createdAt        DateTime         @default(now())
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
@@ -27,6 +29,7 @@ model Users {
   JobApplications  JobApplication[]
   SavedJobs        SavedJob[]
   courses          Course[]
+  reviews          Review[]
   dashboards       Dashboard[]
 }
 
@@ -43,14 +46,12 @@ enum JobType {
 }
 
 model UserProfile {
-  id         String  @id @default(uuid())
-  userId     String? @unique
-  vendorId   String?
-  chatuserid String?
-  user       Users?  @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
-  vendor     Users?  @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
-
-  // venderId                     String?
+  id                           String    @id @default(uuid())
+  userId                       String?   @unique
+  vendorId                     String?
+  chatuserid                   String?
+  user                         Users?    @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
+  vendor                       Users?    @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
   profilePicture               String?
   title                        String?
   name                         String?
@@ -286,6 +287,8 @@ model Course {
   courseType  String?
   instructor  Users    @relation(fields: [userId], references: [id])
   classes     Class[] // renamed relation
+  url         String?
+  reviews     Review[]
 
   @@index([userId])
 }
@@ -305,6 +308,25 @@ model Class {
   course      Course   @relation(fields: [courseId], references: [id])
 
   @@index([courseId])
+}
+
+model Review {
+  id      String @id @default(uuid())
+  rating  Float
+  comment String
+
+  userId   String
+  courseId String
+
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId]) // prevents duplicate review by same user
+  @@index([courseId])
+  @@index([userId])
 }
 
 enum DatasetType {

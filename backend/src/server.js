@@ -2,6 +2,7 @@ import express from "express";
 import cors from 'cors'
 import dotenv from 'dotenv';
 import path from "path";
+import { logger } from "./utils/logger.js";
 
 
 import userRouter from "./Routes/profileRoutes.js";
@@ -38,4 +39,9 @@ app.use(CVRouters);
 
 const PORT = process.env.PORT
 
-app.listen(PORT || '3001', () => console.log(`server Started at http://localhost:${PORT}`))
+app.listen(PORT || '3001', () =>{
+  // console.log(`server Started at http://localhost:${PORT}`);
+  logger.info(`server Started at http://localhost:${PORT}`);
+
+})
+
