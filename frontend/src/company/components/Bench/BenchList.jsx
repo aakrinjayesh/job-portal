@@ -13,7 +13,7 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, onViewDetails, lastBench
           marginBottom: 12,
         }}
       >
-        <div style={{ fontSize: 20, fontWeight: 700 }}>Find Bench</div>
+        <div style={{ fontSize: 20, fontWeight: 700 }}>Find Candidate</div>
 
         <button
           onClick={toggleFilter}
@@ -29,13 +29,7 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, onViewDetails, lastBench
         </button>
       </div>
 
-      {/* <Row gutter={[16, 16]}>
-        {bench.map((c) => (
-          <Col span={24} key={c.id}>
-            <BenchCard candidate={c} onViewDetails={() => onViewDetails(c)} />
-          </Col>
-        ))}
-      </Row> */}
+      
       <Row gutter={[16, 16]}>
   {bench.map((c, index) => {
     const isLast = index === bench.length - 1;

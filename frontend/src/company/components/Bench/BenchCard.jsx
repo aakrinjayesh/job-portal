@@ -2,8 +2,10 @@ import React from "react";
 import { Card, Avatar, Tag, Button } from "antd";
 import { StarOutlined, EnvironmentOutlined, FileTextOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 const BenchCard = ({ candidate, onViewDetails }) => {
+    const navigate = useNavigate();
   const role = candidate?.title || "Unknown Role";
 
   // Experience: prefer totalExperience, fallback to relevantSalesforceExperience
@@ -33,7 +35,18 @@ const clouds = candidate?.primaryClouds?.map((c) => c.name || c) || [];
   const posted = candidate?.createdAt ? dayjs(candidate.createdAt).format("MMM D, YYYY") : "N/A";
 
   return (
-    <Card hoverable style={{ borderRadius: 12, position: "relative" }} bodyStyle={{ padding: 20 }}>
+    // <Card hoverable style={{ borderRadius: 12, position: "relative" }} bodyStyle={{ padding: 20 }}>
+    <Card
+  hoverable
+  style={{ borderRadius: 12, position: "relative" }}
+  bodyStyle={{ padding: 20 }}
+  onClick={() =>
+    navigate("/company/bench/candidates", {
+      state: { candidate }
+    })
+  }
+>
+
       <div style={{ display: "flex", gap: 16 }}>
         <Avatar size={70} src={candidate?.profilePicture} />
 
@@ -68,6 +81,8 @@ const clouds = candidate?.primaryClouds?.map((c) => c.name || c) || [];
   <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
     <EnvironmentOutlined /> {location}
   </span>
+
+
 
 {/* EXPERIENCE + JOINING PERIOD INLINE */}
 <div style={{ marginTop: 4, color: "#444", display: "flex", gap: 16 }}>
@@ -107,12 +122,6 @@ const clouds = candidate?.primaryClouds?.map((c) => c.name || c) || [];
 
           {/* Rate & Posted */}
 {rate && <div style={{ fontWeight: 700 }}>{rate}</div>}
-
-
-
-          <Button type="primary" style={{ marginTop: 14 }} onClick={() => onViewDetails(candidate)}>
-            View Details
-          </Button>
         </div>
       </div>
     </Card>

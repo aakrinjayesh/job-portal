@@ -23,6 +23,7 @@ import ChatPage from "./chat/pages/chat";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import CompanySavedJobs from "./company/pages/CompanySavedJobs";
 import FindBench from "./company/pages/FindBench";
+import BenchCandidateDetails from "./company/components/Bench/BenchCandidateDetails";
 // import ResetPassword from "./pages/ResetPassword";
 
 function App() {
@@ -199,6 +200,15 @@ function App() {
           element={
             <CompanyLayout>
               <FindBench />
+            </CompanyLayout>
+          }
+        />
+
+             <Route
+          path="/company/bench/candidates"
+          element={
+            <CompanyLayout>
+              <BenchCandidateDetails />
             </CompanyLayout>
           }
         />

@@ -5,6 +5,8 @@ import BenchList from "../components/Bench/BenchList";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
 import { GetAllVendorCandidates } from "../api/api";
 
+
+
 function FindBench() {
   const [allBench, setAllBench] = useState([]);
   const [bench, setBench] = useState([]);
@@ -19,6 +21,7 @@ function FindBench() {
 
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+
 
 
 
@@ -198,6 +201,8 @@ if (filters.joiningPeriod) {
             }}
             bodyStyle={{ padding: "16px 24px" }}
           >
+     
+
             <BenchList
               bench={bench}
               lastBenchRef={lastBenchRef}
@@ -215,16 +220,7 @@ if (filters.joiningPeriod) {
         </Col>
       </Row>
 
-      {/* Details Modal */}
-      <Modal
-        open={detailsModalVisible}
-        onCancel={() => setDetailsModalVisible(false)}
-        footer={null}
-        width={900}
-        title="Candidate Details"
-      >
-        <BenchCandidateDetails hideContact={true} selectedCandidate={selectedCandidate} />
-      </Modal>
+     
     </div>
   );
 }

@@ -18,24 +18,30 @@ import {
   LinkedinOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import { useLocation } from "react-router-dom";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
-const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
-  if (!selectedCandidate) {
-    return (
-      <Card
-        style={{
-          textAlign: "center",
-          marginTop: 50,
-          borderRadius: 12,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        }}
-      >
-        <Text type="secondary">No candidate selected.</Text>
-      </Card>
-    );
-  }
+
+const BenchCandidateDetails = () => {
+
+    const location = useLocation();
+const candidate = location.state?.candidate;
+const from = location.state?.from;
+const navigate = useNavigate();
+
+ 
+  if (!candidate) {
+  return (
+    <Card style={{ textAlign: "center", marginTop: 50 }}>
+      No candidate selected.
+    </Card>
+  );
+}
+
 
   const {
     name,
@@ -58,7 +64,7 @@ const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
     workExperience,
     education,
     rateCardPerHour,
-  } = selectedCandidate;
+  } = candidate;
 
   const primarySkills = skillsJson?.filter((s) => s.level === "primary") || [];
   const secondarySkills =
@@ -76,34 +82,48 @@ const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
         padding: "24px 32px",
       }}
     >
+      <div style={{ marginBottom: 20 }}>
+  <button
+    onClick={() => navigate(from === 'mybench'  ? "/company/bench ":"/company/bench/find" )}
+    style={{
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      fontSize: 16,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      color: "#1677ff",
+    }}
+  >
+    <ArrowLeftOutlined /> Back
+  </button>
+</div>
+
       {/* Header Section */}
       <Row align="middle" gutter={16}>
       
 
         <Col flex="80px">
+
   <Avatar
-    size={80}
-    // if profilePicture exists, use it; add ?t=... to bust cache when url changes
-    src={
-      selectedCandidate?.profilePicture
-        ? `${selectedCandidate.profilePicture}?t=${new Date().getTime()}`
-        : undefined
-    }
-    icon={!selectedCandidate?.profilePicture ? <UserOutlined /> : null}
-    style={{
-      backgroundColor: selectedCandidate?.profilePicture ? undefined : "#1677ff",
-      color: selectedCandidate?.profilePicture ? undefined : "#fff",
-      fontSize: 28,
-      objectFit: "cover",
-    }}
-    // when image fails to load, fallback to initials/icon
-    onError={(e) => {
-      // remove src to show icon fallback
-      e.currentTarget.src = "";
-    }}
-    // ensure React will re-render Avatar when profilePicture changes
-    key={selectedCandidate?.profilePicture || "no-profile-pic"}
-  />
+  size={80}
+  src={
+    candidate?.profilePicture
+      ? `${candidate.profilePicture}?t=${Date.now()}`
+      : undefined
+  }
+  icon={!candidate?.profilePicture ? <UserOutlined /> : null}
+  style={{
+    backgroundColor: candidate?.profilePicture ? undefined : "#1677ff",
+    color: "#fff",
+    fontSize: 28,
+    objectFit: "cover",
+  }}
+  onError={(e) => (e.currentTarget.src = "")}
+  key={candidate?.profilePicture || "no-pic"}
+/>
+
 </Col>
 
         <Col flex="auto">
@@ -125,35 +145,11 @@ const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
 
       <Divider />
 
-      {/* Contact Info */}
-      {/* <Row justify="start" gutter={[24, 12]}>
-        {email && (
-          <Col>
-            <MailOutlined />{" "}
-            <a href={`mailto:${email}`} style={{ color: "#1677ff" }}>
-              {email}
-            </a>
-          </Col>
-        )}
-        {phoneNumber && (
-          <Col>
-            <PhoneOutlined /> {phoneNumber}
-          </Col>
-        )}
-        {currentLocation && (
-          <Col>
-            <EnvironmentOutlined /> {currentLocation}
-          </Col>
-        )}
-      </Row> */}
-
-      {/* CONTACT INFO */}
-
 {/* CONTACT DETAILS — hide only email + phone */}
 <Row justify="start" gutter={[24, 12]}>
   
   {/* Email – hide when hideContact = true */}
-  {!hideContact && email && (
+  {!candidate.isContactDetails && from && (
     <Col>
       <MailOutlined />{" "}
       <a href={`mailto:${email}`} style={{ color: "#1677ff" }}>
@@ -163,7 +159,7 @@ const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
   )}
 
   {/* Phone – hide when hideContact = true */}
-  {!hideContact && phoneNumber && (
+  {!candidate.isContactDetails && from && (
     <Col>
       <PhoneOutlined /> {phoneNumber}
     </Col>
@@ -229,7 +225,7 @@ const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
         <Col span={12}>
           <Text strong>Rate Card:</Text>{" "}
           {rateCardPerHour
-            ? `${rateCardPerHour.currency || "INR"} ${rateCardPerHour.value}/hr`
+            ? `${rateCardPerHour.currency || "INR"} ${rateCardPerHour.value}/Month`
             : "N/A"}
         </Col>
       </Row>
@@ -316,20 +312,46 @@ const BenchCandidateDetails = ({ selectedCandidate,hideContact }) => {
             <Card
               key={idx}
               type="inner"
+             
               title={
-                <span style={{ fontWeight: 600 }}>
-                  {exp.role} @ {exp.payrollCompanyName}
-                </span>
-              }
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      width: "100%",
+    }}
+  >
+    {/* LEFT: Job Title */}
+    <span style={{ fontWeight: 600 }}>
+      {exp.role} @ {exp.payrollCompanyName}
+    </span>
+
+    {/* RIGHT: Date */}
+    <span style={{ color: "#777", fontSize: 14 }}>
+      {exp.startDate
+        ? (dayjs(exp.startDate).isValid()
+            ? dayjs(exp.startDate).format("MM/YYYY")
+            : exp.startDate)
+        : "N/A"}
+      {" - "}
+      {!exp.endDate || exp.endDate.toLowerCase?.() === "present"
+        ? "Present"
+        : (dayjs(exp.endDate).isValid()
+            ? dayjs(exp.endDate).format("MM/YYYY")
+            : exp.endDate)}
+    </span>
+  </div>
+}
+
               style={{
                 marginBottom: 12,
                 borderRadius: 10,
                 background: "#fafafa",
               }}
             >
-              <Text type="secondary">
-                {exp.startDate} - {exp.endDate}
-              </Text>
+             
+             
               {exp.projects?.length > 0 && (
                 <div style={{ marginTop: 10 }}>
                   {exp.projects.map((proj, i) => (

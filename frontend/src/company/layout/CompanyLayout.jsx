@@ -79,7 +79,7 @@ const CompanyLayout = ({ children }) => {
     },
     {
       key: "findbench",
-      label: "Find Bench",
+      label: "Find Candidate",
       icon: <SearchOutlined />,
     },
     {

@@ -283,11 +283,7 @@ const getAllVendorCandidates = async (req, res) => {
     // --- FETCH CANDIDATES FOR THIS VENDOR ---
     const [candidates, totalCount] = await Promise.all([
       prisma.userProfile.findMany({
-        where: {
-          vendorId: {
-            not: null, // only vendor-owned profiles
-          }
-        },
+        
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
