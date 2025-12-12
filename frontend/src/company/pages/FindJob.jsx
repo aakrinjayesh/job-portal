@@ -280,6 +280,7 @@ function FindJob() {
             <FiltersPanel
               onFiltersChange={handleFiltersChange}
               handleClearFilters={handleClearFilters}
+              showCandidateType={false}
             />
           </Col>
         )}

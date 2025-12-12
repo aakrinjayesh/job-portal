@@ -42,7 +42,7 @@ const clouds = candidate?.primaryClouds?.map((c) => c.name || c) || [];
   bodyStyle={{ padding: 20 }}
   onClick={() =>
     navigate("/company/bench/candidates", {
-      state: { candidate }
+      state: { candidate, from: "find" }
     })
   }
 >

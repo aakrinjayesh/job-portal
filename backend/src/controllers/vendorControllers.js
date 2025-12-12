@@ -281,22 +281,53 @@ const getAllVendorCandidates = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // --- FETCH CANDIDATES FOR THIS VENDOR ---
-    const [candidates, totalCount] = await Promise.all([
-      prisma.userProfile.findMany({
-        
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
+//     const [candidates, totalCount] = await Promise.all([
+      
 
-      prisma.userProfile.count({
-        where: {
-          vendorId: {
-            not: null,
-          }
+//       prisma.userProfile.findMany({
+//   skip,
+//   take: limit,
+//   orderBy: { createdAt: "desc" },
+//   include: {
+//     vendor: {     // <--- this enables vendor.email
+//       select: {
+//         id: true,
+//         name: true,
+//         email: true
+//       }
+//     }
+//   }
+// }),
+
+
+//       prisma.userProfile.count({
+//         where: {
+//           vendorId: {
+//             not: null,
+//           }
+//         }
+//       })
+//     ]);
+
+const [candidates, totalCount] = await Promise.all([
+  prisma.userProfile.findMany({
+    skip,
+    take: limit,
+    orderBy: { createdAt: "desc" },
+    include: {
+      vendor: {
+        select: {
+          id: true,
+          name: true,
+          email: true
         }
-      })
-    ]);
+      }
+    }
+  }),
+
+  prisma.userProfile.count()   // ✅ REMOVE vendorId filter
+]);
+
 
     // --- REMOVE DUPLICATES ---
     const unique = {};

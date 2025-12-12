@@ -28,6 +28,7 @@ import { useCallback } from "react";
 import { Input } from "antd";
 import { SendVerificationOtp, VerifyCandidateOtp } from "../api/api";
 import SearchWithTextArea from "../components/Bench/SearchWithTextArea";
+import { useNavigate } from "react-router-dom";
 
 const Bench = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -59,6 +60,8 @@ const Bench = () => {
 
   const [timer, setTimer] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
+
+    const navigate = useNavigate();
 
   const { Title } = Typography;
 
@@ -771,13 +774,21 @@ const Bench = () => {
           pagination={false}
           scroll={{ x: 1000 }}
           style={{ cursor: "pointer" }}
+          // onRow={(record) => ({
+          //   onClick: () => {
+          //     console.log("selected candidate", record);
+          //     setSelectedCandidate(record);
+          //     setDetailsModalVisible(true);
+          //   },
+          // })}
           onRow={(record) => ({
-            onClick: () => {
-              console.log("selected candidate", record);
-              setSelectedCandidate(record);
-              setDetailsModalVisible(true);
-            },
-          })}
+  onClick: () => {
+    navigate("/company/bench/candidates", {
+      state: { candidate: record, from: "mybench" }
+    });
+  },
+})}
+
         />
 
         <div style={{ marginTop: 16, display: "flex", gap: 12 }}>

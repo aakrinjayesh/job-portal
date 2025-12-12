@@ -31,6 +31,8 @@ const BenchCandidateDetails = () => {
     const location = useLocation();
 const candidate = location.state?.candidate;
 const from = location.state?.from;
+
+
 const navigate = useNavigate();
 
  
@@ -148,22 +150,47 @@ const navigate = useNavigate();
 {/* CONTACT DETAILS — hide only email + phone */}
 <Row justify="start" gutter={[24, 12]}>
   
-  {/* Email – hide when hideContact = true */}
-  {!candidate.isContactDetails && from && (
+ 
+
+  {/* Case 1: Opened from My Bench → show candidate's own contact */}
+  {from === "mybench" && (
+    <>
+      {candidate.email && (
+        <Col>
+          <MailOutlined />{" "}
+          <a href={`mailto:${candidate.email}`}>{candidate.email}</a>
+        </Col>
+      )}
+
+      {candidate.phoneNumber && (
+        <Col>
+          <PhoneOutlined /> {candidate.phoneNumber}
+        </Col>
+      )}
+    </>
+  )}
+
+  {/* Case 2: Opened from Find Candidate → Vendor candidate → show vendor email */}
+  {from === "find" && candidate.vendorId && candidate.vendor?.email && (
     <Col>
       <MailOutlined />{" "}
-      <a href={`mailto:${email}`} style={{ color: "#1677ff" }}>
-        {email}
+      <a href={`mailto:${candidate.vendor.email}`}>
+        {candidate.vendor.email}
       </a>
     </Col>
   )}
 
-  {/* Phone – hide when hideContact = true */}
-  {!candidate.isContactDetails && from && (
+  {/* Case 3: Opened from Find Candidate → Individual candidate → show candidate email */}
+  {from === "find" && !candidate.vendorId && candidate.email && (
     <Col>
-      <PhoneOutlined /> {phoneNumber}
+      <MailOutlined />{" "}
+      <a href={`mailto:${candidate.email}`}>
+        {candidate.email}
+      </a>
     </Col>
   )}
+
+ 
 
   {/* Location – always visible */}
   {currentLocation && (

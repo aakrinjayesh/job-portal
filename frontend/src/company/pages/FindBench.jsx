@@ -7,6 +7,7 @@ import { GetAllVendorCandidates } from "../api/api";
 
 
 
+
 function FindBench() {
   const [allBench, setAllBench] = useState([]);
   const [bench, setBench] = useState([]);
@@ -21,6 +22,7 @@ function FindBench() {
 
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+const [filtersState, setFiltersState] = useState({});
 
 
 
@@ -79,9 +81,20 @@ function FindBench() {
   );
 
   // Load more when page increases
+  // useEffect(() => {
+  //   if (page > 1) fetchBench(page);
+  // }, [page, fetchBench]);
+
   useEffect(() => {
-    if (page > 1) fetchBench(page);
-  }, [page, fetchBench]);
+  if (page > 1) {
+    fetchBench(page).then(() => {
+      // apply filters to the updated allBench
+      const filtered = filterBench(filtersState, allBench);
+      setBench(filtered);
+    });
+  }
+}, [page]);
+
 
   // ===============================
   // FILTERING
@@ -143,6 +156,34 @@ function FindBench() {
         if (!matches) return false;
       }
 
+      // --- CANDIDATE TYPE FILTER ---
+// --- CANDIDATE TYPE FILTER ---
+if (filters.candidateType && filters.candidateType.length > 0) {
+  const isVendor = cand.vendorId !== null;
+  const isIndividual = cand.userId !== null;
+
+  const wantsVendor = filters.candidateType.includes("vendor");
+  const wantsIndividual = filters.candidateType.includes("individual");
+
+  // Case 1: both checked → show all
+  if (wantsVendor && wantsIndividual) {
+    // show everything → do nothing
+  }
+  // Case 2: only vendor selected
+  else if (wantsVendor && !isVendor) {
+    return false;
+  }
+  // Case 3: only individual selected
+  else if (wantsIndividual && !isIndividual) {
+    return false;
+  }
+}
+
+
+
+
+
+
       // JOINING PERIOD FILTER (Single Select)
 if (filters.joiningPeriod) {
   const candJoining = cand.joiningPeriod?.toLowerCase() || "";
@@ -157,8 +198,10 @@ if (filters.joiningPeriod) {
   }, []);
 
   const handleFiltersChange = (filters) => {
+    setFiltersState(filters);  // <- store the selected filters
     const filtered = filterBench(filters, allBench);
     setBench(filtered);
+     setPage(1); // reset pagination
   };
 
   // ===============================
@@ -184,7 +227,7 @@ if (filters.joiningPeriod) {
         {isFilterOpen && (
           <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
             {/* <FiltersPanel onFiltersChange={handleFiltersChange} /> */}
-            <FiltersPanel onFiltersChange={handleFiltersChange} hideJobFilters={true} showJoiningFilter={true}   />
+            <FiltersPanel onFiltersChange={handleFiltersChange} hideJobFilters={true} showJoiningFilter={true} showCandidateType={true}   />
 
           </Col>
         )}
