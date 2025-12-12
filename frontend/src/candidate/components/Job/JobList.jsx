@@ -10,7 +10,8 @@ import {
   Divider,
   Cascader,
   message,
-  Button
+  Button,
+  Modal
 } from "antd";
 import {
   StarFilled,
@@ -46,6 +47,7 @@ const JobList = ({
   const [messageApi, contextHolder] = message.useMessage();
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const sortOptions = [
     {
@@ -67,6 +69,14 @@ const JobList = ({
   }, [jobids]);
 
   const handleSaveToggle = async (jobId) => {
+
+     const getUser = localStorage.getItem("token");
+
+    if (!getUser) {
+      setShowLoginModal(true); // 🚀 open modal
+      return;
+    }
+     
     const jobIndex = sortedJobs.findIndex((job) => job.id === jobId);
     if (jobIndex === -1) return;
 
@@ -132,6 +142,12 @@ const JobList = ({
   };
 
   const handleCheckEligibility = async (id) => {
+      const getUser = localStorage.getItem("token");
+
+    if (!getUser) {
+      setShowLoginModal(true); // 🚀 open modal
+      return;
+    }
     try {
       const payload = {
         jobId: id,
@@ -171,6 +187,7 @@ const JobList = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+
         <Text strong style={{ fontSize: 14, display: "block" }}>
           {data.fitPercentage}% Match
         </Text>
@@ -198,6 +215,16 @@ const JobList = ({
   return (
     <Row gutter={[16, 16]}>
       {contextHolder}
+
+       <Modal
+        open={showLoginModal}
+        title="Login Required"
+        onCancel={() => setShowLoginModal(false)}
+        okText="Go to Login"
+        onOk={() => navigate("/login")}
+      >
+        <p>Please login to use this button.</p>
+      </Modal>
 
       {/* ⭐ TOP ROW — LEFT FILTER TOGGLE + RIGHT SORT OPTION */}
       <Col xs={24}>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Menu, Avatar, Typography } from "antd";
+import { Layout, Menu, Avatar, Typography,Modal } from "antd";
 import {
   FileTextOutlined,
   SettingOutlined,
@@ -17,6 +17,8 @@ const { Title, Text } = Typography;
 
 const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const navigate = useNavigate();
 
   const menuRoutes = {
@@ -45,16 +47,38 @@ const MainLayout = ({ children }) => {
   ];
 
   const onClick = (e) => {
-    const route = menuRoutes[e.key];
-    if (route) {
-      if (e.key === "logout") localStorage.clear();
-      if (e.key === "chat") {
-        navigate("/candidate/chat", { state: { userType: "candidate" } });
-        return;
-      }
-      navigate(route);
-    }
-  };
+  const route = menuRoutes[e.key];
+
+  if (!route) return;
+
+  // 👇 Pages that require login
+  const protectedPages = [
+    "appliedjobs",
+    "savedjobs",
+    "chat",
+    "settings",
+    "profile"
+  ];
+
+  const token = localStorage.getItem("token");
+
+  if (protectedPages.includes(e.key) && !token) {
+    setShowLoginModal(true);
+    return;
+  }
+
+  if (e.key === "logout") {
+    localStorage.clear();
+  }
+
+  if (e.key === "chat") {
+    navigate("/candidate/chat", { state: { userType: "candidate" } });
+    return;
+  }
+
+  navigate(route);
+};
+
 
   const user = JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
@@ -154,6 +178,17 @@ const MainLayout = ({ children }) => {
         >
           {children}
         </Content>
+
+        <Modal
+  open={showLoginModal}
+  title="Login Required"
+  onCancel={() => setShowLoginModal(false)}
+  okText="Go to Login"
+  onOk={() => navigate("/login")}
+>
+  <p>Please login to use this feature.</p>
+</Modal>
+
 
         {/* Fixed Footer */}
         {/* <Footer
