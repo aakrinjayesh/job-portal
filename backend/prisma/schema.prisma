@@ -26,7 +26,8 @@ model Users {
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
   Job              Job[]            @relation("UserPostedJobs")
-  JobApplications  JobApplication[]
+  JobApplications  JobApplication[] @relation("UserAsCandidate")
+  AppliedJobs      JobApplication[] @relation("AppliedByUser")
   SavedJobs        SavedJob[]
   courses          Course[]
   reviews          Review[]
@@ -86,8 +87,9 @@ model UserProfile {
   verificationOtp String?
   otpExpiry       DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  jobApplications JobApplication[]
 }
 
 model Skills {
@@ -189,21 +191,28 @@ enum ApplicationStatus {
 }
 
 model JobApplication {
-  id        String            @id @default(uuid())
-  jobId     String
-  userId    String
+  id                 String  @id @default(uuid())
+  jobId              String
+  userId             String
+  candidateProfileId String? // TEMP optional
+  appliedById        String? // TEMP optional
+
   status    ApplicationStatus @default(Pending)
   appliedAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
-  job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job              Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user             Users        @relation("UserAsCandidate", fields: [userId], references: [id], onDelete: Cascade)
+  appliedBy        Users?       @relation("AppliedByUser", fields: [appliedById], references: [id])
+  candidateProfile UserProfile? @relation(fields: [candidateProfileId], references: [id])
 
   analysis ApplicationAnalysis?
 
-  @@unique([jobId, userId]) // Prevent duplicate applications
+  @@unique([jobId, candidateProfileId])
   @@index([userId])
   @@index([jobId])
+  @@index([candidateProfileId])
+  @@index([appliedById])
 }
 
 model ApplicationAnalysis {
