@@ -32,6 +32,9 @@ model Users {
   courses          Course[]
   reviews          Review[]
   dashboards       Dashboard[]
+
+  recruiterActivities Activity[] @relation("RecruiterActivities")
+  candidateActivities Activity[] @relation("CandidateActivities")
 }
 
 enum Role {
@@ -402,4 +405,74 @@ model DashboardWidget {
   updatedAt DateTime @updatedAt
 
   @@index([dashboardId])
+}
+
+enum ActivityCategory {
+  NOTE
+  SCHEDULE
+}
+
+enum NoteType {
+  CALL
+  EMAIL
+  MESSAGE
+}
+
+enum ScheduleType {
+  INTERVIEW
+  MEETING
+  FOLLOW_UP
+}
+
+model Activity {
+  id String @id @default(uuid())
+
+  recruiterId String
+  candidateId String
+
+  category ActivityCategory
+
+  recruiter Users @relation("RecruiterActivities", fields: [recruiterId], references: [id], onDelete: Cascade)
+  candidate Users @relation("CandidateActivities", fields: [candidateId], references: [id], onDelete: Cascade)
+
+  note     ActivityNote?
+  schedule ActivitySchedule?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recruiterId])
+  @@index([candidateId])
+  @@index([category])
+}
+
+model ActivityNote {
+  id String @id @default(uuid())
+
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  subject      String
+  noteType     NoteType
+  description  String?
+  interactedAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ActivitySchedule {
+  id String @id @default(uuid())
+
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  title        String
+  scheduleType ScheduleType
+  startTime    DateTime
+  endTime      DateTime
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
