@@ -18,6 +18,9 @@ model Users {
   id               String           @id @default(uuid())
   name             String
   email            String           @unique
+  phoneNumber      String?
+  companyName      String?
+  profileUrl       String?
   role             Role             @default(candidate)
   password         String?
   emailverified    Boolean?
@@ -25,6 +28,7 @@ model Users {
   createdAt        DateTime         @default(now())
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
+  address          Address?
   Job              Job[]            @relation("UserPostedJobs")
   JobApplications  JobApplication[] @relation("UserAsCandidate")
   AppliedJobs      JobApplication[] @relation("AppliedByUser")
@@ -81,7 +85,7 @@ model UserProfile {
   workExperience   Json?
   education        Json?
   isContactDetails Boolean?
-  address          Address?
+  // address          Address?
 
   linkedInUrl  String?
   trailheadUrl String?
@@ -262,15 +266,15 @@ model SavedJob {
 }
 
 model Address {
-  id         String      @id @default(uuid())
+  id         String  @id @default(uuid())
   doorNumber String?
   street     String?
   city       String?
   state      String?
   country    String?
   pinCode    String?
-  profileId  String      @unique
-  profile    UserProfile @relation(fields: [profileId], references: [id])
+  userId     String  @unique
+  user       Users   @relation(fields: [userId], references: [id])
 }
 
 model Country {
