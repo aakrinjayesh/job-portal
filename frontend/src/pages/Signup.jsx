@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Typography, message, Divider } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
-import { GenerateOtp, ValidateOtp } from "../candidate/api/api";
+import { GenerateOtp, ValidateOtp, CheckUserExist } from "../candidate/api/api";
 
 import bg1 from "../assets/salesforce1_bg.jpg";
 import bg5 from "../assets/bg5.webp";
@@ -97,6 +97,13 @@ const Signup = () => {
 
   try {
     setGenerateLoading(true);
+    const check = await CheckUserExist({ email });
+
+if (check.status === "success") {
+  messageApi.warning("User already registered. Please login.");
+  //navigate("/login");
+  return;
+}
     const res = await GenerateOtp({ email, role, name });
 
     if (res.status === "success") {
@@ -107,7 +114,9 @@ const Signup = () => {
       messageApi.error(res.message || "Failed to send OTP");
     }
   } catch (e) {
-    messageApi.error("Failed to send OTP: " + e.response?.data?.message);
+    messageApi.error(
+    "Failed to send OTP: " + (e.response?.data?.message || e.message || "Unknown error")
+  );
   } finally {
     setGenerateLoading(false);
   }

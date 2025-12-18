@@ -11,36 +11,62 @@ function Jobs() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+   // ⭐ filter open / close
+    const [isFilterOpen, setIsFilterOpen] = useState(true);
   const observer = useRef();
   const [ids, setIds] = useState();
 
-  const fetchJobs = useCallback(async (pageNum = 1) => {
-    setLoading(true);
-    try {
-      console.log("api call#############", pageNum);
-      const response = await GetJobsList(pageNum, 10);
-      console.log("API Response:", response); // Add this to debug
-      const newJobs = response?.jobs || [];
+ const controllerRef = useRef(null);
 
-      if (pageNum === 1) {
-        setAllJobs(newJobs);
-        setJobs(newJobs);
-      } else {
-        setAllJobs((prev) => [...prev, ...newJobs]);
-        setJobs((prev) => [...prev, ...newJobs]);
-      }
+const fetchJobs = useCallback(async (pageNum = 1) => {
+  // 🔥 Cancel previous API if exists
+  if (controllerRef.current) {
+    controllerRef.current.abort();
+  }
 
-      // check if more pages exist
-      if (pageNum >= response.totalPages) {
-        setHasMore(false);
-      }
-    } catch (error) {
+  // 🔥 Create new controller
+  const controller = new AbortController();
+  controllerRef.current = controller;
+
+  setLoading(true);
+
+  try {
+    console.log("api call#############", pageNum);
+
+    const response = await GetJobsList(
+      pageNum,
+      10,
+      controller.signal
+    );
+
+    const newJobs = response?.jobs || [];
+
+    if (pageNum === 1) {
+      setAllJobs(newJobs);
+      setJobs(newJobs);
+    } else {
+      setAllJobs((prev) => [...prev, ...newJobs]);
+      setJobs((prev) => [...prev, ...newJobs]);
+    }
+
+    if (pageNum >= response.totalPages) {
+      setHasMore(false);
+    }
+  } catch (error) {
+    if (error.name !== "CanceledError") {
       console.error("Error fetching jobs:", error);
       message.error("Failed to fetch jobs");
-    } finally {
-      setLoading(false);
     }
-  }, []); // Empty dependency array
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+useEffect(() => {
+  return () => {
+    controllerRef.current?.abort();
+  };
+}, []);
 
   useEffect(() => {
     console.log("Component mounted, fetching jobs..."); // Add this
@@ -142,6 +168,9 @@ function Jobs() {
   // const handleFiltersChange = (filters) => {
   //   console.log("Received in jobs.jsx:", filters);
   // };
+   const handleClearFilters = () => {
+    setJobs(allJobs);
+  };
 
   const handleFiltersChange = (filters) => {
     console.log("Received filters:", filters);
@@ -161,18 +190,25 @@ function Jobs() {
     >
       <Row gutter={[16, 16]} style={{ flex: 1, height: "100%" }}>
         {/* Sidebar */}
-        <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
-          <FiltersPanel onFiltersChange={handleFiltersChange} />
-        </Col>
+        {isFilterOpen && (
+          <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
+            <FiltersPanel
+              onFiltersChange={handleFiltersChange}
+              handleClearFilters={handleClearFilters}
+              showCandidateType={false}
+            />
+          </Col>
+        )}
 
         {/* Main Content */}
         <Col
-          span={18}
+          span={isFilterOpen ? 18 : 24}
           style={{
             height: "100%",
             overflowY: "auto",
           }}
         >
+           
           <Card
             style={{
               height: "100%",
@@ -183,7 +219,10 @@ function Jobs() {
             }}
             bodyStyle={{ padding: "16px 24px" }}
           >
-            <JobList jobs={jobs} lastJobRef={lastJobRef} jobids={ids} />
+            <JobList jobs={jobs} lastJobRef={lastJobRef} jobids={ids}
+            portal="candidate"
+            isFilterOpen={isFilterOpen}
+              toggleFilter={() => setIsFilterOpen(!isFilterOpen) }/>
             {loading && (
               <div style={{ textAlign: "center", marginTop: 16 }}>
                 <Spin />
