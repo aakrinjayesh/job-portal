@@ -1,6 +1,10 @@
 // controllers/vendorControllers.js
 import prisma from "../config/prisma.js";
-
+import { extractResumeSections } from "../utils/llmTextExtractor.js";
+import { logger } from "../utils/logger.js";
+import puppeteer from "puppeteer";
+import { generateResumeHTML } from "../utils/resumeTemplate.js";
+import sendEmail from "../utils/sendEmail.js";
 // ✅ Get all candidates for a vendor
 const getVendorCandidates = async (req, res) => {
   try {
@@ -44,6 +48,13 @@ const createVendorCandidate = async (req, res) => {
       });
     }
 
+    const user = await prisma.users.findUnique({ where: { email: userAuth.email } })
+
+    if (!user) {
+      logger.warn("User not found in DB");
+      return res.status(404).json({ message: "User not found" })
+    }
+
     const data = req.body;
 
     const newCandidate = await prisma.userProfile.create({
@@ -72,6 +83,7 @@ const createVendorCandidate = async (req, res) => {
         linkedInUrl: data.linkedInUrl,
         trailheadUrl: data.trailheadUrl,
         profilePicture: data.profilePicture,
+        chatuserid: user.chatuserid
       },
     });
 
@@ -89,51 +101,7 @@ const createVendorCandidate = async (req, res) => {
   }
 };
 
-// ✅ Update vendor candidate
-// const updateVendorCandidate = async (req, res) => {
-//   try {
-//     const userAuth = req.user;
-//     const { id, ...data } = req.body;
 
-//     if (userAuth.role !== "company") {
-//       return res.status(403).json({
-//         status: "failed",
-//         message: "Access denied. Only vendors can update candidates.",
-//       });
-//     }
-
-//     const existingCandidate = await prisma.userProfile.findFirst({
-//       where: {
-//         id,
-//         vendorId: userAuth.id,
-//       },
-//     });
-
-//     if (!existingCandidate) {
-//       return res.status(404).json({
-//         status: "failed",
-//         message: "Candidate not found or not authorized to update.",
-//       });
-//     }
-
-//     const updatedCandidate = await prisma.userProfile.update({
-//       where: { id },
-//       data,
-//     });
-
-//     return res.status(200).json({
-//       status: "success",
-//       message: "Candidate updated successfully.",
-//       data: updatedCandidate,
-//     });
-//   } catch (err) {
-//     console.error("Error updating vendor candidate:", err);
-//     return res.status(500).json({
-//       status: "failed",
-//       message: "Error updating vendor candidate.",
-//     });
-//   }
-// };
 const updateVendorCandidate = async (req, res) => {
   try {
     const userAuth = req.user;
@@ -264,7 +232,7 @@ const deleteVendorCandidate = async (req, res) => {
 
 
 
-const getAllVendorCandidates = async (req, res) => {
+const getAllCandidates = async (req, res) => {
   try {
     const userAuth = req.user;
 
@@ -280,53 +248,25 @@ const getAllVendorCandidates = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // --- FETCH CANDIDATES FOR THIS VENDOR ---
-//     const [candidates, totalCount] = await Promise.all([
-      
 
-//       prisma.userProfile.findMany({
-//   skip,
-//   take: limit,
-//   orderBy: { createdAt: "desc" },
-//   include: {
-//     vendor: {     // <--- this enables vendor.email
-//       select: {
-//         id: true,
-//         name: true,
-//         email: true
-//       }
-//     }
-//   }
-// }),
-
-
-//       prisma.userProfile.count({
-//         where: {
-//           vendorId: {
-//             not: null,
-//           }
-//         }
-//       })
-//     ]);
-
-const [candidates, totalCount] = await Promise.all([
-  prisma.userProfile.findMany({
-    skip,
-    take: limit,
-    orderBy: { createdAt: "desc" },
-    include: {
-      vendor: {
-        select: {
-          id: true,
-          name: true,
-          email: true
+    const [candidates, totalCount] = await Promise.all([
+      prisma.userProfile.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          vendor: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
         }
-      }
-    }
-  }),
+      }),
 
-  prisma.userProfile.count()   // ✅ REMOVE vendorId filter
-]);
+      prisma.userProfile.count()   // ✅ REMOVE vendorId filter
+    ]);
 
 
     // --- REMOVE DUPLICATES ---
@@ -355,6 +295,328 @@ const [candidates, totalCount] = await Promise.all([
 
 
 
+const vendorApplyCandidate = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+    const vendor = req.user;
+    const { jobId, candidateProfileIds } = req.body;
+
+    const aiProcess = true;
+
+    if (!jobId || !Array.isArray(candidateProfileIds) || candidateProfileIds.length === 0) {
+      return res.status(400).json({
+        status: "failed",
+        message: "jobId and candidateProfileIds[] are required",
+      });
+    }
+
+    // 1️⃣ Validate Job
+    const job = await prisma.job.findFirst({
+      where: { id: jobId, isDeleted: false },
+      include: {
+        postedBy: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ status: "error", message: "Job not found" });
+    }
+
+    // 2️⃣ Fetch vendor-owned profiles
+    const profiles = await prisma.userProfile.findMany({
+      where: {
+        id: { in: candidateProfileIds },
+        vendorId,
+      },
+    });
+
+    if (profiles.length !== candidateProfileIds.length) {
+      return res.status(403).json({
+        status: "failed",
+        message: "One or more profiles are not owned by this vendor",
+      });
+    }
+
+    // 3️⃣ Existing applications
+    const existingApps = await prisma.jobApplication.findMany({
+      where: {
+        jobId,
+        candidateProfileId: { in: candidateProfileIds },
+      },
+      select: { candidateProfileId: true },
+    });
+
+    const alreadyAppliedIds = new Set(existingApps.map(a => a.candidateProfileId));
+    const newProfiles = profiles.filter(p => !alreadyAppliedIds.has(p.id));
+
+    // 4️⃣ Prepare Job Description (only if AI is enabled)
+    let jobDescription = null;
+    if (aiProcess) {
+      jobDescription = {
+        job_id: job.id,
+        role: job.role,
+        description: job.description || "",
+        employmentType: job.employmentType || "FullTime",
+        skills: job.skills || [],
+        clouds: job.clouds || [],
+        salary: job.salary,
+        companyName: job.companyName,
+        responsibilities: job.responsibilities || [],
+        qualifications: job.qualifications || [],
+        experience: job.experience || "",
+        location: job.location || "",
+      };
+    }
+
+    // 5️⃣ Apply each candidate with conditional AI processing
+    const appliedCandidates = [];
+    const failedApplications = [];
+
+    for (const profile of newProfiles) {
+      let pdfBuffer = null; // Initialize pdfBuffer for each profile
+      
+      try {
+        let aiAnalysisResult = null;
+
+        // 🔥 Only run AI if aiProcess is true
+        if (aiProcess) {
+          const candidateDetails = {
+            userId: profile.userId,
+            name: profile.name || "",
+            email: profile.email || "",
+            title: profile.title || "",
+            totalExperience: profile.totalExperience || "",
+            skills: profile.skillsJson || [],
+            primaryClouds: profile.primaryClouds || [],
+            secondaryClouds: profile.secondaryClouds || [],
+            certifications: profile.certifications || [],
+            workExperience: profile.workExperience || [],
+            education: profile.education || [],
+            linkedInUrl: profile.linkedInUrl || null,
+          };
+
+          try {
+            aiAnalysisResult = await extractResumeSections(
+              "CV_RANKING",
+              "cvranker",
+              { jobDescription, candidateDetails }
+            );
+          } catch (aiError) {
+            logger.error(`AI Analysis failed for profile ${profile.id}:`, aiError.message);
+            // Continue without AI analysis
+          }
+        }
+
+        // Transaction for this candidate
+        await prisma.$transaction(async (tx) => {
+          // A. Create Application
+          const app = await tx.jobApplication.create({
+            data: {
+              jobId,
+              userId: vendorId,
+              candidateProfileId: profile.id,
+              appliedById: vendorId,
+              status: "Pending",
+            },
+          });
+
+          // B. Save AI Analysis only if aiProcess was enabled and analysis succeeded
+          if (aiProcess && aiAnalysisResult) {
+            await tx.applicationAnalysis.create({
+              data: {
+                jobApplicationId: app.id,
+                fitPercentage: aiAnalysisResult.fit_percentage || 0,
+                details: aiAnalysisResult,
+                status: "COMPLETED",
+              },
+            });
+          }
+        });
+
+        // Generate PDF Resume
+        try {
+          const resumeHTML = generateResumeHTML(
+            { name: profile.name, email: profile.email },
+            profile,
+            job
+          );
+
+          const browser = await puppeteer.launch({
+            headless: "new",
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+          });
+
+          const page = await browser.newPage();
+          await page.setContent(resumeHTML, { waitUntil: "networkidle0" });
+
+          pdfBuffer = await page.pdf({ 
+            format: "A4", 
+            printBackground: true,
+            margin: {
+              top: '20px',
+              right: '20px',
+              bottom: '20px',
+              left: '20px'
+            }
+          });
+          
+          await browser.close();
+        } catch (pdfErr) {
+          logger.error(`PDF generation failed for profile ${profile.id}:`, pdfErr.message);
+          // Continue without PDF
+        }
+
+        // Only add to success list after transaction succeeds
+        appliedCandidates.push({
+          candidateProfileId: profile.id,
+          candidateName: profile.name, // Fix: was missing this field
+          matchScore: aiProcess ? (aiAnalysisResult?.fit_percentage || 0) : null,
+          pdfBuffer,
+          name: profile.name
+        });
+
+      } catch (error) {
+        logger.error(`Failed to apply profile ${profile.id}:`, error.message);
+        failedApplications.push({
+          candidateProfileId: profile.id,
+          candidateName: profile.name,
+          error: error.message
+        });
+      }
+    }
+
+    // 6️⃣ Email to Recruiter (only if there are successful applications)
+    if (job.postedBy?.email && appliedCandidates.length > 0) {
+      try {
+        await sendEmail({
+          to: job.postedBy.email,
+          subject: `New Vendor Applications – ${job.role}`,
+          html: 
+            `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+
+            <!-- HEADER -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
+              <h1 style="margin: 0;">New Job Applications Received! 🎉</h1>
+            </div>
+
+            <!-- BODY -->
+            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+
+              <h2 style="color: #333; margin-top: 0;">Vendor Submissions</h2>
+
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 10px 0;"><strong>Job:</strong> ${job.role}</p>
+                <p style="margin: 10px 0;"><strong>Total Candidates:</strong> ${appliedCandidates.length}</p>
+                <p style="margin: 10px 0;"><strong>AI Ranking:</strong> ${aiProcess ? "Enabled" : "Disabled"}</p>
+              </div>
+
+              <!-- CANDIDATE LIST -->
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #667eea; margin-top: 0;">Submitted Candidates</h3>
+
+                ${appliedCandidates.map(c => `
+                  <p style="margin: 8px 0;">
+                    <strong>${c.name}</strong>
+                    ${aiProcess ? ` – Fit Score: ${c.matchScore ?? "N/A"}%` : ""}
+                  </p>
+                `).join("")}
+              </div>
+
+              <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                📎 Please find the detailed resumes attached to this email.
+              </p>
+
+              <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                <em>This is an automated notification from the Job Portal.</em>
+              </p>
+
+            </div>
+          </div>
+          `,
+          attachments: appliedCandidates
+            .filter(c => c.pdfBuffer)
+            .map(c => ({
+              filename: `${c.name.replace(/\s+/g, "_")}_Resume.pdf`,
+              content: c.pdfBuffer,
+              contentType: "application/pdf",
+            })),
+        });
+      } catch (e) {
+        logger.error("Recruiter email failed:", e.message);
+      }
+    }
+
+    // 7️⃣ Email to Vendor
+    if (vendor?.email) {
+      try {
+        await sendEmail({
+          to: vendor.email,
+          subject: `Application Submitted - ${job.role} at ${job.companyName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
+                <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
+              </div>
+              
+              <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+                <p style="color: #333; font-size: 16px;">Hi ${vendor.name},</p>
+                
+                <p style="color: #666;">Your application has been successfully submitted for the following position:</p>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <p style="margin: 10px 0;"><strong>Position:</strong> ${job.role}</p>
+                  <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
+                  <p style="margin: 10px 0;"><strong>Location:</strong> ${job.location || 'Not specified'}</p>
+                  <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <p><strong>Total Candidates:</strong> ${appliedCandidates.length}</p>
+                  <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;"/>
+
+                  ${appliedCandidates.map(c => `
+                    <p style="margin: 5px 0;">• ${c.candidateName} ${aiProcess ? `(Match Score: ${c.matchScore}%)` : ""}</p>
+                  `).join("")}
+                </div>
+
+                <p style="color: #666;">The employer will review your application and get back to you if your profile matches their requirements.</p>
+                
+                <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
+                
+                <p style="color: #999; font-size: 14px; margin-top: 30px;">
+                  <em>This is an automated confirmation from the Job Portal.</em>
+                </p>
+              </div>
+            </div>
+          `
+        });
+      } catch (emailError) {
+        logger.error('Error sending confirmation email:', emailError.message);
+      }
+    }
+
+    // Remove pdfBuffer from response to reduce payload size
+    appliedCandidates.forEach(c => delete c.pdfBuffer);
+
+    return res.status(201).json({
+      status: "success",
+      message: "Vendor applications processed successfully",
+      appliedCount: appliedCandidates.length,
+      skippedAlreadyApplied: alreadyAppliedIds.size,
+      aiProcessEnabled: aiProcess,
+      appliedCandidates,
+      alreadyAppliedCandidates: [...alreadyAppliedIds],
+      ...(failedApplications.length > 0 && { failedApplications }),
+    });
+
+  } catch (error) {
+    logger.error("Vendor Apply Error:", error.message);
+    return res.status(500).json({
+      status: "failed",
+      message: "Internal server error",
+    });
+  }
+};
+
+
+
 
 
 export {
@@ -363,5 +625,6 @@ export {
   updateVendorCandidate,
   deleteVendorCandidate,
    updateCandidateStatus,
-   getAllVendorCandidates
+   getAllCandidates,
+   vendorApplyCandidate
 };

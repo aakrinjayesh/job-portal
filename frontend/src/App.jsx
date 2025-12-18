@@ -144,14 +144,13 @@ function App() {
         />
 
         <Route
-  path="/company/my-activity"
-  element={
-    <CompanyLayout>
-      <MyActivity />
-    </CompanyLayout>
-  }
-/>
-
+          path="/company/my-activity"
+          element={
+            <CompanyLayout>
+              <MyActivity />
+            </CompanyLayout>
+          }
+        />
 
         <Route
           path="/company/candidate/:id"
@@ -172,25 +171,23 @@ function App() {
         />
 
         <Route
-  path="/company/job/details"
-  element={
-    <CompanyLayout>
-      <JobDetails />
-    </CompanyLayout>
-  }
-/>
+          path="/company/job/details"
+          element={
+            <CompanyLayout>
+              <JobDetails />
+            </CompanyLayout>
+          }
+        />
 
-
-<Route
+        <Route
           path="/company/profile"
           element={
             <CompanyLayout>
               <MyProfile />
-              {_/* <div>profile</div> */_}
             </CompanyLayout>
           }
         />
-         <Route
+        <Route
           path="/company/job/find"
           element={
             <CompanyLayout>
@@ -200,13 +197,13 @@ function App() {
         />
 
         <Route
-            path="/company/jobs/saved"
-            element={
-              <CompanyLayout>
-                <CompanySavedJobs />
-              </CompanyLayout>
-            }
-          />
+          path="/company/jobs/saved"
+          element={
+            <CompanyLayout>
+              <CompanySavedJobs />
+            </CompanyLayout>
+          }
+        />
 
         <Route
           path="/company/job/:id"
@@ -217,7 +214,7 @@ function App() {
           }
         />
 
-         <Route
+        <Route
           path="/company/bench"
           element={
             <CompanyLayout>
@@ -235,7 +232,7 @@ function App() {
           }
         />
 
-             <Route
+        <Route
           path="/company/bench/candidates"
           element={
             <CompanyLayout>

@@ -158,7 +158,7 @@ try {
       await sendEmail({
         to: "vsaijayesh94@gmail.com",
         subject: "⚠️ LLM FAILURE – Gemini API Error",
-        text: `Error calling LLM:\n${err.message}\n\nRole: ${role}`
+        text: `Error calling LLM:\n${err.message}\n\nRole: ${role}\n\n prompt data: ${extra}`
       });
 
       throw err;

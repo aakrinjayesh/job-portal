@@ -20,35 +20,54 @@ const SearchWithTextArea = ({
 
       const textArea = inputRef?.current?.resizableTextArea?.textArea;
       if (!textArea) {
-        console.warn("Search TextArea reference missing.");
         messageApi.error("Unable to access search input.");
         return;
       }
 
       const value = textArea.value?.trim() || "";
-
-      console.log("🔍 Search Query:", value);
-
       if (!value) {
         messageApi.warning("Please enter text to search.");
         return;
       }
 
-      const payload = { JD: value };
+      const resp = await apifunction({ JD: value });
+      console.log("AI Response:", resp);
 
-      const resp = await apifunction(payload);
-
+      // SUCCESS CHECK
       if (resp?.success === "success") {
-        if (resp?.filter) {
-          handleFiltersChange(resp.filter);
-        } else {
-          messageApi.warning("AI did not return any filterable information.");
+        let filter = resp.filter || {};
+
+        // CLEAN: Remove top-level nulls
+        const cleanedFilter = {};
+        Object.entries(filter).forEach(([key, val]) => {
+          if (key !== "experience" && val !== null) {
+            cleanedFilter[key] = val;
+          }
+        });
+
+        // CLEAN NESTED EXPERIENCE
+        if (filter.experience) {
+          const exp = filter.experience;
+          const expClean = {};
+
+          Object.entries(exp).forEach(([key, val]) => {
+            if (val !== null) expClean[key] = val;
+          });
+
+          if (Object.keys(expClean).length > 0) {
+            cleanedFilter.experience = expClean;
+          }
         }
+
+        // ---------- FIX LOCATION (STRING → ARRAY) ----------
+        if (cleanedFilter.location && !Array.isArray(cleanedFilter.location)) {
+          cleanedFilter.location = [cleanedFilter.location];
+        }
+
+        console.log("Cleaned Filter:", cleanedFilter);
+        handleFiltersChange(cleanedFilter);
       } else {
-        messageApi.error(
-          resp?.message ||
-            "Failed to process AI search. Please try again later."
-        );
+        messageApi.error(resp?.message || "Failed to process AI search.");
       }
     } catch (error) {
       console.error("AI Search Error:", error);

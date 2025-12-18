@@ -34,7 +34,7 @@ import {
 const JobRouters = express.Router()
 
 // Public job routes
-JobRouters.get('/jobs', 
+JobRouters.post('/jobs/list', 
   // validateInput(getJobListValidator), 
   // authenticateToken,
    getJobList)

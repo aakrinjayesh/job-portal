@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Spin, message, Button, Table, Tag } from "antd";
+import { Spin, message, Button, Table, Tag, Modal, Input } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GetCandidateDeatils } from "../../api/api";
@@ -7,31 +7,39 @@ import { GetCandidateDeatils } from "../../api/api";
 const CandidateList = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const jobId = location.state?.id;
+  const jobId = location?.state?.id;
+  const jobRole = location?.state?.jobRole;
 
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [messageAPI, contextHolder] = message.useMessage();
   const [total, setTotal] = useState(0);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [groupName, setGroupName] = useState(jobRole);
+
+  // ✅ NEW STATE FOR GROUP CHAT
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [selectedCandidates, setSelectedCandidates] = useState([]);
 
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
         setLoading(true);
-        const payload = { jobId, page, limit: pageSize };
+        const payload = { jobId };
         const response = await GetCandidateDeatils(payload);
 
         if (response?.data && response.data.length > 0) {
           setCandidates(response.data);
-          setTotal(response.total || 0);
+          setTotal(response.total || response.data.length);
         } else {
           setCandidates([]);
-          message.warning("No candidates found for this job.");
+          messageAPI.warning("No candidates found for this job.");
         }
       } catch (error) {
         console.error("Error fetching candidates:", error);
-        message.error("Failed to load candidates.");
+        messageAPI.error("Failed to load candidates.");
       } finally {
         setLoading(false);
       }
@@ -40,16 +48,24 @@ const CandidateList = () => {
     if (jobId) fetchCandidates();
   }, [jobId, page, pageSize]);
 
+  // ✅ ROW SELECTION (CHECKBOX)
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (keys, rows) => {
+      setSelectedRowKeys(keys);
+      setSelectedCandidates(rows);
+    },
+  };
+
   // TABLE COLUMNS
   const columns = [
     {
       title: "Fit Score",
       dataIndex: "matchScore",
       key: "matchScore",
-      //width: 200,
       fixed: "left",
       render: (score) => {
-        if (score == null) return <Tag color="default">N/A</Tag>;
+        if (score == null) return <Tag>N/A</Tag>;
 
         let color = "default";
         if (score >= 80) color = "green";
@@ -60,26 +76,22 @@ const CandidateList = () => {
         return <Tag color={color}>{score}%</Tag>;
       },
     },
-
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      //width: 200,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
-
     {
       title: "Key Match Skills",
-      //width: 200,
       key: "keyMatchSkills",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_match_skills || [];
         return (
           <div style={{ maxHeight: 80, overflowY: "auto" }}>
-            {list.length > 0 ? (
+            {list.length ? (
               list.map((s) => (
-                <Tag color="green" key={s} style={{ marginBottom: 4 }}>
+                <Tag color="green" key={s}>
                   {s}
                 </Tag>
               ))
@@ -92,15 +104,14 @@ const CandidateList = () => {
     },
     {
       title: "Key Gap Skills",
-      width: 200,
       key: "keyGapSkills",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_gap_skills || [];
         return (
-          <div style={{ maxHeight: 80, overflowY: "auto", scrollbarWidth: "none" }}>
-            {list.length > 0 ? (
+          <div style={{ maxHeight: 80, overflowY: "auto" }}>
+            {list.length ? (
               list.map((s) => (
-                <Tag color="red" key={s} style={{ marginBottom: 4 }}>
+                <Tag color="red" key={s}>
                   {s}
                 </Tag>
               ))
@@ -111,19 +122,16 @@ const CandidateList = () => {
         );
       },
     },
-
-
     {
       title: "Key Match Clouds",
-      width: 200,
       key: "keyMatchClouds",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_match_clouds || [];
         return (
           <div style={{ maxHeight: 80, overflowY: "auto" }}>
-            {list.length > 0 ? (
+            {list.length ? (
               list.map((c) => (
-                <Tag color="blue" key={c} style={{ marginBottom: 4 }}>
+                <Tag color="blue" key={c}>
                   {c}
                 </Tag>
               ))
@@ -136,15 +144,14 @@ const CandidateList = () => {
     },
     {
       title: "Key Gap Clouds",
-      width: 200,
       key: "keyGapClouds",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_gap_clouds || [];
         return (
           <div style={{ maxHeight: 80, overflowY: "auto" }}>
-            {list.length > 0 ? (
+            {list.length ? (
               list.map((c) => (
-                <Tag color="orange" key={c} style={{ marginBottom: 4 }}>
+                <Tag color="orange" key={c}>
                   {c}
                 </Tag>
               ))
@@ -155,39 +162,32 @@ const CandidateList = () => {
         );
       },
     },
-
-    // RIGHT FIXED COLUMNS
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
-      //width: 200,
       sorter: (a, b) => a.email.localeCompare(b.email),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-     // width: 200,
     },
     {
       title: "Applied On",
       dataIndex: "appliedAt",
       key: "appliedAt",
-     // width: 200,
       render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
     },
     {
       title: "Location",
       dataIndex: ["profile", "currentLocation"],
       key: "currentLocation",
-      //width: 200,
       render: (text) => text || "N/A",
     },
     {
       title: "Actions",
       key: "actions",
-      //width: 100,
       fixed: "right",
       render: (_, record) => (
         <Button
@@ -206,36 +206,121 @@ const CandidateList = () => {
   ];
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: 20 }}>
+      {contextHolder}
+      {/* BACK BUTTON */}
       <Button
         type="text"
-        onClick={() => navigate("/company/jobs")}
         icon={<ArrowLeftOutlined />}
-        style={{ marginBottom: 5 }}
+        onClick={() => navigate("/company/jobs")}
+        style={{ marginBottom: 8 }}
       >
         Back
       </Button>
 
+      {/* ✅ CREATE GROUP BUTTON */}
+      <Button
+        type="primary"
+        style={{ marginBottom: 12 }}
+        disabled={selectedCandidates.length === 0}
+        onClick={() => setIsGroupModalOpen(true)}
+        // onClick={() => {
+        //   const chatUserIds = selectedCandidates
+        //     .map((c) => c?.profile?.chatuserid)
+        //     .filter(Boolean);
+
+        //   console.log("candidates ids", chatUserIds);
+        //   if (!chatUserIds.length) {
+        //     messageAPI.warning("No valid chat users found");
+        //     return;
+        //   }
+
+        //   if (chatUserIds.length < 2) {
+        //     messageAPI.warning("Select atleast 2 candidates to create group");
+        //     return;
+        //   }
+
+        //   navigate("/company/chat", {
+        //     state: {
+        //       groupUserIds: chatUserIds,
+        //       jobId,
+        //     },
+        //   });
+        // }}
+      >
+        Create Group
+      </Button>
+
       <Spin spinning={loading}>
-        <div style={{ width: "100%", overflowX: "auto" }}>
-          <Table
-            columns={columns}
-            dataSource={candidates}
-            rowKey={(record) => record.id || record.userId}
-            bordered
-            scroll={{ x: "max-content" }} // FIXED SCROLL
-            pagination={{
-              current: page,
-              pageSize,
-              total,
-              showSizeChanger: true,
-              onChange: (newPage, newPageSize) => {
-                setPage(newPage);
-                setPageSize(newPageSize);
+        <Table
+          rowSelection={rowSelection}
+          columns={columns}
+          dataSource={candidates}
+          rowKey={(record) => record.id || record.userId}
+          bordered
+          scroll={{ x: "max-content" }}
+          pagination={{
+            current: page,
+            pageSize,
+            total,
+            showSizeChanger: true,
+            onChange: (p, ps) => {
+              setPage(p);
+              setPageSize(ps);
+            },
+          }}
+        />
+        <Modal
+          title="Create Group Chat"
+          open={isGroupModalOpen}
+          onCancel={() => {
+            setIsGroupModalOpen(false);
+            setGroupName("");
+          }}
+          okText="Create"
+          onOk={() => {
+            if (!groupName.trim()) {
+              message.warning("Please enter a group name");
+              return;
+            }
+
+            const chatUserIds = selectedCandidates
+              .map((c) => c?.profile?.chatuserid)
+              .filter(Boolean);
+
+            if (!chatUserIds.length) {
+              message.warning("No valid chat users selected");
+              return;
+            }
+
+            setIsGroupModalOpen(false);
+            setGroupName("");
+
+            console.log("participat", chatUserIds);
+            console.log("groupname", groupName);
+
+            if (chatUserIds.length < 1) {
+              messageAPI.warning("Select atleast 2 candidates to create group");
+              return;
+            }
+
+            const uniqueIds = [...new Set(chatUserIds)];
+            console.log("uniueid", uniqueIds);
+            navigate("/company/chat", {
+              state: {
+                groupUserIds: uniqueIds,
+                groupName: groupName.trim(), // ✅ PASS GROUP NAME
               },
-            }}
+            });
+          }}
+        >
+          <Input
+            placeholder="Enter group name"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            maxLength={50}
           />
-        </div>
+        </Modal>
       </Spin>
     </div>
   );

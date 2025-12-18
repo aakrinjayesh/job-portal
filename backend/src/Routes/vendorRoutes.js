@@ -6,8 +6,8 @@ import {
   updateVendorCandidate,
   deleteVendorCandidate,
    updateCandidateStatus ,
-   getAllVendorCandidates,
- 
+   getAllCandidates,
+  vendorApplyCandidate
 } from "../controllers/vendorControllers.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
  
@@ -38,10 +38,10 @@ VendorRoutes.post(
 VendorRoutes.get(
   "/candidates/all",
   authenticateToken,
-  getAllVendorCandidates
+  getAllCandidates
 );
 
-
+VendorRoutes.post("/apply-candidate",authenticateToken,vendorApplyCandidate);
 
 
 export default VendorRoutes;

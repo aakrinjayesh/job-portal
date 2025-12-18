@@ -1,6 +1,16 @@
 import winston from "winston";
 import path from "path";
 import "winston-daily-rotate-file";
+import fs from "fs";
+
+const logDir = path.join(process.cwd(), "logs");
+const errorDir = path.join(logDir, "error");
+const appDir = path.join(logDir, "app");
+
+// Create folders if not exist
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
+if (!fs.existsSync(errorDir)) fs.mkdirSync(errorDir);
+if (!fs.existsSync(appDir)) fs.mkdirSync(appDir);
 
 // Custom log levels
 const customLevels = {
@@ -33,8 +43,10 @@ const logFormat = printf(({ level, message, timestamp, stack }) => {
 
 // Rotating file for info/success/debug
 const appRotateTransport = new winston.transports.DailyRotateFile({
-  filename: path.join(process.cwd(), "logs", "app-%DATE%.log"),
-  datePattern: "YYYY-MM-DD",
+  // filename: path.join(process.cwd(), "logs", "app-%DATE%.log"),
+  // datePattern: "YYYY-MM-DD",
+  filename: path.join(appDir, "app-%DATE%.log"),
+  datePattern: "DD-MM-YYYY",
   maxFiles: "14d",
   zippedArchive: true,
   level: "info",
@@ -42,8 +54,10 @@ const appRotateTransport = new winston.transports.DailyRotateFile({
 
 // Rotating file for errors
 const errorRotateTransport = new winston.transports.DailyRotateFile({
-  filename: path.join(process.cwd(), "logs", "error-%DATE%.log"),
-  datePattern: "YYYY-MM-DD",
+  // filename: path.join(process.cwd(), "logs", "error-%DATE%.log"),
+  // datePattern: "YYYY-MM-DD",
+  filename: path.join(errorDir, "error-%DATE%.log"),
+  datePattern: "DD-MM-YYYY",
   maxFiles: "14d",
   zippedArchive: true,
   level: "error",
@@ -59,7 +73,8 @@ const logger = winston.createLogger({
   levels: customLevels.levels,
   level: "info",
   format: combine(
-    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    // timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    timestamp({ format: "DD-MM-YYYY HH:mm:ss" }),
     errors({ stack: true }),
     logFormat
   ),

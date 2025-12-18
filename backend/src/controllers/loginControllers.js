@@ -123,7 +123,7 @@ const setPassword = async (req, res) => {
       });
     }
 
-    // Find user
+    // 1️⃣ Find user
     const user = await prisma.users.findUnique({
       where: { email },
     });
@@ -142,21 +142,22 @@ const setPassword = async (req, res) => {
       });
     }
 
-    // Hash password
+    // 2️⃣ Hash & set password locally
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Update locally
     const updatedUser = await prisma.users.update({
       where: { email },
       data: { password: hashedPassword },
     });
 
-    // Register user in external system
+    // 3️⃣ Register user in external chat system
+    let externalUserId = null;
+
     try {
       const payload = {
         email: updatedUser.email,
-        username: updatedUser.name,
-        password, // use actual password now
+        username: updatedUser.email.split('@')[0].toLocaleLowerCase(),
+        password, // real password
       };
 
       const registerResponse = await axios.post(
@@ -165,17 +166,70 @@ const setPassword = async (req, res) => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      logger.info("✅ External Register Response:", registerResponse?.data);
+      externalUserId = registerResponse?.data?.data?.user?._id;
+      console.log('extarnal userId', externalUserId)
+      if (!externalUserId) {
+        logger.error("❌ External register succeeded but _id missing");
+        throw new Error("External user id missing");
+      }
+
+      logger.info(
+        "✅ External Register Success",
+        JSON.stringify(registerResponse.data, null, 2)
+      );
     } catch (err) {
-      logger.error("⚠️ External registration failed (continuing flow):", JSON.stringify(err.message,null,2));
+      logger.error(
+        "❌ External registration failed",
+        JSON.stringify(err.message, null, 2)
+      );
+      const deleteUser = await prisma.users.delete({
+          where:{
+            email:email
+          }
+        })
+      console.log('deleted user',deleteUser)
+      return res.status(500).json({
+        status: "error",
+        message: "External chat registration failed",
+      });
     }
 
+    // 4️⃣ UPSERT UserProfile with chatuserid (FAIL HARD)
+    try {
+      await prisma.users.update({
+        where: { id: user.id },
+        data: { chatuserid: externalUserId },
+      });
+
+      logger.info(
+        `✅ chatuserid synced for ${role}`,
+        JSON.stringify(
+          { userId: user.id, chatuserid: externalUserId },
+          null,
+          2
+        )
+      );
+    } catch (err) {
+      logger.error(
+        "❌ Failed to upsert UserProfile.chatuserid",
+        JSON.stringify(err.message, null, 2)
+      );
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to sync chat user profile",
+      });
+    }
+
+    // 5️⃣ Final success
     return res.status(200).json({
       status: "success",
-      message: "Password set successfully!",
+      message: "Password set successfully",
     });
   } catch (error) {
-    logger.error("Error in setPassword:", JSON.stringify(error.message,null,2));
+    logger.error(
+      "Error in setPassword:",
+      JSON.stringify(error.message, null, 2)
+    );
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -243,7 +297,7 @@ logger.warn("⚠️ Missing login fields");
     try {
       const payload = {
         email: user.email,
-        username: user.name,
+        username: user.email.split('@')[0].toLocaleLowerCase(),
         password,
       };
 
@@ -258,17 +312,6 @@ logger.warn("⚠️ Missing login fields");
       logger.error("⚠️ External login failed (continuing local flow):", JSON.stringify(err.message,null,2));
     }
 
-    // Cookie setup (same as before)
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-    };
-
-    if (loginResponse?.data?.data?.accessToken && loginResponse?.data?.data?.refreshToken) {
-      res
-        .cookie("accessToken", loginResponse?.data?.data?.accessToken, options)
-        .cookie("refreshToken", loginResponse?.data?.data?.refreshToken, options);
-    }
 
     // Final response
     return res.status(200).json({
@@ -293,7 +336,7 @@ logger.warn("⚠️ Missing login fields");
     logger.error("Login error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
       status: "error",
-      message: "Internal server error",
+      message: "Internal server error" + error.message,
     });
   }
 };
@@ -378,6 +421,39 @@ const resetPassword = async (req, res) => {
     });
   }
 };
+
+const checkUserExists = async (req, res) => {
+  try {
+    const { email } = req.body;
+ 
+    if (!email) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Email is required",
+      });
+    }
+ 
+    const user = await prisma.users.findFirst({ where: { email } });
+ 
+    if (user) {
+      return res.status(200).json({
+        status: "success",
+        message: "User already registered. Please login.",
+      });
+    }
+ 
+    return res.status(200).json({
+      status: "error",
+      message: "User not registered. You can generate OTP.",
+    });
+ 
+  } catch (err) {
+    return res.status(500).json({
+      status: "error",
+      message: err.message || "Something went wrong",
+    });
+  }
+};
  
 export {
   userOtpGenerate,
@@ -386,4 +462,5 @@ export {
   login,
   forgotPassword,
   resetPassword,
+  checkUserExists
 };

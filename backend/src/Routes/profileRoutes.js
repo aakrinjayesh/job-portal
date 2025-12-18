@@ -5,7 +5,8 @@ UploadResumeValidator,
 } from '../validators/userValidators.js'
 
 import { 
-  UploadResume, updateProfiledetails,  getUserProfileDetails,uploadProfilePicture
+  UploadResume, updateProfiledetails,  getUserProfileDetails,uploadProfilePicture,getCountriesWithStates,updateUserProfileDetails,
+  getCompanyProfileDetails,
 } from '../controllers/profileControllers.js'
 
 
@@ -20,21 +21,22 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 
 
+//candidates routes
 
-// user profile routes
+// user to upload pdf in profile page
 userRouter.post('/upload', upload.single('file'), authenticateToken,UploadResume)
 
 
+// user profile details 
 userRouter.post('/profile',
   // validateInput(userProfileValidator), 
   authenticateToken,updateProfiledetails);
 
+userRouter.post('/profile/details', 
+  authenticateToken,getUserProfileDetails);
 
-// for the below just pass {} as payload
-userRouter.post('/profile/details', authenticateToken, getUserProfileDetails);
 
-// NEW: Profile Picture Route
-// --------------------------
+// Profile Picture  save Route
 userRouter.post(
   "/profile/upload-picture",
   authenticateToken,
@@ -42,6 +44,14 @@ userRouter.post(
   uploadProfilePicture
 );
 
+
+// company routes purely 
+
+userRouter.get('/profile/details', authenticateToken, getCompanyProfileDetails);
+
+userRouter.post("/profile/update", authenticateToken, updateUserProfileDetails);
+
+userRouter.get("/countries", authenticateToken, getCountriesWithStates);
 
 
 

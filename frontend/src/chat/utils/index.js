@@ -40,7 +40,7 @@ export const isBrowser = typeof window !== "undefined";
 // This utility function generates metadata for chat objects.
 // It takes into consideration both group chats and individual chats.
 export const getChatObjectMetadata = (chat, loggedInUser) => {
-   console.log('caht in utils', chat)
+  //  console.log('caht in utils', chat)
   console.log('user in utils',loggedInUser )
   // Determine the content of the last message, if any.
   const lastMessage = chat.lastMessage?.content

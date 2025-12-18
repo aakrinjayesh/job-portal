@@ -1,432 +1,3 @@
-// import {
-//   PaperAirplaneIcon,
-//   PaperClipIcon,
-//   XCircleIcon,
-// } from "@heroicons/react/20/solid";
-// import { useEffect, useRef, useState } from "react";
-// import {
-//   deleteMessage,
-//   getChatMessages,
-//   getUserChats,
-//   sendMessage,
-// } from "../api";
-// import AddChatModal from "../components/chat/AddChatModal";
-// import ChatItem from "../components/chat/ChatItem";
-// import MessageItem from "../components/chat/MessageItem";
-// import Typing from "../components/chat/Typing";
-// import Input from "../components/Input";
-// import { useAuth } from "../context/AuthContext";
-// import { useSocket } from "../context/SocketContext";
-// import {
-//   LocalStorage,
-//   classNames,
-//   getChatObjectMetadata,
-//   requestHandler,
-// } from "../utils";
-
-// const CONNECTED_EVENT = "connected";
-// const DISCONNECT_EVENT = "disconnect";
-// const JOIN_CHAT_EVENT = "joinChat";
-// const NEW_CHAT_EVENT = "newChat";
-// const TYPING_EVENT = "typing";
-// const STOP_TYPING_EVENT = "stopTyping";
-// const MESSAGE_RECEIVED_EVENT = "messageReceived";
-// const LEAVE_CHAT_EVENT = "leaveChat";
-// const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
-// const MESSAGE_DELETE_EVENT = "messageDeleted";
-
-// const ChatPage = () => {
-//   const { user, logout } = useAuth();
-//   const { socket } = useSocket();
-
-//   const currentChat = useRef(null);
-//   const typingTimeoutRef = useRef(null);
-
-//   const [isConnected, setIsConnected] = useState(false);
-//   const [openAddChat, setOpenAddChat] = useState(false);
-//   const [loadingChats, setLoadingChats] = useState(false);
-//   const [loadingMessages, setLoadingMessages] = useState(false);
-//   const [chats, setChats] = useState([]);
-//   const [messages, setMessages] = useState([]);
-//   const [unreadMessages, setUnreadMessages] = useState([]);
-//   const [isTyping, setIsTyping] = useState(false);
-//   const [selfTyping, setSelfTyping] = useState(false);
-//   const [message, setMessage] = useState("");
-//   const [localSearchQuery, setLocalSearchQuery] = useState("");
-//   const [attachedFiles, setAttachedFiles] = useState([]);
-
-//   const updateChatLastMessage = (chatToUpdateId, message) => {
-//     const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId);
-//     if (!chatToUpdate) return;
-//     chatToUpdate.lastMessage = message;
-//     chatToUpdate.updatedAt = message?.updatedAt;
-//     setChats([
-//       chatToUpdate,
-//       ...chats.filter((chat) => chat._id !== chatToUpdateId),
-//     ]);
-//   };
-
-//   const updateChatLastMessageOnDeletion = (chatToUpdateId, message) => {
-//     const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId);
-//     if (!chatToUpdate) return;
-
-//     if (chatToUpdate.lastMessage?._id === message._id) {
-//       requestHandler(
-//         async () => getChatMessages(chatToUpdateId),
-//         null,
-//         (req) => {
-//           const { data } = req;
-//           chatToUpdate.lastMessage = data[0];
-//           setChats([...chats]);
-//         },
-//         alert
-//       );
-//     }
-//   };
-
-//   const getChats = async () => {
-//     requestHandler(
-//       async () => await getUserChats(),
-//       setLoadingChats,
-//       (res) => setChats(res.data || []),
-//       alert
-//     );
-//   };
-
-//   const getMessages = async () => {
-//     if (!currentChat.current?._id) return alert("No chat is selected");
-//     if (!socket) return alert("Socket not available");
-
-//     socket.emit(JOIN_CHAT_EVENT, currentChat.current?._id);
-
-//     setUnreadMessages(
-//       unreadMessages.filter((msg) => msg.chat !== currentChat.current?._id)
-//     );
-
-//     requestHandler(
-//       async () => await getChatMessages(currentChat.current?._id || ""),
-//       setLoadingMessages,
-//       (res) => setMessages(res.data || []),
-//       alert
-//     );
-//   };
-
-//   const sendChatMessage = async () => {
-//     if (!currentChat.current?._id || !socket) return;
-//     socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
-
-//     await requestHandler(
-//       async () =>
-//         await sendMessage(
-//           currentChat.current?._id || "",
-//           message,
-//           attachedFiles
-//         ),
-//       null,
-//       (res) => {
-//         setMessage("");
-//         setAttachedFiles([]);
-//         setMessages((prev) => [res.data, ...prev]);
-//         updateChatLastMessage(currentChat.current?._id || "", res.data);
-//       },
-//       alert
-//     );
-//   };
-
-//   const deleteChatMessage = async (message) => {
-//     await requestHandler(
-//       async () => await deleteMessage(message.chat, message._id),
-//       null,
-//       (res) => {
-//         setMessages((prev) => prev.filter((msg) => msg._id !== res.data._id));
-//         updateChatLastMessageOnDeletion(message.chat, message);
-//       },
-//       alert
-//     );
-//   };
-
-//   const handleOnMessageChange = (e) => {
-//     setMessage(e.target.value);
-
-//     if (!socket || !isConnected) return;
-
-//     if (!selfTyping) {
-//       setSelfTyping(true);
-//       socket.emit(TYPING_EVENT, currentChat.current?._id);
-//     }
-
-//     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-//     typingTimeoutRef.current = setTimeout(() => {
-//       socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
-//       setSelfTyping(false);
-//     }, 3000);
-//   };
-
-//   const onMessageReceived = (message) => {
-//     if (message?.chat !== currentChat.current?._id) {
-//       setUnreadMessages((prev) => [message, ...prev]);
-//     } else {
-//       setMessages((prev) => [message, ...prev]);
-//     }
-//     updateChatLastMessage(message.chat || "", message);
-//   };
-
-//   const onMessageDelete = (message) => {
-//     if (message?.chat !== currentChat.current?._id) {
-//       setUnreadMessages((prev) =>
-//         prev.filter((msg) => msg._id !== message._id)
-//       );
-//     } else {
-//       setMessages((prev) => prev.filter((msg) => msg._id !== message._id));
-//     }
-//     updateChatLastMessageOnDeletion(message.chat, message);
-//   };
-
-//   const onNewChat = (chat) => setChats((prev) => [chat, ...prev]);
-//   const onConnect = () => setIsConnected(true);
-//   const onDisconnect = () => setIsConnected(false);
-//   const handleOnSocketTyping = (chatId) =>
-//     chatId === currentChat.current?._id && setIsTyping(true);
-//   const handleOnSocketStopTyping = (chatId) =>
-//     chatId === currentChat.current?._id && setIsTyping(false);
-
-//   useEffect(() => {
-//     getChats();
-//     const _currentChat = LocalStorage.get("currentChat");
-//     if (_currentChat) {
-//       currentChat.current = _currentChat;
-//       socket?.emit(JOIN_CHAT_EVENT, _currentChat._id);
-//       getMessages();
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     if (!socket) return;
-
-//     socket.on(CONNECTED_EVENT, onConnect);
-//     socket.on(DISCONNECT_EVENT, onDisconnect);
-//     socket.on(TYPING_EVENT, handleOnSocketTyping);
-//     socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
-//     socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
-//     socket.on(NEW_CHAT_EVENT, onNewChat);
-//     socket.on(MESSAGE_DELETE_EVENT, onMessageDelete);
-
-//     return () => {
-//       socket.off(CONNECTED_EVENT, onConnect);
-//       socket.off(DISCONNECT_EVENT, onDisconnect);
-//       socket.off(TYPING_EVENT, handleOnSocketTyping);
-//       socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
-//       socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
-//       socket.off(NEW_CHAT_EVENT, onNewChat);
-//       socket.off(MESSAGE_DELETE_EVENT, onMessageDelete);
-//     };
-//   }, [socket, chats]);
-
-//   return (
-//     <>
-//       <AddChatModal
-//         open={openAddChat}
-//         onClose={() => setOpenAddChat(false)}
-//         onSuccess={getChats}
-//       />
-
-//       <div className="w-full justify-between items-stretch h-screen flex flex-shrink-0">
-//         {/* Left Chat List */}
-//         <div className="w-1/3 relative overflow-y-auto px-4">
-//           <div className="sticky top-0 bg-dark py-4 flex justify-between items-center gap-4">
-//             <button
-//               className="bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-sm px-5 py-4"
-//               onClick={logout}
-//             >
-//               Log Out
-//             </button>
-//             <Input
-//               placeholder="Search user or group..."
-//               value={localSearchQuery}
-//               onChange={(e) =>
-//                 setLocalSearchQuery(e.target.value.toLowerCase())
-//               }
-//             />
-//             <button
-//               onClick={() => setOpenAddChat(true)}
-//               className="bg-primary text-black py-4 px-5 rounded-xl"
-//             >
-//               + Add chat
-//             </button>
-//           </div>
-
-//           {loadingChats ? (
-//             <div className="flex justify-center items-center h-[calc(100%-88px)]">
-//               <Typing />
-//             </div>
-//           ) : (
-//             [...chats]
-//               .filter((chat) =>
-//                 localSearchQuery
-//                   ? getChatObjectMetadata(chat, user)
-//                       .title?.toLowerCase()
-//                       ?.includes(localSearchQuery)
-//                   : true
-//               )
-//               .map((chat) => (
-//                 <ChatItem
-//                   key={chat._id}
-//                   chat={chat}
-//                   isActive={chat._id === currentChat.current?._id}
-//                   unreadCount={
-//                     unreadMessages.filter((n) => n.chat === chat._id).length
-//                   }
-//                   onClick={(chat) => {
-//                     if (currentChat.current?._id === chat._id) return;
-//                     LocalStorage.set("currentChat", chat);
-//                     currentChat.current = chat;
-//                     setMessage("");
-//                     getMessages();
-//                   }}
-//                   onChatDelete={(chatId) => {
-//                     setChats((prev) => prev.filter((c) => c._id !== chatId));
-//                     if (currentChat.current?._id === chatId) {
-//                       currentChat.current = null;
-//                       LocalStorage.remove("currentChat");
-//                     }
-//                   }}
-//                 />
-//               ))
-//           )}
-//         </div>
-
-//         {/* Right Chat Section */}
-//         <div className="w-2/3 border-l border-secondary">
-//           {currentChat.current && currentChat.current?._id ? (
-//             <>
-//               <div className="p-4 sticky top-0 bg-dark z-20 flex justify-between items-center border-b border-secondary">
-//                 <div className="flex items-center gap-3">
-//                   <img
-//                     className="h-14 w-14 rounded-full object-cover"
-//                     src={
-//                       getChatObjectMetadata(currentChat.current, user).avatar
-//                     }
-//                   />
-//                   <div>
-//                     <p className="font-bold">
-//                       {getChatObjectMetadata(currentChat.current, user).title}
-//                     </p>
-//                     <small className="text-zinc-400">
-//                       {
-//                         getChatObjectMetadata(currentChat.current, user)
-//                           .description
-//                       }
-//                     </small>
-//                   </div>
-//                 </div>
-//               </div>
-
-//               <div
-//                 className={classNames(
-//                   "p-8 overflow-y-auto flex flex-col-reverse gap-6",
-//                   attachedFiles.length > 0
-//                     ? "h-[calc(100vh-336px)]"
-//                     : "h-[calc(100vh-176px)]"
-//                 )}
-//               >
-//                 {loadingMessages ? (
-//                   <div className="flex justify-center items-center h-[calc(100%-88px)]">
-//                     <Typing />
-//                   </div>
-//                 ) : (
-//                   <>
-//                     {isTyping ? <Typing /> : null}
-//                     {messages?.map((msg) => (
-//                       <MessageItem
-//                         key={msg._id}
-//                         isOwnMessage={msg.sender?._id === user?._id}
-//                         isGroupChatMessage={currentChat.current?.isGroupChat}
-//                         message={msg}
-//                         deleteChatMessage={deleteChatMessage}
-//                       />
-//                     ))}
-//                   </>
-//                 )}
-//               </div>
-
-//               {attachedFiles.length > 0 && (
-//                 <div className="grid gap-4 grid-cols-5 p-4">
-//                   {attachedFiles.map((file, i) => (
-//                     <div
-//                       key={i}
-//                       className="group w-32 h-32 relative rounded-xl cursor-pointer"
-//                     >
-//                       <button
-//                         onClick={() =>
-//                           setAttachedFiles(
-//                             attachedFiles.filter((_, ind) => ind !== i)
-//                           )
-//                         }
-//                         className="absolute -top-2 -right-2"
-//                       >
-//                         <XCircleIcon className="h-6 w-6 text-white" />
-//                       </button>
-//                       <img
-//                         className="h-full w-full rounded-xl object-cover"
-//                         src={URL.createObjectURL(file)}
-//                         alt="attachment"
-//                       />
-//                     </div>
-//                   ))}
-//                 </div>
-//               )}
-
-//               <div className="sticky bottom-0 p-4 flex items-center gap-2 border-t border-secondary">
-//                 <input
-//                   hidden
-//                   id="attachments"
-//                   type="file"
-//                   multiple
-//                   onChange={(e) => {
-//                     if (e.target.files) {
-//                       setAttachedFiles([...e.target.files]);
-//                     }
-//                   }}
-//                 />
-//                 <label
-//                   htmlFor="attachments"
-//                   className="p-4 rounded-full bg-dark hover:bg-secondary cursor-pointer"
-//                 >
-//                   <PaperClipIcon className="w-6 h-6" />
-//                 </label>
-
-//                 <Input
-//                   placeholder="Message"
-//                   value={message}
-//                   onChange={handleOnMessageChange}
-//                   onKeyDown={(e) => {
-//                     if (e.key === "Enter") sendChatMessage();
-//                   }}
-//                 />
-
-//                 <button
-//                   onClick={sendChatMessage}
-//                   disabled={!message && attachedFiles.length <= 0}
-//                   className="p-4 rounded-full bg-dark hover:bg-secondary disabled:opacity-50"
-//                 >
-//                   <PaperAirplaneIcon className="w-6 h-6" />
-//                 </button>
-//               </div>
-//             </>
-//           ) : (
-//             <div className="w-full h-full flex justify-center items-center">
-//               No chat selected
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </>
-//   );
-// };
-
-// export default ChatPage;
-
 import {
   Layout,
   Input,
@@ -455,6 +26,7 @@ import {
   getChatMessages,
   getAvailableUsers,
   createUserChat,
+  createGroupChat,
   getUserChats,
   sendMessage,
 } from "../api";
@@ -487,8 +59,14 @@ const ChatPage = () => {
   const { socket } = useSocket();
   const location = useLocation();
   const candidate = location?.state?.candidate;
+  console.log("candidate", candidate);
   const userType = location?.state?.userType;
   console.log("userType", userType);
+
+  // group
+  const groupUserIds = location?.state?.groupUserIds;
+  const groupName = location?.state?.groupName;
+  console.log("group ids", groupUserIds);
 
   const currentChat = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -686,28 +264,12 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
+    console.log("one to one chat");
     if (!candidate) return;
 
     const startChatFlow = async () => {
       try {
-        // 1️⃣ Get chat users
-        const response = await getAvailableUsers();
-        const allUsers = response?.data?.data || [];
-
-        // 2️⃣ Match by name
-        const matchedUser = allUsers.find(
-          (u) =>
-            u.username?.trim().toLowerCase() ===
-            candidate.name?.trim().toLowerCase()
-        );
-
-        if (!matchedUser) {
-          console.warn("No matching chat user found for:", candidate.name);
-          return;
-        }
-
-        // 3️⃣ Create or get existing chat
-        const chatResponse = await createUserChat(matchedUser._id);
+        const chatResponse = await createUserChat(candidate.profile.chatuserid);
         const chat = chatResponse?.data;
         if (!chat) return;
         getChats();
@@ -722,6 +284,36 @@ const ChatPage = () => {
 
     startChatFlow();
   }, [candidate]);
+
+  const groupCreatedRef = useRef(false);
+
+  useEffect(() => {
+    if (!groupUserIds || groupUserIds.length === 0) return;
+    if (groupCreatedRef.current) return;
+
+    groupCreatedRef.current = true;
+
+    const startGroupChatFlow = async () => {
+      try {
+        const payload = {
+          name: groupName,
+          participants: groupUserIds,
+        };
+
+        const res = await createGroupChat(payload);
+        const chat = res?.data;
+        if (!chat) return;
+
+        getChats();
+        setMessage("");
+        getMessages();
+      } catch (err) {
+        console.error("Failed to create group chat", err);
+      }
+    };
+
+    startGroupChatFlow();
+  }, [groupUserIds, groupName]);
 
   useEffect(() => {
     getChats();

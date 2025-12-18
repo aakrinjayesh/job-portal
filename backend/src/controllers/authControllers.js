@@ -39,7 +39,15 @@ const googleAuth = async (req, res) => {
   const { credential, clientId, type } = req.body;
 
   try {
-    
+    // 🔒 Google auth ONLY for candidates
+    if (type !== "candidate") {
+      return res.status(403).json({
+        status: "error",
+        message: "Google authentication is allowed only for candidates",
+      });
+    }
+
+    // 1️⃣ Verify Google token
     const ticket = await client.verifyIdToken({
       idToken: credential,
       audience: clientId,
@@ -55,9 +63,7 @@ const googleAuth = async (req, res) => {
       });
     }
 
-    
-    // 2️⃣ VALIDATE EMAIL CATEGORY (Personal/Business)
-  
+    // 2️⃣ Validate email type (personal/business)
     if (!isValidEmail(email, type)) {
       return res.status(400).json({
         status: "error",
@@ -65,23 +71,21 @@ const googleAuth = async (req, res) => {
       });
     }
 
-    // 3️⃣ LOCAL USER LOOKUP
- 
+    // 3️⃣ Local user lookup
     let user = await prisma.users.findUnique({ where: { email } });
 
     const fullName = `${given_name || ""} ${family_name || ""}`.trim() || "User";
 
     const externalPayload = {
-      email,
-      username: fullName,
-      password: "123456789",   // simple pass for chat system only
+      email: email,
+      username: email.split('@')[0].toLocaleLowerCase(),
+      password: "Aakrin@123", // chat system only
     };
 
     let isNewUser = false;
+    let externalUserId = null;
 
-
-    // 4️⃣ IF NEW → CREATE USER LOCALLY & REGISTER IN EXTERNAL SYSTEM
-
+    // 4️⃣ New user → create locally & register externally
     if (!user) {
       isNewUser = true;
 
@@ -89,57 +93,113 @@ const googleAuth = async (req, res) => {
         data: {
           name: fullName,
           email,
-          role: type,
+          role: "candidate",
         },
       });
 
-      // Try external registration (non-blocking)
       try {
-       externalregisterData = await axios.post(
+        const externalRegisterResp = await axios.post(
           "http://localhost:8080/api/v1/users/register",
-          externalPayload
+          externalPayload,
+          { headers: { "Content-Type": "application/json" } }
         );
-        logger.info('external register', JSON.stringify(externalregisterData,null,2))
+        console.log('external api',externalRegisterResp.data)
+        externalUserId =externalRegisterResp?.data?.data?.user?._id;
+
+        console.log('externaluser id googkle', externalUserId)
+        
+        if (!externalUserId) {
+          throw new Error("External register succeeded but _id missing");
+        }
+
+        // logger.info(
+        //   "✅ External register (Google)",
+        //   JSON.stringify(externalRegisterResp.data, null, 2)
+        // );
+        console.log("exteranl register google",externalRegisterResp)
       } catch (err) {
-        logger.error("⚠️ External register failed:", JSON.stringify(err.message, null, 2));
+        const deleteUser =await prisma.users.delete({
+          where:{
+            email:email
+          }
+        })
+        console.log('delete User',deleteUser)
+        logger.error(
+          "❌ External register failed (Google)",
+          JSON.stringify(err.message, null, 2)
+        );
+        return res.status(500).json({
+          status: "error",
+          message: "External chat registration failed",
+        });
       }
     }
 
-
-    // 5️⃣ ALWAYS TRY EXTERNAL LOGIN
-    
+    // 5️⃣ Always external login (source of truth)
     let externalLoginData = null;
     try {
       const loginResp = await axios.post(
         "http://localhost:8080/api/v1/users/login",
-        externalPayload
+        externalPayload,
+        { headers: { "Content-Type": "application/json" } }
       );
 
-      logger.info('extarnal login', JSON.stringify(loginResp, null,2))
-      externalLoginData = loginResp.data?.data || null;
+      externalLoginData = loginResp.data?.data;
+
+      if (externalLoginData?.user?._id) {
+        externalUserId = externalLoginData.user._id;
+      }
+
+      logger.info(
+        "✅ External login (Google)",
+        JSON.stringify(loginResp.data, null, 2)
+      );
     } catch (err) {
-      logger.error("⚠️ External login failed:", JSON.stringify(err.message,null,2));
+      logger.error(
+        "❌ External login failed (Google)",
+        JSON.stringify(err.message, null, 2)
+      );
+      return res.status(500).json({
+        status: "error",
+        message: "External chat login failed",
+      });
     }
 
+    if (!externalUserId) {
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to resolve chat user id",
+      });
+    }
 
-    // 6️⃣ ALWAYS GENERATE LOCAL TOKEN
+    // 6️⃣ UPSERT UserProfile (candidate only)
+    try {
+      await prisma.users.update({
+        where: { id: user.id },
+        data: { chatuserid: externalUserId },
+      });
 
+      logger.info(
+        "✅ chatuserid synced (Google)",
+        JSON.stringify(
+          { userId: user.id, chatuserid: externalUserId },
+          null,
+          2
+        )
+      );
+    } catch (err) {
+      logger.error(
+        "❌ Failed to upsert UserProfile.chatuserid",
+        JSON.stringify(err.message, null, 2)
+      );
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to sync chat profile",
+      });
+    }
+
+    // 7️⃣ Local JWT
     const localToken = generateToken(user);
-
-    // Cookies
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-    };
-
-    // Set external tokens if available
-    if (externalLoginData?.accessToken) {
-      res.cookie("accessToken", externalLoginData.accessToken, cookieOptions);
-      res.cookie("refreshToken", externalLoginData.refreshToken, cookieOptions);
-    }
-
-
-    // 7️⃣ RETURN FINAL RESPONSE
 
     return res.status(200).json({
       status: "success",
@@ -156,16 +216,17 @@ const googleAuth = async (req, res) => {
         role: user.role,
       },
 
-      chatmeatadata: externalLoginData
-        ? {
-            user: externalLoginData.user,
-            accessToken: externalLoginData.accessToken,
-            refreshToken: externalLoginData.refreshToken,
-          }
-        : null,
+      chatmeatadata: {
+        user: externalLoginData.user,
+        accessToken: externalLoginData.accessToken,
+        refreshToken: externalLoginData.refreshToken,
+      },
     });
   } catch (err) {
-    logger.error("Google auth error:", JSON.stringify(err.message,null,2));
+    logger.error(
+      "Google auth error:",
+      JSON.stringify(err.message, null, 2)
+    );
     return res.status(500).json({
       status: "error",
       message: err.message || "Google authentication failed",

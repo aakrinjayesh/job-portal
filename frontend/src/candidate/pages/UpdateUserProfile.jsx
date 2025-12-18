@@ -171,7 +171,7 @@ const UpdateUserProfile = ({
   const getInitialData = async () => {
     try {
       const res = await GetUserProfile();
-      if (res?.success === "true" && res?.user) {
+      if (res?.status === "success" && res?.user) {
         const user = res?.user;
 
         // Extract skills from skillsJson

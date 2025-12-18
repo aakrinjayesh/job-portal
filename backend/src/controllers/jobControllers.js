@@ -30,24 +30,14 @@ const userApplyJob = async (req, res) => {
     });
 
     if (!job) {
-      logger.warn(`Job not found - ID: ${jobId}`);
       return res.status(404).json({ status: "error", message: "Job not found" });
     }
     if (job.status !== 'Open') {
-      logger.warn(`Job closed - ID: ${jobId}`);
       return res.status(400).json({ status: "error", message: "Job closed" });
     }
 
-    // 2. Check Existing Application
-    const existingApplication = await prisma.jobApplication.findUnique({
-      where: { jobId_userId: { jobId, userId } }
-    });
-    if (existingApplication) {
-      logger.warn(`User already applied - jobId: ${jobId}, userId: ${userId}`);
-      return res.status(409).json({ status: "error", message: "Already applied" });
-    }
-
-    // 3. Fetch User Profile
+ 
+    // 2. Fetch User Profile
     const user = await prisma.users.findUnique({
       where: { id: userId },
       include: { CandidateProfile: true }
@@ -64,6 +54,23 @@ const userApplyJob = async (req, res) => {
         message: "Fill The Candidate Details First!"
       })
     }
+
+    const profile = user.CandidateProfile;
+// 3. Check Existing Application
+    const existingApplication = await prisma.jobApplication.findUnique({
+  where: {
+    jobId_candidateProfileId: {
+      jobId,
+      candidateProfileId: profile.id
+    }
+  }
+});
+
+if (existingApplication) {
+      logger.warn(`User already applied - jobId: ${jobId}, user profile id: ${profile.id}`);
+      return res.status(409).json({ status: "error", message: "Already applied" });
+    }
+
 
     // ============================================================
     // STEP 4: AI ANALYSIS (Real-time)
@@ -87,7 +94,7 @@ const userApplyJob = async (req, res) => {
       companyName: job?.companyName || ""
     };
 
-    const profile = user.CandidateProfile;
+    
 
 
     const candidateDetails = {
@@ -133,6 +140,8 @@ const userApplyJob = async (req, res) => {
         data: {
           jobId,
           userId,
+          candidateProfileId: profile.id,
+          appliedById: userId,
           status: 'Pending'
         }
       });
@@ -591,55 +600,160 @@ const userWithdrawJob = async (req, res) => {
 
 
 
+// const getJobList = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+ 
+//     const userId = req.user?.id; // user may be optional (if public list)
+ 
+//     const [jobs, totalCount] = await Promise.all([
+//       prisma.job.findMany({
+//         skip,
+//         take: limit,
+//         orderBy: { createdAt: "desc" },
+//         where: {
+//           isDeleted: false
+//         },
+//         include: userId
+//           ? {
+//               savedBy: {
+//                 where: { userId },
+//                 select: { id: true }
+//               }
+//             }
+//           : false
+//       }),
+//       prisma.job.count({
+//         where: { isDeleted: false }
+//       })
+//     ]);
+ 
+//     // Add isSaved flag
+//     const jobsWithSavedStatus = jobs.map(job => ({
+//       ...job,
+//       isSaved: job.savedBy && job.savedBy.length > 0
+//     }));
+ 
+//     return res.status(200).json({
+//       status: "success",
+//       jobs: jobsWithSavedStatus,
+//       totalCount,
+//       currentPage: page,
+//       totalPages: Math.ceil(totalCount / limit),
+//     });
+ 
+//   } catch (error) {
+//     logger.error("getJobList Error:", JSON.stringify(error.message,null,2));
+//     return res.status(500).json({
+//       status: "error",
+//       error: error.message || "Internal server error",
+//     });
+//   }
+// };
+
 const getJobList = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Number(req.body.page) || 1;
+    const limit = Number(req.body.limit) || 10;
     const skip = (page - 1) * limit;
- 
-    const userId = req.user?.id; // user may be optional (if public list)
- 
+     const filters = req.body.filters || {};
+    const userId = req.user?.id;
+
+    const {
+      location = [],
+      skills = [],
+      clouds = [],
+      jobType = [],
+      employmentType = [],
+      experience,
+    } = filters;
+
+    // 🔹 Base condition
+    const where = {
+      isDeleted: false,
+    };
+
+    // LOCATION (Exact city match)
+    if (location.length > 0) {
+      where.location = {
+        in: location,
+        mode: "insensitive",
+      };
+    }
+
+    // SKILLS (array column)
+    if (skills.length > 0) {
+      where.skills = {
+        hasEvery: skills,
+      };
+    }
+
+    // CLOUDS (array column)
+    if (clouds.length > 0) {
+      where.clouds = {
+        hasEvery: clouds,
+      };
+    }
+
+    // JOB TYPE
+    if (jobType.length > 0) {
+      where.jobType = {
+        in: jobType,
+      };
+    }
+
+    // EMPLOYMENT TYPE
+    if (employmentType.length > 0) {
+      where.employmentType = {
+        in: employmentType,
+      };
+    }
+
+    // EXPERIENCE RANGE SUPPORT
+    if (experience?.min !== undefined || experience?.max !== undefined) {
+      where.experience = {
+        number: {
+          gte: experience?.min ?? 0,
+          lte: experience?.max ?? 50,
+        },
+      };
+    }
+
     const [jobs, totalCount] = await Promise.all([
       prisma.job.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        where: {
-          isDeleted: false
-        },
-        include: userId
-          ? {
+        include:{
               savedBy: {
                 where: { userId },
-                select: { id: true }
-              }
+                select: {jobId: true },
+              },
             }
-          : false
       }),
-      prisma.job.count({
-        where: { isDeleted: false }
-      })
+      prisma.job.count({ where }),
     ]);
- 
-    // Add isSaved flag
-    const jobsWithSavedStatus = jobs.map(job => ({
+
+    const jobsWithSavedStatus = jobs.map((job) => ({
       ...job,
-      isSaved: job.savedBy && job.savedBy.length > 0
+      isSaved: job.savedBy && job.savedBy.length > 0 ? true : false
     }));
- 
+
     return res.status(200).json({
       status: "success",
       jobs: jobsWithSavedStatus,
-      totalCount,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
+      totalCount,
     });
- 
   } catch (error) {
-    logger.error("getJobList Error:", JSON.stringify(error.message,null,2));
+    logger.error("getJobList Error:", error);
     return res.status(500).json({
       status: "error",
-      error: error.message || "Internal server error",
+      message: "Internal server error",
     });
   }
 };
@@ -914,23 +1028,18 @@ const getJobDetails = async (req, res) => {
 
 const getApplicantsByJobId = async (req, res) => {
   try {
-    const { jobId } = req.body; 
+    const { jobId } = req.body;
 
     if (!jobId) {
       logger.warn("Missing jobId in getApplicantsByJobId body");
       return res.status(400).json({ message: "jobId is missing!" });
     }
 
-    // Fetch applications with AI Analysis included
+    // Fetch data (WITHOUT Prisma sorting)
     const applicants = await prisma.jobApplication.findMany({
       where: { jobId },
       include: {
-        user: {
-          include: {
-            CandidateProfile: true,
-          },
-        },
-        // Include the AI rank details
+        candidateProfile: true,
         analysis: {
           select: {
             fitPercentage: true,
@@ -938,58 +1047,61 @@ const getApplicantsByJobId = async (req, res) => {
             status: true
           }
         }
-      },
-      // SORTING LOGIC: Highest Match First
-      orderBy: [
-        {
-          analysis: {
-            fitPercentage: 'desc' 
-          }
-        },
-        {
-          appliedAt: 'desc' // Fallback for equal scores or missing analysis
-        }
-      ]
+      }
     });
-
-    logger.info('applicants',applicants)
 
     if (applicants.length === 0) {
       logger.info(`No applicants found for jobId ${jobId}`);
-      return res.status(200).json({ 
-        status:"success", 
-        message:"No applications found", 
-        data: [] });
+      return res.status(200).json({
+        status: "success",
+        message: "No applications found",
+        data: []
+      });
     }
 
-    // Format response for Frontend
+    // -------------------------
+    // ⭐ CUSTOM SORT (JS Layer)
+    // -------------------------
+    applicants.sort((a, b) => {
+      const scoreA = a.analysis?.fitPercentage ?? -1;  // NULL → -1
+      const scoreB = b.analysis?.fitPercentage ?? -1;  // NULL → -1
+
+      // 1️⃣ Match score high → low
+      if (scoreA !== scoreB) return scoreB - scoreA;
+
+      // 2️⃣ If same score → latest applied first
+      return new Date(b.appliedAt) - new Date(a.appliedAt);
+    });
+
+    // Format response
     const formattedApplicants = applicants.map((app) => ({
       applicationId: app.id,
       status: app.status,
       appliedAt: app.appliedAt,
-      userId: app.user.id,
-      name: app.user.name,
-      email: app.user.email,
-      profile: app.user.CandidateProfile,
-      matchScore: app.analysis?.fitPercentage || 0,
-      aiAnalysis: app.analysis?.details || null
+      userId: app.id,
+      name: app.candidateProfile?.name,
+      email: app.candidateProfile?.email,
+      profile: app.candidateProfile,
+      matchScore: app.analysis?.fitPercentage ?? null,
+      aiAnalysis: app.analysis?.details ?? null
     }));
 
     return res.status(200).json({
-      status:"success",
+      status: "success",
       message: "Applicants fetched successfully",
       count: formattedApplicants.length,
       data: formattedApplicants,
     });
 
   } catch (error) {
-    logger.error("Error fetching applicants:", JSON.stringify(error.message,null,2));
+    logger.error("Error fetching applicants:", JSON.stringify(error, null, 2));
     return res.status(500).json({
-      status:"error",
-      message: "Internal server error"+error.message,
+      status: "error",
+      message: "Internal server error: " + error.message,
     });
   }
 };
+
 
 const getUserAppliedJobsId = async (req,res) =>{
   try {

@@ -25,19 +25,19 @@ const ApplyBenchJob = ({ jobId }) => {
 
     const payload = {
       jobId: jobId, // or get from props/location
-      candidateIds: selectedRowKeys,
+      candidateProfileIds: selectedRowKeys,
     };
 
     try {
       setLoading(true);
-       console.log("SelectedRowKeys:", selectedRowKeys);
-console.log("Candidates list:", candidates);
+      console.log("SelectedRowKeys:", selectedRowKeys);
+      console.log("Candidates list:", candidates);
       const res = await ApplyBenchCandidate(payload);
       message.success("Applied successfully");
-      messageApi.success("✅ Candidates applied successfully!"); 
+      messageApi.success("✅ Candidates applied successfully!");
       console.log(res);
     } catch (err) {
-      messageApi.error("Something went wrong:"+err.response.data.message);
+      messageApi.error("Something went wrong:" + err.response.data.message);
       console.error(err);
     } finally {
       setLoading(false);
@@ -46,18 +46,18 @@ console.log("Candidates list:", candidates);
 
   // ------------------- TABLE COLUMNS -------------------
   const columns = [
-   {
-  title: "",
-  render: (_, record) => (
-    <input
-      type="checkbox"
-      checked={selectedRowKeys.includes(record.id)}
-      onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
-      onClick={(e) => e.stopPropagation()}
-    />
-  ),
-},
-{ title: "Id", dataIndex: "id", key: "id" },
+    {
+      title: "",
+      render: (_, record) => (
+        <input
+          type="checkbox"
+          checked={selectedRowKeys.includes(record.id)}
+          onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
+    { title: "Id", dataIndex: "id", key: "id" },
 
     { title: "Name", dataIndex: "name", width: 200 },
     {
@@ -69,8 +69,8 @@ console.log("Candidates list:", candidates);
           .map((s) => s.name)
           .join(", ") || "-",
     },
-     { title: "Location", dataIndex: "currentLocation", width: 200 },
-      { title: "Experience", dataIndex: "totalExperience", width: 200 },
+    { title: "Location", dataIndex: "currentLocation", width: 200 },
+    { title: "Experience", dataIndex: "totalExperience", width: 200 },
     {
       title: "Status",
       dataIndex: "status",
@@ -102,8 +102,8 @@ console.log("Candidates list:", candidates);
       <Table
         columns={columns}
         dataSource={candidates}
-       rowKey="id"
-        scroll={{ x: 1200, y: 500 }}
+        rowKey="id"
+        // scroll={{ x: 1200, y: 500 }}
       />
 
       <Button type="primary" onClick={handleApply}>
