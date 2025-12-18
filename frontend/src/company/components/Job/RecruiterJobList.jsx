@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+
 import {
   Card,
   Typography,
@@ -34,6 +36,7 @@ import {
   GenerateJobDescription,
 } from "../../../candidate/api/api";
 import ReusableSelect from "../../../candidate/components/UserProfile/ReusableSelect";
+
 
 import {
   StarFilled,
@@ -83,12 +86,35 @@ const RecruiterJobList = () => {
   const [aiModalVisible, setAiModalVisible] = useState(false);
   const [aiForm] = Form.useForm();
   const [aiLoading, setAiLoading] = useState(false);
+const location = useLocation();
+
+  
+const controllerRef = useRef(null);  
 
   const [isSalaryRange, setIsSalaryRange] = useState(false);
 
+  // useEffect(() => {
+  //   fetchJobs();
+
+  //    return () => {
+  //   if (controllerRef.current) controllerRef.current.abort();
+  // };
+  // }, []);
+
+
   useEffect(() => {
-    fetchJobs();
-  }, []);
+  fetchJobs();
+
+  return () => {
+    if (controllerRef.current) {
+      console.log("🔥 Aborting Jobs API due to route/tab change");
+      controllerRef.current.abort();
+    }
+  };
+}, [location.pathname]); // 👈 THIS LINE FIXES YOUR ISSUE
+
+ 
+
 
   const showCreateModal = () => {
     setIsEditing(false);
@@ -145,37 +171,63 @@ const RecruiterJobList = () => {
   };
 
   // ✅ Fetch job list
+  
   const fetchJobs = async () => {
-    try {
-      const response = await PostedJobsList();
-      const jobList = response?.jobs || [];
+  // 🔴 Abort previous request if still running
+  if (controllerRef.current) {
+    controllerRef.current.abort();
+  }
 
-      // 🔹 For each job, get candidate count
-      const jobsWithCounts = await Promise.all(
-        jobList.map(async (job) => {
-          try {
-            const candidateResponse = await GetCandidateDeatils({
-              jobId: job.id,
-            });
-            const applicantCount = candidateResponse?.count || 0;
-            return { ...job, applicantCount };
-          } catch (err) {
-            console.error(`Error fetching candidates for job ${job.id}:`, err);
-            return { ...job, applicantCount: 0 }; // fallback
+  // ✅ Create new AbortController
+  const controller = new AbortController();
+  controllerRef.current = controller;
+
+  try {
+    const response = await PostedJobsList(1, 10, controller.signal);
+    const jobList = response?.jobs || [];
+
+    // 🔹 For each job, get candidate count (abort-safe)
+    const jobsWithCounts = await Promise.all(
+      jobList.map(async (job) => {
+        try {
+          const candidateResponse = await GetCandidateDeatils(
+            { jobId: job.id },
+            controller.signal
+          );
+
+          const applicantCount = candidateResponse?.count || 0;
+          return { ...job, applicantCount };
+        } catch (err) {
+          if (err.code === "ERR_CANCELED") {
+            console.log(`Candidate API aborted for job ${job.id}`);
+          } else {
+            console.error(
+              `Error fetching candidates for job ${job.id}:`,
+              err
+            );
           }
-        })
-      );
+          return { ...job, applicantCount: 0 };
+        }
+      })
+    );
 
-      setJobs(jobsWithCounts);
-      console.log("Jobs with applicant counts:", jobsWithCounts);
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-      messageApi.error("Failed to fetch jobs:" + error.response.data.message);
-    } finally {
-      setLoading(false);
+    setJobs(jobsWithCounts);
+    console.log("Jobs with applicant counts:", jobsWithCounts);
+  } catch (error) {
+    if (error.code === "ERR_CANCELED") {
+      // console.log("✅ fetchJobs aborted");
+      return;
     }
-  };
 
+    console.error("Error fetching jobs:", error);
+    messageApi.error("Failed to fetch jobs");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  
   // ✅ Handle selecting/deselecting a job
   const handleSelect = (jobId) => {
     setSelectedJobs((prev) =>
@@ -514,7 +566,13 @@ const RecruiterJobList = () => {
             <Tooltip title="Click to view full job details">
               <Card
                 hoverable
-                onClick={() => navigate(`/company/job/${job.id}`)}
+                // onClick={() => navigate(`/company/job/${job.id}`)}
+                 onClick={() =>
+   navigate("/company/job/details", {
+   state: { job },
+})
+  }
+
                 style={{
                   borderRadius: 12,
                   background: "#fff",
@@ -562,7 +620,11 @@ const RecruiterJobList = () => {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/company/job/${job.id}`);
+                        // navigate(`/company/job/${job.id}`);
+                         navigate("/company/job/details", {
+    state: { job },
+  });
+
                       }}
                     >
                       {job.role || job.title}
@@ -665,7 +727,7 @@ const RecruiterJobList = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate("/company/candidates", {
-                          state: { id: job.id },
+                         state: { id: job?.id, jobRole: job?.role },
                         });
                       }}
                     >
@@ -1025,12 +1087,33 @@ const RecruiterJobList = () => {
             <Form.Item
               name="salary"
               label="Salary Per Annum"
-              rules={[{ required: true }]}
+              rules={[{ required: true },
+                {
+      validator: (_, value) => {
+        if (value === undefined || value === null) return Promise.resolve();
+
+        // convert to string safely
+        const str = value.toString();
+
+        // remove decimal point
+        const digitsOnly = str.replace(".", "");
+
+        if (digitsOnly.length > 10) {
+          return Promise.reject(
+            new Error("Maximum 10 digits allowed (including decimals)")
+          );
+        }
+
+        return Promise.resolve();
+      },
+    },
+              ]}
             >
               <InputNumber
                 formatter={formatter}
                 style={{ width: "100%" }}
                 min={0}
+                precision={8}  
                 placeholder="e.g. 500000 PA"
               />
             </Form.Item>
@@ -1040,12 +1123,33 @@ const RecruiterJobList = () => {
                 <Form.Item
                   name={["salary", "min"]}
                   noStyle
-                  rules={[{ required: true, message: "Min salary required" }]}
+                  rules={[{ required: true, message: "Min salary required" },
+                    {
+      validator: (_, value) => {
+        if (value === undefined || value === null) return Promise.resolve();
+
+        // convert to string safely
+        const str = value.toString();
+
+        // remove decimal point
+        const digitsOnly = str.replace(".", "");
+
+        if (digitsOnly.length > 10) {
+          return Promise.reject(
+            new Error("Maximum 10 digits allowed (including decimals)")
+          );
+        }
+
+        return Promise.resolve();
+      },
+    },
+                  ]}
                 >
                   <InputNumber
                     formatter={formatter}
                     placeholder="Min e.g. 500000 PA"
                     min={0}
+                    precision={8}  
                     style={{ width: "50%" }}
                   />
                 </Form.Item>
@@ -1055,6 +1159,25 @@ const RecruiterJobList = () => {
                   noStyle
                   rules={[
                     { required: true, message: "Max salary required" },
+                    {
+      validator: (_, value) => {
+        if (value === undefined || value === null) return Promise.resolve();
+
+        // convert to string safely
+        const str = value.toString();
+
+        // remove decimal point
+        const digitsOnly = str.replace(".", "");
+
+        if (digitsOnly.length > 10) {
+          return Promise.reject(
+            new Error("Maximum 10 digits allowed (including decimals)")
+          );
+        }
+
+        return Promise.resolve();
+      },
+    },
                     ({ getFieldValue }) => ({
                       validator(_, value) {
                         const min = getFieldValue(["salary", "min"]);
@@ -1072,6 +1195,7 @@ const RecruiterJobList = () => {
                     formatter={formatter}
                     placeholder="Max e.g. 800000 PA"
                     min={0}
+                    precision={8}  
                     style={{ width: "50%" }}
                   />
                 </Form.Item>

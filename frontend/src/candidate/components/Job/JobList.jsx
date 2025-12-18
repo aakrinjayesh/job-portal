@@ -35,15 +35,16 @@ const JobList = ({
   jobs,
   lastJobRef,
   type,
-  jobids,
+  // jobids,
   portal,
   onUnsave,
   isFilterOpen,
   toggleFilter,
+  hideSortAndFilter,
 }) => {
   const navigate = useNavigate();
   const [sortedJobs, setSortedJobs] = useState(jobs);
-  const [savedJobIds, setSavedJobIds] = useState(jobids || []);
+  // const [savedJobIds, setSavedJobIds] = useState(jobids || []);
   const [messageApi, contextHolder] = message.useMessage();
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
@@ -64,9 +65,9 @@ const JobList = ({
     setSortedJobs(jobs);
   }, [jobs]);
 
-  useEffect(() => {
-    setSavedJobIds(jobids || []);
-  }, [jobids]);
+  // useEffect(() => {
+  //   setSavedJobIds(jobids || []);
+  // }, [jobids]);
 
   const handleSaveToggle = async (jobId) => {
 
@@ -81,7 +82,7 @@ const JobList = ({
     if (jobIndex === -1) return;
 
     const originalJobs = [...sortedJobs];
-    const originalSavedIds = [...savedJobIds];
+    // const originalSavedIds = [...savedJobIds];
 
     const newJobs = [...sortedJobs];
     const willBeSaved = !newJobs[jobIndex].isSaved;
@@ -89,11 +90,11 @@ const JobList = ({
     setSortedJobs(newJobs);
 
     // Update savedJobIds optimistically
-    if (willBeSaved) {
-      setSavedJobIds((prev) => [...prev, jobId]);
-    } else {
-      setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
-    }
+    // if (willBeSaved) {
+    //   setSavedJobIds((prev) => [...prev, jobId]);
+    // } else {
+    //   setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
+    // }
 
     try {
       if (willBeSaved) {
@@ -111,7 +112,7 @@ const JobList = ({
     } catch (err) {
       console.error(err);
       setSortedJobs(originalJobs);
-      setSavedJobIds(originalSavedIds);
+      // setSavedJobIds(originalSavedIds);
       messageApi.error("Something went wrong!");
     }
   };
@@ -133,13 +134,33 @@ const JobList = ({
     setSortedJobs(sorted);
   };
 
-  const handleCardClick = (id) => {
-    if (portal === "company") {
-      navigate(`/company/job/${id}`, { state: { type, jobids, portal } });
-    } else {
-      navigate(`/candidate/job/${id}`, { state: { type, jobids } });
-    }
-  };
+  // const handleCardClick = (id) => {
+  //   if (portal === "company") {
+  //     navigate(`/company/job/${id}`, { state: { type, jobids, portal } });
+  //   } else {
+  //     navigate(`/candidate/job/${id}`, { state: { type, jobids } });
+  //   }
+  // };
+  const handleCardClick = (job) => {
+  if (portal === "company") {
+    navigate("/company/job/details", {
+      state: {
+        job,        // FULL JOB OBJECT → JobDetails renders instantly
+        type,
+        portal,
+      },
+    });
+  } else {
+    navigate(`/candidate/job/${job.id}`, {
+      state: {
+        job,
+        type,
+        portal,
+      },
+    });
+  }
+};
+
 
   const handleCheckEligibility = async (id) => {
       const getUser = localStorage.getItem("token");
@@ -227,7 +248,7 @@ const JobList = ({
       </Modal>
 
       {/* ⭐ TOP ROW — LEFT FILTER TOGGLE + RIGHT SORT OPTION */}
-      <Col xs={24}>
+      {/* <Col xs={24}>
         <div
           style={{
             display: "flex",
@@ -236,7 +257,7 @@ const JobList = ({
             marginBottom: 16,
           }}
         >
-          {/* LEFT — FILTER BUTTON */}
+          
           <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
           <Button
   type="text"
@@ -253,7 +274,7 @@ const JobList = ({
 </Tooltip>
 
 
-          {/* RIGHT — SORT */}
+          
           <Cascader
             options={sortOptions}
             onChange={handleSort}
@@ -262,18 +283,51 @@ const JobList = ({
             allowClear
           />
         </div>
-      </Col>
+      </Col> */}
+
+      
+      {!hideSortAndFilter && (
+  <Col xs={24}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 16,
+      }}
+    >
+      <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
+        <Button
+          type="text"
+          onClick={toggleFilter}
+          style={{ fontSize: 20 }}
+          icon={isFilterOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
+        />
+      </Tooltip>
+
+      <Cascader
+        options={sortOptions}
+        onChange={handleSort}
+        placeholder="Sort Jobs"
+        style={{ width: 250 }}
+        allowClear
+      />
+    </div>
+  </Col>
+)}
+
 
       {/* JOB CARDS */}
       {sortedJobs?.map((job, index) => {
         const isLastJob = index === sortedJobs?.length - 1;
-        const isSaved = savedJobIds.includes(job.id);
+        // const isSaved = savedJobIds.includes(job.id);
 
         return (
           <Col xs={24} key={job.id} ref={isLastJob ? lastJobRef : null}>
             <Card
               hoverable
-              onClick={() => handleCardClick(job.id)}
+              // onClick={() => handleCardClick(job.id)}
+              onClick={() => handleCardClick(job)}
               style={{
                 borderRadius: 12,
                 background: "#fff",
@@ -290,7 +344,8 @@ const JobList = ({
                 <Title
                   level={5}
                   style={{ margin: 0 }}
-                  onClick={() => handleCardClick(job.id)}
+                  // onClick={() => handleCardClick(job.id)}
+                  onClick={() => handleCardClick(job)}
                 >
                   {job?.role}
                 </Title>

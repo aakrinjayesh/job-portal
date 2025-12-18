@@ -380,13 +380,13 @@ export async function UnSaveJob(payload) {
 }
 
 
-export async function  SavedJobsList(page = 1, limit = 10) {
+export async function  SavedJobsList(page = 1, limit = 10,signal) {
   try {
       const response = await axiosInstance.get(`/jobs/saved?page=${page}&limit=${limit}`, {
         headers:{
           "Content-Type": "application/json"
         }
-      })
+      },{signal})
       return response.data
   } catch (error) {
     console.log("error duing appling job", error);

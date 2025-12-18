@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Spin, message } from "antd";
 import JobList from "../../candidate/components/Job/JobList";
 import { SavedJobsList, UserJobsids } from "../../candidate/api/api";
+import { useLocation } from "react-router-dom";
+
 
 function CompanySavedJobs() {
   const [jobs, setJobs] = useState([]);
@@ -10,12 +12,23 @@ function CompanySavedJobs() {
   const [page, setPage] = useState(1);
   const observer = useRef();
   const [ids, setIds] = useState();
+  const controllerRef = useRef(null);
+  const location = useLocation();
+
+
 
   // Fetch saved jobs
   const fetchSavedJobs = useCallback(async (pageNum = 1) => {
+
+      if (controllerRef.current) {
+    controllerRef.current.abort();
+  }
+
+  // 🔵 create new controller
+  controllerRef.current = new AbortController();
     setLoading(true);
     try {
-      const resp = await SavedJobsList(pageNum, 10); // Assuming pagination support
+      const resp = await SavedJobsList(pageNum, 10,  controllerRef.current.signal ); // Assuming pagination support
       if (resp?.status === "success") {
         const { savedJobs, pagination } = resp.data || {};
 
@@ -46,6 +59,16 @@ function CompanySavedJobs() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+  return () => {
+    if (controllerRef.current) {
+      console.log("🔥 Aborting SavedJobs API due to tab switch");
+      controllerRef.current.abort();
+    }
+  };
+}, [location.pathname]);
+
 
   useEffect(() => {
     fetchSavedJobs(1);
@@ -105,6 +128,7 @@ function CompanySavedJobs() {
           jobids={ids}
           portal={"company"}
           onUnsave={handleRemoveJob}
+           hideSortAndFilter={true}  
         />
       ) : (
         <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>

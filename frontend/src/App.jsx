@@ -25,7 +25,9 @@ import CompanySavedJobs from "./company/pages/CompanySavedJobs";
 import FindBench from "./company/pages/FindBench";
 import BenchCandidateDetails from "./company/components/Bench/BenchCandidateDetails";
 // import ResetPassword from "./pages/ResetPassword";
+import MyActivity from "./company/pages/MyActivity";
 
+import MyProfile from "./company/pages/MyProfile";
 function App() {
   return (
     <ConfigProvider
@@ -142,6 +144,16 @@ function App() {
         />
 
         <Route
+  path="/company/my-activity"
+  element={
+    <CompanyLayout>
+      <MyActivity />
+    </CompanyLayout>
+  }
+/>
+
+
+        <Route
           path="/company/candidate/:id"
           element={
             <CompanyLayout>
@@ -159,6 +171,25 @@ function App() {
           }
         />
 
+        <Route
+  path="/company/job/details"
+  element={
+    <CompanyLayout>
+      <JobDetails />
+    </CompanyLayout>
+  }
+/>
+
+
+<Route
+          path="/company/profile"
+          element={
+            <CompanyLayout>
+              <MyProfile />
+              {_/* <div>profile</div> */_}
+            </CompanyLayout>
+          }
+        />
          <Route
           path="/company/job/find"
           element={

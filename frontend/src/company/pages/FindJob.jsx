@@ -4,6 +4,8 @@ import FiltersPanel from "../../candidate/components/Job/FilterPanel";
 import JobList from "../../candidate/components/Job/JobList";
 import { GetJobsList } from "../../company/api/api";
 import { UserJobsids } from "../api/api";
+import { useLocation } from "react-router-dom";
+
 
 function FindJob() {
   const [allJobs, setAllJobs] = useState([]);
@@ -12,15 +14,26 @@ function FindJob() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const observer = useRef();
-  const [ids, setIds] = useState();
+  // const [ids, setIds] = useState();
+  const controllerRef = useRef(null);
+const location = useLocation();
+
 
   // ⭐ filter open / close
   const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const fetchJobs = useCallback(async (pageNum = 1) => {
+
+    if (controllerRef.current) {
+  controllerRef.current.abort();
+}
+
+// 🔵 ADD THIS
+controllerRef.current = new AbortController();
+
     setLoading(true);
     try {
-      const response = await GetJobsList(pageNum, 10);
+      const response = await GetJobsList(pageNum, 10,  controllerRef.current.signal  );
       const newJobs = response?.jobs || [];
 
       if (pageNum === 1) {
@@ -33,12 +46,26 @@ function FindJob() {
 
       if (pageNum >= response.totalPages) setHasMore(false);
     } catch (error) {
+       if (error.code === "ERR_CANCELED") {
+    console.log("FindJobs API aborted");
+    return;
+  }
       console.error("Error fetching jobs:", error);
       message.error("Failed to fetch jobs: " + error?.response?.data?.message);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+  return () => {
+    if (controllerRef.current) {
+      console.log("🔥 Aborting FindJobs API due to tab switch");
+      controllerRef.current.abort();
+    }
+  };
+}, [location.pathname]);
+
 
   useEffect(() => {
     fetchJobs(1);
@@ -61,19 +88,19 @@ function FindJob() {
     [loading, hasMore]
   );
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const resp = await UserJobsids();
-        if (resp.status === "success") {
-          setIds(resp.jobids);
-        }
-      } catch (error) {
-        console.log("error", error);
-      }
-    };
-    fetch();
-  }, []);
+  // useEffect(() => {
+  //   const fetch = async () => {
+  //     try {
+  //       const resp = await UserJobsids();
+  //       if (resp.status === "success") {
+  //         // setIds(resp.jobids);
+  //       }
+  //     } catch (error) {
+  //       console.log("error", error);
+  //     }
+  //   };
+  //   fetch();
+  // }, []);
 
   useEffect(() => {
     if (page > 1) fetchJobs(page);
@@ -300,7 +327,7 @@ function FindJob() {
             <JobList
               jobs={jobs}
               lastJobRef={lastJobRef}
-              jobids={ids}
+              // jobids={ids}
               type="find"
               portal="company"
               isFilterOpen={isFilterOpen}

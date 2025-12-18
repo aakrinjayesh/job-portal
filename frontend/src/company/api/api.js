@@ -1,9 +1,9 @@
 import axiosInstance from "../../candidate/api/axiosInstance";
  
 // ✅ FIXED VERSION
-export async function GetJobsList(page = 1, limit = 10) {
+export async function GetJobsList(page = 1, limit = 10, signal) {
   try {
-    const response = await axiosInstance.get(`/jobs?page=${page}&limit=${limit}`);
+    const response = await axiosInstance.get(`/jobs?page=${page}&limit=${limit}`,{ signal });
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
@@ -12,9 +12,11 @@ export async function GetJobsList(page = 1, limit = 10) {
 }
 
 
-export async function PostedJobsList(page = 1, limit = 10) {
+
+
+export async function PostedJobsList(page = 1, limit = 10, signal) {
   try {
-    const response = await axiosInstance.get(`/jobs/posted?page=${page}&limit=${limit}`);
+    const response = await axiosInstance.get(`/jobs/posted?page=${page}&limit=${limit}`,{ signal });
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
@@ -91,9 +93,9 @@ export async function UpdateJob( payload) {
 
 
 
-export async function GetCandidateDeatils(payload) {
+export async function GetCandidateDeatils(payload, signal) {
   try {
-    const response = await axiosInstance.post(`/job/applicants`, payload, {
+    const response = await axiosInstance.post(`/job/applicants`, payload, {signal,
       headers: { "Content-Type": "application/json" },
     });
     return response.data;
@@ -106,9 +108,9 @@ export async function GetCandidateDeatils(payload) {
 
 // vender routes
 
-export async function GetVendorCandidates() {
+export async function GetVendorCandidates(signal) {
   try {
-    const response = await axiosInstance.get(`/vendor/candidates`, {
+    const response = await axiosInstance.get(`/vendor/candidates`, {  signal ,
       headers: { "Content-Type": "application/json" },
     });
     return response.data;
@@ -220,10 +222,10 @@ export async function  UpdateVendorCandidateStatus( payload) {
 //     throw error;
 //   }
 // };
-export async function GetAllVendorCandidates(page = 1, limit = 10) {
+export async function GetAllVendorCandidates(page = 1, limit = 10, signal) {
   try {
     const response = await axiosInstance.get(
-      `/vendor/candidates/all?page=${page}&limit=${limit}`
+      `/vendor/candidates/all?page=${page}&limit=${limit}`,{signal}
     );
     return response.data;
   } catch (error) {
@@ -262,3 +264,135 @@ export async function ApplyBenchCandidate(payload) {
     throw error;
   }
 }
+
+/* ===========================
+   ACTIVITY – CREATE
+=========================== */
+
+// ✅ Create NOTE or SCHEDULE
+export async function CreateActivity(payload) {
+  try {
+    const response = await axiosInstance.post(
+      "/api/activity",
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in CreateActivity:", error);
+    throw error;
+  }
+}
+
+
+
+/* ===========================
+   ACTIVITY – READ
+=========================== */
+
+// ✅ My Activity (Recruiter Dashboard)
+export async function GetMyActivity(signal) {
+  try {
+    const response = await axiosInstance.get(
+      "/api/activity/my-activity",{signal},
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetMyActivity:", error);
+    throw error;
+  }
+}
+
+
+// ✅ Candidate Activity Timeline
+export async function GetCandidateActivities(candidateId) {
+  try {
+    const response = await axiosInstance.get(
+      `/api/activity/candidate/${candidateId}`,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetCandidateActivities:", error);
+    throw error;
+  }
+}
+
+
+/* ===========================
+   ACTIVITY – UPDATE
+=========================== */
+
+// ✅ Update NOTE or SCHEDULE
+export async function UpdateActivity(activityId, payload) {
+  try {
+    const response = await axiosInstance.put(
+         `/api/activity/${activityId}`,
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in UpdateActivity:", error);
+    throw error;
+  }
+}
+
+
+/* ===========================
+   ACTIVITY – DELETE
+=========================== */
+
+// ✅ Delete Activity (Hard delete)
+export async function DeleteActivity(activityId) {
+  try {
+    const response = await axiosInstance.delete(
+     `/api/activity/${activityId}`,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in DeleteActivity:", error);
+    throw error;
+  }
+}
+
+export async function GetUserProfileDetails() {
+  try {
+    // ✅ backend extracts userId from JWT
+    const response = await axiosInstance.get("/profile/details");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error;
+  }
+}
+
+export async function UpdateUserProfileDetails(payload) {
+  try {
+    const response = await axiosInstance.post("/profile/update", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+}
+
+
+
+export async function GetCountries() {
+  try {
+    const response = await axiosInstance.get("/countries");
+    return response.data;
+   }
+    
+   catch (error) {
+    console.error("Error fetching countries:", error);
+    throw error;
+  }
+}
+
+

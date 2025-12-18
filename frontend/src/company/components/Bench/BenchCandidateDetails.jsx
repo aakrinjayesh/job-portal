@@ -386,7 +386,9 @@ const navigate = useNavigate();
                       key={i}
                       type="inner"
                       size="small"
-                      title={proj.projectName}
+                      title={  <span  style={{ fontWeight: 500, color: "#666" }}>
+      <strong>Project:</strong> {proj.projectName}
+    </span>}
                       style={{
                         marginBottom: 8,
                         background: "#fff",

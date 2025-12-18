@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Button,
   Modal,
@@ -28,7 +28,8 @@ import { useCallback } from "react";
 import { Input } from "antd";
 import { SendVerificationOtp, VerifyCandidateOtp } from "../api/api";
 import SearchWithTextArea from "../components/Bench/SearchWithTextArea";
-import { useNavigate } from "react-router-dom";
+import { useNavigate , useLocation } from "react-router-dom";
+
 
 const Bench = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -60,10 +61,24 @@ const Bench = () => {
 
   const [timer, setTimer] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
+  const controllerRef = useRef(null);
+const location = useLocation();
+
 
     const navigate = useNavigate();
+    
 
   const { Title } = Typography;
+
+  useEffect(() => {
+  return () => {
+    if (controllerRef.current) {
+      console.log("🔥 Aborting Bench API due to tab switch");
+      controllerRef.current.abort();
+    }
+  };
+}, [location.pathname]);
+
 
   useEffect(() => {
     let interval = null;
@@ -84,9 +99,16 @@ const Bench = () => {
 
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
+
+      if (controllerRef.current) {
+    controllerRef.current.abort();
+  }
+
+  // 🔵 create new controller
+  controllerRef.current = new AbortController();
     try {
       setLoading(true);
-      const res = await GetVendorCandidates();
+      const res = await GetVendorCandidates(controllerRef.current.signal);
       const list = Array.isArray(res?.data) && res.data;
       setAllCandidates(list || []);
       setCandidates(list || []);
@@ -101,6 +123,10 @@ const Bench = () => {
         setUnverifiedCount(0);
       }
     } catch (error) {
+      if (error.code === "ERR_CANCELED") {
+      console.log("Bench API aborted");
+      return;
+    }
       console.error("Error fetching candidates:", error);
       message.error("Failed to fetch vendor candidates.");
     } finally {
@@ -320,151 +346,186 @@ const Bench = () => {
     }
   };
 
-  // 🔹 Table Columns
-  const columns = [
-    {
-      title: "",
-      dataIndex: "select",
-      key: "select",
-      width: 50,
-      render: (_, record) => (
-        <input
-          type="checkbox"
-          checked={selectedRowKeys.includes(record.id)}
-          onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
-          onClick={(e) => e.stopPropagation()} // stop row click
-        />
-      ),
-    },
+ 
 
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (text) => (
-        <span style={{ color: "#1677ff", fontWeight: 600 }}>{text}</span>
-      ),
-    },
-    {
-      title: "Role",
-      dataIndex: "title",
-      key: "title",
-      sorter: (a, b) => a.title?.localeCompare(b.title),
-    },
-    {
-      title: "Cloud",
-      key: "cloud",
-      render: (_, record) =>
-        Array.isArray(record.primaryClouds) && record.primaryClouds.length > 0
-          ? record.primaryClouds
-              .slice(0, 5)
-              .map((c) => c.name)
-              .join(", ")
-          : "-",
-    },
-    {
-      title: "Skills",
-      key: "skills",
-      render: (_, record) =>
-        record.skillsJson
-          ?.filter((s) => s.level === "primary")
-          .slice(0, 5)
-          .map((s) => s.name)
-          .join(", ") || "-",
-    },
-    {
-      title: "Preferred Locations",
-      key: "preferredLocation",
-      render: (_, record) =>
-        Array.isArray(record.preferredLocation)
-          ? record.preferredLocation.join(", ")
-          : "-",
-    },
+  // 🔹 Table Columns (UPDATED)
+const columns = [
+  // --------------------------------------------------
+  // FIXED LEFT: CHECKBOX COLUMN
+  // --------------------------------------------------
+  {
+    title: "",
+    dataIndex: "select",
+    key: "select",
+    width: 60,
+    fixed: "left",
+    render: (_, record) => (
+      <input
+        type="checkbox"
+        checked={selectedRowKeys.includes(record.id)}
+        onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
+        onClick={(e) => e.stopPropagation()}
+      />
+    ),
+  },
 
-    {
-      title: "Rate Card",
-      key: "rateCard",
-      filters: [
-        { text: "INR", value: "INR" },
-        { text: "USD", value: "USD" },
-        { text: "EUR", value: "EUR" },
-      ],
-      onFilter: (value, record) => record?.rateCardPerHour?.currency === value,
-      sorter: (a, b) =>
-        parseFloat(a?.rateCardPerHour?.value || 0) -
-        parseFloat(b?.rateCardPerHour?.value || 0),
-      render: (_, record) => {
-        const rate = record?.rateCardPerHour?.value || "-";
-        const currency = record?.rateCardPerHour?.currency || "";
-        if (rate === "-" && !currency) return "-";
-        return (
-          <span style={{ fontWeight: 600 }}>
-            {currency} {rate}
-          </span>
-        );
-      },
-    },
+  // --------------------------------------------------
+  // FIXED LEFT: NAME COLUMN
+  // --------------------------------------------------
+  {
+    title: "Name",
+    dataIndex: "name",
+    key: "name",
+    width: 150,
+    fixed: "left",
+    sorter: (a, b) => a.name.localeCompare(b.name),
+    render: (text) => (
+      <span style={{ color: "#1677ff", fontWeight: 600 }}>{text}</span>
+    ),
+  },
 
-    {
-      title: "Joining Period",
-      dataIndex: "joiningPeriod",
-      key: "joiningPeriod",
+  // --------------------------------------------------
+  // NORMAL SCROLLABLE COLUMNS
+  // --------------------------------------------------
+  {
+    title: "Role",
+    dataIndex: "title",
+    key: "title",
+    sorter: (a, b) => a.title?.localeCompare(b.title),
+  },
+  {
+    title: "Cloud",
+    key: "cloud",
+    render: (_, record) =>
+      Array.isArray(record.primaryClouds) && record.primaryClouds.length > 0
+        ? record.primaryClouds
+            .slice(0, 5)
+            .map((c) => c.name)
+            .join(", ")
+        : "-",
+  },
+
+  {
+  title: "Skills",
+  key: "skills",
+  render: (_, record) => {
+    const skills =
+      record.skillsJson
+        ?.filter((s) => s.level === "primary")
+        .slice(0, 5)
+        .map((s) => s.name) || [];
+
+    if (skills.length === 0) return "-";
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        {skills.map((skill, index) => (
+          <span key={index}>{skill}</span>
+        ))}
+      </div>
+    );
+  },
+},
+
+  {
+    title: "Preferred Locations",
+    key: "preferredLocation",
+    render: (_, record) =>
+      Array.isArray(record.preferredLocation)
+        ? record.preferredLocation.join(", ")
+        : "-",
+  },
+
+  {
+    title: "Rate Card",
+    key: "rateCard",
+    filters: [
+      { text: "INR", value: "INR" },
+      { text: "USD", value: "USD" },
+      { text: "EUR", value: "EUR" },
+    ],
+    onFilter: (value, record) => record?.rateCardPerHour?.currency === value,
+    sorter: (a, b) =>
+      parseFloat(a?.rateCardPerHour?.value || 0) -
+      parseFloat(b?.rateCardPerHour?.value || 0),
+    render: (_, record) => {
+      const rate = record?.rateCardPerHour?.value || "-";
+      const currency = record?.rateCardPerHour?.currency || "";
+      if (rate === "-" && !currency) return "-";
+      return (
+        <span style={{ fontWeight: 600 }}>
+          {currency} {rate}
+        </span>
+      );
     },
-    {
-      title: "Verified",
-      key: "verified",
-      render: (_, record) => {
-        const isVerified = record?.isVerified; // boolean from DB
-        return isVerified ? (
-          <span style={{ color: "#52c41a", fontWeight: 600 }}>Verified</span>
-        ) : (
-          <Button
-            type="link"
-            onClick={(e) => {
-              e.stopPropagation();
-              openVerifyModal(record); // we'll implement this function
-            }}
-          >
-            Verify
+  },
+
+  {
+    title: "Joining Period",
+    dataIndex: "joiningPeriod",
+    key: "joiningPeriod",
+  },
+
+  {
+    title: "Verified",
+    key: "verified",
+    render: (_, record) => {
+      const isVerified = record?.isVerified;
+      return isVerified ? (
+        <span style={{ color: "#52c41a", fontWeight: 600 }}>Verified</span>
+      ) : (
+        <Button
+          type="link"
+          onClick={(e) => {
+            e.stopPropagation();
+            openVerifyModal(record);
+          }}
+        >
+          Verify
+        </Button>
+      );
+    },
+  },
+
+  // --------------------------------------------------
+  // FIXED RIGHT: ACTIONS COLUMN
+  // --------------------------------------------------
+  {
+    title: "Actions",
+    key: "actions",
+    width: 140,
+    fixed: "right",
+    render: (_, record) => (
+      <Space>
+        <Button
+          type="link"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEdit(record);
+          }}
+        >
+          Edit
+        </Button>
+
+        <Popconfirm
+          title="Are you sure you want to delete this candidate?"
+          okText="Yes"
+          cancelText="No"
+          onConfirm={(e) => {
+            e?.stopPropagation();
+            handleDelete(record);
+          }}
+          onCancel={(e) => e?.stopPropagation()}
+        >
+          <Button type="link" danger onClick={(e) => e.stopPropagation()}>
+            Delete
           </Button>
-        );
-      },
-    },
+        </Popconfirm>
+      </Space>
+    ),
+  },
+];
 
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(record);
-            }}
-          >
-            Edit
-          </Button>
-
-          <Popconfirm
-            title="Are you sure you want to delete this candidate?"
-            okText="Yes"
-            cancelText="No"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              handleDelete(record);
-            }}
-            onCancel={(e) => e?.stopPropagation()}
-          >
-            <Button type="link" onClick={(e) => e.stopPropagation()} danger>
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
 
   // 🔹 Hotlist submit handler
   const handleHotlistSubmit = () => {
@@ -772,7 +833,8 @@ const Bench = () => {
           rowKey={(record) => record.id || record.name}
           bordered
           pagination={false}
-          scroll={{ x: 1000 }}
+          // scroll={{ x: 1000 }}
+          scroll={{ x: "max-content" }}
           style={{ cursor: "pointer" }}
           // onRow={(record) => ({
           //   onClick: () => {

@@ -4,6 +4,7 @@ import FiltersPanel from "../../candidate/components/Job/FilterPanel";
 import BenchList from "../components/Bench/BenchList";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
 import { GetAllVendorCandidates } from "../api/api";
+import { useLocation } from "react-router-dom";
 
 
 
@@ -23,14 +24,24 @@ function FindBench() {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
 const [filtersState, setFiltersState] = useState({});
+const controllerRef = useRef(null);
+const location = useLocation();
 
 
 
 
   const fetchBench = useCallback(async (pageNum = 1) => {
+
+      if (controllerRef.current) {
+    controllerRef.current.abort();
+  }
+
+  // 🔵 create new controller
+  controllerRef.current = new AbortController();
+
   setLoading(true);
   try {
-    const res = await GetAllVendorCandidates(pageNum, 10);
+    const res = await GetAllVendorCandidates(pageNum, 10,  controllerRef.current.signal);
 
     // Backend returns ---> res.candidates
     const newList = res?.candidates || [];
@@ -48,12 +59,26 @@ const [filtersState, setFiltersState] = useState({});
       setHasMore(false);
     }
   } catch (error) {
+     if (error.code === "ERR_CANCELED") {
+      console.log("FindBench API aborted");
+      return;
+    }
     console.error(error);
     message.error("Failed to load bench candidates.");
   } finally {
     setLoading(false);
   }
 }, []);
+
+useEffect(() => {
+  return () => {
+    if (controllerRef.current) {
+      console.log("🔥 Aborting FindBench API due to tab switch");
+      controllerRef.current.abort();
+    }
+  };
+}, [location.pathname]);
+
 
 
   // Initial load

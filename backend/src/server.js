@@ -12,6 +12,7 @@ import LoginRouters from "./Routes/loginRoutes.js";
 import VendorRoutes from "./Routes/vendorRoutes.js";
 import VerificationRoutes from "./Routes/verificationRoutes.js";
 import CVRouters from "./Routes/cvRankerRoutes.js";
+import activityRoutes from "./Routes/activityRoutes.js";
 
 
 dotenv.config();
@@ -22,7 +23,13 @@ const app = express();
 app.use(cors())
 app.use(express.json())
 
+app.use((req, res, next) => {
+  console.log("➡️ Incoming request:", req.method, req.url);
+  next();
+});
 
+
+app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // app.use('/api/v1', userRouter)
 app.use(LoginRouters)

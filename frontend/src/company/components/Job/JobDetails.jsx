@@ -19,12 +19,16 @@ import ApplyBenchJob from "../../pages/ApplyBenchJob";
 const { Title, Text, Paragraph } = Typography;
 
 const JobDetails = () => {
-  const { id } = useParams();
+  // const { id } = useParams();
   const navigate = useNavigate();
-  const [job, setJob] = useState(null);
+  // const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // const location = useLocation();
+
   const location = useLocation();
+const job = location.state?.job; // ← GET jobId from navigation
+
 
   const type = location?.state?.type;
   const portal = location?.state?.portal;
@@ -32,22 +36,48 @@ const JobDetails = () => {
   console.log("type in compant jobdetails", type);
   console.log("portal", portal);
 
-  useEffect(() => {
-    fetchJobDetails();
-  }, [id]);
+  // useEffect(() => {
+  //   fetchJobDetails();
+  // }, [id]);
+
+useEffect(() => {
+  if (job) {
+    setLoading(false);   // job came from card → no API call
+  } else {
+    fetchJobDetails();   // only call API if user directly opens URL
+  }
+}, []);
+
+
+
+  // const fetchJobDetails = async () => {
+  //   try {
+  //     const payload = { jobid: id };
+  //     // const response = await GetJobDetails(payload);
+  //     setJob(response?.job);
+  //   } catch (error) {
+  //     message.error("Failed to load job details");
+  //     console.error(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const fetchJobDetails = async () => {
-    try {
-      const payload = { jobid: id };
-      const response = await GetJobDetails(payload);
-      setJob(response?.job);
-    } catch (error) {
-      message.error("Failed to load job details");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const jobId = location.state?.jobId;
+    if (!jobId) return; // no api
+
+    const payload = { jobid: jobId };
+    const response = await GetJobDetails(payload);
+    setJob(response?.job);
+  } catch (error) {
+    message.error("Failed to load job details");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleViewCandidates = () => {
     navigate("/company/candidates", { state: { id } });
@@ -152,7 +182,9 @@ const JobDetails = () => {
 
         <Divider />
       </Card>
-      <ApplyBenchJob jobId={id} />
+      {/* <ApplyBenchJob jobId={id} /> */}
+      <ApplyBenchJob jobId={job?.id} />
+
     </div>
   );
 };

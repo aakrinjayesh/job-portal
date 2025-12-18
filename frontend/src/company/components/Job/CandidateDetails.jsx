@@ -2,10 +2,14 @@ import React from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Card, Row, Col, Tag, Divider, Button, Typography } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
+import CandidateActivity from "../activity/CandidateActivity";
+
 
 const { Title, Paragraph, Text } = Typography;
 
 const CandidateDetails = () => {
+
+  
   const location = useLocation();
   const { candidate, jobId } = location.state || {};
   const navigate = useNavigate();
@@ -16,6 +20,9 @@ const CandidateDetails = () => {
   }
 
   const profile = candidate.profile || {};
+
+    console.log("CandidateDetails candidate:", candidate);
+  console.log("candidate.userId:", candidate.userId);
 
   return (
     <div style={{ padding: "20px" }}>
@@ -183,9 +190,15 @@ const CandidateDetails = () => {
             {cert}
           </Tag>
         ))}
+        
+<CandidateActivity candidateId={profile.userId} />
+
+
       </Card>
     </div>
+    
   );
+  
 };
 
 export default CandidateDetails;

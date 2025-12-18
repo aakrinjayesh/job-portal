@@ -42,11 +42,14 @@ const CompanyLayout = ({ children }) => {
   const menuRoutes = {
     dashboard: "/company/dashboard",
     jobs: "/company/jobs",
+    myactivity: "/company/my-activity",
+
     bench: "/company/bench",
     findjob: "/company/job/find",
     findbench: "/company/bench/find",
     savedjobs: "/company/jobs/saved",
     chat: "/company/chat",
+    profile: "/company/profile",
     logout: "/login",
   };
 
@@ -62,6 +65,11 @@ const CompanyLayout = ({ children }) => {
       label: "My Jobs",
       icon: <FileTextOutlined />,
     },
+    {
+  key: "myactivity",
+  label: "My Activity",
+  icon: <AppstoreOutlined />,
+},
      {
       key: "findjob",
       label: "Find Jobs",
@@ -86,6 +94,11 @@ const CompanyLayout = ({ children }) => {
       key: "chat",
       label: "Chat",
       icon: <WhatsAppOutlined />,
+    },
+    {
+      key: "profile",
+      label: "Profile",
+      icon: <FileTextOutlined />,
     },
     {
       key: "logout",
