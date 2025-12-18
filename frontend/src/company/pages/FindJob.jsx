@@ -6,7 +6,6 @@ import { GetJobsList } from "../../company/api/api";
 import { UserJobsids } from "../api/api";
 import { useLocation } from "react-router-dom";
 
-
 function FindJob() {
   const [allJobs, setAllJobs] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -16,24 +15,26 @@ function FindJob() {
   const observer = useRef();
   // const [ids, setIds] = useState();
   const controllerRef = useRef(null);
-const location = useLocation();
-
+  const location = useLocation();
 
   // ⭐ filter open / close
   const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const fetchJobs = useCallback(async (pageNum = 1) => {
-
     if (controllerRef.current) {
-  controllerRef.current.abort();
-}
+      controllerRef.current.abort();
+    }
 
-// 🔵 ADD THIS
-controllerRef.current = new AbortController();
+    // 🔵 ADD THIS
+    controllerRef.current = new AbortController();
 
     setLoading(true);
     try {
-      const response = await GetJobsList(pageNum, 10,  controllerRef.current.signal  );
+      const response = await GetJobsList(
+        pageNum,
+        10,
+        controllerRef.current.signal
+      );
       const newJobs = response?.jobs || [];
 
       if (pageNum === 1) {
@@ -46,10 +47,10 @@ controllerRef.current = new AbortController();
 
       if (pageNum >= response.totalPages) setHasMore(false);
     } catch (error) {
-       if (error.code === "ERR_CANCELED") {
-    console.log("FindJobs API aborted");
-    return;
-  }
+      if (error.code === "ERR_CANCELED") {
+        console.log("FindJobs API aborted");
+        return;
+      }
       console.error("Error fetching jobs:", error);
       message.error("Failed to fetch jobs: " + error?.response?.data?.message);
     } finally {
@@ -58,14 +59,13 @@ controllerRef.current = new AbortController();
   }, []);
 
   useEffect(() => {
-  return () => {
-    if (controllerRef.current) {
-      console.log("🔥 Aborting FindJobs API due to tab switch");
-      controllerRef.current.abort();
-    }
-  };
-}, [location.pathname]);
-
+    return () => {
+      if (controllerRef.current) {
+        console.log("🔥 Aborting FindJobs API due to tab switch");
+        controllerRef.current.abort();
+      }
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     fetchJobs(1);

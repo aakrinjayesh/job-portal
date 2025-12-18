@@ -11,7 +11,7 @@ import {
   Cascader,
   message,
   Button,
-  Modal
+  Modal,
 } from "antd";
 import {
   StarFilled,
@@ -35,7 +35,7 @@ const JobList = ({
   jobs,
   lastJobRef,
   type,
-  // jobids,
+  jobids,
   portal,
   onUnsave,
   isFilterOpen,
@@ -44,7 +44,7 @@ const JobList = ({
 }) => {
   const navigate = useNavigate();
   const [sortedJobs, setSortedJobs] = useState(jobs);
-  // const [savedJobIds, setSavedJobIds] = useState(jobids || []);
+  const [savedJobIds, setSavedJobIds] = useState(jobids || []);
   const [messageApi, contextHolder] = message.useMessage();
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
@@ -65,24 +65,23 @@ const JobList = ({
     setSortedJobs(jobs);
   }, [jobs]);
 
-  // useEffect(() => {
-  //   setSavedJobIds(jobids || []);
-  // }, [jobids]);
+  useEffect(() => {
+    setSavedJobIds(jobids || []);
+  }, [jobids]);
 
   const handleSaveToggle = async (jobId) => {
-
-     const getUser = localStorage.getItem("token");
+    const getUser = localStorage.getItem("token");
 
     if (!getUser) {
       setShowLoginModal(true); // 🚀 open modal
       return;
     }
-     
+
     const jobIndex = sortedJobs.findIndex((job) => job.id === jobId);
     if (jobIndex === -1) return;
 
     const originalJobs = [...sortedJobs];
-    // const originalSavedIds = [...savedJobIds];
+    const originalSavedIds = [...savedJobIds];
 
     const newJobs = [...sortedJobs];
     const willBeSaved = !newJobs[jobIndex].isSaved;
@@ -90,11 +89,11 @@ const JobList = ({
     setSortedJobs(newJobs);
 
     // Update savedJobIds optimistically
-    // if (willBeSaved) {
-    //   setSavedJobIds((prev) => [...prev, jobId]);
-    // } else {
-    //   setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
-    // }
+    if (willBeSaved) {
+      setSavedJobIds((prev) => [...prev, jobId]);
+    } else {
+      setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
+    }
 
     try {
       if (willBeSaved) {
@@ -112,7 +111,7 @@ const JobList = ({
     } catch (err) {
       console.error(err);
       setSortedJobs(originalJobs);
-      // setSavedJobIds(originalSavedIds);
+      setSavedJobIds(originalSavedIds);
       messageApi.error("Something went wrong!");
     }
   };
@@ -141,29 +140,29 @@ const JobList = ({
   //     navigate(`/candidate/job/${id}`, { state: { type, jobids } });
   //   }
   // };
-  const handleCardClick = (job) => {
-  if (portal === "company") {
-    navigate("/company/job/details", {
-      state: {
-        job,        // FULL JOB OBJECT → JobDetails renders instantly
-        type,
-        portal,
-      },
-    });
-  } else {
-    navigate(`/candidate/job/${job.id}`, {
-      state: {
-        job,
-        type,
-        portal,
-      },
-    });
-  }
-};
 
+  const handleCardClick = (job) => {
+    if (portal === "company") {
+      navigate("/company/job/details", {
+        state: {
+          job, // FULL JOB OBJECT → JobDetails renders instantly
+          type,
+          portal,
+        },
+      });
+    } else {
+      navigate(`/candidate/job/${job.id}`, {
+        state: {
+          job,
+          type,
+          portal,
+        },
+      });
+    }
+  };
 
   const handleCheckEligibility = async (id) => {
-      const getUser = localStorage.getItem("token");
+    const getUser = localStorage.getItem("token");
 
     if (!getUser) {
       setShowLoginModal(true); // 🚀 open modal
@@ -208,7 +207,6 @@ const JobList = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-
         <Text strong style={{ fontSize: 14, display: "block" }}>
           {data.fitPercentage}% Match
         </Text>
@@ -222,7 +220,8 @@ const JobList = ({
         </div>
 
         <div>
-          <Text type="secondary">Experience:</Text> {a.total_experience_years} yr
+          <Text type="secondary">Experience:</Text> {a.total_experience_years}{" "}
+          yr
         </div>
 
         <div>
@@ -237,7 +236,7 @@ const JobList = ({
     <Row gutter={[16, 16]}>
       {contextHolder}
 
-       <Modal
+      <Modal
         open={showLoginModal}
         title="Login Required"
         onCancel={() => setShowLoginModal(false)}
@@ -285,37 +284,37 @@ const JobList = ({
         </div>
       </Col> */}
 
-      
       {!hideSortAndFilter && (
-  <Col xs={24}>
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 16,
-      }}
-    >
-      <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
-        <Button
-          type="text"
-          onClick={toggleFilter}
-          style={{ fontSize: 20 }}
-          icon={isFilterOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
-        />
-      </Tooltip>
+        <Col xs={24}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
+              <Button
+                type="text"
+                onClick={toggleFilter}
+                style={{ fontSize: 20 }}
+                icon={
+                  isFilterOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />
+                }
+              />
+            </Tooltip>
 
-      <Cascader
-        options={sortOptions}
-        onChange={handleSort}
-        placeholder="Sort Jobs"
-        style={{ width: 250 }}
-        allowClear
-      />
-    </div>
-  </Col>
-)}
-
+            <Cascader
+              options={sortOptions}
+              onChange={handleSort}
+              placeholder="Sort Jobs"
+              style={{ width: 250 }}
+              allowClear
+            />
+          </div>
+        </Col>
+      )}
 
       {/* JOB CARDS */}
       {sortedJobs?.map((job, index) => {
@@ -396,7 +395,7 @@ const JobList = ({
                     </Space>
                   )}
 
-                 {job.salary && <Text>₹ {job.salary} Lacs PA</Text>}
+                  {job.salary && <Text>₹ {job.salary} Lacs PA</Text>}
                 </Space>
               </div>
 

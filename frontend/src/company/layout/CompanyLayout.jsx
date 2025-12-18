@@ -24,11 +24,6 @@ import {
   LogoutOutlined,
   WhatsAppOutlined,
   SaveFilled,
- CloudOutlined,
-  EnvironmentOutlined,
-  StarFilled,
-  MenuUnfoldOutlined,
-  MenuFoldOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
@@ -43,7 +38,6 @@ const CompanyLayout = ({ children }) => {
     dashboard: "/company/dashboard",
     jobs: "/company/jobs",
     myactivity: "/company/my-activity",
-
     bench: "/company/bench",
     findjob: "/company/job/find",
     findbench: "/company/bench/find",
@@ -54,80 +48,39 @@ const CompanyLayout = ({ children }) => {
   };
 
   const items = [
-    {
-      key: "dashboard",
-      label: "DashBoard",
-      icon: <DashboardOutlined />,
-    },
-    // post a job hari code created job
-    {
-      key: "jobs",
-      label: "My Jobs",
-      icon: <FileTextOutlined />,
-    },
-    {
-  key: "myactivity",
-  label: "My Activity",
-  icon: <AppstoreOutlined />,
-},
-     {
-      key: "findjob",
-      label: "Find Jobs",
-      icon: <SearchOutlined />,
-    },
-    {
-      key: "savedjobs",
-      label: "Saved Jobs",
-      icon: <SaveFilled />,
-    },
-    {
-      key: "bench",
-      label: "My Bench",
-      icon: <TeamOutlined />,
-    },
-    {
-      key: "findbench",
-      label: "Find Candidate",
-      icon: <SearchOutlined />,
-    },
-    {
-      key: "chat",
-      label: "Chat",
-      icon: <WhatsAppOutlined />,
-    },
-    {
-      key: "profile",
-      label: "Profile",
-      icon: <FileTextOutlined />,
-    },
-    {
-      key: "logout",
-      label: "Logout",
-      icon: <LogoutOutlined />,
-    },
+    { key: "dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
+    { key: "jobs", label: "My Jobs", icon: <FileTextOutlined /> },
+    { key: "myactivity", label: "My Activity", icon: <AppstoreOutlined /> },
+    { key: "findjob", label: "Find Jobs", icon: <SearchOutlined /> },
+    { key: "savedjobs", label: "Saved Jobs", icon: <SaveFilled /> },
+    { key: "bench", label: "My Bench", icon: <TeamOutlined /> },
+    { key: "findbench", label: "Find Candidate", icon: <SearchOutlined /> },
+    { key: "chat", label: "Chat", icon: <WhatsAppOutlined /> },
+    { key: "profile", label: "Profile", icon: <FileTextOutlined /> },
+    { key: "logout", label: "Logout", icon: <LogoutOutlined /> },
   ];
 
-  const onClick = (e) => {
-    const route = menuRoutes[e.key];
-    if (route) {
-      if (e.key === "logout") {
-        // Handle logout
-        localStorage.clear();
-      }
-      if (e.key === "chat") {
-        navigate("/company/chat", { state: { userType: "company" } });
-        return;
-      }
-      navigate(route);
+  const onClick = ({ key }) => {
+    const route = menuRoutes[key];
+
+    if (key === "logout") {
+      localStorage.clear();
+      navigate("/login");
+      return;
     }
+
+    if (key === "chat") {
+      navigate("/company/chat", { state: { userType: "company" } });
+      return;
+    }
+
+    if (route) navigate(route);
   };
 
   const user = JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
     role: "Company",
   };
-  const { name, role } = user;
-
   const siderStyle = {
     overflow: "auto",
     height: "100vh",
@@ -140,44 +93,45 @@ const CompanyLayout = ({ children }) => {
     background: "#fff",
     boxShadow: "2px 0 6px rgba(0,0,0,0.1)",
   };
-
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      {/* Sidebar */}
+    <Layout hasSider>
       <Sider
         collapsible
         collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
+        onCollapse={setCollapsed}
         width={230}
         style={siderStyle}
       >
         <div
           style={{
-            padding: "16px",
+            padding: 16,
             textAlign: "center",
             borderBottom: "1px solid #f0f0f0",
           }}
         >
           <Avatar
-            size={54}
+            size={48}
             icon={<UserOutlined />}
             style={{ cursor: "pointer" }}
             onClick={() => navigate("/company/dashboard")}
           />
           {!collapsed && (
             <>
-              <div style={{ marginTop: "8px", fontWeight: "bold" }}>{name}</div>
-              <Text type="secondary">{role}</Text>
+              <div style={{ marginTop: 8, fontWeight: 600 }}>{user.name}</div>
+              <Text type="secondary">{user.role}</Text>
             </>
           )}
         </div>
 
         <Menu
           mode="inline"
-          onClick={onClick}
-          defaultSelectedKeys={["1"]}
-          style={{ borderRight: 0, paddingTop: "16px" }}
           items={items}
+          onClick={onClick}
+          style={{
+            height: "calc(100vh - 110px)", // 🔥 important
+            overflowY: "auto",
+            borderRight: 0,
+          }}
         />
       </Sider>
 
@@ -189,8 +143,8 @@ const CompanyLayout = ({ children }) => {
             left: collapsed ? 80 : 230,
             right: 0,
             height: 64,
+            background: "#fff",
             zIndex: 100,
-            background: "#ffffff",
             padding: "0 24px",
             display: "flex",
             justifyContent: "space-between",
@@ -200,47 +154,22 @@ const CompanyLayout = ({ children }) => {
           }}
         >
           <Title level={4} style={{ margin: 0 }}>
-            Welcome <span style={{ color: "#1677ff" }}>{name}</span>
+            Welcome <span style={{ color: "#1677ff" }}>{user.name}</span>
           </Title>
         </Header>
 
         <Content
           style={{
             marginTop: 64,
-            marginBottom: 64,
-            padding: "10px",
+            // padding: 16,
             background: "#f5f6fa",
-            height: "calc(100vh - 128px)",
+            minHeight: "calc(100vh - 64px)",
             overflowY: "auto",
-            width: "100%",
+            //  width: "100%",
           }}
         >
           {children}
         </Content>
-        {/* <Footer
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: collapsed ? 80 : 230,
-            right: 0,
-            height: 50,
-            background: "#fff",
-            textAlign: "center",
-            boxShadow: "0 -2px 8px rgba(0,0,0,0.05)",
-            lineHeight: "64px",
-            transition: "left 0.2s",
-            padding: 0,
-          }}
-        >
-          <a
-            href="https://aakrin.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Aakrin ©
-          </a>{" "}
-          {new Date().getFullYear()}
-        </Footer> */}
       </Layout>
     </Layout>
   );

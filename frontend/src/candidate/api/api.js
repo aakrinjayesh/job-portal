@@ -471,6 +471,23 @@ export async function AiJobFilter(payload) {
 }
 
 
+export async function CheckUserExist(payload) {
+  try {
+    const response = await axiosInstance.post("/checkuser", payload, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
+  }
+}
+
+
+
+
 
 
 

@@ -1,9 +1,13 @@
 import axiosInstance from "../../candidate/api/axiosInstance";
  
 // ✅ FIXED VERSION
-export async function GetJobsList(page = 1, limit = 10, signal) {
+export async function GetJobsList(page = 1, limit = 10, signal, filters = {}) {
   try {
-    const response = await axiosInstance.get(`/jobs?page=${page}&limit=${limit}`,{ signal });
+    const response = await axiosInstance.post("/jobs/list", {
+    page,
+    limit,
+    filters,
+  },{signal});
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
