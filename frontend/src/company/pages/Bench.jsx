@@ -57,6 +57,7 @@ const Bench = () => {
   const [unverifiedCount, setUnverifiedCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState("active");
+  const [messageApi, contextHolder] = message.useMessage();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const [timer, setTimer] = useState(0);
@@ -315,36 +316,49 @@ const location = useLocation();
     }
   };
 
-  const updateStatus = async (status) => {
-    try {
-      // backend update
-      const payload = {
-        candidateIds: selectedRowKeys,
-        status: status,
-      };
-      const resp = await UpdateVendorCandidateStatus(payload);
-      if (resp.status !== "success") {
-        return message.error("Failed to update status. Try again.");
-      }
-      // frontend update
-      const updated = candidates.map((c) =>
-        selectedRowKeys.includes(c.id)
-          ? { ...c, status: status === "active" } // convert to boolean
-          : c
-      );
-      setAllCandidates(updated);
-      setCandidates(updated);
-      setSelectedRowKeys([]);
+const updateStatus = async (status) => {
+  try {
+    const payload = {
+      candidateIds: selectedRowKeys,
+      status,
+    };
 
-      message.success(
-        status === "active" ? "Moved to Active!" : "Moved to Inactive!"
-      );
-      fetchCandidates();
-    } catch (error) {
-      console.error(error);
-      message.error("Failed to update status. Try again.");
+    const resp = await UpdateVendorCandidateStatus(payload);
+
+    if (resp?.status !== "success") {
+      messageApi.error("Failed to update status. Try again.");
+      return;
     }
-  };
+
+    // 🔹 Optimistic UI update
+    const updated = candidates.map((c) =>
+      selectedRowKeys.includes(c.id)
+        ? { ...c, status: status === "active" }
+        : c
+    );
+    setAllCandidates(updated);
+    setCandidates(updated);
+    setSelectedRowKeys([]);
+
+    // ✅ SUCCESS MESSAGE
+    messageApi.success({
+      content:
+        status === "active"
+          ? "Moved to Active successfully!"
+          : "Moved to Inactive successfully!",
+      duration: 2,
+    });
+
+    // 🔹 Refresh list AFTER message
+    setTimeout(() => {
+      fetchCandidates();
+    }, 300);
+
+  } catch (error) {
+    console.error(error);
+    messageApi.error("Failed to update status. Try again.");
+  }
+};
 
  
 
@@ -664,6 +678,7 @@ const columns = [
 
   return (
     <div style={{ padding: 24 }}>
+       {contextHolder}
       {/* <h2 style={{ marginBottom: 16 }}>Vendor Candidate List</h2> */}
       <Title level={4} style={{ color: "rgba(0,0,0,0.75)", marginBottom: 16 }}>
         Vendor Candidate List

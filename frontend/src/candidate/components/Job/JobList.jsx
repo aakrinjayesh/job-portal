@@ -154,6 +154,7 @@ const JobList = ({
       navigate(`/candidate/job/${job.id}`, {
         state: {
           job,
+          jobids,
           type,
           portal,
         },
