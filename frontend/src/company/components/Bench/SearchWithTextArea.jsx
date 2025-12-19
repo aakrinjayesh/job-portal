@@ -12,17 +12,12 @@ const SearchWithTextArea = ({
   const inputRef = useRef(null);
   // const [searchValue, setSearchValue] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
+  const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async () => {
-    try {
-      setLoading(true);
-
-      const textArea = inputRef?.current?.resizableTextArea?.textArea;
-      if (!textArea) {
-        messageApi.error("Unable to access search input.");
-        return;
-      }
+ const handleSearch = async () => {
+  try {
+    setLoading(true);
 
       const value = textArea.value?.trim() || "";
       if (!value) {
@@ -91,6 +86,8 @@ const SearchWithTextArea = ({
           autoSize={{ minRows: 2, maxRows: 5 }}
           ref={inputRef}
           placeholder="AI Search"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
           style={{ width: "80%" }}
         />
 
@@ -104,12 +101,16 @@ const SearchWithTextArea = ({
           Search
         </Button>
       </Space.Compact>
-      <Button
-        style={{ marginLeft: 10, marginBottom: type === "job" && 10 }}
-        onClick={handleClearFilters}
-      >
-        Clear Filter
-      </Button>
+     <Button
+  style={{ marginLeft: 10, marginBottom: type === "job" && 10 }}
+  onClick={() => {
+    setSearchValue("");      // ✅ clears textarea
+    handleClearFilters();    // existing logic
+  }}
+>
+  Clear Filter
+</Button>
+
     </>
   );
 };
