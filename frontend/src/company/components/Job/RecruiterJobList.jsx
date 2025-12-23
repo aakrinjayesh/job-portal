@@ -543,7 +543,7 @@ const controllerRef = useRef(null);
                   rules={[
                     { required: true, message: "Please enter your reason" },
                     {
-                pattern: /^[A-Za-z][A-Za-z0-9 \-]*$/,
+                pattern: /^[A-Za-z]+$/,
                 message: "Only letters, numbers, and spaces are allowed",
                },
                   ]}

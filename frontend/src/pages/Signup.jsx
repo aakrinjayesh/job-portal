@@ -1,134 +1,50 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Typography, message, Divider } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Typography,
+  message,
+  Divider,
+} from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
-import { GenerateOtp, ValidateOtp, CheckUserExist } from "../candidate/api/api";
-
-import bg1 from "../assets/salesforce1_bg.jpg";
-import bg5 from "../assets/bg5.webp";
-import bg3 from "../assets/bg3.jpg";
-import bg4 from "../assets/bg4.jpg";
+import {
+  GenerateOtp,
+  ValidateOtp,
+  CheckUserExist,
+} from "../candidate/api/api";
+import jobroleImg from "../assets/jobrole.png";
+import groupImg from "../assets/Group.png";
+import andrewImg from "../assets/andrew.png";
+import salaryImg from "../assets/salary.png";
+import personImg from "../assets/login_design.png";
+import AppFooter from "../components/layout/AppFooter";
+import AppHeader from "../components/layout/AppHeader";
 
 const { Title, Text } = Typography;
 
 const Signup = () => {
   const navigate = useNavigate();
-  const [messageApi, contextHolder] = message.useMessage();
+  const location = useLocation();
+  const role = location?.state?.role || "candidate";
+
   const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
   const [generateLoading, setGenerateLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [bgIndex, setBgIndex] = useState(0);
-  const [timer, setTimer] = useState(0); // 🔥 timer for resend
-  const [isResendDisabled, setIsResendDisabled] = useState(true);
+  const [timer, setTimer] = useState(0);
   const [isFormReady, setIsFormReady] = useState(false);
 
-  const location = useLocation();
-  const role = location?.state?.role;
-
-  const backgrounds = [bg1, bg5, bg3, bg4];
-
-  // 🔹 Set background only once when page loads or refreshes
+  /* ================= TIMER ================= */
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * backgrounds.length);
-    setBgIndex(randomIndex);
-  }, []);
-
-  // ⏱️ OTP resend timer logic
-  useEffect(() => {
-    let countdown;
+    let interval;
     if (timer > 0) {
-      countdown = setInterval(() => setTimer((prev) => prev - 1), 1000);
-    } else {
-      setIsResendDisabled(false);
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
     }
-    return () => clearInterval(countdown);
+    return () => clearInterval(interval);
   }, [timer]);
 
-  // ✅ Verify OTP
-  const onFinish = async (values) => {
-    setSubmitLoading(true);
-    try {
-      const response = await ValidateOtp({
-        email: values.email,
-        otp: values.otp,
-      });
-      if (response.status === "success") {
-        localStorage.setItem("token", response.token);
-        messageApi.success("OTP verified successfully!");
-        navigate("/createpassword", { state: { email: values.email, role } });
-      } else {
-        messageApi.error(response.message || "Invalid OTP");
-      }
-    } catch (err) {
-      console.log("validate otp error", err);
-      messageApi.error("Something went wrong:"+err.response.data.message);
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
-  // 🔁 Generate / Resend OTP
- const handleGenerateOtp = async () => {
-  const email = form.getFieldValue("email");
-  const firstname = form.getFieldValue("fname");
-  const lastname = form.getFieldValue("lname");
-
-  // 🔴 Check empty fields
-  if (!firstname) {
-    messageApi.warning("Please enter your first name");
-    return;
-  }
-  if (!lastname) {
-    messageApi.warning("Please enter your last name");
-    return;
-  }
-  if (!email) {
-    messageApi.warning("Please enter your email");
-    return;
-  }
-
-  // 🔴 Run email validation based on role
-  try {
-    await form.validateFields(["email"]);
-  } catch {
-    return; // Stop if email invalid
-  }
-
-  const name = `${firstname} ${lastname}`;
-
-  try {
-    setGenerateLoading(true);
-    const check = await CheckUserExist({ email });
-
-if (check.status === "success") {
-  messageApi.warning("User already registered. Please login.");
-  //navigate("/login");
-  return;
-}
-    const res = await GenerateOtp({ email, role, name });
-
-    if (res.status === "success") {
-      messageApi.success("OTP sent to your email");
-      setTimer(60);
-      setIsResendDisabled(true);
-    } else {
-      messageApi.error(res.message || "Failed to send OTP");
-    }
-  } catch (e) {
-    messageApi.error(
-    "Failed to send OTP: " + (e.response?.data?.message || e.message || "Unknown error")
-  );
-  } finally {
-    setGenerateLoading(false);
-  }
-};
-
-
-  const handleLoginRedirect = () => {
-    navigate("/login");
-  };
-
-  // Check if company email
-const isCompanyEmail = (email) => {
+  /* ================= EMAIL HELPERS ================= */
   const personalDomains = [
     "gmail.com",
     "yahoo.com",
@@ -136,207 +52,341 @@ const isCompanyEmail = (email) => {
     "hotmail.com",
     "icloud.com",
     "rediffmail.com",
-    "zohomail.com"
   ];
 
-  const domain = email.split("@")[1]?.toLowerCase();
-  return domain && !personalDomains.includes(domain);
-};
+  const isCompanyEmail = (email) =>
+    email && !personalDomains.includes(email.split("@")[1]?.toLowerCase());
 
-// Check if personal email
-const isPersonalEmail = (email) => {
-  const personalDomains = [
-    "gmail.com",
-    "yahoo.com",
-    "outlook.com",
-    "hotmail.com",
-    "icloud.com",
-    "rediffmail.com"
-  ];
+  const isPersonalEmail = (email) =>
+    email && personalDomains.includes(email.split("@")[1]?.toLowerCase());
 
-  const domain = email.split("@")[1]?.toLowerCase();
-  return domain && personalDomains.includes(domain);
-};
+  /* ================= OTP VERIFY ================= */
+  const onFinish = async (values) => {
+    setSubmitLoading(true);
+    try {
+      const response = await ValidateOtp({
+        email: values.email,
+        otp: values.otp,
+      });
 
+      if (response.status === "success") {
+        messageApi.success("OTP verified successfully!");
+        navigate("/createpassword", {
+          state: { email: values.email, role },
+        });
+      } else {
+        messageApi.error(response.message || "Invalid OTP");
+      }
+    } catch (err) {
+      messageApi.error(
+        "Something went wrong: " + err?.response?.data?.message
+      );
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
-  return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {contextHolder}
-
-      {/* 🔁 Background slideshow */}
-      {backgrounds.map((img, index) => (
-        <div
-          key={index}
-          style={{
-            backgroundImage: `url(${img})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "brightness(0.5)",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            opacity: bgIndex === index ? 1 : 0,
-            transition: "opacity 2s ease-in-out",
-          }}
-        ></div>
-      ))}
-
-      {/* 🔒 Signup Box */}
-      <div
-        style={{
-          position: "relative",
-          zIndex: 1,
-          width: "400px",
-          textAlign: "center",
-          padding: "25px",
-          borderRadius: "10px",
-        }}
-      >
-        <Title level={1} style={{ marginBottom: "20px", color: "white" }}>
-          QuickhireSF
-        </Title>
-
-        <Title
-          level={4}
-          style={{
-            color: "white",
-            marginBottom: "30px",
-            fontWeight: "400",
-          }}
-        >
-          {role === "company" ? "Company Signup" : "Candidate Signup"}
-        </Title>
-
-        <Form
-          form={form}
-          layout="vertical"
-          name="signup"
-          onFinish={onFinish}
-          style={{ width: "100%" }}
-          onValuesChange={() => {
+  /* ================= SEND / RESEND OTP ================= */
+  const handleGenerateOtp = async () => {
+    const email = form.getFieldValue("email");
     const fname = form.getFieldValue("fname");
     const lname = form.getFieldValue("lname");
-    const email = form.getFieldValue("email");
 
-    if (fname && lname && email) {
-      setIsFormReady(true);
-    } else {
-      setIsFormReady(false);
+    if (!fname || !lname || !email) {
+      messageApi.warning("Please fill all required fields");
+      return;
     }
-  }}
 
-        >
-           <Form.Item
-            name="fname"
-            style={{ marginBottom: "18px" }}
-            rules={[{ required: true, message: "Please enter your firstname" },
-              {
-                pattern: /^[A-Za-z][A-Za-z\s]*$/,
-                message: "Only letters are allowed!",
-              },
-            ]}
-          >
-            <Input placeholder="FirstName" size="large" />
-          </Form.Item>
-           <Form.Item
-            name="lname"
-            style={{ marginBottom: "18px" }}
-            rules={[{ required: true, message: "Please enter your last name" },
-              {
-                pattern: /^[A-Za-z][A-Za-z\s]*$/,
-                message: "Only letters are allowed!",
-              },
-            ]}
-          >
-            <Input placeholder="Lastname" size="large" />
-          </Form.Item>
-           <Form.Item
-            name="email"
-            rules={[
-              { required: true, message: "Please enter your email" },
-              {
-                validator: (_, value) => {
-                  if (!value) return Promise.resolve();
-          
-                  if (role === "candidate" && !isPersonalEmail(value)) {
-                    return Promise.reject(
-                      "Please use a personal email (gmail, yahoo, outlook, icloud)"
-                    );
-                  }
-          
-                  if (role === "company" && !isCompanyEmail(value)) {
-                    return Promise.reject(
-                      "Please use a company email (no gmail/yahoo)"
-                    );
-                  }
-          
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
-            <Input placeholder="Email" size="large" />
-          </Form.Item>
+    try {
+      setGenerateLoading(true);
 
-        <Button
-  onClick={handleGenerateOtp}
-  type="primary"
-  block
-  loading={generateLoading}
-  size="large"
+      const check = await CheckUserExist({ email });
+      if (check.status === "success") {
+        messageApi.warning("User already registered. Please login.");
+        return;
+      }
+
+      const res = await GenerateOtp({
+        email,
+        role,
+        name: `${fname} ${lname}`,
+      });
+
+      if (res.status === "success") {
+        messageApi.success("OTP sent to your email");
+        setTimer(60);
+      } else {
+        messageApi.error(res.message || "Failed to send OTP");
+      }
+    } catch (e) {
+      messageApi.error(
+        "Failed to send OTP: " + (e.response?.data?.message || e.message)
+      );
+    } finally {
+      setGenerateLoading(false);
+    }
+  };
+
+  return (
+    <>
+      {contextHolder}
+
+      <AppHeader />
+
+      {/* ================= BODY ================= */}
+      <div style={styles.container}>
+        {/* LEFT */}
+        <div style={styles.left}>
+          <div style={styles.loginCard}>
+            <Title level={3} style={{ marginBottom: 8 }}>
+              {role === "company" ? "Company Signup" : "Candidate Signup"}
+            </Title>
+
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              onValuesChange={() => {
+                const f = form.getFieldValue("fname");
+                const l = form.getFieldValue("lname");
+                const e = form.getFieldValue("email");
+                setIsFormReady(!!(f && l && e));
+              }}
+            >
+              <Form.Item
+                name="fname"
+                rules={[
+                  { required: true, message: "Enter first name" },
+                  { pattern: /^[A-Za-z\s]+$/, message: "Only letters allowed" },
+                ]}
+              >
+                <Input size="large" placeholder="First Name" />
+              </Form.Item>
+
+              <Form.Item
+                name="lname"
+                rules={[
+                  { required: true, message: "Enter last name" },
+                  { pattern: /^[A-Za-z\s]+$/, message: "Only letters allowed" },
+                ]}
+              >
+                <Input size="large" placeholder="Last Name" />
+              </Form.Item>
+
+              <Form.Item
+                name="email"
+                rules={[
+                  { required: true, message: "Enter email" },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+                      if (role === "candidate" && !isPersonalEmail(value))
+                        return Promise.reject(
+                          "Use personal email (gmail, outlook, etc.)"
+                        );
+                      if (role === "company" && !isCompanyEmail(value))
+                        return Promise.reject("Use company email");
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input size="large" placeholder="Email" />
+              </Form.Item>
+
+              <Button
+                type="primary"
+                block
+                size="large"
+                loading={generateLoading}
+                onClick={handleGenerateOtp}
+                disabled={!isFormReady || timer > 0}
+              >
+                {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
+              </Button>
+
+            <Form.Item
+  name="otp"
+  rules={[{ required: true, message: "Enter OTP" }]}
   style={{
-              marginBottom: "18px",
-              color: "white"
-            }}
-  disabled={timer !== 0 || !isFormReady}
+    marginTop: 16,
+    display: "flex",
+    justifyContent: "center",
+  }}
 >
-  {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
-</Button>
+  <Input.OTP
+    length={4}
+    size="large"
+    style={{ gap: 12 }}
+  />
+</Form.Item>
 
-          <Form.Item
-            name="otp"
-            style={{ marginBottom: "18px" }}
-            rules={[{ required: true, message: "Please enter OTP" }]}
-          >
-            <Input.OTP length={4} size="large" />
-          </Form.Item>
 
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={submitLoading}
-            style={{ marginBottom: "5px" }}
-            block
-            size="large"
-          >
-            Verify & Continue
-          </Button>
-        </Form>
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                size="large"
+                loading={submitLoading}
+              >
+                Verify & Continue
+              </Button>
+            </Form>
 
-        <Divider plain style={{ color: "white",marginBottom:"1px"}}>
-          or
-        </Divider>
+            <Divider />
 
-        <Text style={{ display: "block", color: "white", marginBottom: "18px" }}>
-          Already have an account?{" "}
-          <Button type="link" onClick={handleLoginRedirect}>
-            Login
-          </Button>
-        </Text>
+            <Text>
+              Already have an account?{" "}
+              <Button type="link" onClick={() => navigate("/login")}>
+                Login
+              </Button>
+            </Text>
+          </div>
+        </div>
+
+        {/* RIGHT HERO (Same as Login) */}
+        <div style={styles.right}>
+          <div style={styles.heroText}>
+            <Title level={2} style={{ color: "#fff", fontSize: 24 }}>
+              Dream jobs <span style={{ opacity: 0.7 }}>don’t wait —</span>
+              <br />
+              neither should you.
+            </Title>
+            <Text style={{ color: "#e6e6ff" }}>
+              QuickHire SF. Our Lightning Platform gives you the fastest way to
+              find and apply for jobs.
+            </Text>
+          </div>
+
+          <div style={styles.salaryBadge}>
+              <img src={salaryImg} alt="Salary" style={{ width: 18, height: 18 }} />₹8 – ₹14 LPA</div>
+         
+           <div style={styles.searchCard}>
+             🔍 <span>Find the role that fits your goals.</span>
+           </div>
+         
+           <div style={styles.jobCard}>
+              <img src={jobroleImg} alt="Jobrole" style={{ width: 18, height: 18 }} />
+             <strong>Salesforce Developer</strong>
+             <div style={{ fontSize: 13, opacity: 0.8 }}>New Delhi</div>
+             <div style={{ fontWeight: 600 }}>₹12,00,000 PA</div>
+           </div>
+         
+           <div style={styles.jobType}>
+           <img src={groupImg} alt="Group" style={{ width: 18, height: 18 }} />
+           <span style={{ marginLeft: 8 }}>Fulltime Job</span>
+         </div>
+         
+         
+           <div style={styles.nameTag}>
+              <img src={andrewImg} alt="Andrew" style={{ width: 18, height: 18 }} />Andrew</div>
+           
+
+          <img src={personImg} alt="person" style={styles.person} />
+        </div>
       </div>
-    </div>
+
+     
+<AppFooter />
+    </>
   );
+};
+
+/* ================= STYLES ================= */
+const styles = {
+  header: {
+    height: 70,
+    padding: "0 60px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid #eee",
+    background: "#fff",
+  },
+  logo: { fontWeight: 600, fontSize: 18 },
+  menu: { display: "flex", gap: 24 },
+
+  container: { display: "flex", minHeight: "calc(100vh - 130px)" },
+  left: { width: "50%", padding: 60 },
+  right: {
+    width: "50%",
+    background: "#4F63F6",
+    padding: "80px",
+    position: "relative",
+    overflow: "hidden",
+  },
+
+  loginCard: {
+    maxWidth: 420,
+    margin: "0 auto",
+    padding: 32,
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    background: "#fff",
+  },
+
+  heroText: { maxWidth: 420, zIndex: 5, position: "relative" },
+
+  salaryBadge: {
+    position: "absolute",
+    top: 260,
+    left: 60,
+    background: "#fff",
+    padding: "8px 16px",
+    borderRadius: 20,
+  },
+  
+searchCard: {
+  position: "absolute",
+  bottom: "231px",
+  right: 375,
+  background: "#fff",
+  padding: "10px 14px",
+  borderRadius: 14,
+  fontSize: 14,
+  zIndex: 3,
+},
+  jobCard: {
+    position: "absolute",
+    top: 280,
+    right: 40,
+    background: "#fff",
+    padding: 16,
+    borderRadius: 16,
+    width: 220,
+  },
+  jobType: {
+    position: "absolute",
+    top: 380,
+    right: 180,
+    background: "#fff",
+    padding: "6px 14px",
+    borderRadius: 20,
+  },
+  nameTag: {
+    position: "absolute",
+    bottom: 90,
+    right: 260,
+    background: "#fff",
+    padding: "6px 14px",
+    borderRadius: 20,
+  },
+ person: {
+  //position: "absolute",
+  right: 80,
+  top: 5,
+  height: 350,
+  zIndex: 2,
+},
+
+  footer: {
+    height: 60,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderTop: "1px solid #eee",
+  },
 };
 
 export default Signup;
