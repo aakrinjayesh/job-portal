@@ -3,6 +3,10 @@ import { Spin, message, Button, Table, Tag, Modal, Input } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GetCandidateDeatils } from "../../api/api";
+import { EyeOutlined } from "@ant-design/icons";
+import { Popover } from "antd";
+
+
 
 const CandidateList = () => {
   const location = useLocation();
@@ -22,6 +26,9 @@ const CandidateList = () => {
   // ✅ NEW STATE FOR GROUP CHAT
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [selectedCandidates, setSelectedCandidates] = useState([]);
+const [flags, setFlags] = useState({});
+ 
+
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -57,111 +64,371 @@ const CandidateList = () => {
     },
   };
 
+  // ✅ write this at the TOP of the file (below imports)
+const chipStyle = {
+  padding: "6px 8px",
+  borderRadius: 4,
+  fontSize: 12,
+  lineHeight: "14px",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 10,
+  marginBottom: 4,
+};
+
+// ================= FLAG CONFIG =================
+
+const FLAG_OPTIONS = [
+  { key: "shortlisted", label: "Shortlisted", color: "#52c41a" },
+  { key: "maybe", label: "Maybe", color: "#faad14" },
+  { key: "hold", label: "Hold", color: "#fa8c16" },
+  { key: "rejected", label: "Rejected", color: "#f5222d" },
+];
+
+const DEFAULT_FLAG_COLOR = "#BFBFBF";
+
+// Triangle flag (same as Figma)
+const PennantFlag = ({ color = DEFAULT_FLAG_COLOR }) => (
+  <div
+    style={{
+      width: 0,
+      height: 0,
+      borderTop: "7px solid transparent",
+      borderBottom: "7px solid transparent",
+      borderLeft: `14px solid ${color}`,
+    }}
+  />
+);
+
+// Dropdown content
+const FlagDropdown = ({ record }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    {FLAG_OPTIONS.map((flag) => (
+      <div
+        key={flag.key}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+        }}
+        onClick={() =>
+          setFlags((prev) => ({
+            ...prev,
+            [record.userId]: flag,
+          }))
+        }
+      >
+        <PennantFlag color={flag.color} />
+        <span style={{ fontSize: 13 }}>{flag.label}</span>
+      </div>
+    ))}
+  </div>
+);
+
+
+
+
+
+
   // TABLE COLUMNS
   const columns = [
-    {
-      title: "Fit Score",
-      dataIndex: "matchScore",
-      key: "matchScore",
-      fixed: "left",
-      render: (score) => {
-        if (score == null) return <Tag>N/A</Tag>;
 
-        let color = "default";
-        if (score >= 80) color = "green";
-        else if (score >= 60) color = "blue";
-        else if (score >= 40) color = "orange";
-        else color = "red";
+ {
+  title: "Flags",
+  key: "flags",
+  width: 60,
+  fixed: "left",
+  align: "center",
+  render: (_, record) => {
+    const selectedFlag = flags[record.userId];
 
-        return <Tag color={color}>{score}%</Tag>;
-      },
-    },
-    {
+    return (
+      <Popover
+        trigger="click"
+        placement="right"
+        content={<FlagDropdown record={record} />}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{ cursor: "pointer" }}
+        >
+          <PennantFlag
+            color={selectedFlag?.color || DEFAULT_FLAG_COLOR}
+          />
+        </div>
+      </Popover>
+    );
+  },
+},
+
+
+     {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      fixed: "left",
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
+ 
+
     {
-      title: "Key Match Skills",
-      key: "keyMatchSkills",
-      render: (_, record) => {
-        const list = record?.aiAnalysis?.key_match_skills || [];
-        return (
-          <div style={{ maxHeight: 80, overflowY: "auto" }}>
-            {list.length ? (
-              list.map((s) => (
-                <Tag color="green" key={s}>
-                  {s}
-                </Tag>
-              ))
-            ) : (
-              <Tag>N/A</Tag>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      title: "Key Gap Skills",
-      key: "keyGapSkills",
-      render: (_, record) => {
-        const list = record?.aiAnalysis?.key_gap_skills || [];
-        return (
-          <div style={{ maxHeight: 80, overflowY: "auto" }}>
-            {list.length ? (
-              list.map((s) => (
-                <Tag color="red" key={s}>
-                  {s}
-                </Tag>
-              ))
-            ) : (
-              <Tag>N/A</Tag>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      title: "Key Match Clouds",
-      key: "keyMatchClouds",
-      render: (_, record) => {
-        const list = record?.aiAnalysis?.key_match_clouds || [];
-        return (
-          <div style={{ maxHeight: 80, overflowY: "auto" }}>
-            {list.length ? (
-              list.map((c) => (
-                <Tag color="blue" key={c}>
-                  {c}
-                </Tag>
-              ))
-            ) : (
-              <Tag>N/A</Tag>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      title: "Key Gap Clouds",
-      key: "keyGapClouds",
-      render: (_, record) => {
-        const list = record?.aiAnalysis?.key_gap_clouds || [];
-        return (
-          <div style={{ maxHeight: 80, overflowY: "auto" }}>
-            {list.length ? (
-              list.map((c) => (
-                <Tag color="orange" key={c}>
-                  {c}
-                </Tag>
-              ))
-            ) : (
-              <Tag>N/A</Tag>
-            )}
-          </div>
-        );
-      },
-    },
+  title: "Fit Score",
+  dataIndex: "matchScore",
+  key: "matchScore",
+  render: (score) => {
+    if (score == null) return <Tag>N/A</Tag>;
+
+    let bgColor = "#f5f5f5";
+    let textColor = "#000";
+    let borderColor = "#d9d9d9";
+
+    if (score >= 80) {
+      bgColor = "#f6ffed";
+      textColor = "#389e0d";
+      borderColor = "#b7eb8f";
+    } else if (score >= 60) {
+      bgColor = "#e6f4ff";
+      textColor = "#0958d9";
+      borderColor = "#91caff";
+    } else if (score >= 40) {
+      bgColor = "#fff7e6";
+      textColor = "#d46b08";
+      borderColor = "#ffd591";
+    } else {
+      bgColor = "#fff1f0";
+      textColor = "#cf1322";
+      borderColor = "#ffa39e";
+    }
+
+    return (
+      <span
+        style={{
+          padding: "6px 16px",       // ✅ SAME AS FIGMA
+          borderRadius: "8px",
+          fontWeight: 500,
+          fontSize: "13px",
+          backgroundColor: bgColor,
+          color: textColor,
+          border: `1px solid ${borderColor}`,
+          display: "inline-block",
+          minWidth: 60,
+          textAlign: "center",
+        }}
+      >
+        {score}%
+      </span>
+    );
+  },
+},
+
+
+{
+  title: "Key Match Skills",
+  width:200,
+  key: "keyMatchSkills",
+  render: (_, record) => {
+    const list = record?.aiAnalysis?.key_match_skills || [];
+
+    if (!list.length) {
+      return <Tag style={chipStyle}>NA</Tag>;
+    }
+
+    const visibleSkills = list.slice(0, 2); // 👈 show first 2
+    const remainingCount = list.length - 2;
+
+    return (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {visibleSkills.map((skill) => (
+          <Tag
+            key={skill}
+            color="green"
+            style={chipStyle}
+          >
+            {skill}
+          </Tag>
+        ))}
+
+        {remainingCount > 0 && (
+          <span
+            style={{
+              color: "#1677ff",      // Ant Design link blue
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: "22px",
+              textDecoration: "underline",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              // optional: modal / tooltip later
+              console.log("All match skills:", list);
+            }}
+          >
+            +{remainingCount} more
+          </span>
+        )}
+      </div>
+    );
+  },
+},
+
+
+{
+  title: "Key Gap Skills",
+  key: "keyGapSkills",
+  render: (_, record) => {
+    const list = record?.aiAnalysis?.key_gap_skills || [];
+
+    if (!list.length) {
+      return <Tag style={chipStyle}>NA</Tag>;
+    }
+
+    const visibleSkills = list.slice(0, 2);
+    const remainingCount = list.length - 2;
+
+    return (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {visibleSkills.map((skill) => (
+          <Tag
+            key={skill}
+            color="red"
+            style={chipStyle}
+          >
+            {skill}
+          </Tag>
+        ))}
+
+        {remainingCount > 0 && (
+          <span
+            style={{
+              color: "#1677ff",      // AntD link blue
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: "22px",
+              textDecoration: "underline",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              // OPTIONAL: later you can open modal / tooltip here
+              console.log("All gap skills:", list);
+            }}
+          >
+            +more
+          </span>
+        )}
+      </div>
+    );
+  },
+},
+
+
+
+{
+  title: "Key Match Clouds",
+  key: "keyMatchClouds",
+  render: (_, record) => {
+    const list = record?.aiAnalysis?.key_match_clouds || [];
+
+    if (!list.length) {
+      return <Tag style={chipStyle}>NA</Tag>;
+    }
+
+    const visibleClouds = list.slice(0, 2);   // 👈 same count as others
+    const remainingCount = list.length - 2;
+
+    return (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {visibleClouds.map((cloud) => (
+          <Tag
+            key={cloud}
+            color="blue"
+            style={chipStyle}
+          >
+            {cloud}
+          </Tag>
+        ))}
+
+        {remainingCount > 0 && (
+          <span
+            style={{
+              color: "#1677ff",       // AntD link blue
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: "22px",
+              textDecoration: "underline",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              // later: open modal / tooltip if needed
+              console.log("All match clouds:", list);
+            }}
+          >
+            +{remainingCount} more
+          </span>
+        )}
+      </div>
+    );
+  },
+},
+
+
+
+
+{
+  title: "Key Gap Clouds",
+  key: "keyGapClouds",
+  render: (_, record) => {
+    const list = record?.aiAnalysis?.key_gap_clouds || [];
+
+    // If no data
+    if (!list.length) {
+      return <Tag style={chipStyle}>NA</Tag>;
+    }
+
+    // Show only first 2
+    const visibleClouds = list.slice(0, 2);
+    const remainingCount = list.length - 2;
+
+    return (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {visibleClouds.map((cloud) => (
+          <Tag
+            key={cloud}
+            color="orange"
+            style={chipStyle}
+          >
+            {cloud}
+          </Tag>
+        ))}
+
+        {remainingCount > 0 && (
+          <span
+            style={{
+              color: "#1677ff",     // Ant Design blue
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: "22px",
+              textDecoration: "underline",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              // optional: open modal / tooltip later
+              console.log("All gap clouds:", list);
+            }}
+          >
+            +{remainingCount} more
+          </span>
+        )}
+      </div>
+    );
+  },
+},
+
+
     {
       title: "Email",
       dataIndex: "email",
@@ -185,24 +452,30 @@ const CandidateList = () => {
       key: "currentLocation",
       render: (text) => text || "N/A",
     },
-    {
-      title: "Actions",
-      key: "actions",
-      fixed: "right",
-      render: (_, record) => (
-        <Button
-          type="link"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/company/candidate/${record.userId}`, {
-              state: { candidate: record, jobId },
-            });
-          }}
-        >
-          View
-        </Button>
-      ),
-    },
+  
+
+   {
+  title: "Actions",
+  key: "actions",
+  fixed: "right",
+  align: "center",
+  render: (_, record) => (
+    <EyeOutlined
+      style={{
+        fontSize: 18,        // 👁 icon size
+        color: "#595959",    // same grey as screenshot
+        cursor: "pointer",
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        navigate(`/company/candidate/${record.userId}`, {
+          state: { candidate: record, jobId },
+        });
+      }}
+    />
+  ),
+}
+
   ];
 
   return (
@@ -213,7 +486,7 @@ const CandidateList = () => {
         type="text"
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate("/company/jobs")}
-        style={{ marginBottom: 8 }}
+        style={{ marginBottom: 8 ,marginRight:10}}
       >
         Back
       </Button>
@@ -224,29 +497,7 @@ const CandidateList = () => {
         style={{ marginBottom: 12 }}
         disabled={selectedCandidates.length === 0}
         onClick={() => setIsGroupModalOpen(true)}
-        // onClick={() => {
-        //   const chatUserIds = selectedCandidates
-        //     .map((c) => c?.profile?.chatuserid)
-        //     .filter(Boolean);
-
-        //   console.log("candidates ids", chatUserIds);
-        //   if (!chatUserIds.length) {
-        //     messageAPI.warning("No valid chat users found");
-        //     return;
-        //   }
-
-        //   if (chatUserIds.length < 2) {
-        //     messageAPI.warning("Select atleast 2 candidates to create group");
-        //     return;
-        //   }
-
-        //   navigate("/company/chat", {
-        //     state: {
-        //       groupUserIds: chatUserIds,
-        //       jobId,
-        //     },
-        //   });
-        // }}
+       
       >
         Create Group
       </Button>

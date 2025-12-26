@@ -546,10 +546,16 @@ if (end?.format) end = end.format("MM-YYYY");
                           name={[name, "projectDescription"]}
                           label="Project Description"
                           rules={[
-                            {
-                              // required: true,
-                              message: "Add project description",
-                            },
+                            // {
+                            //   // required: true,
+                            //   message: "Add project description",
+                            // },
+                             {
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+
+                message:
+                  "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+              },
                           ]}
                         >
                           <TextArea
@@ -570,6 +576,12 @@ if (end?.format) end = end.format("MM-YYYY");
                               // required: true,
                               message: "Add roles & responsibilities",
                             },
+                             {
+                pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+
+                message:
+                  "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+              },
                           ]}
                         >
                           <TextArea

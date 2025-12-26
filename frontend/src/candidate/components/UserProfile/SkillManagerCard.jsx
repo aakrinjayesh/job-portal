@@ -595,14 +595,41 @@ const SkillManagerCard = ({
             onChange={(e) => setExperience(parseFloat(e.target.value) || 0)}
             addonAfter="yrs"
           /> */}
-          <InputNumber
+          {/* <InputNumber
   min={1}                       // prevents minus & zero
   step={1}                      // only +1 increments
   value={experience}
   onChange={(value) => setExperience(value || 1)}
   addonAfter="yrs"
   style={{ width: "100%" }}
+/> */}
+
+<InputNumber
+  value={experience}
+  min={1}
+                   // ⛔ blocks large numbers
+  step={1}
+  precision={2}               // ✅ only 2 digits after dot
+  stringMode                  // IMPORTANT: prevents float issues
+  addonAfter="yrs"
+  style={{ width: "100%" }}
+  parser={(value) => value.replace(/[^\d.]/g, "")}
+  formatter={(value) => value}
+  onChange={(value) => {
+    if (value === null) {
+      setExperience(null);
+      return;
+    }
+
+    // ✅ Regex: max 2 digits before dot, max 2 after dot
+    const regex = /^\d{1,2}(\.\d{0,2})?$/;
+
+    if (regex.test(value.toString())) {
+      setExperience(value);
+    }
+  }}
 />
+
         </div>
       </Modal>
 
