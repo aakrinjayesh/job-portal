@@ -1,11 +1,15 @@
 // controllers/vendorControllers.js
 import prisma from "../config/prisma.js";
-import { extractResumeSections } from "../utils/llmTextExtractor.js";
+// import { extractResumeSections } from "../utils/llmTextExtractor.js";
+import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
 import puppeteer from "puppeteer";
 import { generateResumeHTML } from "../utils/resumeTemplate.js";
 import sendEmail from "../utils/sendEmail.js";
 // ✅ Get all candidates for a vendor
+import { applyCandidateFilters } from "../utils/applyFilters.js";
+
+
 const getVendorCandidates = async (req, res) => {
   try {
     const userAuth = req.user;
@@ -199,37 +203,7 @@ const deleteVendorCandidate = async (req, res) => {
 
 
  const updateCandidateStatus = async (req, res) => {
-  try {
-    const { candidateIds, status } = req.body;
-
-    if (!candidateIds?.length || !status) {
-      return res.status(400).json({
-        status: "failed",
-        message: "candidateIds and status are required",
-      });
-    }
-
-    // ⚡ Update all selected candidates
-    await prisma.userProfile.updateMany({
-      where: { id: { in: candidateIds } },
-      data: { status: status   }, // Boolean -> true/false
-    });
-
-    return res.status(200).json({
-      status: "success",
-      message: "Candidate status updated successfully",
-    });
-
-  } catch (error) {
-    console.error("STATUS UPDATE ERROR:", error);
-    return res.status(500).json({
-      status: "failed",
-      message: "Internal server error",
-    });
-  }
 };
-
-
 
 
 const getAllCandidates = async (req, res) => {
@@ -239,60 +213,69 @@ const getAllCandidates = async (req, res) => {
     if (userAuth.role !== "company") {
       return res.status(403).json({
         status: "failed",
-        message: "Access denied.",
+        message: "Access denied",
       });
     }
 
-    // --- PAGINATION ---
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const page = parseInt(req.body.page) || 1;
+    const limit = parseInt(req.body.limit) || 10;
+    const filters = req.body.filters || {};
 
-
-    const [candidates, totalCount] = await Promise.all([
-      prisma.userProfile.findMany({
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          vendor: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
+    // Step 1: Fetch ALL candidates
+    const allCandidates = await prisma.userProfile.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        vendor: {
+          select: { id: true, name: true, email: true, phoneNumber: true},
         }
-      }),
-
-      prisma.userProfile.count()   // ✅ REMOVE vendorId filter
-    ]);
-
-
-    // --- REMOVE DUPLICATES ---
-    const unique = {};
-    candidates.forEach((c) => (unique[c.id] = c));
-    const finalCandidates = Object.values(unique);
-
-    return res.status(200).json({
-      status: "Success",
-      candidates: finalCandidates,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
+        // user: {
+        //   select: { id: true, name: true, email: true },
+        // },
+      },
     });
 
+    // Step 2: Apply filters (in-memory)
+    const filteredCandidates = applyCandidateFilters(
+      allCandidates,
+      filters
+    );
+
+    // Step 3: Pagination
+    const totalCount = filteredCandidates.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    const skip = (page - 1) * limit;
+
+    const paginatedCandidates = filteredCandidates.slice(
+      skip,
+      skip + limit
+    );
+
+    const candidatesWithVendorFlag = paginatedCandidates.map(
+      (candidate) => {
+        const isVendor = !!candidate.vendor;
+
+        return {
+          ...candidate,
+          isVendor,
+        };
+      }
+    );
+
+    return res.status(200).json({
+      status: "success",
+      candidates: candidatesWithVendorFlag,
+      totalCount,
+      currentPage: page,
+      totalPages,
+    });
   } catch (error) {
-    console.error("getAllVendorCandidates Error:", error);
+    console.error("getAllCandidates Error:", error);
     return res.status(500).json({
       status: "error",
-      message: "Failed to fetch vendor candidates",
+      message: error.message || "Internal server error",
     });
   }
 };
-
-
-
 
 
 const vendorApplyCandidate = async (req, res) => {
@@ -303,10 +286,10 @@ const vendorApplyCandidate = async (req, res) => {
 
     const aiProcess = true;
 
-    if (!jobId || !Array.isArray(candidateProfileIds) || candidateProfileIds.length === 0) {
+    if (!jobId || !candidateProfileIds?.length) {
       return res.status(400).json({
-        status: "failed",
-        message: "jobId and candidateProfileIds[] are required",
+        status: "error",
+        message: "jobId and candidateProfileIds are required",
       });
     }
 
@@ -314,12 +297,37 @@ const vendorApplyCandidate = async (req, res) => {
     const job = await prisma.job.findFirst({
       where: { id: jobId, isDeleted: false },
       include: {
-        postedBy: { select: { id: true, name: true, email: true } }
+        postedBy: { select: { id: true, name: true, email: true } },
+        _count: { select: { applications: true } },
       }
     });
 
-    if (!job) {
-      return res.status(404).json({ status: "error", message: "Job not found" });
+    if (!job || job.status !== "Open") {
+      return res.status(400).json({
+        status: "error",
+        message: "Job closed or not found",
+      });
+    }
+
+
+    const currentCount = job._count.applications;
+    const limit = job.ApplicationLimit;
+
+    let remainingSlots = Infinity;
+    if (limit !== null) {
+      remainingSlots = limit - currentCount;
+
+      if (remainingSlots <= 0) {
+        await prisma.job.update({
+          where: { id: jobId },
+          data: { status: "Closed" },
+        });
+
+        return res.status(400).json({
+          status: "error",
+          message: "Application limit reached. Job closed.",
+        });
+      }
     }
 
     // 2️⃣ Fetch vendor-owned profiles
@@ -347,7 +355,11 @@ const vendorApplyCandidate = async (req, res) => {
     });
 
     const alreadyAppliedIds = new Set(existingApps.map(a => a.candidateProfileId));
-    const newProfiles = profiles.filter(p => !alreadyAppliedIds.has(p.id));
+    let newProfiles = profiles.filter(p => !alreadyAppliedIds.has(p.id));
+
+    if (limit !== null) {
+      newProfiles = newProfiles.slice(0, remainingSlots);
+    }
 
     // 4️⃣ Prepare Job Description (only if AI is enabled)
     let jobDescription = null;
@@ -396,7 +408,7 @@ const vendorApplyCandidate = async (req, res) => {
           };
 
           try {
-            aiAnalysisResult = await extractResumeSections(
+            aiAnalysisResult = await extractAIText(
               "CV_RANKING",
               "cvranker",
               { jobDescription, candidateDetails }
@@ -409,7 +421,18 @@ const vendorApplyCandidate = async (req, res) => {
 
         // Transaction for this candidate
         await prisma.$transaction(async (tx) => {
-          // A. Create Application
+
+          const count = await tx.jobApplication.count({ where: { jobId } });
+
+          if (limit !== null && count >= limit) {
+            await tx.job.update({
+              where: { id: jobId },
+              data: { status: "Closed" },
+            });
+            throw new Error("APPLICATION_LIMIT_REACHED");
+          }
+
+          // Create Application
           const app = await tx.jobApplication.create({
             data: {
               jobId,
@@ -476,6 +499,7 @@ const vendorApplyCandidate = async (req, res) => {
         });
 
       } catch (error) {
+        if (e.message === "APPLICATION_LIMIT_REACHED") break;
         logger.error(`Failed to apply profile ${profile.id}:`, error.message);
         failedApplications.push({
           candidateProfileId: profile.id,
@@ -484,6 +508,17 @@ const vendorApplyCandidate = async (req, res) => {
         });
       }
     }
+
+    if (
+      limit !== null &&
+      currentCount + appliedCandidates.length >= limit
+    ) {
+      await prisma.job.update({
+        where: { id: jobId },
+        data: { status: "Closed" },
+      });
+    }
+
 
     // 6️⃣ Email to Recruiter (only if there are successful applications)
     if (job.postedBy?.email && appliedCandidates.length > 0) {

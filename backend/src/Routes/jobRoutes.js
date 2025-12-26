@@ -47,7 +47,7 @@ JobRouters.post('/job/details',
 // User job application routes
 JobRouters.post('/jobs/apply', validateInput(applyJobValidator), authenticateToken, userApplyJob)
 // JobRouters.delete('/jobs/:jobId/withdraw', validateInput(withdrawJobValidator), authenticateToken, userWithdrawJob)
-JobRouters.get('/jobs/applications', authenticateToken, userAllApplyedJobs)
+JobRouters.get('/jobs/applied/all', authenticateToken, userAllApplyedJobs)
 JobRouters.get('/job/applied/ids', authenticateToken, getUserAppliedJobsId)
 
 

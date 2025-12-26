@@ -1,77 +1,89 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Spin } from "antd";
+import { Col, Row, Card, message, Spin, Empty } from "antd";
 import FiltersPanel from "../components/Job/FilterPanel";
 import JobList from "../components/Job/JobList";
 import { GetJobsList } from "../../company/api/api";
 import { UserJobsids } from "../api/api";
 
 function Jobs() {
-  const [allJobs, setAllJobs] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-   // ⭐ filter open / close
-    const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [currentFilters, setCurrentFilters] = useState({});
+  const [totalCount, setTotalCount] = useState(0);
+
+  // ⭐ filter open / close
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const observer = useRef();
   const [ids, setIds] = useState();
 
- const controllerRef = useRef(null);
+  const controllerRef = useRef(null);
 
-const fetchJobs = useCallback(async (pageNum = 1) => {
-  // 🔥 Cancel previous API if exists
-  if (controllerRef.current) {
-    controllerRef.current.abort();
-  }
-
-  // 🔥 Create new controller
-  const controller = new AbortController();
-  controllerRef.current = controller;
-
-  setLoading(true);
-
-  try {
-    console.log("api call#############", pageNum);
-
-    const response = await GetJobsList(
-      pageNum,
-      10,
-      controller.signal
-    );
-
-    const newJobs = response?.jobs || [];
-
-    if (pageNum === 1) {
-      setAllJobs(newJobs);
-      setJobs(newJobs);
-    } else {
-      setAllJobs((prev) => [...prev, ...newJobs]);
-      setJobs((prev) => [...prev, ...newJobs]);
+  // ✅ Server-side filtering: pass filters to API
+  const fetchJobs = useCallback(async (pageNum = 1, filters = {}) => {
+    // 🔥 Cancel previous API if exists
+    if (controllerRef.current) {
+      controllerRef.current.abort();
     }
 
-    if (pageNum >= response.totalPages) {
-      setHasMore(false);
-    }
-  } catch (error) {
-    if (error.name !== "CanceledError") {
-      console.error("Error fetching jobs:", error);
-      message.error("Failed to fetch jobs");
-    }
-  } finally {
-    setLoading(false);
-  }
-}, []);
+    // 🔥 Create new controller
+    const controller = new AbortController();
+    controllerRef.current = controller;
 
-useEffect(() => {
-  return () => {
-    controllerRef.current?.abort();
-  };
-}, []);
+    setLoading(true);
+
+    try {
+      console.log("api call#############", pageNum, "filters:", filters);
+
+      // ✅ Pass filters to API for server-side filtering
+      const response = await GetJobsList(
+        pageNum,
+        10,
+        filters,
+        controller.signal
+      );
+
+      const newJobs = response?.jobs || [];
+
+      if (pageNum === 1) {
+        setJobs(newJobs);
+      } else {
+        setJobs((prev) => [...prev, ...newJobs]);
+      }
+
+      setTotalCount(response.totalCount || 0);
+
+      if (pageNum >= response.totalPages) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+    } catch (error) {
+      if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
+        console.error("Error fetching jobs:", error);
+        message.error(
+          "Failed to fetch jobs: " + error?.response?.data?.message
+        );
+      }
+    } finally {
+      setLoading(false);
+      setInitialLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    console.log("Component mounted, fetching jobs..."); // Add this
-    fetchJobs(1);
-  }, [fetchJobs]);
+    return () => {
+      controllerRef.current?.abort();
+    };
+  }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    console.log("Component mounted, fetching jobs...");
+    fetchJobs(1, currentFilters);
+  }, []);
 
   // Infinite scroll observer
   const lastJobRef = useCallback(
@@ -90,92 +102,45 @@ useEffect(() => {
     [loading, hasMore]
   );
 
+  // ✅ Fetch user's saved job IDs in background (non-blocking)
   useEffect(() => {
-    const fetch = async () => {
+    const fetchIds = async () => {
       try {
         const resp = await UserJobsids();
         if (resp.status === "success") {
           setIds(resp.jobids);
         }
       } catch (error) {
-        console.log("error", error);
+        console.log("Background fetch error:", error);
+        // ✅ Silent fail - doesn't block UI or show error
       }
     };
 
-    fetch();
+    fetchIds();
   }, []);
 
+  // Fetch next page when page changes
   useEffect(() => {
-    if (page > 1) fetchJobs(page);
-  }, [page]);
+    if (page > 1) {
+      fetchJobs(page, currentFilters);
+    }
+  }, [page, currentFilters, fetchJobs]);
 
-  const filterJobs = (filters, allJobs) => {
-    return allJobs.filter((job) => {
-      // --- EXPERIENCE FILTER ---
-      if (
-        filters.experience !== null &&
-        filters.experience !== undefined &&
-        filters.experience !== "Any"
-      ) {
-        const enteredExp = parseInt(filters.experience.number);
-        const jobExp = parseInt(job.experience?.number); // FIXED
-
-        if (!isNaN(enteredExp) && !isNaN(jobExp)) {
-          if (jobExp !== enteredExp) return false;
-        }
-      }
-      // --- SALARY FILTER ---
-      if (filters.salary && filters.salary.length > 0) {
-        // Convert job.salary (number) to lakhs for easier comparison
-        const jobSalaryInLakhs = job.salary / 100000;
-
-        const matches = filters.salary.some((range) => {
-          // e.g. "0-3 Lakhs", "3-6 Lakhs", "10+ Lakhs"
-          const clean = range.replace(" Lakhs", "").trim();
-
-          if (clean.includes("-")) {
-            const [minStr, maxStr] = clean.split("-");
-            const min = parseFloat(minStr);
-            const max = parseFloat(maxStr);
-            return jobSalaryInLakhs >= min && jobSalaryInLakhs <= max;
-          } else if (clean.includes("+")) {
-            const min = parseFloat(clean);
-            return jobSalaryInLakhs >= min;
-          } else {
-            // exact match (e.g. "5 Lakhs")
-            const exact = parseFloat(clean);
-            return Math.abs(jobSalaryInLakhs - exact) < 0.1;
-          }
-        });
-
-        if (!matches) return false;
-      }
-
-      // --- LOCATION FILTER ---
-      if (filters.location && filters.location.length > 0) {
-        const jobLocation = job.location?.toLowerCase() || "";
-        const matches = filters.location.some((loc) => {
-          const regex = new RegExp(loc.toLowerCase(), "i");
-          return regex.test(jobLocation);
-        });
-        if (!matches) return false;
-      }
-
-      return true;
-    });
-  };
-
-  // const handleFiltersChange = (filters) => {
-  //   console.log("Received in jobs.jsx:", filters);
-  // };
-   const handleClearFilters = () => {
-    setJobs(allJobs);
-  };
-
+  // ✅ Handle filter changes - reset to page 1 and fetch from server
   const handleFiltersChange = (filters) => {
     console.log("Received filters:", filters);
-    const filtered = filterJobs(filters, allJobs);
-    setJobs(filtered);
+    setCurrentFilters(filters);
+    setPage(1);
+    setHasMore(true);
+    fetchJobs(1, filters);
+  };
+
+  // ✅ Clear filters and fetch all jobs from server
+  const handleClearFilters = () => {
+    setCurrentFilters({});
+    setPage(1);
+    setHasMore(true);
+    fetchJobs(1, {});
   };
 
   return (
@@ -208,7 +173,6 @@ useEffect(() => {
             overflowY: "auto",
           }}
         >
-           
           <Card
             style={{
               height: "100%",
@@ -219,19 +183,68 @@ useEffect(() => {
             }}
             bodyStyle={{ padding: "16px 24px" }}
           >
-            <JobList jobs={jobs} lastJobRef={lastJobRef} jobids={ids}
-            portal="candidate"
-            isFilterOpen={isFilterOpen}
-              toggleFilter={() => setIsFilterOpen(!isFilterOpen) }/>
-            {loading && (
-              <div style={{ textAlign: "center", marginTop: 16 }}>
-                <Spin />
+            {/* ✅ Show spinner on initial load or filter change (page 1 loading) */}
+            {initialLoading || (loading && page === 1) ? (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minHeight: "400px",
+                }}
+              >
+                <Spin size="large" tip="Loading jobs..." />
               </div>
-            )}
-            {!hasMore && !loading && (
-              <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
-                You’ve reached the end!
-              </p>
+            ) : (
+              <>
+                {/* Show total count */}
+                {totalCount > 0 && (
+                  <div style={{ marginBottom: 16, color: "#666" }}>
+                    Found {totalCount} job{totalCount !== 1 ? "s" : ""}
+                  </div>
+                )}
+
+                <JobList
+                  jobs={jobs}
+                  lastJobRef={lastJobRef}
+                  jobids={ids}
+                  portal="candidate"
+                  isFilterOpen={isFilterOpen}
+                  toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+                />
+
+                {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}
+                {loading && page > 1 && (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      marginTop: 16,
+                      padding: "20px",
+                    }}
+                  >
+                    <Spin size="large" />
+                  </div>
+                )}
+
+                {!hasMore && !loading && jobs.length > 0 && (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      marginTop: 16,
+                      color: "#888",
+                    }}
+                  >
+                    You've reached the end!
+                  </p>
+                )}
+
+                {!loading && totalCount === 0 && (
+                  <Empty
+                    style={{ marginTop: 70 }}
+                    description="No jobs found matching your filters"
+                  />
+                )}
+              </>
             )}
           </Card>
         </Col>

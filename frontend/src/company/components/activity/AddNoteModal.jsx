@@ -1,13 +1,50 @@
 import React from "react";
 import { Modal, Form, Input, Select, message } from "antd";
 import { CreateActivity } from "../../api/api";
+import { useState } from "react";
 
 const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+
+  // const handleSubmit = async () => {
+  //   try {
+  //     setLoading(true);
+
+  //     if (!candidateId) {
+  //       message.error("Candidate not found");
+  //       return;
+  //     }
+
+  //     const values = await form.validateFields();
+
+  //     const resp = await CreateActivity({
+  //       candidateId,
+  //       category: "NOTE",
+  //       note: {
+  //         subject: values.subject,
+  //         noteType: values.noteType,
+  //         description: values.description,
+  //         interactedAt: new Date().toISOString(),
+  //       },
+  //     });
+
+  //     if (resp.status === "success") {
+  //       message.success("Note added successfully");
+  //       form.resetFields();
+  //       onClose();
+  //       onSuccess();
+  //     }
+  //   } catch (error) {
+  //     message.error("Failed to add note");
+  //   } finally {
+  //     setLoading(false); // ✅ always stop loading
+  //   }
+  // };
 
   const handleSubmit = async () => {
     try {
-      console.log("AddNoteModal candidateId:", candidateId);
+      setLoading(true);
 
       if (!candidateId) {
         message.error("Candidate not found");
@@ -16,7 +53,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
 
       const values = await form.validateFields();
 
-      await CreateActivity({
+      const resp = await CreateActivity({
         candidateId,
         category: "NOTE",
         note: {
@@ -27,37 +64,35 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
         },
       });
 
-      message.success("Note added successfully");
-    //   form.resetFields();
-    //   onSuccess();
-    //   onClose();
-    form.resetFields();
-onClose();
-onSuccess();
+      if (resp.status === "success") {
+        message.success("Note added successfully");
 
-    } catch (error) {
+        // 🚀 OPTIMISTIC UPDATE
+        onSuccess(resp.data);
+
+        form.resetFields();
+        onClose();
+      }
+    } catch {
       message.error("Failed to add note");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-  
     <Modal
-  title="Add Note"
-  open={open}
-  onOk={() => form.submit()}
-  onCancel={() => {
-    form.resetFields();
-    onClose();
-  }}
-  destroyOnClose
->
-  <Form
-    layout="vertical"
-    form={form}
-    onFinish={handleSubmit}
-  >
-
+      title="Add Note"
+      open={open}
+      onOk={() => form.submit()}
+      confirmLoading={loading}
+      onCancel={() => {
+        form.resetFields();
+        onClose();
+      }}
+      destroyOnClose
+    >
+      <Form layout="vertical" form={form} onFinish={handleSubmit}>
         <Form.Item
           name="subject"
           label="Subject"

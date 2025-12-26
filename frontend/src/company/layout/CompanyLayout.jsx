@@ -161,7 +161,7 @@ const CompanyLayout = ({ children }) => {
         <Content
           style={{
             marginTop: 64,
-            // padding: 16,
+            padding: 16,
             background: "#f5f6fa",
             minHeight: "calc(100vh - 64px)",
             overflowY: "auto",

@@ -1,8 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Input, Button, Space, message } from "antd";
 
-const { TextArea } = Input;
-
 const SearchWithTextArea = ({
   handleFiltersChange,
   apifunction,
@@ -10,22 +8,22 @@ const SearchWithTextArea = ({
   type,
 }) => {
   const inputRef = useRef(null);
-  // const [searchValue, setSearchValue] = useState("");
+  const { TextArea } = Input;
   const [messageApi, contextHolder] = message.useMessage();
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
 
- const handleSearch = async () => {
-  try {
-    setLoading(true);
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
 
-      const value = textArea.value?.trim() || "";
-      if (!value) {
-        messageApi.warning("Please enter text to search.");
-        return;
-      }
+      // const value = textArea.value?.trim() || "";
+      // if (!value) {
+      //   messageApi.warning("Please enter text to search.");
+      //   return;
+      // }
 
-      const resp = await apifunction({ JD: value });
+      const resp = await apifunction({ JD: searchValue });
       console.log("AI Response:", resp);
 
       // SUCCESS CHECK
@@ -101,16 +99,15 @@ const SearchWithTextArea = ({
           Search
         </Button>
       </Space.Compact>
-     <Button
-  style={{ marginLeft: 10, marginBottom: type === "job" && 10 }}
-  onClick={() => {
-    setSearchValue("");      // ✅ clears textarea
-    handleClearFilters();    // existing logic
-  }}
->
-  Clear Filter
-</Button>
-
+      <Button
+        style={{ marginLeft: 10, marginBottom: type === "job" && 10 }}
+        onClick={() => {
+          setSearchValue(""); // ✅ clears textarea
+          handleClearFilters(); // existing logic
+        }}
+      >
+        Clear Filter
+      </Button>
     </>
   );
 };

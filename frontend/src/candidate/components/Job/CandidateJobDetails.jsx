@@ -9,7 +9,7 @@ import {
   Spin,
   Divider,
   message,
-  Modal
+  Modal,
 } from "antd";
 import axios from "axios";
 import { ArrowLeftOutlined, EnvironmentOutlined } from "@ant-design/icons";
@@ -78,7 +78,7 @@ const CandidateJobDetails = () => {
         messageAPI.error(resp.message || "Failed to apply Job");
       }
     } catch (error) {
-      message.error("Failed to apply for the job");
+      messageAPI.error("Failed to Apply");
     } finally {
       setApplyLoading(false);
     }
@@ -118,7 +118,9 @@ const CandidateJobDetails = () => {
         Back
       </Button>
 
-      <Card style={{ borderRadius: 12, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+      <Card
+        style={{ borderRadius: 12, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
+      >
         <Title level={3}>{job.role}</Title>
         <Text strong>{job.companyName}</Text>
 

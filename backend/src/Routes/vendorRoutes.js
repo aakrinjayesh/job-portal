@@ -35,7 +35,7 @@ VendorRoutes.post(
   updateCandidateStatus
 );
 
-VendorRoutes.get(
+VendorRoutes.post(
   "/candidates/all",
   authenticateToken,
   getAllCandidates

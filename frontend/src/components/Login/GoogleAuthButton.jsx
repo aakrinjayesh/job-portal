@@ -37,7 +37,8 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
 
         login(resp?.chatmeatadata?.user, resp?.chatmeatadata?.accessToken);
 
-        navigate("/candidate/dashboard");
+        // navigate("/candidate/dashboard");
+        navigate("/candidate/profile");
       }
     } catch (error) {
       console.error("Google login error:", error);

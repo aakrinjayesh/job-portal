@@ -1,6 +1,7 @@
 import prisma from '../config/prisma.js'
 import extractTextFromBase64 from '../utils/extractText.js'
-import { extractResumeSections } from '../utils/llmTextExtractor.js'
+// import { extractResumeSections } from '../utils/llmTextExtractor.js'
+import { extractAIText } from '../utils/ai/extractAI.js';
 import fs from "fs";
 import path from "path";
 import { logger } from '../utils/logger.js';
@@ -25,7 +26,7 @@ const UploadResume = async (req, res) => {
 
     logger.info("Extracted text from PDF");
 
-    const structuredData = await extractResumeSections(text, role);
+    const structuredData = await extractAIText(text, role);
     res.status(200).json({
       message: "File received successfully",
       fileName: req.file.originalname,

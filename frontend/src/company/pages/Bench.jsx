@@ -11,7 +11,11 @@ import {
   Popconfirm,
   Typography,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import {
   GetVendorCandidates,
   CreateVendorCandidate,
@@ -23,13 +27,11 @@ import {
 } from "../api/api";
 import UpdateUserProfile from "../../candidate/pages/UpdateUserProfile";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
-import { useCallback } from "react";
 
 import { Input } from "antd";
 import { SendVerificationOtp, VerifyCandidateOtp } from "../api/api";
 import SearchWithTextArea from "../components/Bench/SearchWithTextArea";
-import { useNavigate , useLocation } from "react-router-dom";
-
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Bench = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -63,23 +65,20 @@ const Bench = () => {
   const [timer, setTimer] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
   const controllerRef = useRef(null);
-const location = useLocation();
+  const location = useLocation();
 
-
-    const navigate = useNavigate();
-    
+  const navigate = useNavigate();
 
   const { Title } = Typography;
 
   useEffect(() => {
-  return () => {
-    if (controllerRef.current) {
-      console.log("🔥 Aborting Bench API due to tab switch");
-      controllerRef.current.abort();
-    }
-  };
-}, [location.pathname]);
-
+    return () => {
+      if (controllerRef.current) {
+        console.log("🔥 Aborting Bench API due to tab switch");
+        controllerRef.current.abort();
+      }
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     let interval = null;
@@ -100,37 +99,38 @@ const location = useLocation();
 
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
 
-      if (controllerRef.current) {
-    controllerRef.current.abort();
-  }
-
-  // 🔵 create new controller
-  controllerRef.current = new AbortController();
+    // 🔵 create new controller
+    controllerRef.current = new AbortController();
     try {
       setLoading(true);
       const res = await GetVendorCandidates(controllerRef.current.signal);
-      const list = Array.isArray(res?.data) && res.data;
-      setAllCandidates(list || []);
-      setCandidates(list || []);
-      // --- NEW: update verified / unverified counts ---
-      if (Array.isArray(list)) {
-        const verified = list.filter((c) => !!c.isVerified).length;
-        const unverified = list.length - verified;
-        setVerifiedCount(verified);
-        setUnverifiedCount(unverified);
-      } else {
-        setVerifiedCount(0);
-        setUnverifiedCount(0);
+      if (res.status === "success") {
+        const list = Array.isArray(res?.data) && res.data;
+        setAllCandidates(list || []);
+        setCandidates(list || []);
+        // --- NEW: update verified / unverified counts ---
+        if (Array.isArray(list)) {
+          const verified = list.filter((c) => !!c.isVerified).length;
+          const unverified = list.length - verified;
+          setVerifiedCount(verified);
+          setUnverifiedCount(unverified);
+        } else {
+          setVerifiedCount(0);
+          setUnverifiedCount(0);
+        }
+        setLoading(false);
       }
     } catch (error) {
       if (error.code === "ERR_CANCELED") {
-      console.log("Bench API aborted");
-      return;
-    }
+        console.log("Bench API aborted");
+        return;
+      }
       console.error("Error fetching candidates:", error);
       message.error("Failed to fetch vendor candidates.");
-    } finally {
       setLoading(false);
     }
   };
@@ -316,230 +316,227 @@ const location = useLocation();
     }
   };
 
-const updateStatus = async (status) => {
-  try {
-    const payload = {
-      candidateIds: selectedRowKeys,
-      status,
-    };
+  const updateStatus = async (status) => {
+    try {
+      const payload = {
+        candidateIds: selectedRowKeys,
+        status,
+      };
 
-    const resp = await UpdateVendorCandidateStatus(payload);
+      const resp = await UpdateVendorCandidateStatus(payload);
 
-    if (resp?.status !== "success") {
+      if (resp?.status !== "success") {
+        messageApi.error("Failed to update status. Try again.");
+        return;
+      }
+
+      // 🔹 Optimistic UI update
+      const updated = candidates.map((c) =>
+        selectedRowKeys.includes(c.id)
+          ? { ...c, status: status === "active" }
+          : c
+      );
+      setAllCandidates(updated);
+      setCandidates(updated);
+      setSelectedRowKeys([]);
+
+      // ✅ SUCCESS MESSAGE
+      messageApi.success({
+        content:
+          status === "active"
+            ? "Moved to Active successfully!"
+            : "Moved to Inactive successfully!",
+        duration: 2,
+      });
+
+      // 🔹 Refresh list AFTER message
+      setTimeout(() => {
+        fetchCandidates();
+      }, 300);
+    } catch (error) {
+      console.error(error);
       messageApi.error("Failed to update status. Try again.");
-      return;
     }
-
-    // 🔹 Optimistic UI update
-    const updated = candidates.map((c) =>
-      selectedRowKeys.includes(c.id)
-        ? { ...c, status: status === "active" }
-        : c
-    );
-    setAllCandidates(updated);
-    setCandidates(updated);
-    setSelectedRowKeys([]);
-
-    // ✅ SUCCESS MESSAGE
-    messageApi.success({
-      content:
-        status === "active"
-          ? "Moved to Active successfully!"
-          : "Moved to Inactive successfully!",
-      duration: 2,
-    });
-
-    // 🔹 Refresh list AFTER message
-    setTimeout(() => {
-      fetchCandidates();
-    }, 300);
-
-  } catch (error) {
-    console.error(error);
-    messageApi.error("Failed to update status. Try again.");
-  }
-};
-
- 
+  };
 
   // 🔹 Table Columns (UPDATED)
-const columns = [
-  // --------------------------------------------------
-  // FIXED LEFT: CHECKBOX COLUMN
-  // --------------------------------------------------
-  {
-    title: "",
-    dataIndex: "select",
-    key: "select",
-    width: 60,
-    fixed: "left",
-    render: (_, record) => (
-      <input
-        type="checkbox"
-        checked={selectedRowKeys.includes(record.id)}
-        onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
-        onClick={(e) => e.stopPropagation()}
-      />
-    ),
-  },
+  const columns = [
+    // --------------------------------------------------
+    // FIXED LEFT: CHECKBOX COLUMN
+    // --------------------------------------------------
+    {
+      title: "",
+      dataIndex: "select",
+      key: "select",
+      width: 60,
+      fixed: "left",
+      render: (_, record) => (
+        <input
+          type="checkbox"
+          checked={selectedRowKeys.includes(record.id)}
+          onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
 
-  // --------------------------------------------------
-  // FIXED LEFT: NAME COLUMN
-  // --------------------------------------------------
-  {
-    title: "Name",
-    dataIndex: "name",
-    key: "name",
-    width: 150,
-    fixed: "left",
-    sorter: (a, b) => a.name.localeCompare(b.name),
-    render: (text) => (
-      <span style={{ color: "#1677ff", fontWeight: 600 }}>{text}</span>
-    ),
-  },
+    // --------------------------------------------------
+    // FIXED LEFT: NAME COLUMN
+    // --------------------------------------------------
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      width: 150,
+      fixed: "left",
+      sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (text) => (
+        <span style={{ color: "#1677ff", fontWeight: 600 }}>{text}</span>
+      ),
+    },
 
-  // --------------------------------------------------
-  // NORMAL SCROLLABLE COLUMNS
-  // --------------------------------------------------
-  {
-    title: "Role",
-    dataIndex: "title",
-    key: "title",
-    sorter: (a, b) => a.title?.localeCompare(b.title),
-  },
-  {
-    title: "Cloud",
-    key: "cloud",
-    render: (_, record) =>
-      Array.isArray(record.primaryClouds) && record.primaryClouds.length > 0
-        ? record.primaryClouds
+    // --------------------------------------------------
+    // NORMAL SCROLLABLE COLUMNS
+    // --------------------------------------------------
+    {
+      title: "Role",
+      dataIndex: "title",
+      key: "title",
+      sorter: (a, b) => a.title?.localeCompare(b.title),
+    },
+    {
+      title: "Cloud",
+      key: "cloud",
+      render: (_, record) =>
+        Array.isArray(record.primaryClouds) && record.primaryClouds.length > 0
+          ? record.primaryClouds
+              .slice(0, 5)
+              .map((c) => c.name)
+              .join(", ")
+          : "-",
+    },
+
+    {
+      title: "Skills",
+      key: "skills",
+      render: (_, record) => {
+        const skills =
+          record.skillsJson
+            ?.filter((s) => s.level === "primary")
             .slice(0, 5)
-            .map((c) => c.name)
-            .join(", ")
-        : "-",
-  },
+            .map((s) => s.name) || [];
 
-  {
-  title: "Skills",
-  key: "skills",
-  render: (_, record) => {
-    const skills =
-      record.skillsJson
-        ?.filter((s) => s.level === "primary")
-        .slice(0, 5)
-        .map((s) => s.name) || [];
+        if (skills.length === 0) return "-";
 
-    if (skills.length === 0) return "-";
-
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        {skills.map((skill, index) => (
-          <span key={index}>{skill}</span>
-        ))}
-      </div>
-    );
-  },
-},
-
-  {
-    title: "Preferred Locations",
-    key: "preferredLocation",
-    render: (_, record) =>
-      Array.isArray(record.preferredLocation)
-        ? record.preferredLocation.join(", ")
-        : "-",
-  },
-
-  {
-    title: "Rate Card",
-    key: "rateCard",
-    filters: [
-      { text: "INR", value: "INR" },
-      { text: "USD", value: "USD" },
-      { text: "EUR", value: "EUR" },
-    ],
-    onFilter: (value, record) => record?.rateCardPerHour?.currency === value,
-    sorter: (a, b) =>
-      parseFloat(a?.rateCardPerHour?.value || 0) -
-      parseFloat(b?.rateCardPerHour?.value || 0),
-    render: (_, record) => {
-      const rate = record?.rateCardPerHour?.value || "-";
-      const currency = record?.rateCardPerHour?.currency || "";
-      if (rate === "-" && !currency) return "-";
-      return (
-        <span style={{ fontWeight: 600 }}>
-          {currency} {rate}
-        </span>
-      );
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {skills.map((skill, index) => (
+              <span key={index}>{skill}</span>
+            ))}
+          </div>
+        );
+      },
     },
-  },
 
-  {
-    title: "Joining Period",
-    dataIndex: "joiningPeriod",
-    key: "joiningPeriod",
-  },
-
-  {
-    title: "Verified",
-    key: "verified",
-    render: (_, record) => {
-      const isVerified = record?.isVerified;
-      return isVerified ? (
-        <span style={{ color: "#52c41a", fontWeight: 600 }}>Verified</span>
-      ) : (
-        <Button
-          type="link"
-          onClick={(e) => {
-            e.stopPropagation();
-            openVerifyModal(record);
-          }}
-        >
-          Verify
-        </Button>
-      );
+    {
+      title: "Preferred Locations",
+      key: "preferredLocation",
+      render: (_, record) =>
+        Array.isArray(record.preferredLocation)
+          ? record.preferredLocation.join(", ")
+          : "-",
     },
-  },
 
-  // --------------------------------------------------
-  // FIXED RIGHT: ACTIONS COLUMN
-  // --------------------------------------------------
-  {
-    title: "Actions",
-    key: "actions",
-    width: 140,
-    fixed: "right",
-    render: (_, record) => (
-      <Space>
-        <Button
-          type="link"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEdit(record);
-          }}
-        >
-          Edit
-        </Button>
+    {
+      title: "Rate Card",
+      key: "rateCard",
+      filters: [
+        { text: "INR", value: "INR" },
+        { text: "USD", value: "USD" },
+        { text: "EUR", value: "EUR" },
+      ],
+      onFilter: (value, record) => record?.rateCardPerHour?.currency === value,
+      sorter: (a, b) =>
+        parseFloat(a?.rateCardPerHour?.value || 0) -
+        parseFloat(b?.rateCardPerHour?.value || 0),
+      render: (_, record) => {
+        const rate = record?.rateCardPerHour?.value || "-";
+        const currency = record?.rateCardPerHour?.currency || "";
+        if (rate === "-" && !currency) return "-";
+        return (
+          <span style={{ fontWeight: 600 }}>
+            {currency} {rate}
+          </span>
+        );
+      },
+    },
 
-        <Popconfirm
-          title="Are you sure you want to delete this candidate?"
-          okText="Yes"
-          cancelText="No"
-          onConfirm={(e) => {
-            e?.stopPropagation();
-            handleDelete(record);
-          }}
-          onCancel={(e) => e?.stopPropagation()}
-        >
-          <Button type="link" danger onClick={(e) => e.stopPropagation()}>
-            Delete
+    {
+      title: "Joining Period",
+      dataIndex: "joiningPeriod",
+      key: "joiningPeriod",
+    },
+
+    {
+      title: "Verified",
+      key: "verified",
+      render: (_, record) => {
+        const isVerified = record?.isVerified;
+        return isVerified ? (
+          <span style={{ color: "#52c41a", fontWeight: 600 }}>Verified</span>
+        ) : (
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              openVerifyModal(record);
+            }}
+          >
+            Verify
           </Button>
-        </Popconfirm>
-      </Space>
-    ),
-  },
-];
+        );
+      },
+    },
 
+    // --------------------------------------------------
+    // FIXED RIGHT: ACTIONS COLUMN
+    // --------------------------------------------------
+    {
+      title: "Actions",
+      key: "actions",
+      width: 140,
+      fixed: "right",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}
+          >
+            {/* Edit */}
+            <EditOutlined />
+          </Button>
+
+          <Popconfirm
+            title="Are you sure you want to delete this candidate?"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleDelete(record);
+            }}
+            onCancel={(e) => e?.stopPropagation()}
+          >
+            <Button type="link" danger onClick={(e) => e.stopPropagation()}>
+              <DeleteOutlined />
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
   // 🔹 Hotlist submit handler
   const handleHotlistSubmit = () => {
@@ -678,7 +675,7 @@ const columns = [
 
   return (
     <div style={{ padding: 24 }}>
-       {contextHolder}
+      {contextHolder}
       {/* <h2 style={{ marginBottom: 16 }}>Vendor Candidate List</h2> */}
       <Title level={4} style={{ color: "rgba(0,0,0,0.75)", marginBottom: 16 }}>
         Vendor Candidate List
@@ -859,13 +856,12 @@ const columns = [
           //   },
           // })}
           onRow={(record) => ({
-  onClick: () => {
-    navigate("/company/bench/candidates", {
-      state: { candidate: record, from: "mybench" }
-    });
-  },
-})}
-
+            onClick: () => {
+              navigate("/company/bench/candidates", {
+                state: { candidate: record, from: "mybench" },
+              });
+            },
+          })}
         />
 
         <div style={{ marginTop: 16, display: "flex", gap: 12 }}>

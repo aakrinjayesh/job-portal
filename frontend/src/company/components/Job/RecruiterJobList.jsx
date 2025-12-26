@@ -37,7 +37,6 @@ import {
 } from "../../../candidate/api/api";
 import ReusableSelect from "../../../candidate/components/UserProfile/ReusableSelect";
 
-
 import {
   StarFilled,
   EnvironmentOutlined,
@@ -86,35 +85,22 @@ const RecruiterJobList = () => {
   const [aiModalVisible, setAiModalVisible] = useState(false);
   const [aiForm] = Form.useForm();
   const [aiLoading, setAiLoading] = useState(false);
-const location = useLocation();
+  const location = useLocation();
 
-  
-const controllerRef = useRef(null);  
+  const controllerRef = useRef(null);
 
   const [isSalaryRange, setIsSalaryRange] = useState(false);
 
-  // useEffect(() => {
-  //   fetchJobs();
-
-  //    return () => {
-  //   if (controllerRef.current) controllerRef.current.abort();
-  // };
-  // }, []);
-
-
   useEffect(() => {
-  fetchJobs();
+    fetchJobs();
 
-  return () => {
-    if (controllerRef.current) {
-      console.log("🔥 Aborting Jobs API due to route/tab change");
-      controllerRef.current.abort();
-    }
-  };
-}, [location.pathname]); // 👈 THIS LINE FIXES YOUR ISSUE
-
- 
-
+    return () => {
+      if (controllerRef.current) {
+        console.log("🔥 Aborting Jobs API due to route/tab change");
+        controllerRef.current.abort();
+      }
+    };
+  }, [location.pathname]); // 👈 THIS LINE FIXES YOUR ISSUE
 
   const showCreateModal = () => {
     setIsEditing(false);
@@ -162,6 +148,7 @@ const controllerRef = useRef(null);
       applicationDeadline: job.applicationDeadline
         ? dayjs(job.applicationDeadline)
         : null,
+      ApplicationLimit: job?.ApplicationLimit || null,
     });
   };
 
@@ -171,63 +158,38 @@ const controllerRef = useRef(null);
   };
 
   // ✅ Fetch job list
-  
+
   const fetchJobs = async () => {
-  // 🔴 Abort previous request if still running
-  if (controllerRef.current) {
-    controllerRef.current.abort();
-  }
-
-  // ✅ Create new AbortController
-  const controller = new AbortController();
-  controllerRef.current = controller;
-
-  try {
-    const response = await PostedJobsList(1, 10, controller.signal);
-    const jobList = response?.jobs || [];
-
-    // 🔹 For each job, get candidate count (abort-safe)
-    const jobsWithCounts = await Promise.all(
-      jobList.map(async (job) => {
-        try {
-          const candidateResponse = await GetCandidateDeatils(
-            { jobId: job.id },
-            controller.signal
-          );
-
-          const applicantCount = candidateResponse?.count || 0;
-          return { ...job, applicantCount };
-        } catch (err) {
-          if (err.code === "ERR_CANCELED") {
-            console.log(`Candidate API aborted for job ${job.id}`);
-          } else {
-            console.error(
-              `Error fetching candidates for job ${job.id}:`,
-              err
-            );
-          }
-          return { ...job, applicantCount: 0 };
-        }
-      })
-    );
-
-    setJobs(jobsWithCounts);
-    console.log("Jobs with applicant counts:", jobsWithCounts);
-  } catch (error) {
-    if (error.code === "ERR_CANCELED") {
-      // console.log("✅ fetchJobs aborted");
-      return;
+    // 🔴 Abort previous request if still running
+    if (controllerRef.current) {
+      controllerRef.current.abort();
     }
 
-    console.error("Error fetching jobs:", error);
-    messageApi.error("Failed to fetch jobs");
-  } finally {
-    setLoading(false);
-  }
-};
+    // ✅ Create new AbortController
+    const controller = new AbortController();
+    controllerRef.current = controller;
 
+    try {
+      // setLoading(true);
+      const response = await PostedJobsList(1, 10, controller.signal);
+      const jobList = response?.jobs || [];
+      setJobs(jobList);
+      setLoading(false);
+      console.log("Jobs with applicant counts:", jobsWithCounts);
+    } catch (error) {
+      if (error.code === "ERR_CANCELED") {
+        // console.log("✅ fetchJobs aborted");
+        return;
+      }
 
-  
+      console.error("Error fetching jobs:", error);
+      setLoading(false);
+      messageApi.error("Failed to fetch jobs");
+    } finally {
+      // setLoading(false);
+    }
+  };
+
   // ✅ Handle selecting/deselecting a job
   const handleSelect = (jobId) => {
     setSelectedJobs((prev) =>
@@ -255,7 +217,7 @@ const controllerRef = useRef(null);
     try {
       const values = await form.validateFields();
       setPostLoading(true);
-     
+
       let finalSalary = "";
 
       if (!isSalaryRange) {
@@ -286,8 +248,8 @@ const controllerRef = useRef(null);
         // location: values.location,
         // location: values.location || "Remote",
         location: Array.isArray(values.location)
-  ? values.location.join(", ")
-  : values.location || "Remote",
+          ? values.location.join(", ")
+          : values.location || "Remote",
 
         skills: values.skills || [], // array
         clouds: values.clouds || [],
@@ -299,6 +261,7 @@ const controllerRef = useRef(null);
         certifications: values.certifications || [],
         jobType: values.jobType,
         applicationDeadline: values?.applicationDeadline?.toISOString(),
+        ApplicationLimit: values?.ApplicationLimit,
       };
       console.log("Payload", payload);
       if (isEditing) {
@@ -312,6 +275,7 @@ const controllerRef = useRef(null);
       } else {
         // ✅ Create new job (backend call)
         const response = await CreateJob(payload);
+        // setJobs()
         setPostLoading(false);
         messageApi.success(response.message || "Job created successfully");
       }
@@ -391,9 +355,13 @@ const controllerRef = useRef(null);
       if (res.success === true) {
         messageApi.success("JD generated successfully!");
         // auto-fill fields in main form
+        const experience = {
+          type: "year",
+          number: values?.experience,
+        };
         form.setFieldsValue({
           role: res?.jobDescription?.role,
-          experience: values?.experience,
+          experience: experience,
           experienceLevel: values?.experienceLevel,
           description: res?.jobDescription?.description || "",
           responsibilities: res?.jobDescription?.responsibilities || "",
@@ -447,7 +415,21 @@ const controllerRef = useRef(null);
     }
   };
 
-  if (loading) return <Spin size="large" style={{ marginTop: 100 }} />;
+  if (loading) {
+    console.log("loading true");
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "400px",
+        }}
+      >
+        <Spin />
+      </div>
+    );
+  }
 
   const Experienceoptions = [
     {
@@ -543,9 +525,9 @@ const controllerRef = useRef(null);
                   rules={[
                     { required: true, message: "Please enter your reason" },
                     {
-                pattern: /^[A-Za-z]+$/,
-                message: "Only letters, numbers, and spaces are allowed",
-               },
+                      pattern: /^[A-Za-z]+$/,
+                      message: "Only letters, numbers, and spaces are allowed",
+                    },
                   ]}
                 >
                   <Input.TextArea
@@ -567,12 +549,11 @@ const controllerRef = useRef(null);
               <Card
                 hoverable
                 // onClick={() => navigate(`/company/job/${job.id}`)}
-                 onClick={() =>
-   navigate("/company/job/details", {
-   state: { job },
-})
-  }
-
+                onClick={() =>
+                  navigate("/company/job/details", {
+                    state: { job },
+                  })
+                }
                 style={{
                   borderRadius: 12,
                   background: "#fff",
@@ -621,10 +602,9 @@ const controllerRef = useRef(null);
                       onClick={(e) => {
                         e.stopPropagation();
                         // navigate(`/company/job/${job.id}`);
-                         navigate("/company/job/details", {
-    state: { job },
-  });
-
+                        navigate("/company/job/details", {
+                          state: { job },
+                        });
                       }}
                     >
                       {job.role || job.title}
@@ -727,7 +707,7 @@ const controllerRef = useRef(null);
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate("/company/candidates", {
-                         state: { id: job?.id, jobRole: job?.role },
+                          state: { id: job?.id, jobRole: job?.role },
                         });
                       }}
                     >
@@ -853,19 +833,20 @@ const controllerRef = useRef(null);
           <Form.Item
             name="responsibilities"
             label="Roles & Responsibilities"
-            rules={[
-              // { required: true },
-              // {
-              //   pattern: /^[A-Za-z0-9 ]+$/,
-              //   message: "Only letters, numbers, and spaces are allowed",
-              // },
-              {
-                pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
-
-                message:
-                  "Only letters, numbers, spaces and . , / - ( ) are allowed!",
-              },
-            ]}
+            rules={
+              [
+                // { required: true },
+                // {
+                //   pattern: /^[A-Za-z0-9 ]+$/,
+                //   message: "Only letters, numbers, and spaces are allowed",
+                // },
+                // {
+                //   pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+                //   message:
+                //     "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+                // },
+              ]
+            }
           >
             {/* <Select mode="tags" placeholder="Add responsibilities" /> */}
             <TextArea
@@ -953,7 +934,8 @@ const controllerRef = useRef(null);
                   { required: true, message: "Experience is Required!" },
                   {
                     pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-                    message: "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
+                    message:
+                      "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
                   },
                 ]}
               >
@@ -1010,52 +992,32 @@ const controllerRef = useRef(null);
             </Select>
           </Form.Item>
 
-          {/* {showLocation && (
+          {showLocation && (
             <Form.Item
               name="location"
               label="Location"
               rules={[
                 { required: true, message: "Location is required" },
-                // {
-                //   pattern: /^[A-Za-z ]+$/,
-                //   message: "Only letters and spaces are allowed",
-                // },
+                {
+                  validator: (_, value) => {
+                    if (value && value.length > 3) {
+                      return Promise.reject(
+                        "You can select up to 3 locations only"
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
               ]}
             >
               <ReusableSelect
-                single={false}
-                placeholder="Select Current Job Location"
+                single={false} // MULTIPLE LOCATIONS
+                placeholder="Select up to 3 Locations"
                 fetchFunction={GetLocations}
                 addFunction={PostLocations}
               />
             </Form.Item>
-          )} */}
-
-          {showLocation && (
-  <Form.Item
-    name="location"
-    label="Location"
-    rules={[
-      { required: true, message: "Location is required" },
-      {
-        validator: (_, value) => {
-          if (value && value.length > 3) {
-            return Promise.reject("You can select up to 3 locations only");
-          }
-          return Promise.resolve();
-        },
-      },
-    ]}
-  >
-    <ReusableSelect
-      single={false}                     // MULTIPLE LOCATIONS
-      placeholder="Select up to 3 Locations"
-      fetchFunction={GetLocations}
-      addFunction={PostLocations}
-    />
-  </Form.Item>
-)}
-
+          )}
 
           <Form.Item name="clouds" label="Clouds" rules={[{ required: true }]}>
             <ReusableSelect
@@ -1087,33 +1049,37 @@ const controllerRef = useRef(null);
             <Form.Item
               name="salary"
               label="Salary Per Annum"
-              rules={[{ required: true },
+              rules={[
+                { required: true },
                 {
-      validator: (_, value) => {
-        if (value === undefined || value === null) return Promise.resolve();
+                  validator: (_, value) => {
+                    if (value === undefined || value === null)
+                      return Promise.resolve();
 
-        // convert to string safely
-        const str = value.toString();
+                    // convert to string safely
+                    const str = value.toString();
 
-        // remove decimal point
-        const digitsOnly = str.replace(".", "");
+                    // remove decimal point
+                    const digitsOnly = str.replace(".", "");
 
-        if (digitsOnly.length > 10) {
-          return Promise.reject(
-            new Error("Maximum 10 digits allowed (including decimals)")
-          );
-        }
+                    if (digitsOnly.length > 10) {
+                      return Promise.reject(
+                        new Error(
+                          "Maximum 10 digits allowed (including decimals)"
+                        )
+                      );
+                    }
 
-        return Promise.resolve();
-      },
-    },
+                    return Promise.resolve();
+                  },
+                },
               ]}
             >
               <InputNumber
                 formatter={formatter}
                 style={{ width: "100%" }}
                 min={0}
-                precision={8}  
+                precision={8}
                 placeholder="e.g. 500000 PA"
               />
             </Form.Item>
@@ -1123,33 +1089,37 @@ const controllerRef = useRef(null);
                 <Form.Item
                   name={["salary", "min"]}
                   noStyle
-                  rules={[{ required: true, message: "Min salary required" },
+                  rules={[
+                    { required: true, message: "Min salary required" },
                     {
-      validator: (_, value) => {
-        if (value === undefined || value === null) return Promise.resolve();
+                      validator: (_, value) => {
+                        if (value === undefined || value === null)
+                          return Promise.resolve();
 
-        // convert to string safely
-        const str = value.toString();
+                        // convert to string safely
+                        const str = value.toString();
 
-        // remove decimal point
-        const digitsOnly = str.replace(".", "");
+                        // remove decimal point
+                        const digitsOnly = str.replace(".", "");
 
-        if (digitsOnly.length > 10) {
-          return Promise.reject(
-            new Error("Maximum 10 digits allowed (including decimals)")
-          );
-        }
+                        if (digitsOnly.length > 10) {
+                          return Promise.reject(
+                            new Error(
+                              "Maximum 10 digits allowed (including decimals)"
+                            )
+                          );
+                        }
 
-        return Promise.resolve();
-      },
-    },
+                        return Promise.resolve();
+                      },
+                    },
                   ]}
                 >
                   <InputNumber
                     formatter={formatter}
                     placeholder="Min e.g. 500000 PA"
                     min={0}
-                    precision={8}  
+                    precision={8}
                     style={{ width: "50%" }}
                   />
                 </Form.Item>
@@ -1160,24 +1130,27 @@ const controllerRef = useRef(null);
                   rules={[
                     { required: true, message: "Max salary required" },
                     {
-      validator: (_, value) => {
-        if (value === undefined || value === null) return Promise.resolve();
+                      validator: (_, value) => {
+                        if (value === undefined || value === null)
+                          return Promise.resolve();
 
-        // convert to string safely
-        const str = value.toString();
+                        // convert to string safely
+                        const str = value.toString();
 
-        // remove decimal point
-        const digitsOnly = str.replace(".", "");
+                        // remove decimal point
+                        const digitsOnly = str.replace(".", "");
 
-        if (digitsOnly.length > 10) {
-          return Promise.reject(
-            new Error("Maximum 10 digits allowed (including decimals)")
-          );
-        }
+                        if (digitsOnly.length > 10) {
+                          return Promise.reject(
+                            new Error(
+                              "Maximum 10 digits allowed (including decimals)"
+                            )
+                          );
+                        }
 
-        return Promise.resolve();
-      },
-    },
+                        return Promise.resolve();
+                      },
+                    },
                     ({ getFieldValue }) => ({
                       validator(_, value) {
                         const min = getFieldValue(["salary", "min"]);
@@ -1195,7 +1168,7 @@ const controllerRef = useRef(null);
                     formatter={formatter}
                     placeholder="Max e.g. 800000 PA"
                     min={0}
-                    precision={8}  
+                    precision={8}
                     style={{ width: "50%" }}
                   />
                 </Form.Item>
@@ -1238,6 +1211,14 @@ const controllerRef = useRef(null);
               }
             />
           </Form.Item>
+          <Form.Item name="ApplicationLimit" label="Limit Applications">
+            <InputNumber
+              formatter={formatter}
+              keyboard={true}
+              placeholder="e.g. 1000"
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
         </Form>
       </Modal>
 
@@ -1273,7 +1254,8 @@ const controllerRef = useRef(null);
               {
                 pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
 
-                message: "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
+                message:
+                  "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
               },
             ]}
           >

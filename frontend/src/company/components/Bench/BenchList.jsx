@@ -2,7 +2,7 @@ import React from "react";
 import { Row, Col } from "antd";
 import BenchCard from "./BenchCard";
 
-const BenchList = ({ bench, isFilterOpen, toggleFilter, onViewDetails, lastBenchRef }) => {
+const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
   return (
     <div>
       {/* Header */}
@@ -29,23 +29,21 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, onViewDetails, lastBench
         </button>
       </div>
 
-      
       <Row gutter={[16, 16]}>
-  {bench.map((c, index) => {
-    const isLast = index === bench.length - 1;
+        {bench.map((c, index) => {
+          const isLast = index === bench.length - 1;
 
-    return (
-      <Col
-        span={24}
-        key={c.id}
-        ref={isLast ? lastBenchRef : null}   // ⭐ ADD THIS
-      >
-        <BenchCard candidate={c} onViewDetails={() => onViewDetails(c)} />
-      </Col>
-    );
-  })}
-</Row>
-
+          return (
+            <Col
+              span={24}
+              key={c.id}
+              ref={isLast ? lastBenchRef : null} // ⭐ ADD THIS
+            >
+              <BenchCard candidate={c} />
+            </Col>
+          );
+        })}
+      </Row>
     </div>
   );
 };

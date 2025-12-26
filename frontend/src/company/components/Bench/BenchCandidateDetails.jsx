@@ -25,25 +25,23 @@ import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
-
 const BenchCandidateDetails = () => {
+  const location = useLocation();
+  const candidate = location.state?.candidate;
+  const from = location.state?.from;
 
-    const location = useLocation();
-const candidate = location.state?.candidate;
-const from = location.state?.from;
+  const navigate = useNavigate();
 
+  console.log("candidate", candidate);
+  console.log("candidate vebdirs", candidate.isVendor);
 
-const navigate = useNavigate();
-
- 
   if (!candidate) {
-  return (
-    <Card style={{ textAlign: "center", marginTop: 50 }}>
-      No candidate selected.
-    </Card>
-  );
-}
-
+    return (
+      <Card style={{ textAlign: "center", marginTop: 50 }}>
+        No candidate selected.
+      </Card>
+    );
+  }
 
   const {
     name,
@@ -66,6 +64,7 @@ const navigate = useNavigate();
     workExperience,
     education,
     rateCardPerHour,
+    isVendor,
   } = candidate;
 
   const primarySkills = skillsJson?.filter((s) => s.level === "primary") || [];
@@ -85,48 +84,50 @@ const navigate = useNavigate();
       }}
     >
       <div style={{ marginBottom: 20 }}>
-  <button
-    onClick={() => navigate(from === 'mybench'  ? "/company/bench ":"/company/bench/find" )}
-    style={{
-      background: "none",
-      border: "none",
-      cursor: "pointer",
-      fontSize: 16,
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      color: "#1677ff",
-    }}
-  >
-    <ArrowLeftOutlined /> Back
-  </button>
-</div>
+        <button
+          onClick={() =>
+            navigate(
+              from === "mybench" ? "/company/bench " : "/company/bench/find"
+            )
+          }
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            color: "#1677ff",
+          }}
+        >
+          <ArrowLeftOutlined /> Back
+        </button>
+      </div>
 
       {/* Header Section */}
       <Row align="middle" gutter={16}>
-      
-
         <Col flex="80px">
-
-  <Avatar
-  size={80}
-  src={
-    candidate?.profilePicture
-      ? `${candidate.profilePicture}?t=${Date.now()}`
-      : undefined
-  }
-  icon={!candidate?.profilePicture ? <UserOutlined /> : null}
-  style={{
-    backgroundColor: candidate?.profilePicture ? undefined : "#1677ff",
-    color: "#fff",
-    fontSize: 28,
-    objectFit: "cover",
-  }}
-  onError={(e) => (e.currentTarget.src = "")}
-  key={candidate?.profilePicture || "no-pic"}
-/>
-
-</Col>
+          <Avatar
+            size={80}
+            src={
+              candidate?.profilePicture
+                ? `${candidate.profilePicture}?t=${Date.now()}`
+                : undefined
+            }
+            icon={!candidate?.profilePicture ? <UserOutlined /> : null}
+            style={{
+              backgroundColor: candidate?.profilePicture
+                ? undefined
+                : "#1677ff",
+              color: "#fff",
+              fontSize: 28,
+              objectFit: "cover",
+            }}
+            onError={(e) => (e.currentTarget.src = "")}
+            key={candidate?.profilePicture || "no-pic"}
+          />
+        </Col>
 
         <Col flex="auto">
           <Title level={2} style={{ marginBottom: 0 }}>
@@ -147,62 +148,61 @@ const navigate = useNavigate();
 
       <Divider />
 
-{/* CONTACT DETAILS — hide only email + phone */}
-<Row justify="start" gutter={[24, 12]}>
-  
- 
+      {/* CONTACT DETAILS — hide only email + phone */}
+      <Row justify="start" gutter={[24, 12]}>
+        {/* Case 1: Opened from My Bench → show candidate's own contact */}
+        {from === "mybench" && (
+          <>
+            {candidate.email && (
+              <Col>
+                <MailOutlined />{" "}
+                <a href={`mailto:${candidate.email}`}>{candidate.email}</a>
+              </Col>
+            )}
 
-  {/* Case 1: Opened from My Bench → show candidate's own contact */}
-  {from === "mybench" && (
-    <>
-      {candidate.email && (
-        <Col>
-          <MailOutlined />{" "}
-          <a href={`mailto:${candidate.email}`}>{candidate.email}</a>
-        </Col>
-      )}
+            {candidate.phoneNumber && (
+              <Col>
+                <PhoneOutlined /> {candidate.phoneNumber}
+              </Col>
+            )}
+          </>
+        )}
 
-      {candidate.phoneNumber && (
-        <Col>
-          <PhoneOutlined /> {candidate.phoneNumber}
-        </Col>
-      )}
-    </>
-  )}
+        {/* Case 2: Opened from Find Candidate → Vendor candidate → show vendor email */}
+        {from === "find" && candidate.vendorId && candidate.vendor?.email && (
+          <>
+            <Col>
+              POC Contact: <MailOutlined />{" "}
+              <a href={`mailto:${candidate.vendor.email}`}>
+                {candidate.vendor.email}
+              </a>
+            </Col>
+            {/* <Col>
+              <PhoneOutlined /> {candidate?.vendor?.phoneNumber}
+            </Col> */}
+          </>
+        )}
 
-  {/* Case 2: Opened from Find Candidate → Vendor candidate → show vendor email */}
-  {from === "find" && candidate.vendorId && candidate.vendor?.email && (
-    <Col>
-      <MailOutlined />{" "}
-      <a href={`mailto:${candidate.vendor.email}`}>
-        {candidate.vendor.email}
-      </a>
-    </Col>
-  )}
+        {/* Case 3: Opened from Find Candidate → Individual candidate → show candidate email */}
+        {from === "find" && !candidate.vendorId && candidate.email && (
+          <>
+            <Col>
+              <MailOutlined />{" "}
+              <a href={`mailto:${candidate.email}`}>{candidate.email}</a>
+            </Col>
+            <Col>
+              <PhoneOutlined /> {candidate?.phoneNumber}
+            </Col>
+          </>
+        )}
 
-  {/* Case 3: Opened from Find Candidate → Individual candidate → show candidate email */}
-  {from === "find" && !candidate.vendorId && candidate.email && (
-    <Col>
-      <MailOutlined />{" "}
-      <a href={`mailto:${candidate.email}`}>
-        {candidate.email}
-      </a>
-    </Col>
-  )}
-
- 
-
-  {/* Location – always visible */}
-  {currentLocation && (
-    <Col>
-      <EnvironmentOutlined /> {currentLocation}
-    </Col>
-  )}
-
-</Row>
-
-
-
+        {/* Location – always visible */}
+        {currentLocation && (
+          <Col>
+            <EnvironmentOutlined /> {currentLocation}
+          </Col>
+        )}
+      </Row>
 
       <Row gutter={[16, 8]} style={{ marginTop: 8 }}>
         {portfolioLink && (
@@ -252,7 +252,9 @@ const navigate = useNavigate();
         <Col span={12}>
           <Text strong>Rate Card:</Text>{" "}
           {rateCardPerHour
-            ? `${rateCardPerHour.currency || "INR"} ${rateCardPerHour.value}/Month`
+            ? `${rateCardPerHour.currency || "INR"} ${
+                rateCardPerHour.value
+              }/Month`
             : "N/A"}
         </Col>
       </Row>
@@ -339,46 +341,42 @@ const navigate = useNavigate();
             <Card
               key={idx}
               type="inner"
-             
               title={
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      width: "100%",
-    }}
-  >
-    {/* LEFT: Job Title */}
-    <span style={{ fontWeight: 600 }}>
-      {exp.role} @ {exp.payrollCompanyName}
-    </span>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "100%",
+                  }}
+                >
+                  {/* LEFT: Job Title */}
+                  <span style={{ fontWeight: 600 }}>
+                    {exp.role} @ {exp.payrollCompanyName}
+                  </span>
 
-    {/* RIGHT: Date */}
-    <span style={{ color: "#777", fontSize: 14 }}>
-      {exp.startDate
-        ? (dayjs(exp.startDate).isValid()
-            ? dayjs(exp.startDate).format("MM/YYYY")
-            : exp.startDate)
-        : "N/A"}
-      {" - "}
-      {!exp.endDate || exp.endDate.toLowerCase?.() === "present"
-        ? "Present"
-        : (dayjs(exp.endDate).isValid()
-            ? dayjs(exp.endDate).format("MM/YYYY")
-            : exp.endDate)}
-    </span>
-  </div>
-}
-
+                  {/* RIGHT: Date */}
+                  <span style={{ color: "#777", fontSize: 14 }}>
+                    {exp.startDate
+                      ? dayjs(exp.startDate).isValid()
+                        ? dayjs(exp.startDate).format("MM/YYYY")
+                        : exp.startDate
+                      : "N/A"}
+                    {" - "}
+                    {!exp.endDate || exp.endDate.toLowerCase?.() === "present"
+                      ? "Present"
+                      : dayjs(exp.endDate).isValid()
+                      ? dayjs(exp.endDate).format("MM/YYYY")
+                      : exp.endDate}
+                  </span>
+                </div>
+              }
               style={{
                 marginBottom: 12,
                 borderRadius: 10,
                 background: "#fafafa",
               }}
             >
-             
-             
               {exp.projects?.length > 0 && (
                 <div style={{ marginTop: 10 }}>
                   {exp.projects.map((proj, i) => (
@@ -386,9 +384,11 @@ const navigate = useNavigate();
                       key={i}
                       type="inner"
                       size="small"
-                      title={  <span  style={{ fontWeight: 500, color: "#666" }}>
-      <strong>Project:</strong> {proj.projectName}
-    </span>}
+                      title={
+                        <span style={{ fontWeight: 500, color: "#666" }}>
+                          <strong>Project:</strong> {proj.projectName}
+                        </span>
+                      }
                       style={{
                         marginBottom: 8,
                         background: "#fff",

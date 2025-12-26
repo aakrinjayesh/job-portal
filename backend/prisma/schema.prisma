@@ -179,6 +179,7 @@ model Job {
   isDeleted           Boolean          @default(false)
   deletedReason       String?
   deletedAt           DateTime?
+  ApplicationLimit    Int?
 
   postedById String?
   postedBy   Users?  @relation("UserPostedJobs", fields: [postedById], references: [id])

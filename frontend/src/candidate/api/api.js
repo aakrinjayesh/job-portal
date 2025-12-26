@@ -343,7 +343,7 @@ export async function ApplyJob(payload) {
 
 export async function AppliedJobsList(page = 1, limit = 10) {
   try {
-    const response = await axiosInstance.get(`/jobs/applications?page=${page}&limit=${limit}`);
+    const response = await axiosInstance.get(`/jobs/applied/all?page=${page}&limit=${limit}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);

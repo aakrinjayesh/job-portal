@@ -1,13 +1,13 @@
 import axiosInstance from "../../candidate/api/axiosInstance";
  
 // ✅ FIXED VERSION
-export async function GetJobsList(page = 1, limit = 10, signal, filters = {}) {
+export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
   try {
     const response = await axiosInstance.post("/jobs/list", {
     page,
     limit,
     filters,
-  },{signal});
+  },{signal},{headers: { 'Content-Type': 'application/json' }});
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
@@ -215,21 +215,17 @@ export async function  UpdateVendorCandidateStatus( payload) {
   } 
 }
 
-// export const GetAllVendorCandidates = async () => {
-//   try {
-//     const response = await axiosInstance.get("/vendor/candidates/all", {
-//       headers: { "Content-Type": "application/json" },
-//     });
-//     return response.data;
-//   } catch (error) {
-//     console.error("GetAllVendorCandidates Error:", error);
-//     throw error;
-//   }
-// };
-export async function GetAllVendorCandidates(page = 1, limit = 10, signal) {
+
+export async function GetAllVendorCandidates(page = 1, limit = 10, filters = {}, signal) {
   try {
-    const response = await axiosInstance.get(
-      `/vendor/candidates/all?page=${page}&limit=${limit}`,{signal}
+    const response = await axiosInstance.post(
+      `/vendor/candidates/all`,
+      {
+        page,
+        limit,
+        filters
+      },
+      { signal }
     );
     return response.data;
   } catch (error) {

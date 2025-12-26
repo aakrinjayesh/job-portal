@@ -12,6 +12,7 @@ import {
   message,
   Button,
   Modal,
+  Select,
 } from "antd";
 import {
   StarFilled,
@@ -49,15 +50,16 @@ const JobList = ({
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [sortOrder, setSortOrder] = useState("dsc");
 
   const sortOptions = [
     {
-      value: "createdAt",
-      label: "Posted Time",
-      children: [
-        { value: "asc", label: "Oldest First" },
-        { value: "desc", label: "Recently Posted First" },
-      ],
+      value: "asc",
+      label: "Posted Time: Low to High",
+    },
+    {
+      value: "dsc",
+      label: "Posted Time: High to Low",
     },
   ];
 
@@ -117,29 +119,18 @@ const JobList = ({
   };
 
   const handleSort = (value) => {
-    if (!value || value.length < 2) return;
-    const [field, order] = value;
+    setSortOrder(value);
 
     let sorted = [...jobs];
 
-    if (field === "createdAt") {
-      sorted.sort((a, b) => {
-        return order === "asc"
-          ? new Date(a.createdAt) - new Date(b.createdAt)
-          : new Date(b.createdAt) - new Date(a.createdAt);
-      });
-    }
+    sorted.sort((a, b) => {
+      return value === "asc"
+        ? new Date(a.createdAt) - new Date(b.createdAt)
+        : new Date(b.createdAt) - new Date(a.createdAt);
+    });
 
     setSortedJobs(sorted);
   };
-
-  // const handleCardClick = (id) => {
-  //   if (portal === "company") {
-  //     navigate(`/company/job/${id}`, { state: { type, jobids, portal } });
-  //   } else {
-  //     navigate(`/candidate/job/${id}`, { state: { type, jobids } });
-  //   }
-  // };
 
   const handleCardClick = (job) => {
     if (portal === "company") {
@@ -175,10 +166,10 @@ const JobList = ({
       };
       setLoadingEligibility((prev) => ({ ...prev, [id]: true }));
       const resp = await CVEligibility(payload);
-      if (resp.status === "success") {
+      if (resp?.status === "success") {
         setEligibilityByJob((prev) => ({
           ...prev,
-          [id]: resp.data,
+          [id]: resp?.data,
         }));
       } else {
         messageApi.error("Could not analyze eligibility");
@@ -191,14 +182,14 @@ const JobList = ({
   };
 
   const CompactAnalytics = ({ data }) => {
-    const a = data.analysis;
+    const a = data?.analysis;
 
     return (
       <div
         style={{
           position: "absolute",
           right: 12,
-          top: 12,
+          top: 135,
           width: 130,
           background: "#f6ffed",
           border: "1px solid #b7eb8f",
@@ -209,25 +200,25 @@ const JobList = ({
         onClick={(e) => e.stopPropagation()}
       >
         <Text strong style={{ fontSize: 14, display: "block" }}>
-          {data.fitPercentage}% Match
+          {data?.fitPercentage}% Match
         </Text>
 
         <div style={{ marginTop: 6 }}>
-          <Text type="secondary">Gap Skills:</Text> {a.key_gap_skills.length}
+          <Text type="secondary">Gap Skills:</Text> {a?.key_gap_skills?.length}
         </div>
 
         <div>
-          <Text type="secondary">Gap Clouds:</Text> {a.key_gap_clouds.length}
+          <Text type="secondary">Gap Clouds:</Text> {a?.key_gap_clouds?.length}
         </div>
 
         <div>
-          <Text type="secondary">Experience:</Text> {a.total_experience_years}{" "}
+          <Text type="secondary">Experience:</Text> {a?.total_experience_years}{" "}
           yr
         </div>
 
         <div>
           <Text type="secondary">Deal Breakers:</Text>{" "}
-          {a.scoring_breakdown.deal_breakers_missed}
+          {a?.scoring_breakdown?.deal_breakers_missed}
         </div>
       </div>
     );
@@ -246,44 +237,6 @@ const JobList = ({
       >
         <p>Please login to use this button.</p>
       </Modal>
-
-      {/* ⭐ TOP ROW — LEFT FILTER TOGGLE + RIGHT SORT OPTION */}
-      {/* <Col xs={24}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          
-          <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
-          <Button
-  type="text"
-  onClick={toggleFilter}
-  style={{ fontSize: 20 }}
-  icon={
-    isFilterOpen ? (
-      <MenuFoldOutlined />
-    ) : (
-      <MenuUnfoldOutlined />
-    )
-  }
-/>
-</Tooltip>
-
-
-          
-          <Cascader
-            options={sortOptions}
-            onChange={handleSort}
-            placeholder="Sort Jobs"
-            style={{ width: 250 }}
-            allowClear
-          />
-        </div>
-      </Col> */}
 
       {!hideSortAndFilter && (
         <Col xs={24}>
@@ -306,12 +259,12 @@ const JobList = ({
               />
             </Tooltip>
 
-            <Cascader
+            <Select
+              value={sortOrder}
               options={sortOptions}
               onChange={handleSort}
               placeholder="Sort Jobs"
               style={{ width: 250 }}
-              allowClear
             />
           </div>
         </Col>
@@ -353,12 +306,12 @@ const JobList = ({
                 <span
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleSaveToggle(job.id);
+                    handleSaveToggle(job?.id);
                   }}
                   style={{ cursor: "pointer", fontSize: 20 }}
                 >
-                  <Tooltip title={!job.isSaved ? "Save Job" : "Unsave Job"}>
-                    {job.isSaved ? (
+                  <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+                    {job?.isSaved ? (
                       <StarFilled style={{ color: "#faad14" }} />
                     ) : (
                       <StarOutlined />
@@ -369,12 +322,12 @@ const JobList = ({
 
               <Space align="center" style={{ marginTop: 6 }}>
                 <Text strong style={{ color: "#1890ff" }}>
-                  {job.companyName}
+                  {job?.companyName}
                 </Text>
                 {job.rating && (
                   <>
                     <StarFilled style={{ color: "#faad14" }} />
-                    <Text>{job.rating}</Text>
+                    <Text>{job?.rating}</Text>
                   </>
                 )}
               </Space>
@@ -451,7 +404,7 @@ const JobList = ({
                 )}
 
                 {eligibilityByJob[job.id] ? (
-                  <CompactAnalytics data={eligibilityByJob[job.id]} />
+                  <CompactAnalytics data={eligibilityByJob[job?.id]} />
                 ) : (
                   portal !== "company" && (
                     <Button

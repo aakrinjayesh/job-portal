@@ -307,9 +307,9 @@ logger.warn("⚠️ Missing login fields");
         { headers: { "Content-Type": "application/json" } }
       );
 
-      logger.info("✅ External Login Response:", JSON.stringify(loginResponse?.data,null,2));
+      console.log("✅ External Login Response:", loginResponse?.data);
     } catch (err) {
-      logger.error("⚠️ External login failed (continuing local flow):", JSON.stringify(err.message,null,2));
+      console.error("⚠️ External login failed (continuing local flow):",err.message,null,2);
     }
 
 

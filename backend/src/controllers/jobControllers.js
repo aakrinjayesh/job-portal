@@ -4,8 +4,10 @@ import puppeteer from 'puppeteer';
 import { generateResumeHTML } from "../utils/resumeTemplate.js";
 import fs from 'fs'
 import path from 'path'
-import { extractResumeSections } from "../utils/llmTextExtractor.js";
+// import { extractResumeSections } from "../utils/llmTextExtractor.js";
+import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
+import {applyFilters} from "../utils/applyFilters.js";
 
 
 // User applies for a job
@@ -25,7 +27,10 @@ const userApplyJob = async (req, res) => {
     const job = await prisma.job.findFirst({
       where: { id: jobId, isDeleted: false },
       include: {
-        postedBy: { select: { id: true, name: true, email: true } }
+        postedBy: { select: { id: true, name: true, email: true } },
+        _count: {
+          select: { applications: true }
+        }
       }
     });
 
@@ -33,9 +38,23 @@ const userApplyJob = async (req, res) => {
       return res.status(404).json({ status: "error", message: "Job not found" });
     }
     if (job.status !== 'Open') {
-      return res.status(400).json({ status: "error", message: "Job closed" });
+      return res.status(200).json({ status: "error", message: "No Longer Accepting Jobs" });
     }
 
+    if (
+      job.ApplicationLimit !== null &&
+      job._count.applications >= job.ApplicationLimit
+    ) {
+      await prisma.job.update({
+        where: { id: jobId },
+        data: { status: "Closed" },
+      });
+
+      return res.status(200).json({
+        status: "error",
+        message: "Application limit reached. Job is closed.",
+      });
+    }
  
     // 2. Fetch User Profile
     const user = await prisma.users.findUnique({
@@ -58,23 +77,22 @@ const userApplyJob = async (req, res) => {
     const profile = user.CandidateProfile;
 // 3. Check Existing Application
     const existingApplication = await prisma.jobApplication.findUnique({
-  where: {
-    jobId_candidateProfileId: {
-      jobId,
-      candidateProfileId: profile.id
-    }
-  }
-});
+      where: {
+        jobId_candidateProfileId: {
+          jobId,
+          candidateProfileId: profile.id
+        }
+      }
+    });
 
-if (existingApplication) {
+    if (existingApplication) {
       logger.warn(`User already applied - jobId: ${jobId}, user profile id: ${profile.id}`);
       return res.status(409).json({ status: "error", message: "Already applied" });
     }
 
 
-    // ============================================================
+
     // STEP 4: AI ANALYSIS (Real-time)
-    // ============================================================
     let aiAnalysisResult = null;
     
     const jobDescription = {
@@ -127,15 +145,31 @@ if (existingApplication) {
 
     // Only run AI if candidate has a profile
     if (user.CandidateProfile) {
-        aiAnalysisResult = await extractResumeSections("CV_RANKING","cvranker",{jobDescription, candidateDetails});
+        aiAnalysisResult = await extractAIText("CV_RANKING","cvranker",{jobDescription, candidateDetails});
         logger.info('aicvranker', JSON.stringify(aiAnalysisResult,null,2))
     }
 
-    // ============================================================
+
     // STEP 5: SAVE TO DB (Transaction)
-    // ============================================================
     const application = await prisma.$transaction(async (tx) => {
-      // A. Create the base Application
+
+      const currentCount = await tx.jobApplication.count({
+        where: { jobId },
+      });
+
+      if (
+        job.ApplicationLimit !== null &&
+        currentCount >= job.ApplicationLimit
+      ) {
+        await tx.job.update({
+          where: { id: jobId },
+          data: { status: "Closed" },
+        });
+
+        throw new Error("APPLICATION_LIMIT_REACHED");
+      }
+
+      // Create the base Application
       const newApp = await tx.jobApplication.create({
         data: {
           jobId,
@@ -146,7 +180,7 @@ if (existingApplication) {
         }
       });
 
-      // B. Create the Analysis (if AI succeeded)
+      // Create the Analysis (if AI succeeded)
       if (aiAnalysisResult) {
         await tx.applicationAnalysis.create({
           data: {
@@ -158,13 +192,20 @@ if (existingApplication) {
         });
       }
 
+      if (
+        job.ApplicationLimit !== null &&
+        currentCount + 1 >= job.ApplicationLimit
+      ) {
+        await tx.job.update({
+          where: { id: jobId },
+          data: { status: "Closed" },
+        });
+      }
+
       return newApp;
     });
 
-    // ============================================================
-    // STEP 6: POST-PROCESSING (PDF & Emails) - Kept original logic
-    // ============================================================
-    
+
     // Generate resume HTML
     const resumeHTML = generateResumeHTML(user, user.CandidateProfile, job);
     let pdfBuffer;
@@ -287,7 +328,13 @@ if (existingApplication) {
     });
 
   } catch (error) {
-    logger.error("userApplyJob Error:", JSON.stringify(error.message,null,2));
+    if (error.message === "APPLICATION_LIMIT_REACHED") {
+      return res.status(400).json({
+        status: "error",
+        message: "Application limit reached. Job is closed.",
+      });
+    }
+    logger.error("userApplyJob Error:",error.message);
     return res.status(500).json({
       status: "error",
       message: "Failed to submit application:" + error.message,
@@ -653,115 +700,62 @@ const userWithdrawJob = async (req, res) => {
 //   }
 // };
 
+
 const getJobList = async (req, res) => {
   try {
-    const page = Number(req.body.page) || 1;
-    const limit = Number(req.body.limit) || 10;
-    const skip = (page - 1) * limit;
-     const filters = req.body.filters || {};
+    const page = parseInt(req.body.page) || 1;
+    const limit = parseInt(req.body.limit) || 10;
+    const filters = req.body.filters || {};
+
     const userId = req.user?.id;
 
-    const {
-      location = [],
-      skills = [],
-      clouds = [],
-      jobType = [],
-      employmentType = [],
-      experience,
-    } = filters;
+    // Step 1: Fetch ALL jobs from database (we'll filter in-memory)
+    const allJobs = await prisma.job.findMany({
+      where: {
+        isDeleted: false,
+      },
+      orderBy: { createdAt: "desc" },
+      include: userId
+        ? {
+            savedBy: {
+              where: { userId },
+              select: { id: true },
+            },
+          }
+        : false,
+    });
 
-    // 🔹 Base condition
-    const where = {
-      isDeleted: false,
-    };
-
-    // LOCATION (Exact city match)
-    if (location.length > 0) {
-      where.location = {
-        in: location,
-        mode: "insensitive",
-      };
-    }
-
-    // SKILLS (array column)
-    if (skills.length > 0) {
-      where.skills = {
-        hasEvery: skills,
-      };
-    }
-
-    // CLOUDS (array column)
-    if (clouds.length > 0) {
-      where.clouds = {
-        hasEvery: clouds,
-      };
-    }
-
-    // JOB TYPE
-    if (jobType.length > 0) {
-      where.jobType = {
-        in: jobType,
-      };
-    }
-
-    // EMPLOYMENT TYPE
-    if (employmentType.length > 0) {
-      where.employmentType = {
-        in: employmentType,
-      };
-    }
-
-    // EXPERIENCE RANGE SUPPORT
-    if (experience?.min !== undefined || experience?.max !== undefined) {
-      where.experience = {
-        number: {
-          gte: experience?.min ?? 0,
-          lte: experience?.max ?? 50,
-        },
-      };
-    }
-
-    const [jobs, totalCount] = await Promise.all([
-      prisma.job.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include:{
-              savedBy: {
-                where: { userId },
-                select: {jobId: true },
-              },
-            }
-      }),
-      prisma.job.count({ where }),
-    ]);
-
-    const jobsWithSavedStatus = jobs.map((job) => ({
+    // Step 2: Add isSaved flag
+    const jobsWithSavedStatus = allJobs.map((job) => ({
       ...job,
-      isSaved: job.savedBy && job.savedBy.length > 0 ? true : false
+      isSaved: job.savedBy && job.savedBy.length > 0,
     }));
+
+    // Step 3: Apply filters
+    const filteredJobs = applyFilters(jobsWithSavedStatus, filters);
+
+    // Step 4: Apply pagination to filtered results
+    const totalCount = filteredJobs.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    const skip = (page - 1) * limit;
+    const paginatedJobs = filteredJobs.slice(skip, skip + limit);
 
     return res.status(200).json({
       status: "success",
-      jobs: jobsWithSavedStatus,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
+      jobs: paginatedJobs,
       totalCount,
+      currentPage: page,
+      totalPages,
     });
   } catch (error) {
-    logger.error("getJobList Error:", error);
+    logger.error("getJobList Error:", JSON.stringify(error.message, null, 2));
     return res.status(500).json({
       status: "error",
-      message: "Internal server error",
+      error: error.message || "Internal server error",
     });
   }
 };
 
-
-
-// jayesh
-// Post a job by company or vendor
 const postJob = async (req, res) => {
   try {
       const {
@@ -780,6 +774,7 @@ const postJob = async (req, res) => {
       certifications,
       jobType,
       applicationDeadline,
+      ApplicationLimit
     } = req.body;
     
     logger.log('body ##########',JSON.stringify(req.body,null,2));
@@ -803,6 +798,7 @@ const postJob = async (req, res) => {
         certifications,
         jobType,
         applicationDeadline,
+        ApplicationLimit,
         postedById: userFromAuth.id, // optional
       },
     });
@@ -825,36 +821,110 @@ const postJob = async (req, res) => {
 
 // hari
 // Get list of all jobs posted by company
+// const postedJobs = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+
+//     const userFromAuth = req.user
+
+//     // ❗ Validate userId
+//    if (!userFromAuth.id) {
+//       logger.warn("User ID missing in postedJobs");
+//       return res.status(400).json({
+//         status: "error",
+//         message: "User ID is required"
+//       });
+//     }
+
+//     // 🟢 Fetch paginated jobs & count based on userId + isDeleted
+//     const [jobs, totalCount] = await Promise.all([
+//       prisma.job.findMany({
+//         skip,
+//         take: limit,
+//         where: { postedById: userFromAuth.id, isDeleted: false },
+//         orderBy: { createdAt: "desc" }
+//       }),
+
+//       prisma.job.count({
+//         where: { postedById: userFromAuth.id, isDeleted: false }
+//       })
+//     ]);
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Posted jobs fetched successfully",
+//       totalCount,
+//       currentPage: page,
+//       totalPages: Math.ceil(totalCount / limit),
+//       jobs
+//     });
+
+//   } catch (error) {
+//     logger.error("postedJobs POST Error:", JSON.stringify(error.message,null,2));
+//     return res.status(500).json({
+//       status: "error",
+//       error: error.message || "Internal server error"
+//     });
+//   }
+// };
+
 const postedJobs = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const userFromAuth = req.user
+    const userFromAuth = req.user;
 
-    // ❗ Validate userId
-   if (!userFromAuth.id) {
+    // ❗ Validate user
+    if (!userFromAuth?.id) {
       logger.warn("User ID missing in postedJobs");
       return res.status(400).json({
         status: "error",
-        message: "User ID is required"
+        message: "User ID is required",
       });
     }
 
-    // 🟢 Fetch paginated jobs & count based on userId + isDeleted
+    // 🟢 Fetch jobs + applicant count
     const [jobs, totalCount] = await Promise.all([
       prisma.job.findMany({
         skip,
         take: limit,
-        where: { postedById: userFromAuth.id, isDeleted: false },
-        orderBy: { createdAt: "desc" }
+        where: {
+          postedById: userFromAuth.id,
+          isDeleted: false,
+        },
+        orderBy: { createdAt: "desc" },
+
+        // 🔑 Count applications per job
+        include: {
+          _count: {
+            select: {
+              applications: true,
+            },
+          },
+        },
       }),
 
       prisma.job.count({
-        where: { postedById: userFromAuth.id, isDeleted: false }
-      })
+        where: {
+          postedById: userFromAuth.id,
+          isDeleted: false,
+        },
+      }),
     ]);
+
+    // 🧠 Transform response → add applicantCount
+    const jobsWithApplicantCount = jobs.map((job) => {
+      const { _count, ...jobData } = job;
+
+      return {
+        ...jobData,
+        applicantCount: _count.applications || 0,
+      };
+    });
 
     return res.status(200).json({
       status: "success",
@@ -862,14 +932,18 @@ const postedJobs = async (req, res) => {
       totalCount,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
-      jobs
+      jobs: jobsWithApplicantCount,
     });
 
   } catch (error) {
-    logger.error("postedJobs POST Error:", JSON.stringify(error.message,null,2));
+    logger.error(
+      "postedJobs POST Error:",
+      JSON.stringify(error.message, null, 2)
+    );
+
     return res.status(500).json({
       status: "error",
-      error: error.message || "Internal server error"
+      error: error.message || "Internal server error",
     });
   }
 };
@@ -897,6 +971,7 @@ const editJob = async (req, res) => {
       jobType,
       status,
       applicationDeadline,
+      ApplicationLimit
     } = req.body;
 
     const userFromAuth = req.user;
@@ -945,6 +1020,7 @@ const editJob = async (req, res) => {
         jobType,
         status,
         applicationDeadline,
+        ApplicationLimit
       },
     });
 

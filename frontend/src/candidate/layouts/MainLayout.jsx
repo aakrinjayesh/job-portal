@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Menu, Avatar, Typography,Modal } from "antd";
+import { Layout, Menu, Avatar, Typography, Modal } from "antd";
 import {
   FileTextOutlined,
   SettingOutlined,
@@ -34,51 +34,50 @@ const MainLayout = ({ children }) => {
   };
 
   const items = [
-    { key: "dashboard", label: "Dashboard", icon: <FileTextOutlined /> },
+    // { key: "dashboard", label: "Dashboard", icon: <FileTextOutlined /> },
     { key: "job", label: "Find Jobs", icon: <SearchOutlined /> },
     { key: "savedjobs", label: "Saved Jobs", icon: <SaveFilled /> },
-     { key: "appliedjobs", label: "Applied Jobs", icon: <FileTextOutlined /> },
-     { key: "chat", label: "Chat", icon: <WhatsAppOutlined /> },
+    { key: "appliedjobs", label: "Applied Jobs", icon: <FileTextOutlined /> },
+    { key: "chat", label: "Chat", icon: <WhatsAppOutlined /> },
     { key: "settings", label: "Settings", icon: <SettingOutlined /> },
     { key: "profile", label: "Profile", icon: <FileTextOutlined /> },
     { key: "logout", label: "Logout", icon: <LogoutOutlined /> },
-    
+
     //{ key: "faq", label: "FAQ", icon: <QuestionCircleOutlined /> },
   ];
 
   const onClick = (e) => {
-  const route = menuRoutes[e.key];
+    const route = menuRoutes[e.key];
 
-  if (!route) return;
+    if (!route) return;
 
-  // 👇 Pages that require login
-  const protectedPages = [
-    "appliedjobs",
-    "savedjobs",
-    "chat",
-    "settings",
-    "profile"
-  ];
+    // 👇 Pages that require login
+    const protectedPages = [
+      "appliedjobs",
+      "savedjobs",
+      "chat",
+      "settings",
+      "profile",
+    ];
 
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  if (protectedPages.includes(e.key) && !token) {
-    setShowLoginModal(true);
-    return;
-  }
+    if (protectedPages.includes(e.key) && !token) {
+      setShowLoginModal(true);
+      return;
+    }
 
-  if (e.key === "logout") {
-    localStorage.clear();
-  }
+    if (e.key === "logout") {
+      localStorage.clear();
+    }
 
-  if (e.key === "chat") {
-    navigate("/candidate/chat", { state: { userType: "candidate" } });
-    return;
-  }
+    if (e.key === "chat") {
+      navigate("/candidate/chat", { state: { userType: "candidate" } });
+      return;
+    }
 
-  navigate(route);
-};
-
+    navigate(route);
+  };
 
   const user = JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
@@ -120,7 +119,8 @@ const MainLayout = ({ children }) => {
             size={54}
             icon={<UserOutlined />}
             style={{ cursor: "pointer" }}
-            onClick={() => navigate("/candidate/dashboard")}
+            // onClick={() => navigate("/candidate/dashboard")}
+            onClick={() => navigate("/candidate/profile")}
           />
           {!collapsed && (
             <>
@@ -180,15 +180,14 @@ const MainLayout = ({ children }) => {
         </Content>
 
         <Modal
-  open={showLoginModal}
-  title="Login Required"
-  onCancel={() => setShowLoginModal(false)}
-  okText="Go to Login"
-  onOk={() => navigate("/login")}
->
-  <p>Please login to use this feature.</p>
-</Modal>
-
+          open={showLoginModal}
+          title="Login Required"
+          onCancel={() => setShowLoginModal(false)}
+          okText="Go to Login"
+          onOk={() => navigate("/login")}
+        >
+          <p>Please login to use this feature.</p>
+        </Modal>
 
         {/* Fixed Footer */}
         {/* <Footer

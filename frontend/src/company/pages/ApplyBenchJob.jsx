@@ -3,17 +3,43 @@ import { Table, Spin, message, Button } from "antd";
 import { GetVendorCandidates } from "../api/api";
 import { ApplyBenchCandidate } from "../api/api";
 
+import { Tag, Tooltip } from "antd";
+
+const renderTagsWithMore = (items = [], max = 3) => {
+  if (!items.length) return "-";
+
+  const visible = items.slice(0, max);
+  const extraCount = items.length - max;
+
+  return (
+    <>
+      {visible.map((item, idx) => (
+        <Tag key={idx} color="blue" style={{ marginBottom: 4 }}>
+          {item}
+        </Tag>
+      ))}
+
+      {extraCount > 0 && (
+        <Tooltip title={items.join(", ")}>
+          <Tag color="default">+{extraCount} more</Tag>
+        </Tooltip>
+      )}
+    </>
+  );
+};
+
 const ApplyBenchJob = ({ jobId }) => {
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
-  // ------------------- HANDLE CHECKBOX -------------------
-  const handleCheckboxChange = (id, checked) => {
-    setSelectedRowKeys((prev) =>
-      checked ? [...prev, id] : prev.filter((item) => item !== id)
-    );
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys) => {
+      console.log("ids selected", newSelectedRowKeys);
+      setSelectedRowKeys(newSelectedRowKeys);
+    },
   };
 
   // ------------------- APPLY BUTTON FUNCTION -------------------
@@ -44,38 +70,35 @@ const ApplyBenchJob = ({ jobId }) => {
     }
   };
 
-  // ------------------- TABLE COLUMNS -------------------
   const columns = [
-    {
-      title: "",
-      render: (_, record) => (
-        <input
-          type="checkbox"
-          checked={selectedRowKeys.includes(record.id)}
-          onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
-          onClick={(e) => e.stopPropagation()}
-        />
-      ),
-    },
-    { title: "Id", dataIndex: "id", key: "id" },
-
     { title: "Name", dataIndex: "name", width: 200 },
+
+    // ✅ SKILLS COLUMN
     {
       title: "Skills",
       key: "skills",
-      render: (_, r) =>
-        r.skillsJson
-          ?.filter((s) => s.level === "primary")
-          .map((s) => s.name)
-          .join(", ") || "-",
+      render: (_, r) => {
+        const skills =
+          r.skillsJson
+            ?.filter((s) => s.level === "primary")
+            .map((s) => s.name) || [];
+
+        return renderTagsWithMore(skills, 3);
+      },
     },
+
+    // ✅ CLOUDS COLUMN
+    {
+      title: "Clouds",
+      key: "clouds",
+      render: (_, r) => {
+        const clouds = r.primaryClouds.map((s) => s.name) || [];
+        return renderTagsWithMore(clouds, 3);
+      },
+    },
+
     { title: "Location", dataIndex: "currentLocation", width: 200 },
     { title: "Experience", dataIndex: "totalExperience", width: 200 },
-    {
-      title: "Status",
-      dataIndex: "status",
-      width: 150,
-    },
   ];
 
   // ------------------- FETCH CANDIDATES -------------------
@@ -98,17 +121,18 @@ const ApplyBenchJob = ({ jobId }) => {
   return (
     <Spin spinning={loading}>
       <h3>Apply with your Bench</h3>
-
+      {contextHolder}
+      <Button type="primary" style={{ marginBottom: 20 }} onClick={handleApply}>
+        Apply with Selected Bench
+      </Button>
       <Table
+        rowSelection={rowSelection}
         columns={columns}
+        scroll={{ y: 400 }}
         dataSource={candidates}
         rowKey="id"
         // scroll={{ x: 1200, y: 500 }}
       />
-
-      <Button type="primary" onClick={handleApply}>
-        Apply with Selected Bench
-      </Button>
     </Spin>
   );
 };

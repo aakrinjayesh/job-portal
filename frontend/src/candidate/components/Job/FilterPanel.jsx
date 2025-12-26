@@ -8,17 +8,18 @@ import { AiJobFilter } from "../../api/api";
 const { Text } = Typography;
 const { Panel } = Collapse;
 
-const FiltersPanel = ({ onFiltersChange,  showCandidateType ,handleClearFilters}) => {
+const FiltersPanel = ({
+  onFiltersChange,
+  showCandidateType,
+  handleClearFilters,
+}) => {
   const [experience, setExperience] = useState(30);
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [selectedJobTypes, setSelectedJobTypes] = useState([]);
   const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
   const [skills, setSkills] = useState([]);
   const [clouds, setClouds] = useState([]);
-const [candidateType, setCandidateType] = useState([]);
-
-
-
+  const [candidateType, setCandidateType] = useState([]);
 
   const locationOptions = [
     { label: "Bangalore", count: 4543 },
@@ -28,8 +29,6 @@ const [candidateType, setCandidateType] = useState([]);
     { label: "Mumbai", count: 1512 },
     { label: "Chennai", count: 1343 },
   ];
-
-  
 
   const employeeTypeOptions = [
     { label: "FullTime" },
@@ -45,102 +44,104 @@ const [candidateType, setCandidateType] = useState([]);
     { label: "Hybrid" },
   ];
 
-  const salesforceSkillSuggestions = ["Apex",
-"Approvals",
-"Advanced Approvals",
-"API",
-"AP",
-"Azure DevOps",
-"Bitbucket",
-"Bugzilla",
-"Change Sets",
-"CI/CD",
-"CI/CD (Copado)",
-"Community Setup",
-"Copado",
-"Custom Obj",
-"Custom Objects",
-"Data Loader",
-"DataRaptors",
-"Dashboards",
-"Dell Boomi",
-"DocuSign Integration",
-"Einstein",
-"Fileds",
-"FlexCards",
-"Flows",
-"Force.com IDE",
-"Formula Fields",
-"Gearset",
-"Git",
-"HTML",
-"Integration Procedures",
-"Integration",
-"iOS Mobile Testing",
-"JIRA",
-"JS",
-"LWC",
-"Mantis",
-"Mobile Testing (iOS)",
-"Monday",
-"OmniScripts",
-"Order Management",
-"PB",
-"Plecto",
-"Postman",
-"Process Automation",
-"Process Builder",
-"Regression Testing",
-"Reports",
-"Salesforce Inspector",
-"SAML",
-"SFDX",
-"SF Inspector",
-"Slack Integration",
-"SOQL",
-"SOSL",
-"Scripting",
-"Schema Builder",
-"SQL",
-"Streaming API",
-"Talend",
-"Tibco",
-"TestLink",
-"Triggers",
-"UAT",
-"User & Security Management",
-"Validation Rules",
-"VS Code",
-"VF",
-"VR",
-"WF",
-"Workflows",
-"Workbench"
-];
-  const salesforceCloudSuggestions = ["Salesforce Sales Cloud","Salesforce Marketing Cloud",
-"Salesforce Service Cloud",
-"Salesforce Commerce Cloud",
-"Salesforce Experience Cloud",
-"Salesforce Analytics Cloud",
-"Salesforce Integration Cloud",
-"Salesforce App Cloud",
-"Salesforce IoT Cloud",
-"Salesforce Manufacturing Cloud",
-"Salesforce Financial Services",
-"Salesforce Health Cloud",
-"Salesforce Education Cloud",
-"Salesforce Nonprofit Cloud",
-"Salesforce Media Cloud"
-];
+  const salesforceSkillSuggestions = [
+    "Apex",
+    "Approvals",
+    "Advanced Approvals",
+    "API",
+    "AP",
+    "Azure DevOps",
+    "Bitbucket",
+    "Bugzilla",
+    "Change Sets",
+    "CI/CD",
+    "CI/CD (Copado)",
+    "Community Setup",
+    "Copado",
+    "Custom Obj",
+    "Custom Objects",
+    "Data Loader",
+    "DataRaptors",
+    "Dashboards",
+    "Dell Boomi",
+    "DocuSign Integration",
+    "Einstein",
+    "Fileds",
+    "FlexCards",
+    "Flows",
+    "Force.com IDE",
+    "Formula Fields",
+    "Gearset",
+    "Git",
+    "HTML",
+    "Integration Procedures",
+    "Integration",
+    "iOS Mobile Testing",
+    "JIRA",
+    "JS",
+    "LWC",
+    "Mantis",
+    "Mobile Testing (iOS)",
+    "Monday",
+    "OmniScripts",
+    "Order Management",
+    "PB",
+    "Plecto",
+    "Postman",
+    "Process Automation",
+    "Process Builder",
+    "Regression Testing",
+    "Reports",
+    "Salesforce Inspector",
+    "SAML",
+    "SFDX",
+    "SF Inspector",
+    "Slack Integration",
+    "SOQL",
+    "SOSL",
+    "Scripting",
+    "Schema Builder",
+    "SQL",
+    "Streaming API",
+    "Talend",
+    "Tibco",
+    "TestLink",
+    "Triggers",
+    "UAT",
+    "User & Security Management",
+    "Validation Rules",
+    "VS Code",
+    "VF",
+    "VR",
+    "WF",
+    "Workflows",
+    "Workbench",
+  ];
+  const salesforceCloudSuggestions = [
+    "Salesforce Sales Cloud",
+    "Salesforce Marketing Cloud",
+    "Salesforce Service Cloud",
+    "Salesforce Commerce Cloud",
+    "Salesforce Experience Cloud",
+    "Salesforce Analytics Cloud",
+    "Salesforce Integration Cloud",
+    "Salesforce App Cloud",
+    "Salesforce IoT Cloud",
+    "Salesforce Manufacturing Cloud",
+    "Salesforce Financial Services",
+    "Salesforce Health Cloud",
+    "Salesforce Education Cloud",
+    "Salesforce Nonprofit Cloud",
+    "Salesforce Media Cloud",
+  ];
 
-const updateCandidateType = (type, checked) => {
-  if (checked) {
-    setCandidateType((prev) => [...prev, type]);  
-  } else {
-    setCandidateType((prev) => prev.filter((t) => t !== type));
-  }
-};
-
+  const updateCandidateType = (type, checked) => {
+    if (checked) {
+      setCandidateType((prev) => [...prev, type]);
+    } else {
+      setCandidateType((prev) => prev.filter((t) => t !== type));
+    }
+  };
 
   // Handle Changes
   useEffect(() => {
@@ -151,7 +152,7 @@ const updateCandidateType = (type, checked) => {
       employmentType: selectedEmploymentTypes,
       skills,
       clouds,
-        candidateType,
+      candidateType,
     });
   }, [
     experience,
@@ -160,28 +161,29 @@ const updateCandidateType = (type, checked) => {
     selectedEmploymentTypes,
     skills,
     clouds,
-    candidateType,  
+    candidateType,
   ]);
 
   return (
     <Collapse defaultActiveKey={["filters"]}>
       <SearchWithTextArea
-      handleFiltersChange={onFiltersChange}
-      apifunction={AiJobFilter}
-      handleClearFilters={handleClearFilters}
-      type={"job"}
+        handleFiltersChange={onFiltersChange}
+        apifunction={AiJobFilter}
+        handleClearFilters={handleClearFilters}
+        type={"job"}
       />
       {/* LEFT SIDE COLLAPSE HEADER */}
       <Panel header={<Text strong>Filters</Text>} key="filters">
         <Card style={{ borderRadius: 8 }}>
-
           {/* EXPERIENCE */}
           <Text strong>Experience</Text>
           <Slider
             min={0}
             max={30}
             value={experience}
-            tooltip={{ formatter: (val) => (val === 30 ? "Any" : `${val} Yrs`) }}
+            tooltip={{
+              formatter: (val) => (val === 30 ? "Any" : `${val} Yrs`),
+            }}
             onChange={setExperience}
           />
           <InputNumber
@@ -193,7 +195,6 @@ const updateCandidateType = (type, checked) => {
           />
 
           <Divider />
-          
 
           {/* LOCATION */}
           <Text strong>Location</Text>
@@ -202,52 +203,66 @@ const updateCandidateType = (type, checked) => {
             selected={selectedLocations}
             onChange={setSelectedLocations}
           />
-{showCandidateType && (
-  <>
-    <Divider />
+          {showCandidateType && (
+            <>
+              <Divider />
 
-    <Text strong>Candidate Type</Text>
+              <Text strong>Candidate Type</Text>
 
-    <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 8 }}>
+                {/* Vendor Candidate */}
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 6,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={candidateType.includes("vendor")}
+                    onChange={(e) =>
+                      updateCandidateType("vendor", e.target.checked)
+                    }
+                    style={{
+                      width: 16,
+                      height: 16,
+                      accentColor: "#1677ff",
+                      cursor: "pointer",
+                    }}
+                  />
+                  <span style={{ marginLeft: 8 }}>Vendor Candidate</span>
+                </label>
 
-      {/* Vendor Candidate */}
-      <label style={{ display: "flex", alignItems: "center", marginBottom: 6, cursor: "pointer" }}>
-        <input
-          type="checkbox"
-          checked={candidateType.includes("vendor")}
-          onChange={(e) => updateCandidateType("vendor", e.target.checked)}
-          style={{
-            width: 16,
-            height: 16,
-            accentColor: "#1677ff",
-            cursor: "pointer",
-          }}
-        />
-        <span style={{ marginLeft: 8 }}>Vendor Candidate</span>
-      </label>
+                {/* Individual Candidate */}
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={candidateType.includes("individual")}
+                    onChange={(e) =>
+                      updateCandidateType("individual", e.target.checked)
+                    }
+                    style={{
+                      width: 16,
+                      height: 16,
+                      accentColor: "#1677ff",
+                      cursor: "pointer",
+                    }}
+                  />
+                  <span style={{ marginLeft: 8 }}>Individual Candidate</span>
+                </label>
+              </div>
+            </>
+          )}
 
-      {/* Individual Candidate */}
-      <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-        <input
-          type="checkbox"
-          checked={candidateType.includes("individual")}
-          onChange={(e) => updateCandidateType("individual", e.target.checked)}
-          style={{
-            width: 16,
-            height: 16,
-            accentColor: "#1677ff",
-            cursor: "pointer",
-          }}
-        />
-        <span style={{ marginLeft: 8 }}>Individual Candidate</span>
-      </label>
-    </div>
-  </>
-)}
-
-
-
- <Divider />
+          <Divider />
           {/* JOB TYPE */}
           <Text strong>Job Type</Text>
           <FilterSection
@@ -286,7 +301,6 @@ const updateCandidateType = (type, checked) => {
             onChange={setClouds}
             suggestions={salesforceCloudSuggestions}
           />
-
         </Card>
       </Panel>
     </Collapse>

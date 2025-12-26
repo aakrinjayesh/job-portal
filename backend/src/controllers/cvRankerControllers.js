@@ -1,5 +1,6 @@
 import prisma from "../config/prisma.js";
-import { extractResumeSections } from "../utils/llmTextExtractor.js";
+// import { extractResumeSections } from "../utils/llmTextExtractor.js";
+import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
 
 const cvEligibilityCheck = async (req, res) => {
@@ -100,7 +101,7 @@ const cvEligibilityCheck = async (req, res) => {
     logger.info("Sending data to AI Ranker");
 
     // 3️⃣ Run AI Analyzer (CV Ranker)
-    const aiAnalysisResult = await extractResumeSections(
+    const aiAnalysisResult = await extractAIText(
       "CV_RANKING",
       "cvranker",
       { jobDescription, candidateDetails }
@@ -149,7 +150,7 @@ const generateJobDescription = async (req, res) => {
     }
 
     logger.info("Sending jobdetails to JD Generator");
-    const jd = await extractResumeSections("JD", "generatejd", { jobdetails });
+    const jd = await extractAIText("JD", "generatejd", { jobdetails });
 
     if (!jd) {
       logger.error("JD generation failed");
@@ -193,7 +194,7 @@ const AICandidateSearch = async (req, res) => {
     logger.info("Sending search text to AI Filter Extractor");
 
     // 🔥 Call your AI model with system prompt inside extractResumeSections
-    const aiResult = await extractResumeSections("SEARCH", "aicandidatefilter", { JD });
+    const aiResult = await extractAIText("SEARCH", "aicandidatefilter", { JD });
 
     if (!aiResult) {
       logger.error("AI Search returned empty result");
@@ -235,7 +236,7 @@ const AIJobSearch = async (req,res) =>{
       });
     }
 
-    const aiResult = await extractResumeSections("SEARCH", "aijobfilter", { JD });
+    const aiResult = await extractAIText("SEARCH", "aijobfilter", { JD });
 
     if (!aiResult) {
       logger.error("AI Search returned empty result");
