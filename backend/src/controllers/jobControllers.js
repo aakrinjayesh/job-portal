@@ -647,60 +647,6 @@ const userWithdrawJob = async (req, res) => {
 
 
 
-// const getJobList = async (req, res) => {
-//   try {
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 10;
-//     const skip = (page - 1) * limit;
- 
-//     const userId = req.user?.id; // user may be optional (if public list)
- 
-//     const [jobs, totalCount] = await Promise.all([
-//       prisma.job.findMany({
-//         skip,
-//         take: limit,
-//         orderBy: { createdAt: "desc" },
-//         where: {
-//           isDeleted: false
-//         },
-//         include: userId
-//           ? {
-//               savedBy: {
-//                 where: { userId },
-//                 select: { id: true }
-//               }
-//             }
-//           : false
-//       }),
-//       prisma.job.count({
-//         where: { isDeleted: false }
-//       })
-//     ]);
- 
-//     // Add isSaved flag
-//     const jobsWithSavedStatus = jobs.map(job => ({
-//       ...job,
-//       isSaved: job.savedBy && job.savedBy.length > 0
-//     }));
- 
-//     return res.status(200).json({
-//       status: "success",
-//       jobs: jobsWithSavedStatus,
-//       totalCount,
-//       currentPage: page,
-//       totalPages: Math.ceil(totalCount / limit),
-//     });
- 
-//   } catch (error) {
-//     logger.error("getJobList Error:", JSON.stringify(error.message,null,2));
-//     return res.status(500).json({
-//       status: "error",
-//       error: error.message || "Internal server error",
-//     });
-//   }
-// };
-
-
 const getJobList = async (req, res) => {
   try {
     const page = parseInt(req.body.page) || 1;
@@ -748,7 +694,7 @@ const getJobList = async (req, res) => {
       totalPages,
     });
   } catch (error) {
-    logger.error("getJobList Error:", JSON.stringify(error.message, null, 2));
+    console.error("getJobList Error:", error.message);
     return res.status(500).json({
       status: "error",
       error: error.message || "Internal server error",

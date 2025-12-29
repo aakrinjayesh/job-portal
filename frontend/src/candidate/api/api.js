@@ -470,6 +470,20 @@ export async function AiJobFilter(payload) {
   }
 }
 
+export async function AiCandidateFilter(payload) {
+  try {
+    const response = await axiosInstance.post("/ai-candidate-filter", payload, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
+  }
+}
+
 
 export async function CheckUserExist(payload) {
   try {

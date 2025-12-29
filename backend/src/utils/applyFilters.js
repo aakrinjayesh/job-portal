@@ -253,21 +253,31 @@ const applyFilters = (jobs, filters) => {
   for (const job of jobs) {
     let score = 0;
 
+
     // ---------- EXPERIENCE ----------
-    if (
-      filters.experience !== null &&
-      filters.experience !== undefined &&
-      filters.experience !== "Any" &&
-      filters.experience !== 30
-    ) {
-      const enteredExp = parseInt(filters.experience);
+    if (filters.experience !== null && filters.experience !== undefined) {
+      let enteredExp = null;
+
+      // 🔥 HANDLE AI EXPERIENCE OBJECT
+      if (typeof filters.experience === "object") {
+        enteredExp = parseInt(filters.experience.number);
+      } else {
+        enteredExp = parseInt(filters.experience);
+      }
+
       const jobExp = parseInt(job.experience?.number);
 
-      if (isNaN(enteredExp) || isNaN(jobExp) || jobExp !== enteredExp) {
+      if (
+        isNaN(enteredExp) ||
+        isNaN(jobExp) ||
+        jobExp !== enteredExp
+      ) {
         continue;
       }
+
       score += 1;
     }
+
 
     // ---------- SKILLS ----------
     if (filters.skills?.length) {
@@ -375,6 +385,7 @@ const applyFilters = (jobs, filters) => {
 /**
  * Apply filters to candidates in-memory
  */
+
 const applyCandidateFilters = (candidates, filters) => {
   const scored = [];
 
@@ -388,13 +399,17 @@ const applyCandidateFilters = (candidates, filters) => {
       filters.experience !== 30
     ) {
       const enteredExp = parseInt(filters.experience);
+
       const expFields = [
         candidate.totalExperience,
         candidate.relevantSalesforceExperience,
-        candidate.experience,
-      ].map((e) => parseInt(e));
+      ]
+        .map(e => parseInt(e))
+        .filter(e => !isNaN(e));
 
-      if (!expFields.some((e) => e === enteredExp)) continue;
+      // ✅ >= experience instead of exact
+      if (!expFields.some(e => e >= enteredExp)) continue;
+
       score += 1;
     }
 
@@ -403,13 +418,23 @@ const applyCandidateFilters = (candidates, filters) => {
       const skills = candidate.skillsJson?.map(s => s.name) || [];
 
       let skillScore = 0;
+
       for (const fs of filters.skills) {
         const best = Math.max(
-          ...skills.map(cs => smartMatchScore(cs, fs))
+          ...skills.map(cs => smartMatchScore(cs, fs)),
+          0
         );
-        if (best === 0) return null;
+
+        // ❌ reject candidate, NOT function
+        if (best === 0) {
+          skillScore = -1;
+          break;
+        }
+
         skillScore += best;
       }
+
+      if (skillScore < 0) continue;
       score += skillScore;
     }
 
@@ -418,24 +443,34 @@ const applyCandidateFilters = (candidates, filters) => {
       const clouds = candidate.primaryClouds?.map(c => c.name) || [];
 
       let cloudScore = 0;
+
       for (const fc of filters.clouds) {
         const best = Math.max(
-          ...clouds.map(cc => fuzzyMatchScore(cc, fc))
+          ...clouds.map(cc => fuzzyMatchScore(cc, fc)),
+          0
         );
-        if (best === 0) return null;
+
+        if (best === 0) {
+          cloudScore = -1;
+          break;
+        }
+
         cloudScore += best;
       }
+
+      if (cloudScore < 0) continue;
       score += cloudScore;
     }
 
-    // ---------------- LOCATION ----------------
-    if (filters.location?.length) {
+    // ---------------- LOCATION (AI uses preferredLocation) ----------------
+    if (filters.preferredLocation?.length) {
       const locations = candidate.preferredLocation || [];
 
       const best = Math.max(
-        ...filters.location.map(loc =>
-          Math.max(...locations.map(cl => fuzzyMatchScore(cl, loc)))
-        )
+        ...filters.preferredLocation.map(loc =>
+          Math.max(...locations.map(cl => fuzzyMatchScore(cl, loc)), 0)
+        ),
+        0
       );
 
       if (best === 0) continue;
@@ -464,8 +499,7 @@ const applyCandidateFilters = (candidates, filters) => {
       const wantsIndividual = filters.candidateType.includes("individual");
 
       if (wantsVendor && !candidate.vendorId) continue;
-      if (wantsIndividual && (candidate.vendorId || !candidate.userId))
-        continue;
+      if (wantsIndividual && candidate.vendorId) continue;
 
       score += 0.5;
     }
@@ -473,9 +507,10 @@ const applyCandidateFilters = (candidates, filters) => {
     scored.push({ ...candidate, _score: score });
   }
 
-  // 🔥 SORT BY RELEVANCE (HIGH → LOW)
+  // 🔥 SORT BY RELEVANCE
   return scored.sort((a, b) => b._score - a._score);
 };
+
 
 
 

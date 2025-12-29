@@ -4,6 +4,7 @@ import FilterSection from "./FilterSection";
 import AddSkillInput from "./AddSkillInput";
 import SearchWithTextArea from "../../../company/components/Bench/SearchWithTextArea";
 import { AiJobFilter } from "../../api/api";
+import { AiCandidateFilter } from "../../api/api";
 
 const { Text } = Typography;
 const { Panel } = Collapse;
@@ -168,9 +169,9 @@ const FiltersPanel = ({
     <Collapse defaultActiveKey={["filters"]}>
       <SearchWithTextArea
         handleFiltersChange={onFiltersChange}
-        apifunction={AiJobFilter}
+        apifunction={showCandidateType ? AiCandidateFilter : AiJobFilter}
         handleClearFilters={handleClearFilters}
-        type={"job"}
+        type={"candidate"}
       />
       {/* LEFT SIDE COLLAPSE HEADER */}
       <Panel header={<Text strong>Filters</Text>} key="filters">

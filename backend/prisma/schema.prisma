@@ -29,6 +29,7 @@ model Users {
   createdAt        DateTime         @default(now())
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
+  savedCandidates  SavedCandidate[] @relation("RecruiterSavedCandidates")
   address          Address?
   Job              Job[]            @relation("UserPostedJobs")
   JobApplications  JobApplication[] @relation("UserAsCandidate")
@@ -55,12 +56,13 @@ enum JobType {
 }
 
 model UserProfile {
-  id                           String    @id @default(uuid())
-  userId                       String?   @unique
+  id                           String           @id @default(uuid())
+  userId                       String?          @unique
   vendorId                     String?
   chatuserid                   String?
-  user                         Users?    @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
-  vendor                       Users?    @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
+  user                         Users?           @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
+  vendor                       Users?           @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
+  savedByRecruiters            SavedCandidate[] @relation("CandidateSavedByRecruiters")
   profilePicture               String?
   title                        String?
   name                         String?
@@ -197,6 +199,8 @@ enum ApplicationStatus {
   Shortlisted
   Rejected
   Hired
+  Clear
+  BookMark
 }
 
 model JobApplication {
@@ -481,4 +485,24 @@ model ActivitySchedule {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SavedCandidate {
+  id String @id @default(uuid())
+
+  recruiterId        String // company / recruiter user
+  candidateProfileId String
+
+  // source             SavedCandidateSource @default(MANUAL)
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recruiter        Users       @relation("RecruiterSavedCandidates", fields: [recruiterId], references: [id], onDelete: Cascade)
+  candidateProfile UserProfile @relation("CandidateSavedByRecruiters", fields: [candidateProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([recruiterId, candidateProfileId]) // prevent duplicate saves
+  @@index([recruiterId])
+  @@index([candidateProfileId])
 }

@@ -76,7 +76,7 @@ const SearchWithTextArea = ({
       <Space.Compact
         style={{
           marginBottom: 18,
-          width: type === "job" ? 215 : 350,
+          width: type === "job" || "candidate" ? 215 : 350,
         }}
       >
         <TextArea

@@ -241,7 +241,7 @@ const getAllCandidates = async (req, res) => {
     );
 
     // Step 3: Pagination
-    const totalCount = filteredCandidates.length;
+    const totalCount = filteredCandidates?.length || 0;
     const totalPages = Math.ceil(totalCount / limit);
     const skip = (page - 1) * limit;
 
