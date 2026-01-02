@@ -39,8 +39,9 @@ model Users {
   reviews          Review[]
   dashboards       Dashboard[]
 
-  recruiterActivities Activity[] @relation("RecruiterActivities")
-  candidateActivities Activity[] @relation("CandidateActivities")
+  recruiterActivities Activity[]      @relation("RecruiterActivities")
+  candidateActivities Activity[]      @relation("CandidateActivities")
+  recruiterTodos      RecruiterTodo[]
 }
 
 enum Role {
@@ -56,15 +57,17 @@ enum JobType {
 }
 
 model UserProfile {
-  id                           String           @id @default(uuid())
-  userId                       String?          @unique
-  vendorId                     String?
-  chatuserid                   String?
-  user                         Users?           @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
-  vendor                       Users?           @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
-  savedByRecruiters            SavedCandidate[] @relation("CandidateSavedByRecruiters")
-  profilePicture               String?
-  title                        String?
+  id                String           @id @default(uuid())
+  userId            String?          @unique
+  vendorId          String?
+  chatuserid        String?
+  user              Users?           @relation("CandidateUserProfile", fields: [userId], references: [id], onDelete: Cascade)
+  vendor            Users?           @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
+  savedByRecruiters SavedCandidate[] @relation("CandidateSavedByRecruiters")
+  profilePicture    String?
+  title             String?
+  summary           String           @default("")
+
   name                         String?
   phoneNumber                  String?
   email                        String?
@@ -505,4 +508,19 @@ model SavedCandidate {
   @@unique([recruiterId, candidateProfileId]) // prevent duplicate saves
   @@index([recruiterId])
   @@index([candidateProfileId])
+}
+
+model RecruiterTodo {
+  id          String @id @default(uuid())
+  recruiterId String
+
+  title     String
+  completed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recruiter Users @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+
+  @@index([recruiterId])
 }
