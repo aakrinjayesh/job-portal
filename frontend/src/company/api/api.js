@@ -395,4 +395,46 @@ export async function GetCountries() {
   }
 }
 
+export async function SaveCandidate(payload) {
+  try {
+      let data = JSON.stringify(payload)
+      const response = await axiosInstance.post('/vendor/candidate/save', data , {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+export async function UnsaveCandidate(payload) {
+  try {
+      let data = JSON.stringify(payload)
+      const response = await axiosInstance.post('/vendor/candidate/unsave', data , {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+
+export async function  SavedCandidatesList() {
+  try {
+      const response = await axiosInstance.get(`/vendor/candidate/saved`, {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
 

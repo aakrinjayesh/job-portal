@@ -23,6 +23,7 @@ import ChatPage from "./chat/pages/chat";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import CompanySavedJobs from "./company/pages/CompanySavedJobs";
 import FindBench from "./company/pages/FindBench";
+import SavedCandidates from "./company/components/Job/SavedCandidates";
 import BenchCandidateDetails from "./company/components/Bench/BenchCandidateDetails";
 // import ResetPassword from "./pages/ResetPassword";
 import MyActivity from "./company/pages/MyActivity";
@@ -237,6 +238,15 @@ function App() {
           element={
             <CompanyLayout>
               <BenchCandidateDetails />
+            </CompanyLayout>
+          }
+        />
+
+         <Route
+          path="/company/bench/saved"
+          element={
+            <CompanyLayout>
+              <SavedCandidates />
             </CompanyLayout>
           }
         />

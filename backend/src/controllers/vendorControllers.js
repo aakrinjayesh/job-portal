@@ -203,6 +203,124 @@ const deleteVendorCandidate = async (req, res) => {
 
 
  const updateCandidateStatus = async (req, res) => {
+  try {
+    const userAuth = req.user;
+    const { jobApplicationId, status } = req.body;
+
+    if (userAuth.role !== "company") {
+      return res.status(403).json({
+        status: "failed",
+        message: "Only recruiters can update status",
+      });
+    }
+
+    if (!jobApplicationId || !status) {
+      return res.status(400).json({
+        status: "failed",
+        message: "jobApplicationId and status required",
+      });
+    }
+
+    // Manual options ONLY
+    const allowedStatuses = ["Shortlisted", "Rejected", "Pending"];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid status",
+      });
+    }
+
+    const application = await prisma.jobApplication.findUnique({
+      where: { id: jobApplicationId },
+      include: {
+        job: { select: { postedById: true } },
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Application not found",
+      });
+    }
+
+    if (application.job.postedById !== userAuth.id) {
+      return res.status(403).json({
+        status: "failed",
+        message: "Unauthorized",
+      });
+    }
+
+    const updated = await prisma.jobApplication.update({
+      where: { id: jobApplicationId },
+      data: { status },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Status updated",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("updateCandidateStatus error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Internal server error",
+    });
+  }
+};
+
+
+const markCandidateReviewed = async (req, res) => {
+  try {
+    const userAuth = req.user;
+    const { jobApplicationId } = req.body;
+
+    if (userAuth.role !== "company") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    if (!jobApplicationId) {
+      return res.status(400).json({ message: "jobApplicationId is required" });
+    }
+
+    const application = await prisma.jobApplication.findUnique({
+      where: { id: jobApplicationId },
+      include: {
+        job: { select: { postedById: true } },
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    if (application.job.postedById !== userAuth.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // Only Pending → Reviewed
+    if (application.status !== "Pending") {
+      return res.status(200).json({
+        status: "success",
+        message: "Already reviewed or manually updated",
+      });
+    }
+
+    await prisma.jobApplication.update({
+      where: { id: jobApplicationId },
+      data: { status: "Reviewed" },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Candidate marked as Reviewed",
+    });
+  } catch (error) {
+    console.error("markCandidateReviewed error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 
@@ -650,8 +768,165 @@ const vendorApplyCandidate = async (req, res) => {
   }
 };
 
+const saveCandidate = async (req, res) => {
+  try {
+    const { candidateProfileId } = req.body;
+    console.log("candidate",req.user.id)
+
+    // Validate logged-in user
+    const user = await prisma.users.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid recruiter user",
+      });
+    }
+
+    // Validate candidate
+    const candidate = await prisma.userProfile.findUnique({
+      where: { id: candidateProfileId },
+    });
+
+    if (!candidate) {
+      return res.status(404).json({
+        status: "error",
+        message: "Candidate not found",
+      });
+    }
+
+    // Prevent duplicate save
+    const existingSave = await prisma.savedCandidate.findUnique({
+      where: {
+        recruiterId_candidateProfileId: {
+          recruiterId: user.id,
+          candidateProfileId,
+        },
+      },
+    });
+
+    if (existingSave) {
+      return res.status(409).json({
+        status: "error",
+        message: "Candidate already saved",
+      });
+    }
+
+    // Save candidate
+    const savedCandidate = await prisma.savedCandidate.create({
+      data: {
+        recruiterId: user.id,
+        candidateProfileId,
+      },
+    });
+
+    return res.status(201).json({
+      status: "success",
+      message: "Candidate saved successfully",
+      data: savedCandidate,
+    });
+
+  } catch (error) {
+    console.error("saveCandidate error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
 
 
+
+const unsaveCandidate = async (req, res) => {
+  try {
+    const { candidateProfileId } = req.body;
+    const recruiterId = req.user.id;
+
+    if (!candidateProfileId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Candidate profile ID is required",
+      });
+    }
+
+    const deleted = await prisma.savedCandidate.deleteMany({
+      where: {
+        recruiterId,
+        candidateProfileId,
+      },
+    });
+
+    if (deleted.count === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Saved candidate not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Candidate removed from saved list",
+    });
+
+  } catch (error) {
+    logger.error("unsaveCandidate Error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to unsave candidate",
+    });
+  }
+};
+
+
+const getSavedCandidates = async (req, res) => {
+  try {
+    const recruiterId = req.user.id;
+    const { page = 1, limit = 10 } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [savedCandidates, total] = await Promise.all([
+      prisma.savedCandidate.findMany({
+        where: { recruiterId },
+        include: {
+          candidateProfile: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.savedCandidate.count({ where: { recruiterId } }),
+    ]);
+
+    const formatted = savedCandidates.map(item => ({
+      ...item.candidateProfile,
+      isSaved: true,
+      savedAt: item.createdAt,
+    }));
+
+    return res.status(200).json({
+      status: "success",
+      data: {
+        savedCandidates: formatted,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / parseInt(limit)),
+        },
+      },
+    });
+
+  } catch (error) {
+    logger.error("getSavedCandidates Error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch saved candidates",
+    });
+  }
+};
 
 
 export {
@@ -661,5 +936,9 @@ export {
   deleteVendorCandidate,
    updateCandidateStatus,
    getAllCandidates,
-   vendorApplyCandidate
+   vendorApplyCandidate,
+   saveCandidate,
+   unsaveCandidate,
+   getSavedCandidates,
+   markCandidateReviewed,
 };

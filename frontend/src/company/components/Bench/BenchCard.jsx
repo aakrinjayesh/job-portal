@@ -1,8 +1,12 @@
 import React from "react";
-import { Card, Avatar, Tag, Button } from "antd";
+import { useState, useEffect } from "react";
+import { Card, Avatar, Tag, Button,message } from "antd";
+import { SaveCandidate,UnsaveCandidate} from "../../api/api";
 import {
+  StarFilled,
   StarOutlined,
   EnvironmentOutlined,
+  TeamOutlined,UserOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -11,6 +15,11 @@ import { useNavigate } from "react-router-dom";
 const BenchCard = ({ candidate }) => {
   const navigate = useNavigate();
   const role = candidate?.title || "Unknown Role";
+  const [saved, setSaved] = useState(candidate?.isSaved || false);
+  const [savedCandidateIds, setSavedCandidateIds] = useState([]);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [sortedCandidates, setSortedCandidates] = useState([]);
+
 
   // Experience: prefer totalExperience, fallback to relevantSalesforceExperience
   const expYears =
@@ -42,8 +51,38 @@ const BenchCard = ({ candidate }) => {
     ? dayjs(candidate.createdAt).format("MMM D, YYYY")
     : "N/A";
 
+    // useEffect(() => {
+    //     setSavedCandidateIds(candidateids || []);
+    //   }, [candidateids]);
+
+   const handleSaveToggle = async (candidateId) => {
+  const willBeSaved = !saved;
+  setSaved(willBeSaved); // ✅ toggle immediately for UI
+
+  try {
+    if (willBeSaved) {
+      const resp = await SaveCandidate({ candidateProfileId: candidateId });
+      if (resp?.status !== "success") throw new Error();
+      messageApi.success("Candidate saved!");
+    } else {
+      const resp = await UnsaveCandidate({ candidateProfileId: candidateId });
+      if (resp?.status !== "success") throw new Error();
+      messageApi.success("Candidate removed!");
+    }
+  } catch (error) {
+    console.error("Save error:", error);
+    setSaved(!willBeSaved); // rollback if API fails
+    // messageApi.error("Something went wrong!");
+  }
+};
+
+
+
+
+
   return (
     // <Card hoverable style={{ borderRadius: 12, position: "relative" }} bodyStyle={{ padding: 20 }}>
+    
     <Card
       hoverable
       style={{ borderRadius: 12, position: "relative" }}
@@ -54,6 +93,7 @@ const BenchCard = ({ candidate }) => {
         })
       }
     >
+      {contextHolder}
       <div style={{ display: "flex", gap: 16 }}>
         <Avatar size={70} src={candidate?.profilePicture} />
 
@@ -78,11 +118,40 @@ const BenchCard = ({ candidate }) => {
               </div>
             </div>
 
-            {/* Posted date */}
+            {/* 👇 Vendor / Individual Badge */}
+  <div style={{ marginRight: "175px"}}>
+  {candidate?.isVendor ? (
+    <Tag icon={<TeamOutlined />} color="blue">
+      Vendor Candidate
+    </Tag>
+  ) : (
+    <Tag icon={<UserOutlined />} color="green">
+      Individual Candidate
+    </Tag>
+  )}
+</div>
 
-            <div style={{ textAlign: "right", color: "#999", fontSize: 13 }}>
+   <Button
+        type="text"
+        onClick={(e) => {
+                    e.stopPropagation();
+                    handleSaveToggle(candidate?.id);
+                  }}
+        icon={
+          saved ? (
+            <StarFilled style={{ color: "#faad14" }} />
+          ) : (
+            <StarOutlined />
+          )
+        }
+        style={{ position: "absolute", top: 12, right: 12 }}
+      />
+
+
+            {/* Posted date */}
+            {/* <div style={{ textAlign: "right", color: "#999", fontSize: 13 }}>
               {posted}
-            </div>
+            </div>  */}
           </div>
 
           {/* LOCATION + ID */}
