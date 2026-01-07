@@ -7,6 +7,7 @@ import {
   Button,
   Breadcrumb,
   Space,
+  ConfigProvider
 } from "antd";
 import {
   DashboardOutlined,
@@ -53,10 +54,21 @@ const CompanyLayout = ({ children }) => {
   };
 
   /* 🎯 Active menu */
-  const selectedKey =
-    Object.keys(menuRoutes).find((key) =>
-      location.pathname.startsWith(menuRoutes[key])
-    ) || "dashboard";
+  const selectedKey = React.useMemo(() => {
+  const currentPath = location.pathname;
+
+  // sort routes by length (longest first)
+  const sortedRoutes = Object.entries(menuRoutes).sort(
+    (a, b) => b[1].length - a[1].length
+  );
+
+  const match = sortedRoutes.find(([, path]) =>
+    currentPath.startsWith(path)
+  );
+
+  return match ? match[0] : "dashboard";
+}, [location.pathname]);
+
 
   /* 🧠 Menu click handler */
   const onMenuClick = ({ key }) => {
@@ -89,18 +101,20 @@ const CompanyLayout = ({ children }) => {
   return (
     <Layout hasSider>
       {/* 🧭 Sidebar */}
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        width={260}
-        style={{
-          background: "#011026",
-          height: "100vh",
-          position: "sticky",
-          top: 0,
-        }}
-      >
+    <Sider
+  collapsible
+  collapsed={collapsed}
+  onCollapse={setCollapsed}
+  trigger={null}   // 👈 removes collapse icon below logout
+  width={260}
+  style={{
+    background: "#011026",
+    height: "100vh",
+    position: "sticky",
+    top: 0,
+  }}
+>
+
         {/* 🧑 Company Info */}
         <div
           style={{
@@ -128,12 +142,25 @@ const CompanyLayout = ({ children }) => {
         </div>
 
         {/* 📌 Main Menu */}
-        <Menu
-          mode="inline"
-          theme="dark"
-          selectedKeys={[selectedKey]}
-          onClick={onMenuClick}
-          style={{ background: "transparent", border: "none" }}
+       
+        <ConfigProvider
+          theme={{
+            components: {
+              Menu: {
+                darkItemBg: "transparent",
+                darkItemHoverBg: "#1677FF",
+                darkItemSelectedBg: "#1677FF",
+                darkItemSelectedColor: "#fff",
+              },
+            },
+          }}
+        >
+       <Menu
+  mode="inline"
+  theme="dark"
+  selectedKeys={[selectedKey]}
+  onClick={onMenuClick}
+  style={{ background: "transparent", border: "none" }}
           items={[
             { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
             { key: "jobs", icon: <FileTextOutlined />, label: "My Jobs" },
@@ -149,7 +176,11 @@ const CompanyLayout = ({ children }) => {
             },
             { key: "chat", icon: <MessageOutlined />, label: "Chat" },
           ]}
-        />
+      
+
+        />  </ConfigProvider>
+
+       
 
         {/* Divider */}
         <div
@@ -172,6 +203,7 @@ const CompanyLayout = ({ children }) => {
             { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
           ]}
         />
+        
       </Sider>
 
       {/* 📄 Main Layout */}
@@ -207,10 +239,10 @@ const CompanyLayout = ({ children }) => {
 
             <div>
               <Breadcrumb
-                items={[
-                  { title: "Dashboard" },
-                  { title: pageTitle },
-                ]}
+                // items={[
+                //   { title: "Dashboard" },
+                //   { title: pageTitle },
+                // ]}
               />
               <Title level={4} style={{ margin: 0 }}>
                 {pageTitle}
@@ -248,7 +280,7 @@ const CompanyLayout = ({ children }) => {
     <Text strong style={{ margin: 0 }}>
       Hi, {user.name}
     </Text>
-    <DownOutlined style={{ color: "#666", fontSize: 12 }} />
+   
   </Space>
 
   <Text
