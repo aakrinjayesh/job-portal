@@ -1,4 +1,5 @@
 import React from "react";
+import { useState ,useEffect} from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -11,11 +12,17 @@ import {
   Collapse,
   Space,
   Avatar,
+  Rate,
+  Input,
+  Modal,
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import CandidateActivity from "../activity/CandidateActivity";
 
 const { Title, Paragraph, Text } = Typography;
+
+
+
 
 const CandidateDetails = () => {
   const location = useLocation();
@@ -23,11 +30,28 @@ const CandidateDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // userId in URL
 
+  // 🔹 Review state (per candidate)
+const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+const [reviewsByCandidate, setReviewsByCandidate] = useState({});
+const [tempReview, setTempReview] = useState("");
+
+
+
+useEffect(() => {
+  const savedReviews = localStorage.getItem("candidateReviews");
+  if (savedReviews) {
+    setReviewsByCandidate(JSON.parse(savedReviews));
+  }
+}, []);
+
+
   if (!candidate) {
     return <p style={{ padding: "20px" }}>No candidate details found.</p>;
   }
 
   const profile = candidate.profile || {};
+  const summary = profile.summary;
+
 
   console.log("CandidateDetails candidate:", candidate);
   console.log("candidate.userId:", candidate.userId);
@@ -42,34 +66,72 @@ const CandidateDetails = () => {
     fontWeight: 500,
   };
 
-  const InfoItem = ({ label, value }) => (
-    <div>
-      {/* LABEL */}
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 600, // ✅ semibold
-          color: "#000000", // ✅ label grey
-          lineHeight: "16px",
-        }}
-      >
-        {label}
-      </div>
+const secondarySkillChipStyle = {
+  background: "#FBEBFF",
+  border: "0.5px solid #800080",
+  color: "#111111",
+  borderRadius: 100,
+  padding: "6px 12px",
+  fontSize: 12,
+  fontWeight: 510,
+  textTransform: "capitalize",
+};
 
-      {/* VALUE */}
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 400, // ✅ regular
-          color: "#2E2E2E", // ✅ value color
-          lineHeight: "18px",
-          marginTop: 4, // ✅ spacing like Figma
-        }}
-      >
-        {value || "-"}
-      </div>
+
+
+
+  const InfoItem = ({ label, value }) => (
+  <div
+    style={{
+      flex: 1,
+      minWidth: 0,
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,                // ✅ label–value gap
+    }}
+  >
+    {/* LABEL */}
+    <div
+      style={{
+        height: 20,          // ✅ fixed label height (Figma)
+        fontSize: 14,
+        fontWeight: 590,
+        color: "#2E2E2E",
+        lineHeight: "18px",
+      }}
+    >
+      {label}
     </div>
-  );
+
+   
+<div
+  style={{
+    minHeight: 18,
+    fontSize: 14,
+    fontWeight: 400,
+    color: "#2E2E2E",
+    lineHeight: "18px",
+    wordBreak: "break-word",
+  }}
+>
+  {typeof value === "string" &&
+  (value.startsWith("http://") || value.startsWith("https://")) ? (
+    <a
+      href={value}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: "#1677FF" }} // optional link color
+    >
+      {value}
+    </a>
+  ) : (
+    value || "-"
+  )}
+</div>
+
+  </div>
+);
+
 
   const certificateChipStyle = {
     background: "#E2EEFF",
@@ -82,11 +144,11 @@ const CandidateDetails = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "0px" }}>
       {/* Back Button */}
       <Button
         type="text"
-        style={{ marginBottom: 5 }}
+        style={{ marginBottom: 5,height:25 }}
         onClick={() =>
           navigate("/company/candidates", { state: { id: jobId } })
         }
@@ -113,37 +175,87 @@ const CandidateDetails = () => {
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     Applied {candidate.updatedAt}
                   </Text>
+
+                    <Space size={8} align="center">
+    <Rate allowHalf defaultValue={2.5} />
+
+  
+
+    <Text
+  style={{
+    fontSize: 12,
+    color: "#1677FF",
+    cursor: "pointer",
+    fontWeight: 500,
+  }}
+  onClick={() => {
+    setTempReview(reviewsByCandidate[candidate.applicationId] || "");
+    setIsReviewModalOpen(true);
+  }}
+>
+  Add Review
+</Text>
+
+</Space>
                 </Space>
               </Space>
 
-              <Button
-                type="default"
-                style={{
-                  backgroundColor: "#D1E4FF",
-                  color: "#310000", // ✅ text color
-                  height: 40,
-                  width: 176,
-                  borderRadius: 100,
-                  border: "none",
+<Button
+  type="default"
+  style={{
+    backgroundColor: "#D1E4FF",
+    color: "#310000",
+    height: 40,
+    borderRadius: 100,
+    border: "none",
 
-                  // TEXT STYLES (matches Figma)
-                  fontSize: 14,
-                  fontWeight: 590, // ✅ semi-bold
-                  lineHeight: "14px", // 100%
-                  textAlign: "center",
-                  fontFamily:
-                    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial",
-                }}
-                onClick={() =>
-                  navigate("/company/chat", {
-                    state: { candidate, jobId },
-                  })
-                }
-              >
-                Chat with {candidate.name}
-              </Button>
-            </Row>
-          </div>
+    // ✅ IMPORTANT FIX
+    paddingLeft: 20,
+    paddingRight: 20,
+    whiteSpace: "nowrap",
+
+    // TEXT STYLES
+    fontSize: 14,
+    fontWeight: 590,
+    lineHeight: "14px",
+    textAlign: "center",
+    fontFamily:
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial",
+  }}
+  onClick={() =>
+    navigate("/company/chat", {
+      state: { candidate, jobId },
+    })
+  }
+>
+  Chat with {candidate.name}
+</Button>
+</Row>
+            </div>
+
+{summary?.trim()?.length > 0 && (
+  <div
+    style={{
+      marginTop: 12,
+      marginBottom: 20,
+      backgroundColor: "#D1E4FF", // ✅ same blue as Chat button
+      color: "#101828",
+      borderRadius: 16,          // ✅ pill style
+      padding: "12px 16px",      // ✅ auto height based on text
+      fontSize: 14,
+      fontWeight: 400,
+      lineHeight: "20px",
+      maxWidth: "100%",
+      wordBreak: "break-word",
+    }}
+  >
+    {summary}
+  </div>
+)}
+
+
+         
+
 
           <Collapse
             bordered={false}
@@ -157,135 +269,67 @@ const CandidateDetails = () => {
                   </Title>
                 ),
                 children: (
+                 
+
                   <div
-                    style={{
-                      background: "#ffffff",
-                      padding: 24,
-                      borderRadius: 10,
-                      border: "1px solid #ebebeb",
-                    }}
-                  >
-                    <Row gutter={[24, 24]}>
-                      {/* ROW 1 */}
-                      <Col span={8}>
-                        <InfoItem label="Email" value={candidate.email} />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem label="Title" value={profile.title} />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem label="Phone" value={profile.phoneNumber} />
-                      </Col>
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 24, // space between rows (Figma)
+  }}
+>
+  {/* ROW 1 */}
+  <div style={{ display: "flex", gap: 28 }}>
+    <InfoItem label="Email" value={candidate.email} />
+    <InfoItem label="Title" value={profile.title} />
+    <InfoItem label="Phone" value={profile.phoneNumber} />
+  </div>
 
-                      {/* ROW 2 */}
-                      <Col span={8}>
-                        <InfoItem
-                          label="Current Location"
-                          value={profile.currentLocation}
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem
-                          label="Preferred Job Type"
-                          value={profile.preferredJobType?.join(", ")}
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem
-                          label="Total Experience"
-                          value={
-                            profile.experience
-                              ? `${profile.experience.number} ${profile.experience.type}`
-                              : "-"
-                          }
-                        />
-                      </Col>
+  {/* ROW 2 */}
+  <div style={{ display: "flex", gap: 28 }}>
+    <InfoItem label="Current Location" value={profile.currentLocation} />
+    <InfoItem
+      label="Preferred Job Type"
+      value={profile.preferredJobType?.join(", ")}
+    />
+    <InfoItem
+      label="Total Experience"
+      value={
+        profile.experience
+          ? `${profile.experience.number} ${profile.experience.type}`
+          : "-"
+      }
+    />
+  </div>
 
-                      {/* ROW 3 */}
-                      <Col span={8}>
-                        <InfoItem
-                          label="Expected CTC"
-                          value={
-                            profile.expectedCTC
-                              ? `${profile.expectedCTC} LPA`
-                              : "-"
-                          }
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem
-                          label="Rate Card"
-                          value={
-                            profile.rateCardPerHour?.value
-                              ? `${profile.rateCardPerHour.value} ${profile.rateCardPerHour.currency}/hr`
-                              : "-"
-                          }
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem
-                          label="Joining Period (in days)"
-                          value={profile.joiningPeriod}
-                        />
-                      </Col>
+  {/* ROW 3 */}
+  <div style={{ display: "flex", gap: 28 }}>
+    <InfoItem
+      label="Expected CTC"
+      value={profile.expectedCTC ? `${profile.expectedCTC} LPA` : "-"}
+    />
+    <InfoItem
+      label="Rate Card"
+      value={
+        profile.rateCardPerHour?.value
+          ? `${profile.rateCardPerHour.value} ${profile.rateCardPerHour.currency}/hr`
+          : "-"
+      }
+    />
+    <InfoItem label="LinkedIn" value={profile.linkedInUrl} />
+  </div>
 
-                      {/* ROW 4 */}
-                      <Col span={8}>
-                        <InfoItem
-                          label="LinkedIn"
-                          value={
-                            profile.linkedInUrl ? (
-                              <a
-                                href={profile.linkedInUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {profile.linkedInUrl}
-                              </a>
-                            ) : (
-                              "-"
-                            )
-                          }
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem
-                          label="Portfolio"
-                          value={
-                            profile.portfolioLink ? (
-                              <a
-                                href={profile.portfolioLink}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {profile.portfolioLink}
-                              </a>
-                            ) : (
-                              "-"
-                            )
-                          }
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <InfoItem
-                          label="Trailhead"
-                          value={
-                            profile.trailheadUrl ? (
-                              <a
-                                href={profile.trailheadUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {profile.trailheadUrl}
-                              </a>
-                            ) : (
-                              "-"
-                            )
-                          }
-                        />
-                      </Col>
-                    </Row>
-                  </div>
+  {/* ROW 4 */}
+  <div style={{ display: "flex", gap: 28 }}>
+    <InfoItem label="Portfolio" value={profile.portfolioLink} />
+    <InfoItem label="Trailhead" value={profile.trailheadUrl} />
+    <InfoItem
+      label="Joining Period (in days)"
+      value={profile.joiningPeriod}
+    />
+  </div>
+</div>
+
                 ),
               },
             ]}
@@ -316,8 +360,8 @@ const CandidateDetails = () => {
                     {/* LINE between Skills & Primary Skills */}
                     <Divider style={{ marginTop: 2, marginBottom: 12 }} />
 
-                    {/* PRIMARY SKILLS CARD */}
-                    <div
+                   
+                    {/* <div
                       style={{
                         background: "#FFFFFF", // ✅ white background
                         border: "1px solid #EDEDED",
@@ -326,12 +370,12 @@ const CandidateDetails = () => {
                         marginBottom: 16,
                       }}
                     >
-                      {/* Header */}
+                      
                       <Text strong style={{ display: "block", marginBottom: 12 }}>
                         Primary Skills
                       </Text>
 
-                      {/* Skill Chips */}
+                     
                       <div
                         style={{
                           display: "flex",
@@ -362,7 +406,63 @@ const CandidateDetails = () => {
                           <Text type="secondary">No skills available</Text>
                         )}
                       </div>
-                    </div>
+                    </div> */}
+
+
+                    {/* PRIMARY + SECONDARY SKILLS (SAME CARD) */}
+<div
+  style={{
+    background: "#FFFFFF",
+    border: "1px solid #EDEDED",
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 16,
+  }}
+>
+  {/* PRIMARY SKILLS */}
+  <Text strong style={{ display: "block", marginBottom: 12 }}>
+    Primary Skills
+  </Text>
+
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+    {profile.skillsJson?.filter(s => s.level === "primary")?.length ? (
+      profile.skillsJson
+        .filter(s => s.level === "primary")
+        .map((skill, index) => (
+          <Tag key={index} style={skillChipStyle}>
+            {skill.name}
+          </Tag>
+        ))
+    ) : (
+      <Text type="secondary">No primary skills</Text>
+    )}
+  </div>
+
+  {/* GAP */}
+  {profile.skillsJson?.some(s => s.level === "secondary") && (
+    <Divider style={{ margin: "16px 0 12px" }} />
+  )}
+
+  {/* SECONDARY SKILLS */}
+  {profile.skillsJson?.some(s => s.level === "secondary") && (
+    <>
+      <Text strong style={{ display: "block", marginBottom: 12 }}>
+        Secondary Skills
+      </Text>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {profile.skillsJson
+          .filter(s => s.level === "secondary")
+          .map((skill, index) => (
+            <Tag key={index} style={secondarySkillChipStyle}>
+              {skill.name}
+            </Tag>
+          ))}
+      </div>
+    </>
+  )}
+</div>
+
                   </>
                 ),
               },
@@ -370,6 +470,118 @@ const CandidateDetails = () => {
           />
 
           <Divider />
+
+
+
+<Collapse
+  bordered={false}
+  defaultActiveKey={[]}
+  items={[
+    {
+      key: "clouds",
+      label: (
+        <Title level={4} style={{ margin: 0 }}>
+          Clouds
+        </Title>
+      ),
+      children: (
+        <>
+          {/* DIVIDER (same pattern as Skills) */}
+          <Divider style={{ marginTop: 2, marginBottom: 12 }} />
+
+          {/* CLOUDS CARD */}
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #EDEDED",
+              borderRadius: 10,
+              padding: 16,
+              marginBottom: 16,
+            }}
+          >
+            {/* Header */}
+            <Text strong style={{ display: "block", marginBottom: 12 }}>
+             Primary Cloud 
+            </Text>
+
+            {/* Cloud Chips */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              {profile.primaryClouds?.length ? (
+                profile.primaryClouds.map((cloud, index) => (
+                  <Tag
+                    key={index}
+                    style={skillChipStyle} // ✅ SAME AS SKILLS
+                    closeIcon={
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "#4C7DFF",
+                          fontWeight: 600,
+                        }}
+                      ></span>
+                    }
+                    onClose={(e) => e.preventDefault()}
+                  >
+                    {cloud.name}
+                  </Tag>
+                ))
+              ) : (
+                <Text type="secondary">No clouds available</Text>
+              )}
+            </div>
+
+            {/* SECONDARY CLOUDS */}
+{profile.secondaryClouds?.length > 0 && (
+  <>
+    {/* spacing between primary & secondary */}
+    <Divider style={{ margin: "12px 0" }} />
+
+    <Text strong style={{ display: "block", marginBottom: 12 }}>
+      Secondary Cloud
+    </Text>
+
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+      }}
+    >
+      {profile.secondaryClouds.map((cloud, index) => (
+        <Tag
+          key={index}
+          style={secondarySkillChipStyle} // ✅ PINK STYLE
+          closeIcon={
+            <span
+              style={{
+                fontSize: 12,
+                color: "#F759AB",
+                fontWeight: 600,
+              }}
+            ></span>
+          }
+          onClose={(e) => e.preventDefault()}
+        >
+          {cloud.name}
+        </Tag>
+      ))}
+    </div>
+  </>
+)}
+
+          </div>
+        </>
+      ),
+    },
+  ]}
+/>
+<Divider />
 
           <Collapse
             bordered={false}
@@ -616,23 +828,107 @@ const CandidateDetails = () => {
           />
         </Card>
       </Col>
-      <Col span={8}>
-          <Card
-            title="Activity"
-            bordered={false}
-            style={{
-              position: "sticky",
-              top: 20,
-              maxHeight: "calc(100vh - 40px)",
-              overflowY: "auto",
-            }}
-          >
-            <CandidateActivity candidateId={profile.userId} />
-          </Card>
-        </Col>
+     
+
+        <Col span={8}>
+    <Card
+      bordered={false}
+      bodyStyle={{
+        padding: 0,
+        height: "100%",
+      }}
+      style={{
+        position: "sticky",
+        top: 20,
+        height: "calc(100vh - 30px)",
+        overflow: "hidden",
+        borderRadius: 10,
+      }}
+    >
+      <div
+        style={{
+          height: "100%",
+          overflowY: "auto",
+          padding: 24,
+        }}
+      >
+        <CandidateActivity candidateId={profile.userId} />
+      </div>
+    </Card>
+  </Col>
       </Row>
+
+      <Modal
+  open={isReviewModalOpen}
+  footer={null}
+  centered
+  width={640}
+  onCancel={() => setIsReviewModalOpen(false)}
+>
+  {/* Header */}
+  <div style={{ marginBottom: 24 }}>
+    <div style={{ fontSize: 24, fontWeight: 510, color: "#101828" }}>
+      Add Review
     </div>
+    <div style={{ fontSize: 14, color: "#101828", marginTop: 4 }}>
+      Add a short review of the candidate based on your conversation
+    </div>
+  </div>
+
+  {/* Textarea */}
+  <div style={{ marginBottom: 32 }}>
+    <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+      <div style={{ color: "#B60554", fontSize: 12 }}>*</div>
+      <div style={{ fontSize: 13, fontWeight: 590 }}>Add review</div>
+    </div>
+
+    <Input.TextArea
+      rows={4}
+      placeholder="Review Description"
+      value={tempReview}
+      onChange={(e) => setTempReview(e.target.value)}
+      style={{ borderRadius: 8 }}
+    />
+  </div>
+
+  {/* Footer */}
+  <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
+    <Button onClick={() => setIsReviewModalOpen(false)}>Cancel</Button>
+
+  
+
+    <Button
+  type="primary"
+  onClick={() => {
+    const updatedReviews = {
+      ...reviewsByCandidate,
+      [candidate.applicationId]: tempReview,
+    };
+
+    setReviewsByCandidate(updatedReviews);
+    localStorage.setItem(
+      "candidateReviews",
+      JSON.stringify(updatedReviews)
+    );
+
+    setIsReviewModalOpen(false);
+  }}
+>
+  Add
+</Button>
+
+  </div>
+</Modal>
+
+    </div>
+
+    
   );
 };
 
 export default CandidateDetails;
+
+
+
+
+

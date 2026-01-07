@@ -70,10 +70,15 @@ const UpdateUserProfile = ({
   const [educationList, setEducationList] = useState([]);
   const [experienceList, setExperienceList] = useState([]);
 
+  const [isCandidate, setIsCandidate] = useState(false);
+
+
   const role = localStorage.getItem("role");
 
   useEffect(() => {
     if (editRecord && Reciviedrole) {
+
+       setIsCandidate(!!editRecord.userId); 
       console.log("edit true");
       // Reset previous values
       form.resetFields();
@@ -111,6 +116,8 @@ const UpdateUserProfile = ({
         portfolioLink: editRecord?.portfolioLink || "",
         profilePicture: editRecord?.profilePicture || null,
         title: editRecord?.title || "",
+        summary: editRecord?.summary || "",
+
         currentCTC: editRecord?.currentCTC || "",
         expectedCTC: editRecord?.expectedCTC || "",
         rateCardPerHour: editRecord?.rateCardPerHour || {
@@ -174,6 +181,9 @@ const UpdateUserProfile = ({
       if (res?.status === "success" && res?.user) {
         const user = res?.user;
 
+        setIsCandidate(!!user.userId);
+
+
         // Extract skills from skillsJson
         const skillsJson = user?.skillsJson || [];
         const prims = skillsJson
@@ -221,6 +231,8 @@ const UpdateUserProfile = ({
             currency: "INR",
           },
           title: user?.title || "",
+          summary: user?.summary || "",
+
           linkedInUrl: user?.linkedInUrl || "",
           trailheadUrl: user?.trailheadUrl || "",
           education: user?.education || [],
@@ -456,6 +468,8 @@ const UpdateUserProfile = ({
         portfolioLink: values?.portfolioLink,
         profilePicture: profilePicUrl, // <---- SAVED
         title: values?.title || null,
+        summary: values.summary,
+
         currentCTC: String(values?.currentCTC) || null,
         expectedCTC: String(values?.expectedCTC) || null,
         joiningPeriod: values?.joiningPeriod || null,
@@ -848,6 +862,34 @@ const UpdateUserProfile = ({
               </Form.Item>
             </Col>
 
+            <Col span={24}>
+ <Form.Item
+  label="Professional Summary"
+  name="summary"
+  rules={[
+    {
+      required: true,
+      message: "Professional summary is required",
+    },
+  
+    {
+      pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"]+$/,
+      message:
+        "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
+    },
+  ]}
+>
+  <Input.TextArea
+    rows={4}
+    showCount
+    maxLength={600}
+    placeholder="Salesforce-focused professional summary (minimum 100 characters)"
+  />
+</Form.Item>
+
+</Col>
+
+
             {/* Preferred & Current Location */}
             <Col xs={24} sm={12}>
               <Form.Item
@@ -1050,7 +1092,7 @@ const UpdateUserProfile = ({
             </Col>
 
             <Col xs={24} sm={8}>
-              <Form.Item
+              {/* <Form.Item
                 label="LinkedIn URL"
                 name="linkedInUrl"
                 rules={[
@@ -1067,11 +1109,47 @@ const UpdateUserProfile = ({
                 ]}
               >
                 <Input placeholder="https://www.linkedin.com/in/yourprofile" />
-              </Form.Item>
+              </Form.Item> */}
+
+              {isCandidate ? (
+  <Form.Item
+    label="LinkedIn URL"
+    name="linkedInUrl"
+    rules={[
+      {
+        required: true,
+        message: "LinkedIn URL is required",
+      },
+      {
+        pattern:
+          /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
+        message: "Please enter a valid LinkedIn profile URL",
+      },
+    ]}
+  >
+    <Input placeholder="https://www.linkedin.com/in/yourprofile" />
+  </Form.Item>
+) : (
+  <Form.Item
+    label="LinkedIn URL"
+    name="linkedInUrl"
+    rules={[
+      {
+        
+        pattern:
+          /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
+        message: "Please enter a valid LinkedIn profile URL",
+      },
+    ]}
+  >
+    <Input placeholder="https://www.linkedin.com/in/yourprofile" />
+  </Form.Item>
+)}
+
             </Col>
 
             <Col xs={24} sm={8}>
-              <Form.Item
+              {/* <Form.Item
                 label="Trailhead URL"
                 name="trailheadUrl"
                 rules={[
@@ -1090,7 +1168,43 @@ const UpdateUserProfile = ({
                 ]}
               >
                 <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
-              </Form.Item>
+              </Form.Item> */}
+
+
+              {isCandidate ? (
+  <Form.Item
+    label="Trailhead URL"
+    name="trailheadUrl"
+    rules={[
+      {
+        required: true,
+        message: "Trailhead URL is required",
+      },
+      {
+        pattern:
+          /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
+        message: "Please enter a valid Trailhead URL",
+      },
+    ]}
+  >
+    <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
+  </Form.Item>
+) : (
+  <Form.Item
+    label="Trailhead URL"
+    name="trailheadUrl"
+    rules={[
+      {
+        pattern:
+          /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
+        message: "Please enter a valid Trailhead URL",
+      },
+    ]}
+  >
+    <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
+  </Form.Item>
+)}
+
             </Col>
           </Row>
 

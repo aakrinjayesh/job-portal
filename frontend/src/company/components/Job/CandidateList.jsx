@@ -7,6 +7,12 @@ import { EyeOutlined } from "@ant-design/icons";
 import { Popover } from "antd";
 
 
+import {
+  MarkCandidateReviewed,
+  UpdateVendorCandidateStatus,
+ 
+} from "../../api/api";
+
 
 const CandidateList = () => {
   const location = useLocation();
@@ -26,8 +32,13 @@ const CandidateList = () => {
   // ✅ NEW STATE FOR GROUP CHAT
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [selectedCandidates, setSelectedCandidates] = useState([]);
-const [flags, setFlags] = useState({});
- 
+  const [statusMap, setStatusMap] = useState({});
+
+const [candidateType, setCandidateType] = useState("ALL");
+
+
+ const [searchText, setSearchText] = useState("");
+
 
 
   useEffect(() => {
@@ -38,6 +49,12 @@ const [flags, setFlags] = useState({});
         const response = await GetCandidateDeatils(payload);
 
         if (response?.data && response.data.length > 0) {
+
+           const map = {};
+  response.data.forEach((c) => {
+    map[c.applicationId] = c.status || "Pending";
+  });
+  setStatusMap(map);
           setCandidates(response.data);
           setTotal(response.total || response.data.length);
         } else {
@@ -54,6 +71,49 @@ const [flags, setFlags] = useState({});
 
     if (jobId) fetchCandidates();
   }, [jobId, page, pageSize]);
+
+
+
+
+const filteredCandidates = candidates
+  .filter((c) => {
+    const vendorId = c?.profile?.vendorId;
+
+      if (candidateType === "ALL") return true;
+    if (candidateType === "NORMAL") return vendorId == null;
+    if (candidateType === "VENDOR") return vendorId != null;
+
+    return true;
+  })
+  .filter((c) => {
+    if (!searchText.trim()) return true;
+
+    const name = c?.name?.toLowerCase() || "";
+    const title = c?.profile?.title?.toLowerCase() || "";
+
+    return (
+      name.includes(searchText.toLowerCase()) ||
+      title.includes(searchText.toLowerCase())
+    );
+  })
+  .sort((a, b) => {
+    if (!searchText.trim()) return 0;
+
+    const aName = a?.name?.toLowerCase() || "";
+    const bName = b?.name?.toLowerCase() || "";
+
+    const q = searchText.toLowerCase();
+
+    const aMatch = aName.includes(q);
+    const bMatch = bName.includes(q);
+
+    // 👇 matches come to top
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return 0;
+  });
+
+
 
   // ✅ ROW SELECTION (CHECKBOX)
   const rowSelection = {
@@ -76,16 +136,22 @@ const chipStyle = {
   marginBottom: 4,
 };
 
-// ================= FLAG CONFIG =================
 
-const FLAG_OPTIONS = [
-  { key: "shortlisted", label: "Shortlisted", color: "#52c41a" },
-  { key: "maybe", label: "Maybe", color: "#faad14" },
-  { key: "hold", label: "Hold", color: "#fa8c16" },
-  { key: "rejected", label: "Rejected", color: "#f5222d" },
-];
 
 const DEFAULT_FLAG_COLOR = "#BFBFBF";
+
+const STATUS_FLAG_MAP = {
+  Pending: { label: "Pending", color: "#bfbfbf" },
+  Reviewed: { label: "Reviewed", color: "#1890ff" },
+  Shortlisted: { label: "Shortlisted", color: "#52c41a" },
+  Rejected: { label: "Rejected", color: "#f5222d" },
+  Bookmark: { label: "Bookmark", color: "#faad14" }, // gold
+  Clear: { label: "Clear", color: "#d9d9d9" },           // light grey
+
+};
+
+const MANUAL_STATUS_OPTIONS = ["Shortlisted", "Pending", "Rejected", "Clear","Bookmark",];
+
 
 // Triangle flag (same as Figma)
 const PennantFlag = ({ color = DEFAULT_FLAG_COLOR }) => (
@@ -100,48 +166,150 @@ const PennantFlag = ({ color = DEFAULT_FLAG_COLOR }) => (
   />
 );
 
-// Dropdown content
-const FlagDropdown = ({ record }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-    {FLAG_OPTIONS.map((flag) => (
-      <div
-        key={flag.key}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          cursor: "pointer",
-        }}
-        onClick={() =>
-          setFlags((prev) => ({
-            ...prev,
-            [record.userId]: flag,
-          }))
-        }
-      >
-        <PennantFlag color={flag.color} />
-        <span style={{ fontSize: 13 }}>{flag.label}</span>
-      </div>
-    ))}
-  </div>
-);
+
+
+
+const FlagDropdown = ({ record }) => {
+  // const currentStatus = record.status || "Pending";
+  const currentStatus = statusMap[record.applicationId] || "Pending";
+
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {MANUAL_STATUS_OPTIONS.map((status) => {
+        const isActive = currentStatus === status;
+
+        return (
+          <div
+            key={status}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              padding: "4px 6px",
+              borderRadius: 6,
+              backgroundColor: isActive ? "#f5f5f5" : "transparent",
+              fontWeight: isActive ? 600 : 400,
+            }}
+            onClick={async () => {
+              const finalStatus = status === "Clear" ? "Pending" : status;
+
+              await UpdateVendorCandidateStatus({
+                jobApplicationId: record.applicationId,
+                status: finalStatus,
+              });
+
+              // setCandidates((prev) =>
+              //   prev.map((c) =>
+              //     c.id === record.applicationId
+              //       ? { ...c, status: finalStatus }
+              //       : c
+              //   )
+              // );
+              setStatusMap((prev) => ({
+  ...prev,
+  [record.applicationId]: finalStatus,
+}));
+
+            }}
+          >
+            {/* ✅ KEEP ORIGINAL FLAG COLOR ALWAYS */}
+            <PennantFlag color={STATUS_FLAG_MAP[status].color} />
+
+            <span style={{ fontSize: 13 }}>
+              {STATUS_FLAG_MAP[status].label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const FLAG_FILTER_STATUSES = [
+  "Pending",
+  "Reviewed",
+  "Shortlisted",
+  "Rejected",
+  "Bookmark",
+];
 
 
 
 
 
-
-  // TABLE COLUMNS
+// TABLE COLUMNS
   const columns = [
 
- {
+
+
+{
   title: "Flags",
   key: "flags",
   width: 60,
   fixed: "left",
   align: "center",
+
+  // ✅ ADD THIS (custom flag UI)
+  filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+    <div style={{ padding: 8, minWidth: 160 }}>
+      {FLAG_FILTER_STATUSES.map((status) => {
+        const isActive = selectedKeys[0] === status;
+
+        return (
+          <div
+            key={status}
+            onClick={() => {
+              setSelectedKeys([status]); // single select
+              confirm();                 // apply instantly
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              padding: "6px 8px",
+              borderRadius: 6,
+              backgroundColor: isActive ? "#f5f5f5" : "transparent",
+              fontWeight: isActive ? 600 : 400,
+            }}
+          >
+            <PennantFlag color={STATUS_FLAG_MAP[status].color} />
+            <span>{STATUS_FLAG_MAP[status].label}</span>
+          </div>
+        );
+      })}
+
+      <div
+        onClick={() => {
+          clearFilters();
+          confirm();
+        }}
+        style={{
+          marginTop: 8,
+          fontSize: 12,
+          color: "#1677ff",
+          cursor: "pointer",
+          textAlign: "right",
+        }}
+      >
+        Clear
+      </div>
+    </div>
+  ),
+
+  // ✅ KEEP THIS (filter logic)
+  onFilter: (value, record) => {
+    const currentStatus =
+      statusMap[record.applicationId] || "Pending";
+    return currentStatus === value;
+  },
+
+  // ✅ KEEP THIS (row flag UI)
   render: (_, record) => {
-    const selectedFlag = flags[record.userId];
+    const currentStatus = statusMap[record.applicationId] || "Pending";
+    const flagMeta = STATUS_FLAG_MAP[currentStatus];
 
     return (
       <Popover
@@ -153,9 +321,7 @@ const FlagDropdown = ({ record }) => (
           onClick={(e) => e.stopPropagation()}
           style={{ cursor: "pointer" }}
         >
-          <PennantFlag
-            color={selectedFlag?.color || DEFAULT_FLAG_COLOR}
-          />
+          <PennantFlag color={flagMeta?.color || DEFAULT_FLAG_COLOR} />
         </div>
       </Popover>
     );
@@ -163,12 +329,13 @@ const FlagDropdown = ({ record }) => (
 },
 
 
+
      {
       title: "Name",
       dataIndex: "name",
       key: "name",
       fixed: "left",
-      sorter: (a, b) => a.name.localeCompare(b.name),
+      // sorter: (a, b) => a.name.localeCompare(b.name),
     },
  
 
@@ -466,23 +633,69 @@ const FlagDropdown = ({ record }) => (
         color: "#595959",    // same grey as screenshot
         cursor: "pointer",
       }}
-      onClick={(e) => {
-        e.stopPropagation();
-        navigate(`/company/candidate/${record.userId}`, {
-          state: { candidate: record, jobId },
-        });
-      }}
-    />
+     
+
+ onClick={async (e) => {
+  e.stopPropagation();
+
+  // ✅ 1. Try marking reviewed (do NOT block navigation)
+  try {
+    if (record?.id) {
+      await MarkCandidateReviewed({
+        // jobApplicationId: record.id,
+        // jobApplicationId: record.jobApplicationId,
+         jobApplicationId: record.applicationId,
+      });
+    }
+  } catch (err) {
+    console.warn("Mark reviewed failed, continuing navigation");
+  }
+
+  // ✅ 2. Update UI optimistically
+  setCandidates((prev) =>
+    prev.map((c) =>
+      // c.id === record.id
+  c.applicationId === record.applicationId
+   ? { ...c, status: "Reviewed" } : c
+    )
+  );
+
+  // ✅ 3. ALWAYS navigate
+  navigate(`/company/candidate/${record.userId}`, {
+    state: {
+      candidate: { ...record, status: "Reviewed" },
+      jobId,
+    },
+  });
+}}
+ />
   ),
 }
 
   ];
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 0 }}>
       {contextHolder}
-      {/* BACK BUTTON */}
-      <Button
+      
+{/* ================= FIGMA HEADER CARD ================= */}
+<div
+  style={{
+    width: "100%",
+    padding: 8,
+    background: "#FFFFFF",
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  }}
+>
+  {/* LEFT SIDE – TOGGLES */}
+  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+
+    <Button
         type="text"
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate("/company/jobs")}
@@ -491,23 +704,171 @@ const FlagDropdown = ({ record }) => (
         Back
       </Button>
 
-      {/* ✅ CREATE GROUP BUTTON */}
-      <Button
-        type="primary"
-        style={{ marginBottom: 12 }}
-        disabled={selectedCandidates.length === 0}
-        onClick={() => setIsGroupModalOpen(true)}
-       
-      >
-        Create Group
-      </Button>
+      {/* ALL */}
+<div
+  onClick={() => setCandidateType("ALL")}
+  style={{
+    height: 32,
+    borderRadius: 6,
+    outline:
+      candidateType === "ALL"
+        ? "1px solid #3F41D1"
+        : "1px solid #A3A3A3",
+    background:
+      candidateType === "ALL" ? "#EBEBFA" : "#FFFFFF",
+    display: "flex",
+    alignItems: "center",
+    cursor: "pointer",
+  }}
+>
+  <div style={{ padding: "4px 12px" }}>
+    <span
+      style={{
+        color:
+          candidateType === "ALL" ? "#3F41D1" : "#666666",
+        fontSize: 13,
+        fontWeight: candidateType === "ALL" ? 500 : 400,
+      }}
+    >
+      All ({candidates.length})
+    </span>
+  </div>
+</div>
 
-      <Spin spinning={loading}>
+
+    {/* NORMAL */}
+    <div
+      onClick={() => setCandidateType("NORMAL")}
+      style={{
+        height: 32,
+         
+        borderRadius: 6,
+        outline:
+          candidateType === "NORMAL"
+            ? "1px solid #3F41D1"
+            : "1px solid #A3A3A3",
+        background:
+          candidateType === "NORMAL" ? "#EBEBFA" : "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        cursor: "pointer",
+      }}
+    >
+      <div style={{ padding: "4px 12px" }}>
+        <span
+          style={{
+            color:
+              candidateType === "NORMAL" ? "#3F41D1" : "#666666",
+            fontSize: 13,
+            fontWeight: candidateType === "NORMAL" ? 500 : 400,
+             
+          }}
+        >
+          Normal Candidates (
+          {candidates.filter(c => c?.profile?.vendorId == null).length})
+        </span>
+      </div>
+    </div>
+
+    {/* VENDOR */}
+    <div
+      onClick={() => setCandidateType("VENDOR")}
+      style={{
+        height: 32,
+        borderRadius: 6,
+        outline:
+          candidateType === "VENDOR"
+            ? "1px solid #3F41D1"
+            : "1px solid #A3A3A3",
+        background:
+          candidateType === "VENDOR" ? "#EBEBFA" : "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        cursor: "pointer",
+        
+      }}
+    >
+      <div style={{ padding: "4px 12px" }}>
+        <span
+          style={{
+            color:
+              candidateType === "VENDOR" ? "#3F41D1" : "#666666",
+            fontSize: 13,
+            fontWeight: candidateType === "VENDOR" ? 500 : 400,
+          }}
+        >
+          Bench Candidates (
+          {candidates.filter(c => c?.profile?.vendorId != null).length})
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {/* RIGHT SIDE – SEARCH + CREATE GROUP */}
+  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+    {/* SEARCH */}
+    <Input
+  placeholder="Search by name or title"
+  allowClear
+  value={searchText}
+  onChange={(e) => setSearchText(e.target.value)}
+  style={{
+    width: 200,
+    height: 36,
+    borderRadius: 20,
+    fontSize: 13,
+  }}
+/>
+
+
+    {/* CREATE GROUP CHAT (SAME LOGIC, FIGMA STYLE) */}
+    <div
+      onClick={() =>
+        selectedCandidates.length === 0
+          ? null
+          : setIsGroupModalOpen(true)
+      }
+      style={{
+        height: 36,
+        borderRadius: 20,
+        padding: "6px 18px",
+        background:
+          selectedCandidates.length === 0 ? "#EBEBEB" : "#1677FF",
+        display: "flex",
+        alignItems: "center",
+        cursor:
+          selectedCandidates.length === 0
+            ? "not-allowed"
+            : "pointer",
+      }}
+    >
+      <span
+        style={{
+          color:
+            selectedCandidates.length === 0
+              ? "#A3A3A3"
+              : "#FFFFFF",
+          fontSize: 13,
+          fontWeight: 500,
+        }}
+      >
+        + Create Group Chat
+      </span>
+    </div>
+  </div>
+</div>
+
+<Spin spinning={loading}>
         <Table
           rowSelection={rowSelection}
           columns={columns}
-          dataSource={candidates}
-          rowKey={(record) => record.id || record.userId}
+          // dataSource={candidates}
+          dataSource={filteredCandidates}
+
+          // rowKey={(record) => record.id || record.userId}
+          // rowKey={(record) => record.id}
+          rowKey={(record) => record.applicationId}
+
           bordered
           scroll={{ x: "max-content" }}
           pagination={{
@@ -573,6 +934,9 @@ const FlagDropdown = ({ record }) => (
           />
         </Modal>
       </Spin>
+
+
+
     </div>
   );
 };
