@@ -271,7 +271,7 @@ FIELD RULES
 
 5. SALARY
 - Extract ONLY explicitly written salary values.
-- ❌ No inference or normalization.
+- normalization to only number no prefix.
 - If absent → null.
 
 6. SKILLS

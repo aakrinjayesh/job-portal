@@ -73,7 +73,15 @@ try {
     }
 
   // Clean output
-  console.log("groq output", result)
+  // console.log("groq output", result)
+
+  const tokenUsage = {
+      prompt: result?.usage?.prompt_tokens,
+      completion: result?.usage?.completion_tokens,
+      total: result?.usage?.total_tokens,
+    };
+
+    console.log("🔢 Token Usage:", tokenUsage);
   let rawText = result?.choices?.[0]?.message?.content?.trim() || "";
   rawText = rawText.replace(/```json|```/g, "").trim();
 
