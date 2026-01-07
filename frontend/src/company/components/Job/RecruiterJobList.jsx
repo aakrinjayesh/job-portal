@@ -149,13 +149,25 @@ const RecruiterJobList = () => {
       setIsSalaryRange(false); // toggle UI to single salary mode
     }
 
+    const experienceValue = job.experience
+  ? {
+      number: Number(job.experience.number),
+      type: job.experience.type,
+    }
+  : undefined;
+
     form.setFieldsValue({
       ...job,
+      experience: experienceValue,
       ...salaryValues,
       applicationDeadline: job.applicationDeadline
         ? dayjs(job.applicationDeadline)
         : null,
-      ApplicationLimit: job?.ApplicationLimit || null,
+      // ApplicationLimit: job?.ApplicationLimit || null,
+       ApplicationLimit:
+   job?.ApplicationLimit !== undefined
+     ? Number(job.ApplicationLimit)
+     : null,
     });
   };
 
@@ -221,9 +233,37 @@ const RecruiterJobList = () => {
     return Number(String(val).replace(/,/g, ""));
   };
 
+  
+  const STEPS = [
+    {
+      key: "basic",
+      fields: ["upload", "role", "description", "responsibilities"],
+    },
+    {
+      key: "job",
+      fields: ["employmentType", "tenure", "experience", "experienceLevel"],
+    },
+    {
+      key: "location",
+      fields: ["jobType", "location", "clouds", "skills"],
+    },
+    {
+      key: "salary",
+      fields: [
+        "salary",
+        "companyName",
+        "certifications",
+        "applicationDeadline",
+        "ApplicationLimit",
+      ],
+    },
+  ];
+
   const handleOk = async () => {
     try {
-      const values = await form.validateFields();
+      // const values = await form.validateFields();
+      const allFields = STEPS.flatMap(step => step.fields);
+const values = await form.validateFields(allFields);
       setPostLoading(true);
 
       let finalSalary = "";
@@ -238,13 +278,23 @@ const RecruiterJobList = () => {
 
       let payload = {
         role: values.role,
+       
+
         description: values.description,
         employmentType: values.employmentType,
         // experience: values.experience,
-        experience: {
-          number: String(values.experience.number),
-          type: values.experience.type,
-        },
+        // experience: {
+        //   number: String(values.experience.number),
+        //   type: values.experience.type,
+        // },
+        experience:
+  values.experience?.number && values.experience?.type
+    ? {
+        number: String(values.experience.number),
+        type: values.experience.type,
+      }
+    : null,
+
         experienceLevel: values.experienceLevel,
         // tenure: values.tenure,
         tenure: values.tenure
@@ -269,7 +319,12 @@ const RecruiterJobList = () => {
         certifications: values.certifications || [],
         jobType: values.jobType,
         applicationDeadline: values?.applicationDeadline?.toISOString(),
-        ApplicationLimit: values?.ApplicationLimit,
+        // ApplicationLimit: values?.ApplicationLimit,
+         ApplicationLimit:
+   values?.ApplicationLimit !== undefined &&
+   values?.ApplicationLimit !== null
+     ? Number(values.ApplicationLimit)
+     : undefined,
       };
       console.log("Payload", payload);
       if (isEditing) {
@@ -292,7 +347,15 @@ const RecruiterJobList = () => {
       form.resetFields();
     } catch (error) {
       console.error("Error saving job:", error);
-      messageApi.error("Failed to save job:" + error.response.data.message);
+      // messageApi.error("Failed to save job:" + error.response.data.message);
+       messageApi.error(
+   error?.response?.data?.message?.message ||
+   "Failed to save job"
+ );
+      messageApi.error(
+  error?.response?.data?.message || "Failed to save job"
+);
+
       setPostLoading(false);
     } finally {
       setPostLoading(false);
@@ -463,30 +526,6 @@ const RecruiterJobList = () => {
     { title: "Salary & Other" },
   ];
 
-  const STEPS = [
-    {
-      key: "basic",
-      fields: ["upload", "role", "description", "responsibilities"],
-    },
-    {
-      key: "job",
-      fields: ["employmentType", "tenure", "experience", "experienceLevel"],
-    },
-    {
-      key: "location",
-      fields: ["jobType", "location", "clouds", "skills"],
-    },
-    {
-      key: "salary",
-      fields: [
-        "salary",
-        "companyName",
-        "certifications",
-        "applicationDeadline",
-        "ApplicationLimit",
-      ],
-    },
-  ];
 
   return (
     <>
@@ -951,21 +990,7 @@ const RecruiterJobList = () => {
               </div>
             </div>
 
-            {/* Progress bar */}
-            {/* <div style={{ display: "flex", gap: 8 }}>
-      {STEPS.map((_, index) => (
-        <div
-          key={index}
-          style={{
-            flex: 1,
-            height: 4,
-            borderRadius: 4,
-            background:
-              index <= currentStep ? "#1677FF" : "#E5E7EB",
-          }}
-        />
-      ))}
-    </div> */}
+            
 
             <Steps
               current={currentStep}
@@ -982,7 +1007,7 @@ const RecruiterJobList = () => {
         onCancel={handleCancel}
         okText={isEditing ? "Update" : "Create"}
         width={700}
-        bodyStyle={{
+        styles={{
           maxHeight: "70vh",
           height: "520px",
           overflowY: "auto",
@@ -1523,14 +1548,29 @@ const RecruiterJobList = () => {
           )}
 
           {/* Next button */}
-          {currentStep < STEPS.length - 1 && (
+          {/* {currentStep < STEPS.length - 1 && (
             <Button
               type="primary"
               onClick={() => setCurrentStep((prev) => prev + 1)}
             >
               Next
             </Button>
-          )}
+          )} */}
+
+          <Button
+  type="primary"
+  onClick={async () => {
+    try {
+      await form.validateFields(STEPS[currentStep].fields);
+      setCurrentStep((prev) => prev + 1);
+    } catch (e) {
+      // stay on same step
+    }
+  }}
+>
+  Next
+</Button>
+
 
           {/* Final Create / Update */}
           {currentStep === STEPS.length - 1 && (
