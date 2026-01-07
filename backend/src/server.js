@@ -3,6 +3,8 @@ import cors from 'cors'
 import dotenv from 'dotenv';
 import path from "path";
 import { logger } from "./utils/logger.js";
+import { apiLimiter, authLimiter, aiLimiter } from "./Middleware/rateLimiter.js";
+import { aiUserLimiter } from "./Middleware/aiRateLimiter.js";
 
 
 import userRouter from "./Routes/profileRoutes.js";
@@ -13,7 +15,8 @@ import VendorRoutes from "./Routes/vendorRoutes.js";
 import VerificationRoutes from "./Routes/verificationRoutes.js";
 import CVRouters from "./Routes/cvRankerRoutes.js";
 import activityRoutes from "./Routes/activityRoutes.js";
-
+import { authenticateToken } from "./Middleware/authMiddleware.js";
+import todoRoutes from "./Routes/todoRoutes.js";
 
 dotenv.config();
 
@@ -22,23 +25,22 @@ const app = express();
 
 app.use(cors())
 app.use(express.json())
+app.use(apiLimiter);
 
-app.use((req, res, next) => {
-  console.log("➡️ Incoming request:", req.method, req.url);
-  next();
-});
+
 
 
 app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-// app.use('/api/v1', userRouter)
-app.use(LoginRouters)
+app.use(authLimiter, LoginRouters);
 app.use(userRouter)
 app.use(JobRouters)
 app.use(CommonRouters)
 app.use('/vendor',VendorRoutes)
 app.use("/verification", VerificationRoutes);
-app.use(CVRouters);
+// app.use(authenticateToken, aiUserLimiter, CVRouters);
+app.use(authenticateToken, CVRouters);
+app.use("/api/todos", todoRoutes);
 
 
 

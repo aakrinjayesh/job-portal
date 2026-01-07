@@ -289,6 +289,7 @@ logger.warn("⚠️ Missing login fields");
       email: user.email,
       name: user.name,
       role: user.role,
+      plan: user.plan
     };
     const token = generateToken(userjwt);
 

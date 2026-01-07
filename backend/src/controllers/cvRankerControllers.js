@@ -5,7 +5,14 @@ import { logger } from "../utils/logger.js";
 
 const cvEligibilityCheck = async (req, res) => {
   const { jobId } = req.body;
-  const userId = req.user?.id;
+  const userId = req.user.id;
+  console.log("userId",userId)
+  if (!userId) {
+  return res.status(401).json({
+    status: "error",
+    message: "Unauthorized",
+  });
+}
 
   logger.info("CV Eligibility Check Started", { jobId, userId });
 

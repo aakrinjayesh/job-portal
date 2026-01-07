@@ -8,6 +8,7 @@ import path from 'path'
 import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
 import {applyFilters} from "../utils/applyFilters.js";
+import { queueRecruiterEmails } from "../utils/BulkEmail/jobEmail.service.js";
 
 
 // User applies for a job
@@ -751,11 +752,44 @@ const postJob = async (req, res) => {
 
     logger.info(`Job posted successfully - jobId: ${job.id}`);
 
-    return res.status(201).json({
+    res.status(201).json({
       status: "success",
       message: "Job posted successfully",
       job,
     });
+
+    (async () => {
+      try {
+        const recruiters = await prisma.users.findMany({
+          where: {
+            role: "company"
+          },
+          select: {
+            email: true,
+            id: true,
+          },
+        });
+
+        if (!recruiters.length) {
+          console.warn("No recruiters found for email notification");
+          return;
+        }
+
+        await queueRecruiterEmails(recruiters, job);
+
+        console.log(
+          `Queued job emails for ${recruiters.length} recruiters (jobId: ${job.id})`
+        );
+
+      } catch (emailError) {
+        // ❗ DO NOT throw — email failure should not break job posting
+        logger.error(
+          "Failed to queue recruiter emails",
+          JSON.stringify(emailError.message, null, 2)
+        );
+      }
+    })();
+
   } catch (error) {
     logger.error("postJob Error:", JSON.stringify(error.message,null,2));
     return res.status(500).json({
@@ -764,57 +798,6 @@ const postJob = async (req, res) => {
     })
   }
 }
-
-// hari
-// Get list of all jobs posted by company
-// const postedJobs = async (req, res) => {
-//   try {
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 10;
-//     const skip = (page - 1) * limit;
-
-//     const userFromAuth = req.user
-
-//     // ❗ Validate userId
-//    if (!userFromAuth.id) {
-//       logger.warn("User ID missing in postedJobs");
-//       return res.status(400).json({
-//         status: "error",
-//         message: "User ID is required"
-//       });
-//     }
-
-//     // 🟢 Fetch paginated jobs & count based on userId + isDeleted
-//     const [jobs, totalCount] = await Promise.all([
-//       prisma.job.findMany({
-//         skip,
-//         take: limit,
-//         where: { postedById: userFromAuth.id, isDeleted: false },
-//         orderBy: { createdAt: "desc" }
-//       }),
-
-//       prisma.job.count({
-//         where: { postedById: userFromAuth.id, isDeleted: false }
-//       })
-//     ]);
-
-//     return res.status(200).json({
-//       status: "success",
-//       message: "Posted jobs fetched successfully",
-//       totalCount,
-//       currentPage: page,
-//       totalPages: Math.ceil(totalCount / limit),
-//       jobs
-//     });
-
-//   } catch (error) {
-//     logger.error("postedJobs POST Error:", JSON.stringify(error.message,null,2));
-//     return res.status(500).json({
-//       status: "error",
-//       error: error.message || "Internal server error"
-//     });
-//   }
-// };
 
 const postedJobs = async (req, res) => {
   try {
