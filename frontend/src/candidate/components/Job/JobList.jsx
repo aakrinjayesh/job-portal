@@ -10,6 +10,7 @@ import {
   Divider,
   Cascader,
   message,
+  Checkbox,
   Button,
   Modal,
   Select,
@@ -21,6 +22,9 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   FileTextOutlined,
+  DollarOutlined,
+  ClockCircleOutlined,
+  UserOutlined
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -277,150 +281,235 @@ const JobList = ({
 
         return (
           <Col xs={24} key={job.id} ref={isLastJob ? lastJobRef : null}>
-            <Card
-              hoverable
-              // onClick={() => handleCardClick(job.id)}
-              onClick={() => handleCardClick(job)}
-              style={{
-                borderRadius: 12,
-                background: "#fff",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Title
-                  level={5}
-                  style={{ margin: 0 }}
-                  // onClick={() => handleCardClick(job.id)}
-                  onClick={() => handleCardClick(job)}
-                >
-                  {job?.role}
-                </Title>
+                         <Card
+  hoverable
+  onClick={() =>
+    navigate("/company/job/details", {
+      state: { job },
+    })
+  }
+  style={{
+    borderRadius: 12,
+    background: "#fff",
+    padding: 0,
+    cursor: "pointer",
+    border: "1px solid #EEEEEE",
+  }}
+>
+  {/* ===== Header ===== */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 16,
+      flexWrap: "wrap",
+    }}
+  >
+    {/* Left */}
+    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      {/* <Checkbox
+        checked={selectedJobs.includes(job.id)}
+        onClick={(e) => e.stopPropagation()}
+        onChange={() => handleSelect(job.id)}
+      /> */}
 
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSaveToggle(job?.id);
-                  }}
-                  style={{ cursor: "pointer", fontSize: 20 }}
-                >
-                  <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+      <img
+        src="https://placehold.co/60x60"
+        alt="logo"
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 6,
+          border: "1px solid #F5F5F5",
+        }}
+      />
+
+      <div>
+        <div style={{ fontSize: 16, fontWeight: 590, color: "#212121" }}>
+          {job.role || job.title}
+        
+          {/* ⭐ Save Button – TOP RIGHT */}
+<div
+  onClick={(e) => {
+    e.stopPropagation(); // prevent navigation
+    handleSaveToggle(job.id);
+  }}
+  style={{
+    position: "absolute",
+    top: 16,
+    right: 16,
+    fontSize: 22,
+    cursor: "pointer",
+    zIndex: 2,
+  }}
+>
+   <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
                     {job?.isSaved ? (
                       <StarFilled style={{ color: "#faad14" }} />
                     ) : (
                       <StarOutlined />
                     )}
                   </Tooltip>
-                </span>
-              </div>
+</div>
 
-              <Space align="center" style={{ marginTop: 6 }}>
-                <Text strong style={{ color: "#1890ff" }}>
-                  {job?.companyName}
-                </Text>
-                {job.rating && (
-                  <>
-                    <StarFilled style={{ color: "#faad14" }} />
-                    <Text>{job?.rating}</Text>
-                  </>
-                )}
-              </Space>
 
-              <div style={{ marginTop: 12 }}>
-                <Space split={<Divider type="vertical" />} wrap>
-                  {job.experience && (
-                    <Text>
-                      {job.experience.number} {job.experience.type}
-                    </Text>
-                  )}
+        </div>
+        <div style={{ fontSize: 14, color: "#666666" }}>
+          {job.companyName}
+        </div>
+        <div style={{ fontSize: 12, color: "#A3A3A3" }}>
+          Posted{" "}
+          {job?.updatedAt
+            ? dayjs(job.updatedAt).fromNow()
+            : "Recently"}
+        </div>
+      </div>
+    </div>
 
-                  {job.location && (
-                    <Space>
-                      <EnvironmentOutlined />
-                      <Tooltip title={job.location}>
-                        <Text>{job.location}</Text>
-                      </Tooltip>
-                    </Space>
-                  )}
 
-                  {job.salary && <Text>₹ {job.salary} Lacs PA</Text>}
-                </Space>
-              </div>
 
-              {job.description && (
-                <Space
-                  align="start"
-                  style={{ marginTop: 12 }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <FileTextOutlined style={{ marginTop: 4 }} />
-                  <Paragraph
-                    type="secondary"
-                    ellipsis={{ rows: 2, expandable: true, symbol: "more" }}
-                    style={{ margin: 0 }}
-                  >
-                    {job.description}
-                  </Paragraph>
-                </Space>
-              )}
+    
+    </div>
+ 
 
-              <div style={{ marginTop: 12 }}>
-                {job.clouds?.map((cloud, idx) => (
-                  <Tag color="gray" key={idx} style={{ borderRadius: 20 }}>
-                    {cloud}
-                  </Tag>
-                ))}
-              </div>
+  {/* ===== Job Meta ===== */}
+  <div
+    style={{
+      display: "flex",
+      gap: 16,
+      marginTop: 20,
+      flexWrap: "wrap",
+      color: "#666",
+      fontSize: 14,
+    }}
+  >
+    <span>
+      <EnvironmentOutlined /> {job.location}
+    </span>
+    <Divider type="vertical" />
+    <span>
+      <DollarOutlined /> {job.salary} PA
+    </span>
+    <Divider type="vertical" />
+    <span>
+      <ClockCircleOutlined /> {job.employmentType}
+    </span>
+    <Divider type="vertical" />
+    <span>
+      <UserOutlined /> {job.experience?.number}{" "}
+      {job.experience?.type}
+    </span>
+  </div>
 
-              {job.skills?.length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  {job.skills.map((skill, i) => (
-                    <Tag key={i} color="blue" style={{ borderRadius: 20 }}>
-                      {skill}
-                    </Tag>
-                  ))}
-                </div>
-              )}
+  
 
-              <div
-                style={{
-                  marginTop: 12,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                {job.createdAt && (
-                  <Text type="secondary">
-                    Posted {dayjs(job.createdAt).fromNow()} (
-                    {dayjs(job.createdAt).format("MMM D, YYYY")})
-                  </Text>
-                )}
+  {/* ===== Clouds + Skills (ONE LINE) ===== */}
+{(job.clouds?.length > 0 || job.skills?.length > 0) && (
+  <div
+    style={{
+      display: "flex",
+      gap: 16,
+      marginTop: 20,
+      width: "100%",
+      flexWrap: "wrap", // responsive
+    }}
+  >
+    {/* ===== Related Clouds ===== */}
+    {job.clouds?.length > 0 && (
+      <div
+        style={{
+          flex: 1,
+          padding: 16,
+          border: "1px solid #EEEEEE",
+          borderRadius: 8,
+          minWidth: 260,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 510,
+            marginBottom: 8,
+            color: "#444444",
+          }}
+        >
+          Related Clouds
+        </div>
 
-                {eligibilityByJob[job.id] ? (
-                  <CompactAnalytics data={eligibilityByJob[job?.id]} />
-                ) : (
-                  portal !== "company" && (
-                    <Button
-                      type="primary"
-                      loading={loadingEligibility[job.id]}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCheckEligibility(job.id);
-                      }}
-                    >
-                      Check Eligibility
-                    </Button>
-                  )
-                )}
-              </div>
-            </Card>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          {job.clouds.map((cloud, i) => (
+            <Tag
+              key={i}
+              style={{
+                background: "#E7F0FE",
+                borderRadius: 100,
+                border: "1px solid #1677FF",
+              }}
+            >
+              {cloud}
+            </Tag>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* ===== Related Skills ===== */}
+    {job.skills?.length > 0 && (
+      <div
+        style={{
+          flex: 1,
+          padding: 16,
+          border: "1px solid #EEEEEE",
+          borderRadius: 8,
+          minWidth: 260,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 510,
+            marginBottom: 8,
+            color: "#444444",
+          }}
+        >
+          Related Skills
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          {job.skills.map((skill, i) => (
+            <Tag
+              key={i}
+              style={{
+                background: "#FBEBFF",
+                borderRadius: 100,
+                border: "1px solid #800080",
+              }}
+            >
+              {skill}
+            </Tag>
+          ))}
+        </div>
+       
+      </div>
+    )}
+   
+  </div>
+)}
+
+</Card>
           </Col>
         );
       })}

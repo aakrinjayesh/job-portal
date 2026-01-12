@@ -11,7 +11,7 @@ import {
   message,
 } from "antd";
 import axios from "axios";
-import { ArrowLeftOutlined, EnvironmentOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, EnvironmentOutlined, DownOutlined, RightOutlined} from "@ant-design/icons";
 import { GetJobDetails } from "../../api/api";
 import { useLocation } from "react-router-dom";
 import ApplyBenchJob from "../../pages/ApplyBenchJob";
@@ -22,12 +22,16 @@ const JobDetails = () => {
   // const { id } = useParams();
   const navigate = useNavigate();
   // const [job, setJob] = useState(null);
+  const [showSkills, setShowSkills] = useState(false);
+const [showClouds, setShowClouds] = useState(false);
+
   const [loading, setLoading] = useState(true);
 
   // const location = useLocation();
 
   const location = useLocation();
 const job = location.state?.job; // ← GET jobId from navigation
+const from = location.state?.from; 
 
 
   const type = location?.state?.type;
@@ -108,82 +112,179 @@ useEffect(() => {
         Back
       </Button>
 
-      <Card
-        style={{ borderRadius: 12, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
+     <Card
+  style={{
+    borderRadius: 14,
+    border: "1px solid #f0f0f0",
+    boxShadow: "none",
+    padding: 24,
+  }}
+>
+  {/* ===== HEADER ===== */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    }}
+  >
+    <div>
+      <Title level={4} style={{ marginBottom: 0 }}>
+        {job.role}
+      </Title>
+      <Text type="secondary">{job.companyName}</Text>
+    </div>
+
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <Tag
+        color={job.status === "Closed" ? "error" : "success"}
+        style={{
+          borderRadius: 20,
+          padding: "2px 12px",
+          fontSize: 12,
+        }}
       >
-        <Title level={3}>
-          {job.role}{" "}
-          {/* <Button
-            type="primary"
-            onClick={handleViewCandidates}
-            style={{ float: "right" }}
-          >
-            View Candidates
-          </Button> */}
-        </Title>
+        {job.status}
+      </Tag>
 
-        <Text strong>{job.companyName}</Text>
+    </div>
+  </div>
 
-        <Space style={{ display: "block", marginTop: 8 }}>
-          <EnvironmentOutlined /> <Text>{job.location}</Text>
-        </Space>
+  {/* ===== DETAILS GRID ===== */}
+  <Divider style={{ margin: "16px 0" }} />
 
-        <Divider />
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: 20,
+    }}
+  >
+    <div>
+      <Text strong>Employment Type</Text>
+      <div>{job.employmentType}</div>
+    </div>
 
-        <Paragraph>
-          <Text strong>Employment Type:</Text> {job.employmentType}
-        </Paragraph>
+    <div>
+      <Text strong>Experience Required</Text>
+      <div>
+        {job.experience?.number} {job.experience?.type}
+      </div>
+    </div>
 
-        <Paragraph>
-          <Text strong>Experience Required:</Text> 
-          {job.experience && (
-                    <Text>
-                      {job.experience.number} {job.experience.type}
-                    </Text>
-                  )}
-        </Paragraph>
+    <div>
+      <Text strong>Salary</Text>
+      <div>₹ {job.salary} LPA</div>
+    </div>
 
-        <Paragraph>
-          <Text strong>Salary:</Text> ₹{job.salary}
-        </Paragraph>
+    <div>
+      <Text strong>Location</Text>
+      <div>{job.location}</div>
+    </div>
 
-        <Paragraph>
-          <Text strong>Job Type:</Text> {job.jobType}
-        </Paragraph>
+    <div>
+      <Text strong>Job Type</Text>
+      <div>{job.jobType}</div>
+    </div>
 
-        <Paragraph>
-          <Text strong>Status:</Text> {job.status}
-        </Paragraph>
+    <div>
+      <Text strong>Work Shift</Text>
+      <div>{job.workShift || "Morning Shift"}</div>
+    </div>
 
-        <Paragraph>
-          <Text strong>Description:</Text> <br />
-          {job.description}
-        </Paragraph>
+   <div>
+     <div>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    }}
+  >
+    <Text strong>Clouds</Text>
+  </div>
 
-        <Divider />
+ {showClouds && (
+  <div
+    style={{
+      marginTop: 8,
+      display: "flex",
+      flexWrap: "nowrap",
+      gap: 8,
+      overflowX: "auto",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {job.clouds?.map((cloud, i) => (
+      <Tag
+        key={i}
+        style={{
+          background: "#E7F0FE",
+          borderRadius: 100,
+          border: "1px solid #1677FF",
+          flexShrink: 0, // 🔑 prevents shrinking
+        }}
+      >
+        {cloud}
+      </Tag>
+    ))}
+  </div>
+)}
 
-        <Text strong>Skills Required:</Text>
-        <div style={{ marginTop: 8 }}>
-          {job.skills?.map((skill, idx) => (
-            <Tag color="blue" key={idx}>
-              {skill}
-            </Tag>
-          ))}
-        </div>
 
-        <Text strong>Clouds Required:</Text>
-        <div style={{ marginTop: 8 }}>
-          {job.clouds?.map((cloud, idx) => (
-            <Tag color="blue" key={idx}>
-              {cloud}
-            </Tag>
-          ))}
-        </div>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    }}
+  >
+    <Text strong>Skills</Text>
+  </div>
 
-        <Divider />
-      </Card>
+  {showClouds && (
+  <div
+    style={{
+      marginTop: 8,
+      display: "flex",
+      flexWrap: "nowrap",
+      gap: 8,
+      overflowX: "auto",
+      whiteSpace: "nowrap",
+    }}
+  >
+      {job.skills?.map((skill, i) => (
+        <Tag
+          key={i}
+          style={{
+            background: "#FBEBFF",
+            borderRadius: 100,
+            border: "1px solid #800080",
+            marginBottom: 6,
+          }}
+        >
+          {skill}
+        </Tag>
+      ))}
+    </div>
+  )}
+</div>
+</div>
+ </div>
+
+    {/* ===== DESCRIPTION ===== */}
+  <Divider style={{ margin: "16px 0" }} />
+
+  <Text strong>Description</Text>
+  <Paragraph style={{ marginTop: 6, color: "#555" }}>
+    {job.description}
+  </Paragraph>
+</Card>
+
       {/* <ApplyBenchJob jobId={id} /> */}
-      <ApplyBenchJob jobId={job?.id} />
+      
+  <ApplyBenchJob jobId={job?.id} />
+
 
     </div>
   );

@@ -5,6 +5,84 @@ import { ApplyBenchCandidate } from "../api/api";
 
 import { Tag, Tooltip } from "antd";
 
+const renderGreenTags = (items = [], max = 3) => {
+  if (!items.length) return "-";
+
+  const visible = items.slice(0, max);
+  const extra = items.length - max;
+
+  return (
+    <>
+      {visible.map((item, idx) => (
+        <Tag
+          key={idx}
+           style={{
+            background: "#FBEBFF",
+            borderRadius: 100,
+            border: "1px solid #800080",
+            marginBottom: 6,
+          }}
+        >
+          {item}
+        </Tag>
+      ))}
+
+      {extra > 0 && (
+        <Tag
+          style={{
+            color: "#1976d2",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          +{extra}more
+        </Tag>
+      )}
+    </>
+  );
+};
+
+const renderPinkTags = (items = [], max = 3) => {
+  if (!items.length) return "-";
+
+  const visible = items.slice(0, max);
+  const extra = items.length - max;
+
+  return (
+    <>
+      {visible.map((item, idx) => (
+        <Tag
+          key={idx}
+         style={{
+            background: "#E7F0FE",
+            borderRadius: 100,
+            border: "1px solid #1677FF",
+            marginBottom: 6,
+          }}
+        >
+          {item}
+        </Tag>
+      ))}
+
+      {extra > 0 && (
+        <Tag
+          style={{
+            color: "#1976d2",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          +{extra}more
+        </Tag>
+      )}
+    </>
+  );
+};
+
+
+
 const renderTagsWithMore = (items = [], max = 3) => {
   if (!items.length) return "-";
 
@@ -83,7 +161,7 @@ const ApplyBenchJob = ({ jobId }) => {
             ?.filter((s) => s.level === "primary")
             .map((s) => s.name) || [];
 
-        return renderTagsWithMore(skills, 3);
+        return renderGreenTags(skills, 3);
       },
     },
 
@@ -93,7 +171,7 @@ const ApplyBenchJob = ({ jobId }) => {
       key: "clouds",
       render: (_, r) => {
         const clouds = r.primaryClouds.map((s) => s.name) || [];
-        return renderTagsWithMore(clouds, 3);
+        return renderPinkTags(clouds, 3);
       },
     },
 
@@ -120,11 +198,35 @@ const ApplyBenchJob = ({ jobId }) => {
 
   return (
     <Spin spinning={loading}>
-      <h3>Apply with your Bench</h3>
-      {contextHolder}
-      <Button type="primary" style={{ marginBottom: 20 }} onClick={handleApply}>
-        Apply with Selected Bench
-      </Button>
+     <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  }}
+>
+  <h3 style={{ margin: 0 }}>Candidate List</h3>
+
+  <Button
+  onClick={handleApply}
+  disabled={!selectedRowKeys.length}
+  style={{
+    background: "#E6F0FF",
+    color: "#1D4ED8",
+    border: "1px solid #C7D2FE",
+    borderRadius: 20,
+    padding: "4px 16px",
+    height: 32,
+    fontSize: 13,
+    fontWeight: 500,
+  }}
+>
+  Apply With Selected Bench
+</Button>
+
+</div>
+
       <Table
         rowSelection={rowSelection}
         columns={columns}
