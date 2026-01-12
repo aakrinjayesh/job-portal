@@ -24,7 +24,7 @@ import {
   FileTextOutlined,
   DollarOutlined,
   ClockCircleOutlined,
-  UserOutlined
+  UserOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -281,235 +281,257 @@ const JobList = ({
 
         return (
           <Col xs={24} key={job.id} ref={isLastJob ? lastJobRef : null}>
-                         <Card
-  hoverable
-  onClick={() =>
-    navigate("/company/job/details", {
-      state: { job },
-    })
-  }
-  style={{
-    borderRadius: 12,
-    background: "#fff",
-    padding: 0,
-    cursor: "pointer",
-    border: "1px solid #EEEEEE",
-  }}
->
-  {/* ===== Header ===== */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 16,
-      flexWrap: "wrap",
-    }}
-  >
-    {/* Left */}
-    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-      {/* <Checkbox
+            <Card
+              hoverable
+              onClick={() =>
+                navigate("/company/job/details", {
+                  state: { job },
+                })
+              }
+              style={{
+                borderRadius: 12,
+                background: "#fff",
+                padding: 0,
+                cursor: "pointer",
+                border: "1px solid #EEEEEE",
+              }}
+            >
+              {/* ===== Header ===== */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 16,
+                  flexWrap: "wrap",
+                }}
+              >
+                {/* Left */}
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  {/* <Checkbox
         checked={selectedJobs.includes(job.id)}
         onClick={(e) => e.stopPropagation()}
         onChange={() => handleSelect(job.id)}
       /> */}
 
-      <img
-        src="https://placehold.co/60x60"
-        alt="logo"
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: 6,
-          border: "1px solid #F5F5F5",
-        }}
-      />
-
-      <div>
-        <div style={{ fontSize: 16, fontWeight: 590, color: "#212121" }}>
-          {job.role || job.title}
-        
-          {/* ⭐ Save Button – TOP RIGHT */}
-<div
-  onClick={(e) => {
-    e.stopPropagation(); // prevent navigation
-    handleSaveToggle(job.id);
-  }}
-  style={{
-    position: "absolute",
-    top: 16,
-    right: 16,
-    fontSize: 22,
-    cursor: "pointer",
-    zIndex: 2,
-  }}
->
-   <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
-                    {job?.isSaved ? (
-                      <StarFilled style={{ color: "#faad14" }} />
+                  <div>
+                    {job.companyLogo ? (
+                      <img
+                        src={job.companyLogo}
+                        alt="logo"
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 6,
+                          border: "1px solid #F5F5F5",
+                        }}
+                      />
                     ) : (
-                      <StarOutlined />
+                      <div
+                        style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 12,
+                          background:
+                            "linear-gradient(135deg, #1677FF, #69B1FF)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 22,
+                          fontWeight: 700,
+                          color: "#FFFFFF",
+                          boxShadow: "0 4px 10px rgba(22, 119, 255, 0.25)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {(job.companyName || job.role || job.title || "")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
                     )}
-                  </Tooltip>
-</div>
+                  </div>
 
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 590,
+                        color: "#212121",
+                      }}
+                    >
+                      {job.role || job.title}
 
-        </div>
-        <div style={{ fontSize: 14, color: "#666666" }}>
-          {job.companyName}
-        </div>
-        <div style={{ fontSize: 12, color: "#A3A3A3" }}>
-          Posted{" "}
-          {job?.updatedAt
-            ? dayjs(job.updatedAt).fromNow()
-            : "Recently"}
-        </div>
-      </div>
-    </div>
+                      {/* ⭐ Save Button – TOP RIGHT */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation(); // prevent navigation
+                          handleSaveToggle(job.id);
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: 16,
+                          right: 16,
+                          fontSize: 22,
+                          cursor: "pointer",
+                          zIndex: 2,
+                        }}
+                      >
+                        <Tooltip
+                          title={!job?.isSaved ? "Save Job" : "Unsave Job"}
+                        >
+                          {job?.isSaved ? (
+                            <StarFilled style={{ color: "#faad14" }} />
+                          ) : (
+                            <StarOutlined />
+                          )}
+                        </Tooltip>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 14, color: "#666666" }}>
+                      {job.companyName}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#A3A3A3" }}>
+                      Posted{" "}
+                      {job?.updatedAt
+                        ? dayjs(job.updatedAt).fromNow()
+                        : "Recently"}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
+              {/* ===== Job Meta ===== */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  marginTop: 20,
+                  flexWrap: "wrap",
+                  color: "#666",
+                  fontSize: 14,
+                }}
+              >
+                <span>
+                  <EnvironmentOutlined /> {job.location}
+                </span>
+                <Divider type="vertical" />
+                <span>
+                  <DollarOutlined /> {job.salary} PA
+                </span>
+                <Divider type="vertical" />
+                <span>
+                  <ClockCircleOutlined /> {job.employmentType}
+                </span>
+                <Divider type="vertical" />
+                <span>
+                  <UserOutlined /> {job.experience?.number}{" "}
+                  {job.experience?.type}
+                </span>
+              </div>
 
+              {/* ===== Clouds + Skills (ONE LINE) ===== */}
+              {(job.clouds?.length > 0 || job.skills?.length > 0) && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 16,
+                    marginTop: 20,
+                    width: "100%",
+                    flexWrap: "wrap", // responsive
+                  }}
+                >
+                  {/* ===== Related Clouds ===== */}
+                  {job.clouds?.length > 0 && (
+                    <div
+                      style={{
+                        flex: 1,
+                        padding: 16,
+                        border: "1px solid #EEEEEE",
+                        borderRadius: 8,
+                        minWidth: 260,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 510,
+                          marginBottom: 8,
+                          color: "#444444",
+                        }}
+                      >
+                        Related Clouds
+                      </div>
 
-    
-    </div>
- 
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {job.clouds.map((cloud, i) => (
+                          <Tag
+                            key={i}
+                            style={{
+                              background: "#E7F0FE",
+                              borderRadius: 100,
+                              border: "1px solid #1677FF",
+                            }}
+                          >
+                            {cloud}
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-  {/* ===== Job Meta ===== */}
-  <div
-    style={{
-      display: "flex",
-      gap: 16,
-      marginTop: 20,
-      flexWrap: "wrap",
-      color: "#666",
-      fontSize: 14,
-    }}
-  >
-    <span>
-      <EnvironmentOutlined /> {job.location}
-    </span>
-    <Divider type="vertical" />
-    <span>
-      <DollarOutlined /> {job.salary} PA
-    </span>
-    <Divider type="vertical" />
-    <span>
-      <ClockCircleOutlined /> {job.employmentType}
-    </span>
-    <Divider type="vertical" />
-    <span>
-      <UserOutlined /> {job.experience?.number}{" "}
-      {job.experience?.type}
-    </span>
-  </div>
+                  {/* ===== Related Skills ===== */}
+                  {job.skills?.length > 0 && (
+                    <div
+                      style={{
+                        flex: 1,
+                        padding: 16,
+                        border: "1px solid #EEEEEE",
+                        borderRadius: 8,
+                        minWidth: 260,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 510,
+                          marginBottom: 8,
+                          color: "#444444",
+                        }}
+                      >
+                        Related Skills
+                      </div>
 
-  
-
-  {/* ===== Clouds + Skills (ONE LINE) ===== */}
-{(job.clouds?.length > 0 || job.skills?.length > 0) && (
-  <div
-    style={{
-      display: "flex",
-      gap: 16,
-      marginTop: 20,
-      width: "100%",
-      flexWrap: "wrap", // responsive
-    }}
-  >
-    {/* ===== Related Clouds ===== */}
-    {job.clouds?.length > 0 && (
-      <div
-        style={{
-          flex: 1,
-          padding: 16,
-          border: "1px solid #EEEEEE",
-          borderRadius: 8,
-          minWidth: 260,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 510,
-            marginBottom: 8,
-            color: "#444444",
-          }}
-        >
-          Related Clouds
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-          }}
-        >
-          {job.clouds.map((cloud, i) => (
-            <Tag
-              key={i}
-              style={{
-                background: "#E7F0FE",
-                borderRadius: 100,
-                border: "1px solid #1677FF",
-              }}
-            >
-              {cloud}
-            </Tag>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {/* ===== Related Skills ===== */}
-    {job.skills?.length > 0 && (
-      <div
-        style={{
-          flex: 1,
-          padding: 16,
-          border: "1px solid #EEEEEE",
-          borderRadius: 8,
-          minWidth: 260,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 510,
-            marginBottom: 8,
-            color: "#444444",
-          }}
-        >
-          Related Skills
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-          }}
-        >
-          {job.skills.map((skill, i) => (
-            <Tag
-              key={i}
-              style={{
-                background: "#FBEBFF",
-                borderRadius: 100,
-                border: "1px solid #800080",
-              }}
-            >
-              {skill}
-            </Tag>
-          ))}
-        </div>
-       
-      </div>
-    )}
-   
-  </div>
-)}
-
-</Card>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {job.skills.map((skill, i) => (
+                          <Tag
+                            key={i}
+                            style={{
+                              background: "#FBEBFF",
+                              borderRadius: 100,
+                              border: "1px solid #800080",
+                            }}
+                          >
+                            {skill}
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
           </Col>
         );
       })}

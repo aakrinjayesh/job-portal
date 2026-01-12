@@ -14,6 +14,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members         OrganizationMember[]
+  jobs            Job[]
+  jobApplications JobApplication[]
+  savedCandidates SavedCandidate[]
+  activities      Activity[]
+
+  invites OrganizationInvite[]
+}
+
+model OrganizationMember {
+  id             String        @id @default(uuid())
+  organizationId String
+  userId         String        @unique
+  role           OrgMemberRole @default(COMPANY_USER)
+
+  user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+enum OrgMemberRole {
+  COMPANY_ADMIN
+  COMPANY_USER
+}
+
+model OrganizationInvite {
+  id             String        @id @default(uuid())
+  email          String
+  token          String        @unique
+  organizationId String
+  role           OrgMemberRole @default(COMPANY_USER)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([email])
+}
+
 model Users {
   id               String           @id @default(uuid())
   name             String
@@ -42,12 +92,11 @@ model Users {
   reviews          Review[]
   dashboards       Dashboard[]
 
-  recruiterActivities Activity[]         @relation("RecruiterActivities")
-  candidateActivities Activity[]         @relation("CandidateActivities")
+  recruiterActivities Activity[]          @relation("RecruiterActivities")
+  candidateActivities Activity[]          @relation("CandidateActivities")
   recruiterTodos      RecruiterTodo[]
-  whatsappMessages    WhatsAppMessage[]
-  whatsappTemplete    WhatsAppTemplate[]
   candidateRatings    CandidateRating[]
+  organizationMember  OrganizationMember?
 }
 
 enum Role {
@@ -111,10 +160,9 @@ model UserProfile {
   verificationOtp String?
   otpExpiry       DateTime?
 
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  jobApplications  JobApplication[]
-  whatsappMessages WhatsAppMessage[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  jobApplications JobApplication[]
 }
 
 model Skills {
@@ -197,12 +245,16 @@ model Job {
   deletedReason       String?
   deletedAt           DateTime?
   ApplicationLimit    Int?
+  companyLogo         String?
 
   postedById String?
   postedBy   Users?  @relation("UserPostedJobs", fields: [postedById], references: [id])
 
   applications JobApplication[]
   savedBy      SavedJob[]
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -233,6 +285,9 @@ model JobApplication {
   user             Users        @relation("UserAsCandidate", fields: [userId], references: [id], onDelete: Cascade)
   appliedBy        Users?       @relation("AppliedByUser", fields: [appliedById], references: [id])
   candidateProfile UserProfile? @relation(fields: [candidateProfileId], references: [id])
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
   analysis ApplicationAnalysis?
 
@@ -464,7 +519,8 @@ model Activity {
   note     ActivityNote?
   schedule ActivitySchedule?
 
-  whatsappMessages WhatsAppMessage[]
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -520,6 +576,9 @@ model SavedCandidate {
   recruiter        Users       @relation("RecruiterSavedCandidates", fields: [recruiterId], references: [id], onDelete: Cascade)
   candidateProfile UserProfile @relation("CandidateSavedByRecruiters", fields: [candidateProfileId], references: [id], onDelete: Cascade)
 
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
   @@unique([recruiterId, candidateProfileId]) // prevent duplicate saves
   @@index([recruiterId])
   @@index([candidateProfileId])
@@ -538,72 +597,6 @@ model RecruiterTodo {
   recruiter Users @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
 
   @@index([recruiterId])
-}
-
-enum WhatsAppDirection {
-  OUTGOING
-  INCOMING
-}
-
-enum WhatsAppStatus {
-  SENT
-  DELIVERED
-  READ
-  FAILED
-  RECEIVED
-}
-
-enum WhatsAppTemplateStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  DISABLED
-}
-
-model WhatsAppMessage {
-  id String @id @default(uuid())
-
-  activityId String
-  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-
-  recruiterId String
-  candidateId String
-
-  recruiter Users       @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
-  candidate UserProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-
-  direction WhatsAppDirection
-  status    WhatsAppStatus
-
-  message       String
-  templateName  String?
-  whatsappMsgId String?
-  errorMessage  String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([activityId])
-  @@index([recruiterId])
-  @@index([candidateId])
-  @@index([whatsappMsgId])
-}
-
-model WhatsAppTemplate {
-  id String @id @default(uuid())
-
-  name      String @unique
-  language  String @default("en")
-  content   String
-  variables Json?
-
-  status WhatsAppTemplateStatus @default(PENDING)
-
-  createdById String?
-  createdBy   Users?  @relation(fields: [createdById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model CandidateRating {

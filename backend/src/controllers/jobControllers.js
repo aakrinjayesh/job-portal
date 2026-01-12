@@ -721,7 +721,8 @@ const postJob = async (req, res) => {
       certifications,
       jobType,
       applicationDeadline,
-      ApplicationLimit
+      ApplicationLimit,
+      companyLogo
     } = req.body;
     
     logger.log('body ##########',JSON.stringify(req.body,null,2));
@@ -746,6 +747,7 @@ const postJob = async (req, res) => {
         jobType,
         applicationDeadline,
         ApplicationLimit,
+        companyLogo,
         postedById: userFromAuth.id, // optional
       },
     });
@@ -900,7 +902,8 @@ const editJob = async (req, res) => {
       jobType,
       status,
       applicationDeadline,
-      ApplicationLimit
+      ApplicationLimit,
+      companyLogo
     } = req.body;
 
     const userFromAuth = req.user;
@@ -949,7 +952,8 @@ const editJob = async (req, res) => {
         jobType,
         status,
         applicationDeadline,
-        ApplicationLimit
+        ApplicationLimit,
+        companyLogo
       },
     });
 

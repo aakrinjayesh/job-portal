@@ -150,11 +150,11 @@ const RecruiterJobList = () => {
     }
 
     const experienceValue = job.experience
-  ? {
-      number: Number(job.experience.number),
-      type: job.experience.type,
-    }
-  : undefined;
+      ? {
+          number: Number(job.experience.number),
+          type: job.experience.type,
+        }
+      : undefined;
 
     form.setFieldsValue({
       ...job,
@@ -164,10 +164,10 @@ const RecruiterJobList = () => {
         ? dayjs(job.applicationDeadline)
         : null,
       // ApplicationLimit: job?.ApplicationLimit || null,
-       ApplicationLimit:
-   job?.ApplicationLimit !== undefined
-     ? Number(job.ApplicationLimit)
-     : null,
+      ApplicationLimit:
+        job?.ApplicationLimit !== undefined
+          ? Number(job.ApplicationLimit)
+          : null,
     });
   };
 
@@ -233,7 +233,6 @@ const RecruiterJobList = () => {
     return Number(String(val).replace(/,/g, ""));
   };
 
-  
   const STEPS = [
     {
       key: "basic",
@@ -252,6 +251,7 @@ const RecruiterJobList = () => {
       fields: [
         "salary",
         "companyName",
+        "companyLogo",
         "certifications",
         "applicationDeadline",
         "ApplicationLimit",
@@ -262,8 +262,8 @@ const RecruiterJobList = () => {
   const handleOk = async () => {
     try {
       // const values = await form.validateFields();
-      const allFields = STEPS.flatMap(step => step.fields);
-const values = await form.validateFields(allFields);
+      const allFields = STEPS.flatMap((step) => step.fields);
+      const values = await form.validateFields(allFields);
       setPostLoading(true);
 
       let finalSalary = "";
@@ -278,7 +278,6 @@ const values = await form.validateFields(allFields);
 
       let payload = {
         role: values.role,
-       
 
         description: values.description,
         employmentType: values.employmentType,
@@ -288,12 +287,15 @@ const values = await form.validateFields(allFields);
         //   type: values.experience.type,
         // },
         experience:
-  values.experience?.number && values.experience?.type
-    ? {
-        number: String(values.experience.number),
-        type: values.experience.type,
-      }
-    : null,
+          values.experience?.number && values.experience?.type
+            ? {
+                number: String(values.experience.number),
+                type: values.experience.type,
+              }
+            : {
+                number: null,
+                type: null,
+              },
 
         experienceLevel: values.experienceLevel,
         // tenure: values.tenure,
@@ -315,16 +317,17 @@ const values = await form.validateFields(allFields);
         // salary: isSalaryRange ? Number(values.salary) : Number(values.salary),
         salary: finalSalary,
         companyName: values.companyName,
+        companyLogo: values.companyLogo,
         responsibilities: values.responsibilities || "", // string
         certifications: values.certifications || [],
         jobType: values.jobType,
         applicationDeadline: values?.applicationDeadline?.toISOString(),
         // ApplicationLimit: values?.ApplicationLimit,
-         ApplicationLimit:
-   values?.ApplicationLimit !== undefined &&
-   values?.ApplicationLimit !== null
-     ? Number(values.ApplicationLimit)
-     : undefined,
+        ApplicationLimit:
+          values?.ApplicationLimit !== undefined &&
+          values?.ApplicationLimit !== null
+            ? Number(values.ApplicationLimit)
+            : undefined,
       };
       console.log("Payload", payload);
       if (isEditing) {
@@ -348,13 +351,10 @@ const values = await form.validateFields(allFields);
     } catch (error) {
       console.error("Error saving job:", error);
       // messageApi.error("Failed to save job:" + error.response.data.message);
-       messageApi.error(
-   error?.response?.data?.message?.message ||
-   "Failed to save job"
- );
       messageApi.error(
-  error?.response?.data?.message || "Failed to save job"
-);
+        error?.response?.data?.message?.message || "Failed to save job"
+      );
+      messageApi.error(error?.response?.data?.message || "Failed to save job");
 
       setPostLoading(false);
     } finally {
@@ -525,7 +525,6 @@ const values = await form.validateFields(allFields);
     { title: "Location & Skills" },
     { title: "Salary & Other" },
   ];
-
 
   return (
     <>
@@ -766,23 +765,41 @@ const values = await form.validateFields(allFields);
                     onChange={() => handleSelect(job.id)}
                   />
 
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 12,
-                      background: "linear-gradient(135deg, #1677FF, #69B1FF)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 22,
-                      fontWeight: 700,
-                      color: "#FFFFFF",
-                      boxShadow: "0 4px 10px rgba(22, 119, 255, 0.25)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {(job.role || job.title || "").charAt(0).toUpperCase()}
+                  <div>
+                    {job.companyLogo ? (
+                      <img
+                        src={job.companyLogo}
+                        alt="logo"
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 6,
+                          border: "1px solid #F5F5F5",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 12,
+                          background:
+                            "linear-gradient(135deg, #1677FF, #69B1FF)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 22,
+                          fontWeight: 700,
+                          color: "#FFFFFF",
+                          boxShadow: "0 4px 10px rgba(22, 119, 255, 0.25)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {(job.companyName || job.role || job.title || "")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -989,8 +1006,6 @@ const values = await form.validateFields(allFields);
                 Fill in the required data below to create a new job post.
               </div>
             </div>
-
-            
 
             <Steps
               current={currentStep}
@@ -1496,6 +1511,10 @@ const values = await form.validateFields(allFields);
                     <Input placeholder="Company Name" />
                   </Form.Item>
 
+                  <Form.Item name="companyLogo" label="Company Logo">
+                    <Input placeholder="URL" />
+                  </Form.Item>
+
                   <Form.Item name="certifications" label="Certifications">
                     <ReusableSelect
                       placeholder="Select or add Certificate"
@@ -1558,19 +1577,18 @@ const values = await form.validateFields(allFields);
           )} */}
 
           <Button
-  type="primary"
-  onClick={async () => {
-    try {
-      await form.validateFields(STEPS[currentStep].fields);
-      setCurrentStep((prev) => prev + 1);
-    } catch (e) {
-      // stay on same step
-    }
-  }}
->
-  Next
-</Button>
-
+            type="primary"
+            onClick={async () => {
+              try {
+                await form.validateFields(STEPS[currentStep].fields);
+                setCurrentStep((prev) => prev + 1);
+              } catch (e) {
+                // stay on same step
+              }
+            }}
+          >
+            Next
+          </Button>
 
           {/* Final Create / Update */}
           {currentStep === STEPS.length - 1 && (
