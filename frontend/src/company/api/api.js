@@ -523,3 +523,19 @@ export async function DeleteRecruiterTodo(todoId) {
   }
 }
 
+// ✅ Save / Update Candidate Rating
+export async function SaveCandidateRating(payload) {
+  try {
+    const response = await axiosInstance.post(
+      "/candidate/rating",
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in SaveCandidateRating:", error);
+    throw error;
+  }
+}

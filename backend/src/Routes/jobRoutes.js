@@ -13,7 +13,8 @@ import {
   getJobDetails,
   getApplicantsByJobId,
   getUserAppliedJobsId, 
-  userUnsaveJob
+  userUnsaveJob,
+   saveCandidateRating  
 } from '../controllers/jobControllers.js'
 import { validateInput } from '../Middleware/inputValidator.js'
 import { authenticateToken } from '../Middleware/authMiddleware.js'
@@ -28,8 +29,11 @@ import {
   editJobValidator,
   deleteJobValidator,
   postedJobValidator,
-  getJobDeatilsValidator
+  getJobDeatilsValidator,
+   
 } from '../validators/userValidators.js'
+
+
 
 const JobRouters = express.Router()
 
@@ -80,6 +84,14 @@ JobRouters.delete('/jobs/delete', validateInput(deleteJobValidator), authenticat
 
 
 JobRouters.post("/job/applicants", authenticateToken, getApplicantsByJobId)
+
+JobRouters.post(
+  "/candidate/rating",
+  authenticateToken,
+  saveCandidateRating
+);
+
+
 
 
 export default JobRouters

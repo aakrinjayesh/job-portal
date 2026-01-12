@@ -1043,16 +1043,37 @@ const getApplicantsByJobId = async (req, res) => {
     // Fetch data (WITHOUT Prisma sorting)
     const applicants = await prisma.jobApplication.findMany({
       where: { jobId },
+      // include: {
+      //   candidateProfile: true,
+      //   analysis: {
+      //     select: {
+      //       fitPercentage: true,
+      //       details: true,
+      //       status: true
+      //     }
+      //   }
+      // }
+
       include: {
-        candidateProfile: true,
-        analysis: {
-          select: {
-            fitPercentage: true,
-            details: true,
-            status: true
-          }
-        }
-      }
+  candidateProfile: {
+    include: {
+      CandidateRating: {
+        select: {
+          rating: true,
+          comment: true,
+        },
+      },
+    },
+  },
+  analysis: {
+    select: {
+      fitPercentage: true,
+      details: true,
+      status: true,
+    },
+  },
+}
+
     });
 
     if (applicants.length === 0) {
@@ -1079,17 +1100,44 @@ const getApplicantsByJobId = async (req, res) => {
     });
 
     // Format response
-    const formattedApplicants = applicants.map((app) => ({
-      applicationId: app.id,
-      status: app.status,
-      appliedAt: app.appliedAt,
-      userId: app.id,
-      name: app.candidateProfile?.name,
-      email: app.candidateProfile?.email,
-      profile: app.candidateProfile,
-      matchScore: app.analysis?.fitPercentage ?? null,
-      aiAnalysis: app.analysis?.details ?? null
-    }));
+    // const formattedApplicants = applicants.map((app) => ({
+    //   applicationId: app.id,
+    //   status: app.status,
+    //   appliedAt: app.appliedAt,
+    //   userId: app.id,
+    //   name: app.candidateProfile?.name,
+    //   email: app.candidateProfile?.email,
+    //   profile: app.candidateProfile,
+    //   matchScore: app.analysis?.fitPercentage ?? null,
+    //   aiAnalysis: app.analysis?.details ?? null
+
+      
+    // }));
+
+    const formattedApplicants = applicants.map((app) => {
+  const ratings = app.candidateProfile?.CandidateRating || [];
+
+  const total = ratings.reduce((sum, r) => sum + r.rating, 0);
+  const avgRating = ratings.length ? total / ratings.length : null;
+
+  return {
+    applicationId: app.id,
+    status: app.status,
+    appliedAt: app.appliedAt,
+
+    name: app.candidateProfile?.name,
+    email: app.candidateProfile?.email,
+    profile: app.candidateProfile,
+
+    matchScore: app.analysis?.fitPercentage ?? null,
+ aiAnalysis: app.analysis?.details ?? null,
+    // ⭐ NEW FIELDS
+    avgRating,                 // e.g. 3.33
+    ratingCount: ratings.length,
+    ratingReviews: ratings,    // [{ rating, comment }]
+  };
+});
+
 
     return res.status(200).json({
       status: "success",
@@ -1143,6 +1191,51 @@ const getUserAppliedJobsId = async (req,res) =>{
       })
   }
 }
+ const saveCandidateRating = async (req, res) => {
+  try {
+    const recruiterId = req.user.id;
+    const { candidateProfileId, rating, comment } = req.body;
+
+    if (!candidateProfileId || !rating) {
+      return res.status(400).json({
+        status: "error",
+        message: "candidateProfileId and rating are required",
+      });
+    }
+
+    const result = await prisma.candidateRating.upsert({
+      where: {
+        recruiterId_candidateProfileId: {
+          recruiterId,
+          candidateProfileId,
+        },
+      },
+      create: {
+        recruiterId,
+        candidateProfileId,
+        rating,
+        comment,
+      },
+      update: {
+        rating,
+        comment,
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Rating saved successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("saveCandidateRating error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to save rating",
+    });
+  }
+};
+
 
 export {
   userApplyJob,
@@ -1158,5 +1251,6 @@ export {
   deleteJob,
   getJobDetails,
   getApplicantsByJobId,
-  getUserAppliedJobsId
+  getUserAppliedJobsId,
+ saveCandidateRating,
 }

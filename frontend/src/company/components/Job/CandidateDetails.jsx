@@ -20,12 +20,15 @@ import {
 } from "antd";
 import { ArrowLeftOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import CandidateActivity from "../activity/CandidateActivity";
+import { SaveCandidateRating } from "../../api/api";
+
+
 
 const { Title, Paragraph, Text } = Typography;
 
 const CandidateDetails = () => {
   const location = useLocation();
-  const { candidate, jobId } = location.state || {};
+  // const { candidate, jobId } = location.state || {};
   const navigate = useNavigate();
   const { id } = useParams(); // userId in URL
   const [messageApi, contextHolder] = message.useMessage();
@@ -34,6 +37,54 @@ const CandidateDetails = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewsByCandidate, setReviewsByCandidate] = useState({});
   const [tempReview, setTempReview] = useState("");
+
+  const [ratingValue, setRatingValue] = useState(0);
+
+const { candidate: initialCandidate, jobId } = location.state || {};
+const [candidate, setCandidate] = useState(initialCandidate);
+
+
+// const reloadCandidate = async () => {
+//   try {
+//     const res = await GetCandidateDeatils({ jobId });
+
+//     const updatedCandidate = res.data.find(
+//       (c) => c.profile.id === candidate.profile.id
+//     );
+
+//     if (updatedCandidate) {
+//       setCandidate(updatedCandidate); // 🔥 THIS updates UI
+//     }
+//   } catch (err) {
+//     console.error("Failed to reload candidate", err);
+//   }
+// };
+
+const reloadCandidate = async () => {
+  try {
+    const res = await SaveCandidateRating({
+      candidateProfileId: candidate.profile.id,
+      rating: ratingValue,
+      comment: tempReview,
+    });
+
+    // 🔥 MANUALLY update UI instead of refetching
+    setCandidate((prev) => ({
+      ...prev,
+      avgRating: ratingValue,
+      ratingReviews: [
+        ...(prev.ratingReviews || []),
+        {
+          rating: ratingValue,
+          comment: tempReview,
+        },
+      ],
+    }));
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   useEffect(() => {
     const savedReviews = localStorage.getItem("candidateReviews");
@@ -168,7 +219,12 @@ const CandidateDetails = () => {
                     </Text>
 
                     <Space size={8} align="center">
-                      <Rate allowHalf defaultValue={2.5} />
+                      {/* <Rate allowHalf defaultValue={2.5} /> */}
+
+                      <Rate
+  disabled
+  value={Math.round(candidate.avgRating || 0)}
+/>
 
                       <Text
                         style={{
@@ -246,7 +302,51 @@ const CandidateDetails = () => {
               </Row>
             </div>
 
+            {/* ⭐ Recruiter Reviews – AVERAGE BASED */}
+{candidate.ratingReviews?.length > 0 && (
+  <div style={{ marginBottom: 20 }}>
+    <Divider style={{ margin: "12px 0" }} />
+
+    <Title level={5} style={{ marginBottom: 8 }}>
+      Recruiter Reviews
+    </Title>
+
+    {/* ⭐ SHOW ONLY ONE AVERAGE STAR */}
+    <Space align="center" size={8} style={{ marginBottom: 12 }}>
+      <Rate
+        disabled
+        value={Math.round(candidate.avgRating || 0)}
+      />
+      <Text type="secondary" style={{ fontSize: 12 }}>
+        ({candidate.ratingReviews.length} reviews)
+      </Text>
+    </Space>
+
+    {/* 🧾 SHOW COMMENTS ONLY */}
+    {candidate.ratingReviews.map((review, index) => (
+      review.comment && (
+        <div
+          key={index}
+          style={{
+            padding: 10,
+            marginBottom: 6,
+            border: "1px solid #EDEDED",
+            borderRadius: 8,
+            background: "#FAFAFA",
+            fontSize: 13,
+          }}
+        >
+          {review.comment}
+        </div>
+      )
+    ))}
+  </div>
+)}
+
+
             {summary?.trim()?.length > 0 && (
+
+              
               <div
                 style={{
                   marginTop: 12,
@@ -919,6 +1019,9 @@ const CandidateDetails = () => {
           </div>
         </div>
 
+        <Rate value={ratingValue} onChange={setRatingValue} />
+
+
         {/* Textarea */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
@@ -939,7 +1042,7 @@ const CandidateDetails = () => {
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
           <Button onClick={() => setIsReviewModalOpen(false)}>Cancel</Button>
 
-          <Button
+          {/* <Button
             type="primary"
             onClick={() => {
               const updatedReviews = {
@@ -957,7 +1060,47 @@ const CandidateDetails = () => {
             }}
           >
             Add
-          </Button>
+          </Button> */}
+
+          {/* <Button
+  type="primary"
+  onClick={async () => {
+    if (!ratingValue) {
+      message.error("Please select rating");
+      return;
+    }
+
+    await SaveCandidateRating({
+      candidateProfileId: candidate.profile.id,
+      rating: ratingValue,
+      comment: tempReview,
+    });
+
+    await reloadCandidate(); 
+
+    message.success("Rating saved");
+    setIsReviewModalOpen(false);
+  }}
+>
+  Add
+</Button> */}
+
+<Button
+  type="primary"
+  onClick={async () => {
+    if (!ratingValue) {
+      message.error("Please select rating");
+      return;
+    }
+
+    await reloadCandidate();
+    message.success("Rating saved");
+    setIsReviewModalOpen(false);
+  }}
+>
+  Add
+</Button>
+
         </div>
       </Modal>
     </div>
