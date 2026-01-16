@@ -586,101 +586,40 @@ const RecruiterJobList = () => {
 
       {contextHolder}
 
-      <Modal
-        title={
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <div
-              style={{
-                fontSize: 24,
-                fontWeight: 510,
-                color: "#101828",
-              }}
-            >
-              Delete Selected Job(s)
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 400,
-                color: "#101828",
-              }}
-            >
-              Make sure to recheck before the final submission
-            </div>
-          </div>
-        }
+       <Modal
+        title="Delete Selected Job(s)"
         open={isModalOpen}
-        onOk={() => form.submit()}
+        onOk={handleConfirmDelete}
         confirmLoading={deleteLoading}
         onCancel={() => {
           setIsModalOpen(false);
           form.resetFields();
         }}
-        destroyOnClose
-        width={640}
         okText="Submit"
         cancelText="Cancel"
-        okButtonProps={{
-          style: {
-            borderRadius: 100,
-            padding: "0 24px",
-            fontWeight: 590,
-          },
-        }}
-        cancelButtonProps={{
-          style: {
-            borderRadius: 100,
-            padding: "0 24px",
-            fontWeight: 590,
-            borderColor: "#666666",
-            color: "#666666",
-          },
-        }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleConfirmDelete}
-          requiredMark={false}
-        >
-          {/* ===== Select Reason ===== */}
+        <Form form={form} layout="vertical">
           <Form.Item
+            label="Select Reason"
             name="reason"
             rules={[{ required: true, message: "Please select a reason" }]}
-            label={
-              <span style={{ fontSize: 13, fontWeight: 590, color: "#2E2E2E" }}>
-                <span style={{ color: "#B60554" }}>*</span> Select Reason
-              </span>
-            }
           >
-            <div
-              style={{
-                border: "1px solid #5C5C5C",
-                borderRadius: 8,
-                padding: "6px 8px",
-              }}
-            >
-              <Select
-                bordered={false}
-                placeholder="Choose a reason"
-                style={{ width: "100%" }}
-              >
-                <Option value="Job Position filled">Job Position filled</Option>
-                <Option value="Job Role & Requirement Changed">
-                  Job Role & Requirement Changed
-                </Option>
-                <Option value="Budget or Hiring Freeze">
-                  Budget or Hiring Freeze
-                </Option>
-                <Option value="Recruitment Strategy Change">
-                  Recruitment Strategy Change
-                </Option>
-                <Option value="Other">Other</Option>
-              </Select>
-            </div>
+            <Select placeholder="Choose a reason">
+              <Option value="Job Position filled">Job Position filled</Option>
+              <Option value="Job Role & Requirement Changed">
+                Job Role & Requirement Changed
+              </Option>
+              <Option value="Budget or Hiring Freeze">
+                Budget or Hiring Freeze
+              </Option>
+              <Option value="Recruitment Strategy Change">
+                Recruitment Strategy Change
+              </Option>
+              <Option value="Other">Other</Option>
+            </Select>
           </Form.Item>
 
-          {/* ===== Conditional Custom Reason ===== */}
+          {/* ✅ Show input if user selects "Other" */}
           <Form.Item
             noStyle
             shouldUpdate={(prev, current) => prev.reason !== current.reason}
@@ -688,40 +627,20 @@ const RecruiterJobList = () => {
             {({ getFieldValue }) =>
               getFieldValue("reason") === "Other" ? (
                 <Form.Item
+                  label="Custom Reason"
                   name="customReason"
                   rules={[
                     { required: true, message: "Please enter your reason" },
                     {
-                      pattern: /^[A-Za-z ]+$/,
-                      message: "Only letters and spaces are allowed",
+                      pattern: /^[A-Za-z]+$/,
+                      message: "Only letters, numbers, and spaces are allowed",
                     },
                   ]}
-                  label={
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 590,
-                        color: "#2E2E2E",
-                      }}
-                    >
-                      <span style={{ color: "#B60554" }}>*</span> Custom Reason
-                    </span>
-                  }
                 >
-                  <div
-                    style={{
-                      border: "1px solid #5C5C5C",
-                      borderRadius: 8,
-                      padding: 8,
-                    }}
-                  >
-                    <Input.TextArea
-                      rows={3}
-                      bordered={false}
-                      placeholder="Enter your custom reason"
-                      style={{ padding: 0, fontSize: 13 }}
-                    />
-                  </div>
+                  <Input.TextArea
+                    rows={3}
+                    placeholder="Enter your custom reason"
+                  />
                 </Form.Item>
               ) : null
             }

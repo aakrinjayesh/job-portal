@@ -177,7 +177,12 @@ const Signup = () => {
                 name="email"
                 rules={[
                   { required: true, message: "Enter email" },
-                  {
+                {
+  pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+  message:
+    "Spaces and invalid formats are not allowed.",
+},
+ {
                     validator: (_, value) => {
                       if (!value) return Promise.resolve();
                       if (role === "candidate" && !isPersonalEmail(value))
