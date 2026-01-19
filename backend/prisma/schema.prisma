@@ -25,6 +25,8 @@ model Organization {
   jobApplications JobApplication[]
   savedCandidates SavedCandidate[]
   activities      Activity[]
+  userProfile     UserProfile[]
+  savedJobs       SavedJob[]
 
   invites OrganizationInvite[]
 }
@@ -34,6 +36,7 @@ model OrganizationMember {
   organizationId String
   userId         String        @unique
   role           OrgMemberRole @default(COMPANY_USER)
+  permissions    OrgPermission @default(FULL_ACCESS)
 
   user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -49,12 +52,19 @@ enum OrgMemberRole {
   COMPANY_USER
 }
 
+enum OrgPermission {
+  VIEW_ONLY
+  VIEW_EDIT
+  FULL_ACCESS
+}
+
 model OrganizationInvite {
   id             String        @id @default(uuid())
   email          String
   token          String        @unique
   organizationId String
   role           OrgMemberRole @default(COMPANY_USER)
+  permissions    OrgPermission @default(VIEW_ONLY)
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -163,6 +173,8 @@ model UserProfile {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   jobApplications JobApplication[]
+  organizationId  String?
+  organization    Organization?    @relation(fields: [organizationId], references: [id])
 }
 
 model Skills {
@@ -333,10 +345,17 @@ model SavedJob {
   userId  String
   savedAt DateTime @default(now())
 
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
   job  Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, userId]) // Prevent duplicate saves
+  @@unique([jobId, organizationId])
   @@index([userId])
   @@index([jobId])
 }
