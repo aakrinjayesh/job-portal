@@ -610,13 +610,14 @@ model RecruiterTodo {
   recruiterId String
 
   title     String
-  completed Boolean @default(false)
-
+  completed Boolean  @default(false)
+  isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   recruiter Users @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
 
+  @@unique([recruiterId, title])
   @@index([recruiterId])
 }
 
