@@ -69,8 +69,7 @@ axiosInstance.interceptors.response.use(
         localStorage.removeItem("user");
         localStorage.removeItem("astoken");
         localStorage.removeItem("asuser");
-        localStorage.setItem("test","axios middleware")
-        // window.location.href = "/";
+        window.location.href = "/";
         return Promise.reject(err);
       }
     }
