@@ -1,189 +1,168 @@
-import { Dropdown, Badge, Avatar, Card, Popconfirm } from "antd";
-import {
-  MoreOutlined,
-  InfoCircleOutlined,
-  DeleteOutlined,
-  PaperClipOutlined,
-} from "@ant-design/icons";
+import React, { useState } from "react";
+import { Avatar, Badge, Typography, Dropdown, Popconfirm } from "antd";
+import { MoreOutlined, DeleteOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import moment from "moment";
-import { useState } from "react";
-import { deleteOneOnOneChat } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { getChatObjectMetadata, requestHandler } from "../../utils";
+import { deleteOneOnOneChat } from "../../api";
 import GroupChatDetailsModal from "./GroupChatDetailsModal";
 
-const ChatItem = ({
-  chat,
-  onClick,
-  isActive,
-  unreadCount = 0,
-  onChatDelete,
-}) => {
+const { Text } = Typography;
+
+const ChatItem = ({ chat, onClick, isActive, unreadCount = 0, onChatDelete }) => {
   const { user } = useAuth();
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
+
+  const chatMetadata = getChatObjectMetadata(chat, user);
 
   const deleteChat = async () => {
     await requestHandler(
       async () => await deleteOneOnOneChat(chat._id),
       null,
-      () => onChatDelete(chat._id),
-      alert
+      () => onChatDelete(chat._id)
     );
   };
 
-  const menuItems = chat.isGroupChat
-    ? [
-        {
-          key: "info",
-          label: "About group",
-          icon: <InfoCircleOutlined />,
-        },
-      ]
-    : [
-        {
-          key: "delete",
-          label: (
-            <Popconfirm
-              title="Delete this chat?"
-              description="This action cannot be undone."
-              okText="Delete"
-              cancelText="Cancel"
-              okButtonProps={{ danger: true }}
-              onConfirm={deleteChat}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span>Delete chat</span>
-            </Popconfirm>
-          ),
-          icon: <DeleteOutlined />,
-          danger: true,
-        },
-      ];
-
-  if (!chat) return null;
-
-  const chatMetadata = getChatObjectMetadata(chat, user);
-  // console.log("chatmetadata", chatMetadata);
-
   return (
     <>
+      {/* Group Chat Modal */}
       <GroupChatDetailsModal
         open={openGroupInfo}
         onClose={() => setOpenGroupInfo(false)}
         chatId={chat._id}
         onGroupDelete={onChatDelete}
       />
-      <Badge count={unreadCount > 9 ? "9+" : unreadCount} offset={[-10, 10]}>
-        <Card
-          hoverable
-          // className={isActive ? "border-gray-500" : ""}
 
-          style={{
-            marginBottom: 8,
-
-            borderRadius: 24,
-            background: isActive
-              ? "#f5f5f5"
-              : unreadCount > 0
-              ? "#f6ffed"
-              : "transparent",
-            borderColor: unreadCount > 0 ? "#52c41a" : undefined,
+      <div
+        style={{
+          width: "100%",
+          padding: 16,
+          background: isActive ? "lightblue" : "#FFFFFF",
+          color: isActive ? "white" : "#0A0A0A",
+          borderBottom: "1px solid #F3F4F6",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          cursor: "pointer",
+          transition: "background 0.2s ease",
+        }}
+        onClick={() => onClick(chat)}
+      >
+        {/* Dropdown Menu */}
+        <Dropdown
+          trigger={["click"]}
+          menu={{
+            items: chat.isGroupChat
+              ? [
+                  {
+                    key: "info",
+                    label: "Group Info",
+                    icon: <InfoCircleOutlined />,
+                  },
+                ]
+              : [
+                  {
+                    key: "delete",
+                    label: (
+                      <Popconfirm title="Delete chat?" onConfirm={deleteChat}>
+                        Delete Chat
+                      </Popconfirm>
+                    ),
+                    icon: <DeleteOutlined />,
+                    danger: true,
+                  },
+                ],
+            onClick: ({ key }) => {
+              if (key === "info") setOpenGroupInfo(true);
+            },
           }}
-          onClick={() => onClick(chat)}
-          // bodyStyle={{ padding: "12px 16px" }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* <Dropdown
-              // menu={{ items: menuItems }}
-              onClick={menuOnClick}
-              items={menuItems}
-              trigger={["click"]}
-              placement="bottomLeft"
-            >
-              <MoreOutlined
-                style={{ fontSize: 20, cursor: "pointer", color: "#8c8c8c" }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </Dropdown> */}
+          <MoreOutlined
+            onClick={(e) => e.stopPropagation()}
+            style={{ color: "#9CA3AF" }}
+          />
+        </Dropdown>
 
-            <Dropdown
-              menu={{
-                items: menuItems,
-                onClick: ({ key }) => {
-                  if (key === "info") setOpenGroupInfo(true);
-                },
-              }}
-              trigger={["click"]}
-              placement="bottomLeft"
-            >
-              <MoreOutlined
-                style={{ fontSize: 20, cursor: "pointer", color: "#8c8c8c" }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </Dropdown>
+        {/* Avatar */}
+        <Avatar
+          size={48}
+          src={chatMetadata.avatar || "https://placehold.co/48x48"}
+          style={{ borderRadius: 9999 }}
+        />
 
-            <div style={{ flexShrink: 0 }}>
-              {/* {chat.isGroupChat ? (
-                <Avatar.Group maxCount={3} size={48}>
-                  {chat.participants.slice(0, 3).map((p) => (
-                    <Avatar key={p._id} src={p.avatar.url} />
-                  ))}
-                </Avatar.Group>
-              ) : (
-                <Avatar src={chatMetadata.avatar} size={48} />
-              )} */}
-              <Avatar src={chatMetadata.avatar} size={48} />
-            </div>
-
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              <div
-                style={{
-                  fontWeight: unreadCount > 0 ? 600 : 400,
-                  marginBottom: 4,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {chatMetadata.title}
-              </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "#8c8c8c",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                {chat.lastMessage &&
-                  chat.lastMessage.attachments.length > 0 && (
-                    <PaperClipOutlined style={{ marginRight: 4 }} />
-                  )}
-                <span
-                  style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {chatMetadata.lastMessage}
-                </span>
-              </div>
-            </div>
-
-            <div
+        {/* Name + Last Message */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ overflow: "hidden" }}>
+            <Text
               style={{
-                fontSize: 11,
-                color: "#8c8c8c",
-                textAlign: "right",
-                flexShrink: 0,
+                fontSize: 16,
+                fontWeight: unreadCount ? 600 : 500,
+                color: "#0A0A0A",
+                display: "block",
+                lineHeight: "24px",
+              }}
+              ellipsis
+            >
+              {chatMetadata.title}
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#6A7282",
+              }}
+              ellipsis
+            >
+              {chatMetadata.lastMessage}
+            </Text>
+          </div>
+
+          {/* Time + Unread Badge */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              height: 48,
+              marginLeft: 12,
+              color:"white"
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#6A7282",
+                lineHeight: "16px",
               }}
             >
               {moment(chat.updatedAt).fromNow()}
-            </div>
+            </Text>
+
+            {unreadCount > 0 && (
+              <Badge
+                count={unreadCount > 9 ? "9+" : unreadCount}
+                style={{
+                  backgroundColor: "#00C950",
+                  fontSize: 12,
+                  lineHeight: "16px",
+                  height: 20,
+                  minWidth: 20,
+                  borderRadius: 9999,
+                }}
+              />
+            )}
           </div>
-        </Card>
-      </Badge>
+        </div>
+      </div>
     </>
   );
 };

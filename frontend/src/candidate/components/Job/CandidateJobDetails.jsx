@@ -85,7 +85,7 @@ const CandidateJobDetails = () => {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
+    <div style={{ width: "100%", margin: "0 auto", padding: 24 }}>
       {contextHolder}
 
       {/* ---------------------------------------------------- */}
@@ -118,70 +118,157 @@ const CandidateJobDetails = () => {
         Back
       </Button>
 
-      <Card
-        style={{ borderRadius: 12, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
+     <Card
+  style={{
+    borderRadius: 14,
+    border: "1px solid #f0f0f0",
+    boxShadow: "none",
+    padding: 24
+  }}
+>
+  {/* ===== HEADER ===== */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    }}
+  >
+    <div>
+      <Title level={4} style={{ marginBottom: 0 }}>
+        {job.role}
+      </Title>
+      <Text type="secondary">{job.companyName}</Text>
+    </div>
+
+    <Tag
+      color={job.status === "Closed" ? "error" : "success"}
+      style={{
+        borderRadius: 20,
+        padding: "2px 12px",
+        fontSize: 12,
+      }}
+    >
+      {job.status}
+    </Tag>
+  </div>
+
+  <Divider style={{ margin: "16px 0" }} />
+
+  {/* ===== DETAILS GRID ===== */}
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: 20,
+    }}
+  >
+    <div>
+      <Text strong>Employment Type</Text>
+      <div>{job.employmentType}</div>
+    </div>
+
+    <div>
+      <Text strong>Experience Required</Text>
+      <div>
+        {job.experience?.number} {job.experience?.type}
+      </div>
+    </div>
+
+    <div>
+      <Text strong>Salary</Text>
+      <div>₹ {job.salary} LPA</div>
+    </div>
+
+    <div>
+      <Text strong>Location</Text>
+      <div>{job.location}</div>
+    </div>
+
+    <div>
+      <Text strong>Job Type</Text>
+      <div>{job.jobType}</div>
+    </div>
+
+    <div>
+      <Text strong>Work Shift</Text>
+      <div>{job.workShift || "Morning Shift"}</div>
+    </div>
+  </div>
+
+  <Divider style={{ margin: "16px 0" }} />
+  {/* ===== CLOUDS ===== */}
+  <Text strong>Clouds:</Text>
+  <div
+    style={{
+      marginTop: 8,
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8,
+    }}
+  >
+    {job.clouds?.map((cloud, i) => (
+      <Tag
+        key={i}
+        style={{
+                              background: "#E7F0FE",
+                              borderRadius: 100,
+                              border: "1px solid #1677FF",
+                            }}
       >
-        <Title level={3}>{job.role}</Title>
-        <Text strong>{job.companyName}</Text>
+        {cloud}
+      </Tag>
+    ))}
+  </div>
 
-        <Space style={{ display: "block", marginTop: 8 }}>
-          <EnvironmentOutlined /> <Text>{job.location}</Text>
-        </Space>
+   <Divider style={{ margin: "16px 0" }} />
 
-        <Divider />
+  {/* ===== SKILLS ===== */}
+  <Text strong>Skills:</Text>
+  <div
+    style={{
+      marginTop: 8,
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8,
+    }}
+  >
+    {job.skills?.map((skill, i) => (
+      <Tag
+        key={i}
+        style={{
+          background: "#FBEBFF",
+          borderRadius: 100,
+          border: "1px solid #800080",
+        }}
+      >
+        {skill}
+      </Tag>
+    ))}
+  </div>
 
-        <Paragraph>
-          <Text strong>Description:</Text> <br />
-          {job.description}
-        </Paragraph>
+  <Divider style={{ margin: "16px 0" }} />
 
-        <Paragraph>
-          <Text strong>Employment Type:</Text> {job.employmentType}
-        </Paragraph>
+  {/* ===== DESCRIPTION ===== */}
+  <Text strong>Description</Text>
+  <Paragraph style={{ marginTop: 6, color: "#555" }}>
+    {job.description}
+  </Paragraph>
 
-        <Paragraph>
-          <Text strong>Experience Required:</Text>
-          {job.experience && (
-            <Text>
-              {job.experience.number} {job.experience.type}
-            </Text>
-          )}
-        </Paragraph>
+  <Divider />
 
-        <Paragraph>
-          <Text strong>Salary:</Text> ₹ {job.salary}
-        </Paragraph>
+  {/* ===== APPLY BUTTON ===== */}
+  <Button
+    type="primary"
+    onClick={handleApply}
+    loading={ApplyLoading}
+    disabled={isApplied || type === "apply"}
+    style={{ borderRadius: 8 }}
+  >
+    {isApplied || type === "apply" ? "Applied" : "Apply Now"}
+  </Button>
+</Card>
 
-        <Paragraph>
-          <Text strong>Job Type:</Text> {job.jobType}
-        </Paragraph>
-
-        <Paragraph>
-          <Text strong>Status:</Text> {job.status}
-        </Paragraph>
-
-        <Divider />
-
-        <Text strong>Skills Required:</Text>
-        <div style={{ marginTop: 8 }}>
-          {job.skills?.map((skill, idx) => (
-            <Tag color="blue" key={idx}>
-              {skill}
-            </Tag>
-          ))}
-        </div>
-
-        <Divider />
-
-        <Button
-          type="primary"
-          onClick={handleApply}
-          loading={ApplyLoading}
-          disabled={isApplied || type === "apply"}
-        >
-          {isApplied || type === "apply" ? "Applied" : "Apply Now"}
-        </Button>
-      </Card>
     </div>
   );
 };

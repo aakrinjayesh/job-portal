@@ -21,8 +21,10 @@ import {
   LogoutOutlined,
   ArrowLeftOutlined,
   BellOutlined,
+  UserOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import { logout } from "../../candidate/api/api";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const { Sider, Header, Content } = Layout;
@@ -40,52 +42,90 @@ const CompanyLayout = ({ children }) => {
   };
 
   /* 🔗 Menu → Route mapping */
-  const menuRoutes = {
-    dashboard: "/company/dashboard",
-    jobs: "/company/jobs",
-    myactivity: "/company/my-activity",
-    findjob: "/company/job/find",
-    savedjobs: "/company/jobs/saved",
-    bench: "/company/bench",
-    findbench: "/company/bench/find",
-    savedcandidates: "/company/bench/saved",
-    chat: "/company/chat",
-    settings: "/company/settings",
+ const menuRoutes = {
+  dashboard: ["/company/dashboard"],
+
+  jobs: [
+    "/company/jobs",
+    //"/company/job", // covers /company/job/details & /company/job/:id
+  ],
+  jobdetails:["/company/job/details"],
+
+  viewcandidates: ["/company/candidates"],
+
+  myactivity: ["/company/my-activity"],
+
+  findjob: ["/company/job/find"],
+
+  savedjobs: ["/company/jobs/saved"],
+
+  bench: [
+    "/company/bench",
+  ],
+
+  findbench: ["/company/bench/find"],
+
+  savedcandidates: ["/company/bench/saved"],
+
+  chat: ["/company/chat"],
+
+  profile: ["/company/profile"],
+
+  settings: ["/company/settings"],
+};
+
+const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      // ignore errors
+    } finally {
+      localStorage.clear();
+      // window.location.href = "/";
+      navigate("/login");
+    }
   };
+  
+
 
   /* 🎯 Active menu */
-  const selectedKey = React.useMemo(() => {
-  const currentPath = location.pathname;
+const selectedKey = React.useMemo(() => {
+  const path = location.pathname;
 
-  // sort routes by length (longest first)
+  // 🔑 sort routes by longest path first
   const sortedRoutes = Object.entries(menuRoutes).sort(
-    (a, b) => b[1].length - a[1].length
+    (a, b) => Math.max(...b[1].map(p => p.length)) -
+              Math.max(...a[1].map(p => p.length))
   );
 
-  const match = sortedRoutes.find(([, path]) =>
-    currentPath.startsWith(path)
-  );
+  for (const [key, paths] of sortedRoutes) {
+    if (paths.some((p) => path.startsWith(p))) {
+      return key;
+    }
+  }
 
-  return match ? match[0] : "dashboard";
+  return "dashboard";
 }, [location.pathname]);
-
 
   /* 🧠 Menu click handler */
   const onMenuClick = ({ key }) => {
     if (key === "logout") {
-      localStorage.clear();
-      navigate("/login");
+      handleLogout();
       return;
     }
 
-    const route = menuRoutes[key];
-    if (route) navigate(route);
+  const route = menuRoutes[key];
+if (route && route.length) {
+  navigate(route[0]); // always navigate to first route
+}
   };
 
   /* 🧭 Breadcrumb + title logic */
   const pageTitleMap = {
     dashboard: "Dashboard",
     jobs: "My Jobs",
+    jobdetails: "Job Details",
+    viewcandidates: "View Candidates",
     myactivity: "My Activity",
     findjob: "Find Jobs",
     savedjobs: "Saved Jobs",
@@ -93,6 +133,7 @@ const CompanyLayout = ({ children }) => {
     findbench: "Find Candidate",
     savedcandidates: "Saved Candidates",
     chat: "Chats",
+    profile: "Profile",
     settings: "Settings",
   };
 
@@ -195,10 +236,12 @@ const CompanyLayout = ({ children }) => {
         {/* ⚙️ Bottom Menu */}
         <Menu
           mode="inline"
+          selectedKeys={[selectedKey]} 
           theme="dark"
           onClick={onMenuClick}
           style={{ background: "transparent", border: "none" }}
           items={[
+            { key: "profile", icon: <UserOutlined />, label: "Profile"},
             { key: "settings", icon: <SettingOutlined />, label: "Settings" },
             { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
           ]}
@@ -250,7 +293,7 @@ const CompanyLayout = ({ children }) => {
             </div>
           </Space>
 
-          {/* Right */}
+          {/* Right
           <Space size={24}>
             <Button
               shape="circle"
@@ -261,7 +304,7 @@ const CompanyLayout = ({ children }) => {
                 width: 48,
                 height: 48,
               }}
-            />
+            /> */}
 
             <Space>
               <Avatar
@@ -296,7 +339,7 @@ const CompanyLayout = ({ children }) => {
 </div>
 
             </Space>
-          </Space>
+          {/* </Space> */}
         </Header>
 
         {/* 🧾 Content */}

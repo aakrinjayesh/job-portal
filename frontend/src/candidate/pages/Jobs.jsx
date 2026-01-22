@@ -35,7 +35,6 @@ function Jobs() {
     setLoading(true);
 
     try {
-      console.log("api call#############", pageNum, "filters:", filters);
 
       // ✅ Pass filters to API for server-side filtering
       const response = await GetJobsList(
@@ -62,7 +61,6 @@ function Jobs() {
       }
     } catch (error) {
       if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
-        console.error("Error fetching jobs:", error);
         message.error(
           "Failed to fetch jobs: " + error?.response?.data?.message
         );
@@ -111,7 +109,6 @@ function Jobs() {
           setIds(resp.jobids);
         }
       } catch (error) {
-        console.log("Background fetch error:", error);
         // ✅ Silent fail - doesn't block UI or show error
       }
     };
@@ -128,7 +125,6 @@ function Jobs() {
 
   // ✅ Handle filter changes - reset to page 1 and fetch from server
   const handleFiltersChange = (filters) => {
-    console.log("Received filters:", filters);
     setCurrentFilters(filters);
     setPage(1);
     setHasMore(true);

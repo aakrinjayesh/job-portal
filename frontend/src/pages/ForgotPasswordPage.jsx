@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { GenerateOtp, ValidateOtp } from "../candidate/api/api";
 
 import personImg from "../assets/login_design.png";
+import cloudImage from "../assets/Fill-1.png";
 import salaryImg from "../assets/salary.png";
 import jobroleImg from "../assets/jobrole.png";
 import groupImg from "../assets/Group.png";
@@ -168,43 +169,71 @@ const ForgotPasswordPage = () => {
         </div>
 
         {/* RIGHT HERO */}
-        <div style={styles.right}>
-          <div style={styles.heroText}>
-            <Title
-              level={2}
-              style={{ color: "#fff", fontWeight: 700, lineHeight: 1.25 }}
-            >
-              Forgot password? <br />
-              Quick & secure.
-            </Title>
-            <Text style={{ color: "#e6e6ff", fontSize: 14 }}>
-              Enter your email and OTP to reset your password quickly.
-            </Text>
-          </div>
-
-          {/* Floating cards */}
-          <div style={styles.salaryBadge}>
-            <img src={salaryImg} alt="Salary" style={{ width: 18, height: 18 }} />
-            ₹8 – ₹14 LPA
-          </div>
-          <div style={styles.searchCard}>🔍 Find the role that fits your goals.</div>
-          <div style={styles.jobCard}>
-            <img src={jobroleImg} alt="Jobrole" style={{ width: 18, height: 18 }} />
-            <strong>Salesforce Developer</strong>
-            <div style={{ fontSize: 13, opacity: 0.8 }}>New Delhi</div>
-            <div style={{ fontWeight: 600 }}>₹12,00,000 PA</div>
-          </div>
-          <div style={styles.jobType}>
-            <img src={groupImg} alt="Group" style={{ width: 18, height: 18 }} />
-            <span style={{ marginLeft: 8 }}>Fulltime Job</span>
-          </div>
-          <div style={styles.nameTag}>
-            <img src={andrewImg} alt="Andrew" style={{ width: 18, height: 18 }} />Andrew
-          </div>
+         <div style={styles.right}>
+                 <img src={cloudImage} alt="cloud" style={styles.cloud} />
+                 <img src={personImg} alt="person" style={styles.person} />
+                 {/* HERO TEXT */}
+                 <div style={styles.heroText}>
+                   <Title
+                     level={2}
+                     style={{
+                       color: "#fff",
+                       fontSize: "20px",
+                       fontWeight: 700,
+                       //lineHeight: 1.25,
+                       marginBottom: 12,
+                     }}
+                   >
+                     Dream jobs <span style={{ opacity: 0.7 }}>don’t wait —</span>
+                     <br />
+                     neither should you.
+                   </Title>
        
-
-          <img src={personImg} alt="person" style={styles.person} />
-        </div>
+                   <Text style={{ color: "#e6e6ff", fontSize: "14px" }}>
+                     QuickHire SF. Our new Lightning Platform gives you the fastest,
+                     most complete way to find and apply for new job opportunities.
+                   </Text>
+                 </div>
+       
+                 {/* FLOATING CARDS */}
+                 <div style={styles.salaryBadge}>
+                   <img
+                     src={salaryImg}
+                     alt="Salary"
+                     style={{ width: 18, height: 18 }}
+                   />
+                   ₹8 – ₹14 LPA
+                 </div>
+       
+                 <div style={styles.searchCard}>
+                   🔍 <span>Find the role that fits your goals.</span>
+                 </div>
+       
+                 <div style={styles.jobCard}>
+                   <img
+                     src={jobroleImg}
+                     alt="Jobrole"
+                     style={{ width: 18, height: 18 }}
+                   />
+                   <strong>Salesforce Developer</strong>
+                   <div style={{ fontSize: 13, opacity: 0.8 }}>New Delhi</div>
+                   <div style={{ fontWeight: 600 }}>₹12,00,000 PA</div>
+                 </div>
+       
+                 <div style={styles.jobType}>
+                   <img src={groupImg} alt="Group" style={{ width: 18, height: 18 }} />
+                   <span style={{ marginLeft: 8 }}>Fulltime Job</span>
+                 </div>
+       
+                 <div style={styles.nameTag}>
+                   <img
+                     src={andrewImg}
+                     alt="Andrew"
+                     style={{ width: 18, height: 18 }}
+                   />
+                   Andrew
+                 </div>
+               </div>
       </div>
       <AppFooter />
     </>
@@ -212,7 +241,24 @@ const ForgotPasswordPage = () => {
 };
 
 const styles = {
-  container: { display: "flex", minHeight: "100vh" },
+  header: {
+    height: 70,
+    padding: "0 60px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    background: "#fff",
+    borderBottom: "1px solid #eee",
+  },
+  logo: { fontWeight: 600, fontSize: 18 },
+  menu: { display: "flex", gap: 24, color: "#555" },
+
+  container: {
+    display: "flex",
+    minHeight: "100vh",
+    //alignItems: "stretch",
+  },
+
   left: { width: "50%", padding: 60, background: "#fff" },
   right: {
     width: "50%",
@@ -221,41 +267,72 @@ const styles = {
     position: "relative",
     overflow: "hidden",
   },
-  heroText: { marginBottom: 40 },
+
+  cloud: {
+    position: "absolute",
+    left: 100,
+    bottom: 40,
+    width: 420,
+    height: "auto",
+    zIndex: 1,
+    opacity: 0.9,
+  },
+
+  heroText: {
+    color: "#A9B2FF",
+    fontFamily: "SF Pro",
+    fontSize: 40,
+    fontStyle: "normal",
+    fontWeight: 400,
+    //lineHeight: "48px",
+    letterSpacing: "-0.48px",
+  },
+
+  badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
+  badge: {
+    background: "#fff",
+    padding: "8px 16px",
+    borderRadius: 20,
+    fontWeight: 500,
+  },
+
   salaryBadge: {
     position: "absolute",
-    top: 260,
-    left: 60,
+    top: "263px",
+    left: "62px",
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
     fontWeight: 600,
     zIndex: 3,
   },
+
   searchCard: {
     position: "absolute",
-    bottom: 230,
-    right: 375,
+    bottom: "200px",
+    right: 450,
     background: "#fff",
     padding: "10px 14px",
     borderRadius: 14,
     fontSize: 14,
     zIndex: 3,
   },
+
   jobCard: {
     position: "absolute",
     top: 280,
-    right: 24,
+    right: "24px",
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
     width: 220,
     zIndex: 3,
   },
+
   jobType: {
     position: "absolute",
-    top: 376,
-    right: 170,
+    top: "376px",
+    right: "170px",
     background: "#fff",
     padding: "6px 14px",
     borderRadius: 20,
@@ -266,6 +343,7 @@ const styles = {
     alignItems: "center",
     gap: 8,
   },
+
   nameTag: {
     position: "absolute",
     bottom: 90,
@@ -277,7 +355,15 @@ const styles = {
     fontWeight: 600,
     zIndex: 3,
   },
-  person: { right: 80, top: 5, height: 350, zIndex: 2 },
+
+  person: {
+    position: "absolute",
+    right: 60,
+    bottom: 0,
+    height: 380,
+    zIndex: 2,
+  },
+
   loginCard: {
     maxWidth: 420,
     margin: "0 auto",
@@ -286,6 +372,61 @@ const styles = {
     borderRadius: 12,
     boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
     background: "#fff",
+  },
+
+  footer: {
+    height: 60,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#fff",
+    borderTop: "1px solid #eee",
+  },
+
+  footerWrapper: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    //marginTop: 40,   // ❗ REMOVE negative margin
+    paddingBottom: 40,
+  },
+
+  footerCard: {
+    background: "#fff",
+    padding: "24px 40px",
+    borderRadius: 16,
+    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+    textAlign: "center",
+    maxWidth: 900,
+    width: "90%",
+  },
+
+  footerText: {
+    fontSize: 14,
+    fontWeight: 500,
+    marginBottom: 20,
+  },
+
+  footerLogos: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 24,
+    flexWrap: "wrap",
+  },
+
+  // logoBox: {
+  //   background: "#fff",
+  //   border: "1px solid #eee",
+  //   borderRadius: 12,
+  //   padding: "8px 16px",
+  //   display: "flex",
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  // },
+
+  logoBoxImg: {
+    height: 24,
   },
 };
 

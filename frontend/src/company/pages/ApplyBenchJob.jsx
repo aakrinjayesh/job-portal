@@ -12,15 +12,22 @@ const renderGreenTags = (items = [], max = 3) => {
   const extra = items.length - max;
 
   return (
-    <>
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 6,
+        maxWidth: "100%",
+      }}
+    >
       {visible.map((item, idx) => (
         <Tag
           key={idx}
-           style={{
+          style={{
             background: "#FBEBFF",
             borderRadius: 100,
             border: "1px solid #800080",
-            marginBottom: 6,
+            whiteSpace: "normal",
           }}
         >
           {item}
@@ -34,14 +41,16 @@ const renderGreenTags = (items = [], max = 3) => {
             background: "transparent",
             border: "none",
             cursor: "pointer",
+            padding: 0,
           }}
         >
-          +{extra}more
+          +{extra} more
         </Tag>
       )}
-    </>
+    </div>
   );
 };
+
 
 const renderPinkTags = (items = [], max = 3) => {
   if (!items.length) return "-";
@@ -50,15 +59,22 @@ const renderPinkTags = (items = [], max = 3) => {
   const extra = items.length - max;
 
   return (
-    <>
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 6,
+        maxWidth: "100%",
+      }}
+    >
       {visible.map((item, idx) => (
         <Tag
           key={idx}
-         style={{
+          style={{
             background: "#E7F0FE",
             borderRadius: 100,
             border: "1px solid #1677FF",
-            marginBottom: 6,
+            whiteSpace: "normal",
           }}
         >
           {item}
@@ -72,14 +88,16 @@ const renderPinkTags = (items = [], max = 3) => {
             background: "transparent",
             border: "none",
             cursor: "pointer",
+            padding: 0,
           }}
         >
-          +{extra}more
+          +{extra} more
         </Tag>
       )}
-    </>
+    </div>
   );
 };
+
 
 
 
@@ -151,7 +169,17 @@ const ApplyBenchJob = ({ jobId }) => {
   const columns = [
     { title: "Name", dataIndex: "name", width: 200 },
 
-    // ✅ SKILLS COLUMN
+    // ✅ CLOUDS COLUMN
+    {
+      title: "Clouds",
+      key: "clouds",
+      render: (_, r) => {
+        const clouds = r.primaryClouds.map((s) => s.name) || [];
+        return renderPinkTags(clouds, 3);
+      },
+    },
+
+     // ✅ SKILLS COLUMN
     {
       title: "Skills",
       key: "skills",
@@ -162,16 +190,6 @@ const ApplyBenchJob = ({ jobId }) => {
             .map((s) => s.name) || [];
 
         return renderGreenTags(skills, 3);
-      },
-    },
-
-    // ✅ CLOUDS COLUMN
-    {
-      title: "Clouds",
-      key: "clouds",
-      render: (_, r) => {
-        const clouds = r.primaryClouds.map((s) => s.name) || [];
-        return renderPinkTags(clouds, 3);
       },
     },
 

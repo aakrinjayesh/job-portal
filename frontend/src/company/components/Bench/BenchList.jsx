@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { Row, Col, Select } from "antd";
+import { Row, Col, Dropdown,Button,Tooltip } from "antd";
+import {
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  DownOutlined,
+  LeftOutlined,
+} from "@ant-design/icons";
 import BenchCard from "./BenchCard";
 
 const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
   const [sortedCandidates, setSortedCandidates] = useState([]);
   const [sortOrder, setSortOrder] = useState("dsc");
 
-  const sortOptions = [
-    { value: "dsc", label: "Posted Time: Newest First" },
-    { value: "asc", label: "Posted Time: Oldest First" },
-    { value: "exp", label: "Experience: High to Low" },
-    { value: "rate", label: "Rate: High to Low" },
-  ];
+ const sortMenu = {
+  items: [
+    { key: "dsc", label: "Posted Time" },
+    { key: "asc", label: "Posted Time (Oldest)" },
+    { key: "exp", label: "Experience (High to Low)" },
+    { key: "rate", label: "Rate (High to Low)" },
+  ],
+  onClick: ({ key }) => handleSort(key),
+};
+
 
   /* 🔁 Sync incoming bench data */
   useEffect(() => {
@@ -62,41 +72,57 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
   return (
     <div>
       {/* 🔝 Header */}
-      <div
+     <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  }}
+>
+
+  <div style={{ fontSize: 20, fontWeight: 700 }}>
+      {/* FILTER TOGGLE */}
+    <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
+      <Button
+        type="text"
+        onClick={toggleFilter}
+        style={{ fontSize: 20 }}
+        icon={
+          isFilterOpen ? <LeftOutlined /> : <LeftOutlined />
+        }
+      />
+    </Tooltip>
+    Find Candidate
+  </div>
+
+  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+
+    {/* SORT TEXT STYLE */}
+    <Dropdown menu={sortMenu} trigger={["click"]}>
+      <span
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
+          cursor: "pointer",
+          fontSize: 14,
+          color: "#6B7280",
+          userSelect: "none",
         }}
       >
-        <div style={{ fontSize: 20, fontWeight: 700 }}>
-          Find Candidate
-        </div>
-
-        <div style={{ display: "flex", gap: 12 }}>
-          <Select
-            value={sortOrder}
-            options={sortOptions}
-            onChange={handleSort}
-            style={{ width: 280 }}
-            placeholder="Sort Candidates"
-          />
-
-          <button
-            onClick={toggleFilter}
-            style={{
-              border: "none",
-              background: "#f0f0f0",
-              padding: "6px 12px",
-              borderRadius: 6,
-              cursor: "pointer",
-            }}
-          >
-            {isFilterOpen ? "Hide Filters" : "Show Filters"}
-          </button>
-        </div>
-      </div>
+        Sort by:{" "}
+        <span style={{ color: "#1677FF", fontWeight: 500 }}>
+          {sortOrder === "asc"
+            ? "Posted Time (Oldest)"
+            : sortOrder === "exp"
+            ? "Experience"
+            : sortOrder === "rate"
+            ? "Rate"
+            : "Posted Time"}
+        </span>{" "}
+        <DownOutlined />
+      </span>
+    </Dropdown>
+  </div>
+</div>
 
       {/* 🧾 Candidate Cards */}
       <Row gutter={[16, 16]}>

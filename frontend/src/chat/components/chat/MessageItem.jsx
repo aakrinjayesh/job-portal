@@ -214,25 +214,30 @@ const MessageItem = ({
     },
   ];
 
-  const messageContainerStyle = {
-    display: "flex",
-    justifyContent: isOwnMessage ? "flex-end" : "flex-start",
-    alignItems: "flex-end",
-    gap: 12,
-    maxWidth: "70%",
-    marginLeft: isOwnMessage ? "auto" : 0,
-    marginRight: isOwnMessage ? 0 : "auto",
-    marginBottom: 16,
-  };
+ const messageContainerStyle = {
+  display: "flex",
+  justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+  alignItems: "flex-end",
+  gap: 12,
+  marginLeft: isOwnMessage ? "auto" : 0,
+  marginRight: isOwnMessage ? 0 : "auto",
+  marginBottom: 16,
+};
 
-  const bubbleStyle = {
-    padding: "12px 16px",
-    borderRadius: 16,
-    background: isOwnMessage ? "#1890ff" : "#f5f5f5",
-    color: isOwnMessage ? "#fff" : "#000",
-    position: "relative",
-    maxWidth: "100%",
-  };
+
+ const bubbleStyle = {
+  padding: "8px 12px",          // smaller & cleaner
+  borderRadius: 16,
+  background: isOwnMessage ? "#1890ff" : "#f5f5f5",
+  color: isOwnMessage ? "#fff" : "#000",
+  position: "relative",
+
+  display: "inline-flex",      // ✅ KEY
+  width: "fit-content",        // ✅ auto size
+  maxWidth: "100%",            // controlled by parent
+  wordBreak: "break-word",
+};
+
 
   if (isOwnMessage) {
     bubbleStyle.borderBottomRightRadius = 4;
@@ -254,7 +259,13 @@ const MessageItem = ({
             <Avatar src={message.sender?.avatar?.url} size={32} />
           )}
 
-          <div style={{ flex: 1, maxWidth: "100%" }}>
+         <div
+  style={{
+    display: "inline-flex",
+    maxWidth: "70%",
+  }}
+>
+
             <div style={bubbleStyle}>
               {isGroupChatMessage && !isOwnMessage && (
                 <Tag

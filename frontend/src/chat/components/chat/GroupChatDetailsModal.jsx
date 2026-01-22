@@ -7,16 +7,15 @@ import {
   Space,
   Tag,
   List,
-  Modal,
   Divider,
   message,
   Popconfirm,
+  Typography,
 } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   UserAddOutlined,
-  TeamOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
@@ -31,6 +30,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { requestHandler } from "../../utils";
 
+const { Text, Title } = Typography;
+
 const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
   const { user } = useAuth();
   const [addingParticipant, setAddingParticipant] = useState(false);
@@ -40,6 +41,10 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
   const [groupDetails, setGroupDetails] = useState(null);
   const [users, setUsers] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
+
+  const isAdmin = groupDetails?.admin === user?._id;
+
+  /* ================= LOGIC (UNCHANGED) ================= */
 
   const handleGroupNameUpdate = async () => {
     if (!newGroupName) return messageApi.error("Group name is required");
@@ -51,9 +56,8 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
         setGroupDetails(data);
         setNewGroupName(data.name);
         setRenamingGroup(false);
-        messageApi.success("Group name updated to " + data.name);
+        messageApi.success("Group name updated");
       }
-      // alert
     );
   };
 
@@ -61,16 +65,12 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
     requestHandler(
       async () => await getAvailableUsers(),
       null,
-      (res) => {
-        const { data } = res;
-        setUsers(data || []);
-      }
-      // alert
+      (res) => setUsers(res.data || [])
     );
   };
 
   const deleteGroupChat = async () => {
-    if (groupDetails?.admin !== user?._id) {
+    if (!isAdmin) {
       return messageApi.info("You are not the admin of the group");
     }
     await requestHandler(
@@ -80,7 +80,6 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
         onGroupDelete(chatId);
         handleClose();
       }
-      // alert
     );
   };
 
@@ -89,38 +88,32 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
       async () => await removeParticipantFromGroup(chatId, participantId),
       null,
       () => {
-        const updatedGroupDetails = {
+        setGroupDetails({
           ...groupDetails,
-          participants:
-            groupDetails?.participants?.filter(
-              (p) => p._id !== participantId
-            ) || [],
-        };
-        setGroupDetails(updatedGroupDetails);
+          participants: groupDetails.participants.filter(
+            (p) => p._id !== participantId
+          ),
+        });
         messageApi.success("Participant removed");
       }
-      // alert
     );
   };
 
   const addParticipant = async () => {
     if (!participantToBeAdded)
-      return messageApi.error("Please select a participant to add.");
+      return messageApi.error("Please select a participant");
     requestHandler(
       async () => await addParticipantToGroup(chatId, participantToBeAdded),
       null,
       (res) => {
-        const { data } = res;
-        const updatedGroupDetails = {
+        setGroupDetails({
           ...groupDetails,
-          participants: data?.participants || [],
-        };
-        setGroupDetails(updatedGroupDetails);
-        setParticipantToBeAdded("");
+          participants: res.data.participants,
+        });
         setAddingParticipant(false);
+        setParticipantToBeAdded("");
         messageApi.success("Participant added");
       }
-      // alert
     );
   };
 
@@ -129,11 +122,9 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
       async () => await getGroupInfo(chatId),
       null,
       (res) => {
-        const { data } = res;
-        setGroupDetails(data);
-        setNewGroupName(data?.name || "");
+        setGroupDetails(res.data);
+        setNewGroupName(res.data?.name || "");
       }
-      // alert
     );
   };
 
@@ -150,99 +141,71 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
     getUsers();
   }, [open]);
 
-  const isAdmin = groupDetails?.admin === user?._id;
+  /* ================= UI ================= */
 
   return (
     <Drawer
-      title={null}
-      placement="right"
-      onClose={handleClose}
       open={open}
+      onClose={handleClose}
       width={600}
       closeIcon={<CloseOutlined />}
+      title={null}
     >
       {contextHolder}
-      <Space direction="vertical" style={{ width: "100%" }} size="large">
-        {/* Group Avatar */}
-        <div style={{ textAlign: "center" }}>
-          <Avatar.Group maxCount={3} size={80}>
-            {groupDetails?.participants.slice(0, 3).map((p) => (
-              <Avatar key={p._id} src={p.avatar.url} size={80} />
-            ))}
-          </Avatar.Group>
-          {groupDetails?.participants?.length > 3 && (
-            <div style={{ marginTop: 8 }}>
-              +{groupDetails.participants.length - 3} more
-            </div>
-          )}
-        </div>
 
-        {/* Group Name */}
-        <div style={{ textAlign: "center" }}>
-          {renamingGroup ? (
-            <Space.Compact style={{ width: "100%" }}>
-              <Input
-                placeholder="Enter new group name..."
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                size="large"
-              />
-              <Button type="primary" onClick={handleGroupNameUpdate}>
-                Save
-              </Button>
-              <Button onClick={() => setRenamingGroup(false)}>Cancel</Button>
-            </Space.Compact>
-          ) : (
-            <Space>
-              <h2 style={{ margin: 0 }}>{groupDetails?.name}</h2>
-              {isAdmin && (
-                <Button
-                  type="text"
-                  icon={<EditOutlined />}
-                  onClick={() => setRenamingGroup(true)}
+      <div style={{ padding: 32, background: "#fff", height: "100%" }}>
+        {/* Header */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
+          <Avatar size={48} />
+          <div style={{ flex: 1 }}>
+            {renamingGroup ? (
+              <Space.Compact style={{ width: "100%" }}>
+                <Input
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
                 />
-              )}
-            </Space>
-          )}
-          <div style={{ color: "#8c8c8c", marginTop: 4 }}>
-            Group · {groupDetails?.participants.length} participants
+                <Button type="primary" onClick={handleGroupNameUpdate}>
+                  Save
+                </Button>
+                <Button onClick={() => setRenamingGroup(false)}>Cancel</Button>
+              </Space.Compact>
+            ) : (
+              <Space>
+                <Title level={4} style={{ margin: 0 }}>
+                  {groupDetails?.name}
+                </Title>
+                {isAdmin && (
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={() => setRenamingGroup(true)}
+                  />
+                )}
+              </Space>
+            )}
+            <Text type="secondary">
+              {groupDetails?.participants.length} Participants
+            </Text>
           </div>
         </div>
 
-        <Divider />
-
-        {/* Participants List */}
-        <div>
-          <div
-            style={{ marginBottom: 16, display: "flex", alignItems: "center" }}
-          >
-            <TeamOutlined style={{ marginRight: 8, fontSize: 18 }} />
-            <span style={{ fontSize: 16, fontWeight: 500 }}>
-              {groupDetails?.participants.length} Participants
-            </span>
-          </div>
-
-          <List
-            dataSource={groupDetails?.participants || []}
-            renderItem={(participant) => (
+        {/* Participants */}
+        <List
+          itemLayout="horizontal"
+          dataSource={groupDetails?.participants || []}
+          renderItem={(participant) => (
+            <>
               <List.Item
                 actions={
                   isAdmin
                     ? [
                         <Popconfirm
-                          title="Remove Participant?"
-                          description="Are you sure you want to remove this participant?"
-                          okText="Delete"
-                          cancelText="Cancel"
-                          okButtonProps={{ danger: true }}
-                          onConfirm={() => removeParticipant(participant._id)}
-                          onClick={(e) => e.stopPropagation()}
+                          title="Remove participant?"
+                          onConfirm={() =>
+                            removeParticipant(participant._id)
+                          }
                         >
-                          <Button
-                            danger
-                            size="small"
-                            // onClick={() => }
-                          >
+                          <Button danger>
                             Remove
                           </Button>
                         </Popconfirm>,
@@ -251,82 +214,76 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
                 }
               >
                 <List.Item.Meta
-                  avatar={<Avatar src={participant.avatar.url} size={48} />}
+                  avatar={<Avatar src={participant.avatar?.url} />}
                   title={
                     <Space>
-                      {participant.username}
-                      {participant._id === groupDetails.admin && (
-                        <Tag color="success">admin</Tag>
+                      <Text>{participant.username}</Text>
+                      {participant._id === groupDetails?.admin && (
+                        <Tag color="blue">Admin</Tag>
                       )}
                     </Space>
                   }
-                  description={participant.email}
+                  description={
+                    <Text type="secondary">{participant.email}</Text>
+                  }
                 />
               </List.Item>
-            )}
-          />
-
-          {isAdmin && (
-            <Space
-              direction="vertical"
-              style={{ width: "100%", marginTop: 16 }}
-            >
-              {!addingParticipant ? (
-                <Button
-                  type="primary"
-                  icon={<UserAddOutlined />}
-                  block
-                  onClick={() => setAddingParticipant(true)}
-                >
-                  Add participant
-                </Button>
-              ) : (
-                <Space.Compact style={{ width: "100%" }}>
-                  <Select
-                    placeholder="Select a user to add..."
-                    value={participantToBeAdded}
-                    onChange={setParticipantToBeAdded}
-                    style={{ flex: 1 }}
-                    options={users.map((u) => ({
-                      label: u.username,
-                      value: u._id,
-                    }))}
-                  />
-                  <Button type="primary" onClick={addParticipant}>
-                    Add
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setAddingParticipant(false);
-                      setParticipantToBeAdded("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Space.Compact>
-              )}
-              <Popconfirm
-                title="Delete Group"
-                description="Are you sure you want to delete this group?"
-                okText="Delete"
-                cancelText="Cancel"
-                okButtonProps={{ danger: true }}
-                onConfirm={deleteGroupChat}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  block
-                  // onClick={deleteGroupChat}
-                >
-                  Delete group
-                </Button>
-              </Popconfirm>
-            </Space>
+              <Divider style={{ margin: 0 }} />
+            </>
           )}
-        </div>
-      </Space>
+        />
+
+        {/* Footer */}
+        {isAdmin && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 16,
+              marginTop: 32,
+            }}
+          >
+            <Popconfirm
+              title="Delete group?"
+              onConfirm={deleteGroupChat}
+            >
+              <Button shape="round" >
+                Delete Group
+              </Button>
+            </Popconfirm>
+
+            {!addingParticipant ? (
+              <Button
+                type="primary"
+                shape="round"
+                icon={<UserAddOutlined />}
+                onClick={() => setAddingParticipant(true)}
+              >
+                Add Participant
+              </Button>
+            ) : (
+              <Space.Compact>
+                <Select
+                  placeholder="Select user"
+                  value={participantToBeAdded}
+                  onChange={setParticipantToBeAdded}
+                  options={users.map((u) => ({
+                    label: u.username,
+                    value: u._id,
+                  }))}
+                  style={{ minWidth: 200 }}
+                />
+                <Button type="primary" onClick={addParticipant}>
+                  Add
+                </Button>
+                <Button onClick={() => setAddingParticipant(false)}>
+                  Cancel
+                </Button>
+              </Space.Compact>
+            )}
+          </div>
+        )}
+      </div>
     </Drawer>
   );
 };

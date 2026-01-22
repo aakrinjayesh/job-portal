@@ -14,19 +14,22 @@ import {
   Button,
   Modal,
   Select,
+  Dropdown
 } from "antd";
 import {
   StarFilled,
   StarOutlined,
+  BookFilled,
+  BookOutlined,
   EnvironmentOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
+  LeftOutlined,
+  DownOutlined,
   FileTextOutlined,
-  DollarOutlined,
   ClockCircleOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-
+import { LuBookmark } from "react-icons/lu";
+import { LuBookmarkCheck } from "react-icons/lu";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useNavigate } from "react-router-dom";
@@ -56,16 +59,16 @@ const JobList = ({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [sortOrder, setSortOrder] = useState("dsc");
 
-  const sortOptions = [
-    {
-      value: "asc",
-      label: "Posted Time: Low to High",
-    },
-    {
-      value: "dsc",
-      label: "Posted Time: High to Low",
-    },
-  ];
+  // const sortOptions = [
+  //   {
+  //     value: "asc",
+  //     label: "Posted Time: Low to High",
+  //   },
+  //   {
+  //     value: "dsc",
+  //     label: "Posted Time: High to Low",
+  //   },
+  // ];
 
   useEffect(() => {
     setSortedJobs(jobs);
@@ -136,6 +139,21 @@ const JobList = ({
     setSortedJobs(sorted);
   };
 
+  const sortMenu = {
+    items: [
+      {
+        key: "dsc",
+        label: "Posted Time",
+      },
+      {
+        key: "asc",
+        label: "Posted Time(Oldest)",
+      },
+    ],
+    onClick: ({ key }) => handleSort(key),
+  };
+
+
   const handleCardClick = (job) => {
     if (portal === "company") {
       navigate("/company/job/details", {
@@ -184,6 +202,35 @@ const JobList = ({
       setLoadingEligibility((prev) => ({ ...prev, [id]: false }));
     }
   };
+
+  const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
+    const visible = items.slice(0, max);
+    const remainingCount = items.length - max;
+
+    return (
+      <Space size={[8, 8]} wrap>
+        {visible.map((item, index) => (
+          <Tag key={index} style={tagStyle}>
+            {item}
+          </Tag>
+        ))}
+
+        {remainingCount > 0 && (
+          <Text
+            style={{
+              color: "#1677ff",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "default", // 👈 looks like text
+            }}
+          >
+            +{remainingCount} more
+          </Text>
+        )}
+      </Space>
+    );
+  };
+
 
   const CompactAnalytics = ({ data }) => {
     const a = data?.analysis;
@@ -257,27 +304,36 @@ const JobList = ({
                 type="text"
                 onClick={toggleFilter}
                 style={{ fontSize: 20 }}
-                icon={
-                  isFilterOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />
-                }
+                icon={isFilterOpen ? <LeftOutlined /> : <LeftOutlined />}
               />
             </Tooltip>
 
-            <Select
-              value={sortOrder}
-              options={sortOptions}
-              onChange={handleSort}
-              placeholder="Sort Jobs"
-              style={{ width: 250 }}
-            />
+            {/* SORT TEXT STYLE */}
+            <Dropdown menu={sortMenu} trigger={["click"]}>
+              <span
+                style={{
+                  cursor: "pointer",
+                  fontSize: 14,
+                  color: "#6B7280",
+                  userSelect: "none",
+                }}
+              >
+                Sort by:{" "}
+                <span style={{ color: "#1677FF", fontWeight: 500 }}>
+                  Posted Time
+                </span>{" "}
+                <DownOutlined />
+              </span>
+            </Dropdown>
           </div>
+
         </Col>
       )}
 
       {/* JOB CARDS */}
       {sortedJobs?.map((job, index) => {
         const isLastJob = index === sortedJobs?.length - 1;
-        // const isSaved = savedJobIds.includes(job.id);
+        const isSaved = savedJobIds.includes(job.id);
 
         return (
           <Col xs={24} key={job.id} ref={isLastJob ? lastJobRef : null}>
@@ -380,9 +436,9 @@ const JobList = ({
                           title={!job?.isSaved ? "Save Job" : "Unsave Job"}
                         >
                           {job?.isSaved ? (
-                            <StarFilled style={{ color: "#faad14" }} />
+                            <LuBookmarkCheck size={22} color="#1677ff" />
                           ) : (
-                            <StarOutlined />
+                            <LuBookmark size={22} color="#9CA3AF" />
                           )}
                         </Tooltip>
                       </div>
@@ -416,7 +472,7 @@ const JobList = ({
                 </span>
                 <Divider type="vertical" />
                 <span>
-                  <DollarOutlined /> {job.salary} PA
+                  ₹ {job.salary} LPA
                 </span>
                 <Divider type="vertical" />
                 <span>
@@ -469,18 +525,16 @@ const JobList = ({
                           flexWrap: "wrap",
                         }}
                       >
-                        {job.clouds.map((cloud, i) => (
-                          <Tag
-                            key={i}
-                            style={{
-                              background: "#E7F0FE",
-                              borderRadius: 100,
-                              border: "1px solid #1677FF",
-                            }}
-                          >
-                            {cloud}
-                          </Tag>
-                        ))}
+                        <TagsWithMore
+                          items={job.clouds}
+                          tagStyle={{
+                            background: "#E7F0FE",
+                            borderRadius: 100,
+                            border: "1px solid #1677FF",
+                          }}
+                        />
+
+
                       </div>
                     </div>
                   )}
@@ -514,18 +568,15 @@ const JobList = ({
                           flexWrap: "wrap",
                         }}
                       >
-                        {job.skills.map((skill, i) => (
-                          <Tag
-                            key={i}
-                            style={{
-                              background: "#FBEBFF",
-                              borderRadius: 100,
-                              border: "1px solid #800080",
-                            }}
-                          >
-                            {skill}
-                          </Tag>
-                        ))}
+                        <TagsWithMore
+                          items={job.skills}
+                          tagStyle={{
+                            background: "#FBEBFF",
+                            borderRadius: 100,
+                            border: "1px solid #800080",
+                          }}
+                        />
+
                       </div>
                     </div>
                   )}

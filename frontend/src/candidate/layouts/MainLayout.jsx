@@ -1,60 +1,78 @@
 import React, { useState } from "react";
-import { Layout, Menu, Avatar, Typography, Modal } from "antd";
+import {
+  Layout,
+  Menu,
+  Avatar,
+  Typography,
+  Button,
+  Breadcrumb,
+  Space,
+  Modal,
+} from "antd";
 import {
   FileTextOutlined,
-  SettingOutlined,
-  QuestionCircleOutlined,
   SearchOutlined,
   SaveFilled,
-  LogoutOutlined,
   WhatsAppOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+  ArrowLeftOutlined,
+  BellOutlined,
+  DownOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
-const { Header, Sider, Content, Footer } = Layout;
-const { Title, Text } = Typography;
+const { Sider, Header, Content } = Layout;
+const { Text, Title } = Typography;
 
 const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const menuRoutes = {
-    dashboard: "/candidate/dashboard",
-    profile: "/candidate/profile",
-    job: "/candidate/jobs",
-    chat: "/candidate/chat",
-    appliedjobs: "/candidate/jobs/applied",
-    savedjobs: "/candidate/jobs/saved",
-    settings: "/candidate/settings",
-    faq: "/candidate/faq",
-    logout: "/login",
+  /* 👤 User Info */
+  const user = JSON.parse(localStorage.getItem("user")) || {
+    name: "Guest",
+    role: "Candidate",
   };
 
-  const items = [
-    // { key: "dashboard", label: "Dashboard", icon: <FileTextOutlined /> },
-    { key: "job", label: "Find Jobs", icon: <SearchOutlined /> },
-    { key: "savedjobs", label: "Saved Jobs", icon: <SaveFilled /> },
-    { key: "appliedjobs", label: "Applied Jobs", icon: <FileTextOutlined /> },
-    { key: "chat", label: "Chat", icon: <WhatsAppOutlined /> },
-    { key: "settings", label: "Settings", icon: <SettingOutlined /> },
-    { key: "profile", label: "Profile", icon: <FileTextOutlined /> },
-    { key: "logout", label: "Logout", icon: <LogoutOutlined /> },
+  /* 🔗 Menu → Route mapping */
+  const menuRoutes = {
+    jobs: ["/candidate/jobs"],
+    savedjobs: ["/candidate/jobs/saved"],
+    appliedjobs: ["/candidate/jobs/applied"],
+    chat: ["/candidate/chat"],
+    settings: ["/candidate/settings"],
+    profile: ["/candidate/profile"],
+  };
 
-    //{ key: "faq", label: "FAQ", icon: <QuestionCircleOutlined /> },
-  ];
+  /* 🎯 Active menu */
+ const selectedKey = React.useMemo(() => {
+   const path = location.pathname;
+ 
+   // 🔑 sort routes by longest path first
+   const sortedRoutes = Object.entries(menuRoutes).sort(
+     (a, b) => Math.max(...b[1].map(p => p.length)) -
+               Math.max(...a[1].map(p => p.length))
+   );
+ 
+   for (const [key, paths] of sortedRoutes) {
+     if (paths.some((p) => path.startsWith(p))) {
+       return key;
+     }
+   }
+ 
+   return "jobs";
+ }, [location.pathname]);
 
-  const onClick = (e) => {
-    const route = menuRoutes[e.key];
-
-    if (!route) return;
-
-    // 👇 Pages that require login
+  /* 🧠 Menu click */
+  const onMenuClick = ({ key }) => {
     const protectedPages = [
-      "appliedjobs",
       "savedjobs",
+      "appliedjobs",
       "chat",
       "settings",
       "profile",
@@ -62,159 +80,222 @@ const MainLayout = ({ children }) => {
 
     const token = localStorage.getItem("token");
 
-    if (protectedPages.includes(e.key) && !token) {
+    if (protectedPages.includes(key) && !token) {
       setShowLoginModal(true);
       return;
     }
 
-    if (e.key === "logout") {
+    if (key === "logout") {
       localStorage.clear();
+      navigate("/login");
+      return;
     }
 
-    if (e.key === "chat") {
+    if (key === "chat") {
       navigate("/candidate/chat", { state: { userType: "candidate" } });
       return;
     }
 
-    navigate(route);
+   const route = menuRoutes[key];
+if (route && route.length) {
+  navigate(route[0]); // always navigate to first route
+}
   };
 
-  const user = JSON.parse(localStorage.getItem("user")) || {
-    name: "Guest",
-    role: "Candidate",
+  /* 🧭 Title mapping */
+  const pageTitleMap = {
+    jobs: "Find Jobs",
+    savedjobs: "Saved Jobs",
+    appliedjobs: "Applied Jobs",
+    chat: "Chats",
+    settings: "Settings",
+    profile: "Profile",
   };
-  const { name, role } = user;
 
-  const siderStyle = {
-    overflow: "auto",
-    height: "100vh",
-    position: "sticky",
-    insetInlineStart: 0,
-    top: 0,
-    bottom: 0,
-    scrollbarWidth: "thin",
-    scrollbarGutter: "stable",
-    background: "#fff",
-    boxShadow: "2px 0 6px rgba(0,0,0,0.1)",
-  };
+  const pageTitle = pageTitleMap[selectedKey] || "Find Jobs";
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      {/* Sidebar (unchanged as requested) */}
+    <Layout hasSider>
+      {/* 🧭 Sidebar */}
       <Sider
         collapsible
         collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-        width={230}
-        style={siderStyle}
+        onCollapse={setCollapsed}
+        width={260}
+        style={{
+          background: "#011026",
+          height: "100vh",
+          position: "sticky",
+          top: 0,
+        }}
       >
+        {/* 👤 User Info */}
         <div
           style={{
-            padding: "16px",
-            textAlign: "center",
-            borderBottom: "1px solid #f0f0f0",
+            display: "flex",
+            gap: 12,
+            padding: 24,
+            alignItems: "center",
           }}
         >
-          <Avatar
-            size={54}
-            icon={<UserOutlined />}
-            style={{ cursor: "pointer" }}
-            // onClick={() => navigate("/candidate/dashboard")}
-            onClick={() => navigate("/candidate/profile")}
-          />
+          <Avatar size={40} icon={<UserOutlined />} />
+
           {!collapsed && (
-            <>
-              <div style={{ marginTop: "8px", fontWeight: "bold" }}>{name}</div>
-              <Text type="secondary">{role}</Text>
-            </>
+            <div>
+              <Text style={{ color: "#fff", fontWeight: 600 }}>
+                {user.name}
+              </Text>
+              <br />
+              <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
+                {user.role}
+              </Text>
+            </div>
           )}
         </div>
 
+        {/* 📌 Main Menu */}
         <Menu
           mode="inline"
-          onClick={onClick}
-          style={{ borderRight: 0, paddingTop: "16px" }}
-          items={items}
+          theme="dark"
+          selectedKeys={[selectedKey]}
+          onClick={onMenuClick}
+          style={{ background: "transparent", border: "none" }}
+          items={[
+            { key: "jobs", icon: <SearchOutlined />, label: "Find Jobs" },
+            {
+              key: "savedjobs",
+              icon: <SaveFilled />,
+              label: "Saved Jobs",
+            },
+            {
+              key: "appliedjobs",
+              icon: <FileTextOutlined />,
+              label: "Applied Jobs",
+            },
+            { key: "chat", icon: <WhatsAppOutlined />, label: "Chat" },
+          ]}
+        />
+
+        {/* Divider */}
+        <div
+          style={{
+            height: 1,
+            background: "#E0E0E0",
+            margin: "16px 0",
+            opacity: 0.3,
+          }}
+        />
+
+        {/* ⚙️ Bottom Menu */}
+        <Menu
+          mode="inline"
+          theme="dark"
+          onClick={onMenuClick}
+          style={{ background: "transparent", border: "none" }}
+          items={[
+            { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+            { key: "profile", icon: <UserOutlined />, label: "Profile" },
+            { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
+          ]}
         />
       </Sider>
 
-      {/* Main Layout */}
+      {/* 📄 Main Layout */}
       <Layout>
-        {/* Fixed Header */}
+        {/* 🔝 Header */}
         <Header
           style={{
-            position: "fixed",
-            top: 0,
-            left: collapsed ? 80 : 230,
-            right: 0,
-            height: 64,
-            zIndex: 100,
-            background: "#ffffff",
+            background: "#fff",
             padding: "0 24px",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            transition: "left 0.2s",
+            justifyContent: "space-between",
+            height: 80,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
           }}
         >
-          <Title level={4} style={{ margin: 0 }}>
-            Welcome <span style={{ color: "#1677ff" }}>{name}</span>
-          </Title>
+          {/* Left */}
+          <Space size={16}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              style={{
+                borderRadius: 20,
+                background: "#F8F8F8",
+                border: "none",
+                fontWeight: 500,
+              }}
+            >
+              Back
+            </Button>
+
+            <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
+
+            <div>
+              <Breadcrumb
+              />
+              <Title level={4} style={{ margin: 0 }}>
+                {pageTitle}
+              </Title>
+            </div>
+          </Space>
+
+          {/* Right */}
+          {/* <Space size={24}>
+            <Button
+              shape="circle"
+              icon={<BellOutlined />}
+              style={{
+                background: "#F0F2F4",
+                border: "none",
+                width: 48,
+                height: 48,
+              }}
+            /> */}
+
+            <Space>
+              <Avatar size={56}>
+                {user.name?.slice(0, 2).toUpperCase()}
+              </Avatar>
+
+              <div style={{ lineHeight: 1.2 }}>
+                <Space size={4}>
+                  <Text strong>Hi, {user.name}</Text>
+                  <DownOutlined style={{ fontSize: 12 }} />
+                </Space>
+                <Text
+                  type="secondary"
+                  style={{ display: "block", fontSize: 12 }}
+                >
+                  {user.role}
+                </Text>
+              </div>
+            </Space>
+          {/* </Space> */}
         </Header>
 
-        {/* Scrollable Content */}
+        {/* 🧾 Content */}
         <Content
           style={{
-            marginTop: 64,
-            // marginBottom: 64,
-            padding: "10px",
-            paddingBottom: "0px",
+            padding: 16,
             background: "#f5f6fa",
-            height: "calc(100vh - 128px)",
-            overflowY: "auto",
-            width: "100%",
+            minHeight: "calc(100vh - 80px)",
           }}
         >
           {children}
         </Content>
-
-        <Modal
-          open={showLoginModal}
-          title="Login Required"
-          onCancel={() => setShowLoginModal(false)}
-          okText="Go to Login"
-          onOk={() => navigate("/login")}
-        >
-          <p>Please login to use this feature.</p>
-        </Modal>
-
-        {/* Fixed Footer */}
-        {/* <Footer
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: collapsed ? 80 : 230,
-            right: 0,
-            height: 50,
-            background: "#fff",
-            textAlign: "center",
-            boxShadow: "0 -2px 8px rgba(0,0,0,0.05)",
-            lineHeight: "64px",
-            transition: "left 0.2s",
-            padding: 0,
-          }}
-        >
-          <a
-            href="https://aakrin.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Aakrin ©
-          </a>{" "}
-          {new Date().getFullYear()}
-        </Footer> */}
       </Layout>
+
+      {/* 🔐 Login Modal */}
+      <Modal
+        open={showLoginModal}
+        title="Login Required"
+        onCancel={() => setShowLoginModal(false)}
+        okText="Go to Login"
+        onOk={() => navigate("/login")}
+      >
+        <p>Please login to use this feature.</p>
+      </Modal>
     </Layout>
   );
 };

@@ -18,10 +18,21 @@ const CreatePassword = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const email = location?.state?.email;
-  const role = location?.state?.role;
+   // 🔹 Normal flow (preferred)
+  const stateEmail = location?.state?.email;
+  const stateRole = location?.state?.role;
 
-  if (!email) {
+  // 🔹 Invite flow (fallback)
+  const query = new URLSearchParams(location.search);
+  const queryEmail = query.get("email");
+  const queryRole = query.get("role");
+  const token = query.get("token");
+
+  // 🔹 Final resolved values
+  const email = stateEmail || queryEmail;
+  const role = stateRole || queryRole;
+
+  if (!email || !role) {
     return (
       <div style={{ textAlign: "center", marginTop: 100 }}>
         <h3>Invalid Access</h3>
@@ -42,6 +53,7 @@ const CreatePassword = () => {
         email,
         password: values.password,
         role,
+        ...(token && { token }),
       });
 
       if (res.status === "success") {
@@ -207,48 +219,70 @@ const styles = {
     padding: "0 60px",
     display: "flex",
     alignItems: "center",
+    justifyContent: "space-between",
+    background: "#fff",
     borderBottom: "1px solid #eee",
   },
-  logo: { fontSize: 18, fontWeight: 600 },
+  logo: { fontWeight: 600, fontSize: 18 },
+  menu: { display: "flex", gap: 24, color: "#555" },
 
   container: {
     display: "flex",
-    minHeight: "calc(100vh - 70px)",
+    minHeight: "100vh",
+    //alignItems: "stretch",
   },
 
-  left: {
-    width: "50%",
-    padding: 60,
-    background: "#fff",
-  },
-
-  card: {
-    maxWidth: 420,
-    margin: "0 auto",
-    padding: 32,
-    borderRadius: 12,
-    border: "1px solid #e5e7eb",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
-  },
-
+  left: { width: "50%", padding: 60, background: "#fff" },
   right: {
     width: "50%",
     background: "#4F63F6",
-    padding: "80px",
+    padding: "80px 80px",
     position: "relative",
     overflow: "hidden",
   },
 
-  heroText: {
+   card: {
     maxWidth: 420,
-    zIndex: 5,
-    position: "relative",
+    margin: "0 auto",
+    padding: "32px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    background: "#fff",
+  },
+
+  cloud: {
+    position: "absolute",
+    left: 100,
+    bottom: 40,
+    width: 420,
+    height: "auto",
+    zIndex: 1,
+    opacity: 0.9,
+  },
+
+  heroText: {
+    color: "#A9B2FF",
+    fontFamily: "SF Pro",
+    fontSize: 40,
+    fontStyle: "normal",
+    fontWeight: 400,
+    //lineHeight: "48px",
+    letterSpacing: "-0.48px",
+  },
+
+  badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
+  badge: {
+    background: "#fff",
+    padding: "8px 16px",
+    borderRadius: 20,
+    fontWeight: 500,
   },
 
   salaryBadge: {
     position: "absolute",
-    top: 260,
-    left: 60,
+    top: "263px",
+    left: "62px",
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
@@ -258,20 +292,21 @@ const styles = {
 
   searchCard: {
     position: "absolute",
-    bottom: 230,
-    right: 360,
+    bottom: "200px",
+    right: 450,
     background: "#fff",
     padding: "10px 14px",
     borderRadius: 14,
+    fontSize: 14,
     zIndex: 3,
   },
 
   jobCard: {
     position: "absolute",
     top: 280,
-    right: 24,
+    right: "24px",
     background: "#fff",
-    padding: 14,
+    padding: "14px 16px",
     borderRadius: 16,
     width: 220,
     zIndex: 3,
@@ -279,17 +314,17 @@ const styles = {
 
   jobType: {
     position: "absolute",
-    top: 376,
-    right: 170,
+    top: "376px",
+    right: "170px",
     background: "#fff",
     padding: "6px 14px",
     borderRadius: 20,
     fontSize: 13,
     fontWeight: 500,
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
     zIndex: 3,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
   },
 
   nameTag: {
@@ -299,16 +334,82 @@ const styles = {
     background: "#fff",
     padding: "6px 14px",
     borderRadius: 20,
+    fontSize: 13,
     fontWeight: 600,
     zIndex: 3,
   },
 
   person: {
     position: "absolute",
-    right: 80,
-    top: 20,
-    height: 350,
+    right: 60,
+    bottom: 0,
+    height: 380,
     zIndex: 2,
+  },
+
+  loginCard: {
+    maxWidth: 420,
+    margin: "0 auto",
+    padding: "32px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    background: "#fff",
+  },
+
+  footer: {
+    height: 60,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#fff",
+    borderTop: "1px solid #eee",
+  },
+
+  footerWrapper: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    //marginTop: 40,   // ❗ REMOVE negative margin
+    paddingBottom: 40,
+  },
+
+  footerCard: {
+    background: "#fff",
+    padding: "24px 40px",
+    borderRadius: 16,
+    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+    textAlign: "center",
+    maxWidth: 900,
+    width: "90%",
+  },
+
+  footerText: {
+    fontSize: 14,
+    fontWeight: 500,
+    marginBottom: 20,
+  },
+
+  footerLogos: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 24,
+    flexWrap: "wrap",
+  },
+
+  // logoBox: {
+  //   background: "#fff",
+  //   border: "1px solid #eee",
+  //   borderRadius: 12,
+  //   padding: "8px 16px",
+  //   display: "flex",
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  // },
+
+  logoBoxImg: {
+    height: 24,
   },
 };
 

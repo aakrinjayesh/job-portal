@@ -34,6 +34,22 @@ const LoginPage = () => {
     if (role) setActiveTab(role);
   }, [role]);
 
+   /* ================= EMAIL HELPERS ================= */
+  const personalDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "rediffmail.com",
+  ];
+
+  const isCompanyEmail = (email) =>
+    email && !personalDomains.includes(email.split("@")[1]?.toLowerCase());
+
+  const isPersonalEmail = (email) =>
+    email && personalDomains.includes(email.split("@")[1]?.toLowerCase());
+
   const onFinish = async (values, role) => {
     try {
       setSubmitting(true);
@@ -78,11 +94,30 @@ const LoginPage = () => {
         (
           <Form layout="vertical" onFinish={(v) => onFinish(v, role)}>
             <Form.Item
-              name="email"
-              rules={[{ required: true, message: "Enter email" }]}
-            >
-              <Input size="large" placeholder="Email" />
-            </Form.Item>
+                           name="email"
+                           rules={[
+                             { required: true, message: "Enter email" },
+                           {
+             pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+             message:
+               "Spaces and invalid formats are not allowed.",
+           },
+            {
+                               validator: (_, value) => {
+                                 if (!value) return Promise.resolve();
+                                 if (role === "candidate" && !isPersonalEmail(value))
+                                   return Promise.reject(
+                                     "Use personal email (gmail, outlook, etc.)"
+                                   );
+                                 if (role === "company" && !isCompanyEmail(value))
+                                   return Promise.reject("Use company email");
+                                 return Promise.resolve();
+                               },
+                             },
+                           ]}
+                         >
+                           <Input size="large" placeholder="Email" />
+                         </Form.Item>
 
             <Form.Item
               name="password"

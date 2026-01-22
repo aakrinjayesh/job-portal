@@ -191,86 +191,58 @@ useEffect(() => {
       <Text strong>Work Shift</Text>
       <div>{job.workShift || "Morning Shift"}</div>
     </div>
+    </div>
+    <Divider style={{ margin: "16px 0" }} />
 
-   <div>
-     <div>
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-    }}
-  >
-    <Text strong>Clouds</Text>
-  </div>
-
- {showClouds && (
+  {/* ===== CLOUDS ===== */}
+  <Text strong>Clouds:</Text>
   <div
     style={{
       marginTop: 8,
       display: "flex",
-      flexWrap: "nowrap",
+      flexWrap: "wrap",
       gap: 8,
-      overflowX: "auto",
-      whiteSpace: "nowrap",
     }}
   >
     {job.clouds?.map((cloud, i) => (
       <Tag
         key={i}
         style={{
-          background: "#E7F0FE",
-          borderRadius: 100,
-          border: "1px solid #1677FF",
-          flexShrink: 0, // 🔑 prevents shrinking
-        }}
+                              background: "#E7F0FE",
+                              borderRadius: 100,
+                              border: "1px solid #1677FF",
+                            }}
       >
         {cloud}
       </Tag>
     ))}
   </div>
-)}
 
+   <Divider style={{ margin: "16px 0" }} />
 
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-    }}
-  >
-    <Text strong>Skills</Text>
-  </div>
-
-  {showClouds && (
+  {/* ===== SKILLS ===== */}
+  <Text strong>Skills:</Text>
   <div
     style={{
       marginTop: 8,
       display: "flex",
-      flexWrap: "nowrap",
+      flexWrap: "wrap",
       gap: 8,
-      overflowX: "auto",
-      whiteSpace: "nowrap",
     }}
   >
-      {job.skills?.map((skill, i) => (
-        <Tag
-          key={i}
-          style={{
-            background: "#FBEBFF",
-            borderRadius: 100,
-            border: "1px solid #800080",
-            marginBottom: 6,
-          }}
-        >
-          {skill}
-        </Tag>
-      ))}
-    </div>
-  )}
-</div>
-</div>
- </div>
+    {job.skills?.map((skill, i) => (
+      <Tag
+        key={i}
+        style={{
+          background: "#FBEBFF",
+          borderRadius: 100,
+          border: "1px solid #800080",
+        }}
+      >
+        {skill}
+      </Tag>
+    ))}
+  </div>
 
     {/* ===== DESCRIPTION ===== */}
   <Divider style={{ margin: "16px 0" }} />
