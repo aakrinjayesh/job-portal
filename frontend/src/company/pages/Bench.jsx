@@ -440,10 +440,6 @@ const handleOtpChange = (value, index) => {
   ),
 },
 
-
-  
-
-
     {
   title: "Role",
   dataIndex: "title",
@@ -1034,7 +1030,7 @@ const Divider = () => (
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 20,
   }}
 >
   
@@ -1069,32 +1065,14 @@ const Divider = () => (
       );
     })}
   </div>
-
-  {/* SEARCH (UI ONLY, NO LOGIC CHANGE) */}
-  {/* <div
-    style={{
-      width: 300,
-      height: 40,
-      borderRadius: 28,
-      border: "1px solid #A3A3A3",
-      display: "flex",
-      alignItems: "center",
-      padding: "0 16px",
-      color: "#A3A3A3",
-      fontSize: 16,
-    }}
-  >
-    Search by name or role
-  </div> */}
+      <div style={{ width: 150 }}>
+  <SearchWithTextArea
+    handleFiltersChange={handleFiltersChange}
+    apifunction={AiCandidateFilter}
+    handleClearFilters={handleClearFilters}
+  />
 </div>
-
-
-
-      <SearchWithTextArea
-        handleFiltersChange={handleFiltersChange}
-        apifunction={AiCandidateFilter}
-        handleClearFilters={handleClearFilters}
-      />
+</div>
 
       <Spin spinning={loading}>
         {/* 🔍 SEARCH INPUT */}
