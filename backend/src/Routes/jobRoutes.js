@@ -18,6 +18,7 @@ import {
 } from '../controllers/jobControllers.js'
 import { validateInput } from '../Middleware/inputValidator.js'
 import { authenticateToken } from '../Middleware/authMiddleware.js'
+import { ensureCompanyMember } from '../Middleware/organizationMiddleware.js'
 
 import { 
   getJobListValidator, 
@@ -69,17 +70,19 @@ JobRouters.get('/jobs/saved', authenticateToken, userAllSavedJobs)
 
 
 
-// Company/Vendor job management routes
+          // Company/Vendor job management routes
+
+
 JobRouters.post('/jobs/create', 
   validateInput(postJobValidator), 
-  authenticateToken, postJob)
+  authenticateToken, ensureCompanyMember, postJob)
 JobRouters.get('/jobs/posted',
   // validateInput(postedJobValidator),
   authenticateToken, postedJobs)
 JobRouters.post('/jobs/update', 
   validateInput(editJobValidator), 
-  authenticateToken, editJob)
-JobRouters.delete('/jobs/delete', validateInput(deleteJobValidator), authenticateToken, deleteJob)
+  authenticateToken, ensureCompanyMember, editJob)
+JobRouters.delete('/jobs/delete', validateInput(deleteJobValidator), authenticateToken, ensureCompanyMember, deleteJob)
 
 
 
@@ -88,6 +91,7 @@ JobRouters.post("/job/applicants", authenticateToken, getApplicantsByJobId)
 JobRouters.post(
   "/candidate/rating",
   authenticateToken,
+  ensureCompanyMember,
   saveCandidateRating
 );
 

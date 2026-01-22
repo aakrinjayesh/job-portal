@@ -1,10 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./candidate/layouts/MainLayout";
 import UpdateUserProfile from "./candidate/pages/UpdateUserProfile";
+import CompanySettings from "./company/pages/Settings";
 import Settings from "./candidate/pages/Settings";
 import FAQ from "./candidate/pages/FAQ";
 import DashBoard from "./company/pages/DashBoard";
 import CompanyLayout from "./company/layout/CompanyLayout";
+import AcceptInvite from "./company/pages/AcceptInvite"; // New Component
 import { ConfigProvider, theme } from "antd";
 import CandidateJobDetails from "./candidate/components/Job/CandidateJobDetails";
 import JobDetails from "./company/components/Job/JobDetails";
@@ -27,9 +29,27 @@ import SavedCandidates from "./company/components/Job/SavedCandidates";
 import BenchCandidateDetails from "./company/components/Bench/BenchCandidateDetails";
 // import ResetPassword from "./pages/ResetPassword";
 import MyActivity from "./company/pages/MyActivity";
-
 import MyProfile from "./company/pages/MyProfile";
+import { useEffect } from "react";
+import LandingRedirect from "./pages/LandingRedirect";
+
 function App() {
+  useEffect(() => {
+    if (window.location.pathname === "/login") return;
+
+    const initAuth = async () => {
+      try {
+        const res = await axiosInstance.get("/auth/refresh-token");
+        localStorage.setItem("token", res.data.token);
+      } catch (err) {
+        console.log("err", err);
+        // localStorage.clear();
+      }
+    };
+
+    initAuth();
+  }, []);
+
   return (
     <ConfigProvider
       theme={{
@@ -44,7 +64,8 @@ function App() {
       {/* <BrowserRouter> */}
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
+        <Route path="/" element={<LandingRedirect />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/createpassword" element={<CreatePassword />} />
@@ -242,7 +263,7 @@ function App() {
           }
         />
 
-         <Route
+        <Route
           path="/company/bench/saved"
           element={
             <CompanyLayout>
@@ -259,6 +280,15 @@ function App() {
             </CompanyLayout>
           }
         />
+        <Route
+          path="/company/settings"
+          element={
+            <CompanyLayout>
+              <CompanySettings />
+            </CompanyLayout>
+          }
+        />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
       </Routes>
       {/* </BrowserRouter> */}
     </ConfigProvider>

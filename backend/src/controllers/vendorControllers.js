@@ -8,13 +8,15 @@ import { generateResumeHTML } from "../utils/resumeTemplate.js";
 import sendEmail from "../utils/sendEmail.js";
 // ✅ Get all candidates for a vendor
 import { applyCandidateFilters } from "../utils/applyFilters.js";
+import { canCreate, canDelete, canEdit } from "../utils/permission.js";
 
 
 const getVendorCandidates = async (req, res) => {
   try {
-    const userAuth = req.user;
+    const { organizationId } = req.user;
 
-    if (userAuth.role !== "company") {
+
+    if (!organizationId) {
       return res.status(403).json({
         status: "failed",
         message: "Access denied. Only vendors can view candidates.",
@@ -22,7 +24,7 @@ const getVendorCandidates = async (req, res) => {
     }
 
     const candidates = await prisma.userProfile.findMany({
-      where: { vendorId: userAuth.id },
+      where: { organizationId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -44,19 +46,20 @@ const getVendorCandidates = async (req, res) => {
 const createVendorCandidate = async (req, res) => {
   try {
     const userAuth = req.user;
+    const {organizationId, permission} = req.user
 
-    if (userAuth.role !== "company") {
+    if (!organizationId || !permission) {
       return res.status(403).json({
         status: "failed",
         message: "Access denied. Only vendors can create candidates.",
       });
     }
 
-    const user = await prisma.users.findUnique({ where: { email: userAuth.email } })
-
-    if (!user) {
-      logger.warn("User not found in DB");
-      return res.status(404).json({ message: "User not found" })
+    if (!canCreate(permission)) {
+      return res.status(403).json({
+        status: "failed",
+        message: "You do not have permission to create vendor candidates.",
+      });
     }
 
     const data = req.body;
@@ -64,6 +67,7 @@ const createVendorCandidate = async (req, res) => {
     const newCandidate = await prisma.userProfile.create({
       data: {
         vendorId: userAuth.id,
+        organizationId,
         name: data.name,
         email: data.email,
         phoneNumber: data.phoneNumber,
@@ -109,19 +113,31 @@ const createVendorCandidate = async (req, res) => {
 const updateVendorCandidate = async (req, res) => {
   try {
     const userAuth = req.user;
-    const { id, ...data } = req.body;
+    
+     const {organizationId, permission} = req.user
 
-    if (userAuth.role !== "company") {
+    if (!organizationId || !permission) {
       return res.status(403).json({
         status: "failed",
-        message: "Access denied. Only vendors can update candidates.",
+        message: "Access denied. Only vendors can create candidates.",
       });
     }
 
+    if (!canEdit(permission)) {
+      return res.status(403).json({
+        status: "failed",
+        message: "You do not have permission to create or edit vendor candidates.",
+      });
+    }
+
+    const { id, ...data } = req.body;
+
+    
     const existingCandidate = await prisma.userProfile.findFirst({
       where: {
         id,
         vendorId: userAuth.id,
+        organizationId
       },
     });
 
@@ -163,17 +179,27 @@ const deleteVendorCandidate = async (req, res) => {
     const userAuth = req.user;
     const { id } = req.body;
 
-    if (userAuth.role !== "company") {
+     const {organizationId, permission} = req.user
+
+    if (!organizationId || !permission) {
       return res.status(403).json({
         status: "failed",
-        message: "Access denied. Only vendors can delete candidates.",
+        message: "Access denied. Only vendors can create candidates.",
       });
     }
+
+    if (!canDelete(permission)) {
+      return res.status(403).json({
+        status: "failed",
+        message: "You do not have permission to create vendor candidates.",
+      });
+    }
+
 
     const existingCandidate = await prisma.userProfile.findFirst({
       where: {
         id,
-        vendorId: userAuth.id,
+        vendorId: organizationId,
       },
     });
 
@@ -205,6 +231,15 @@ const deleteVendorCandidate = async (req, res) => {
  const updateCandidateStatus = async (req, res) => {
   try {
     const userAuth = req.user;
+    // const { organizationId, permission } = req.user;
+
+    if (!canEdit(userAuth.permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not allowed to edit jobs"
+      });
+    }
+
     const { jobApplicationId, status } = req.body;
 
     if (userAuth.role !== "company") {
@@ -234,7 +269,8 @@ const deleteVendorCandidate = async (req, res) => {
     const application = await prisma.jobApplication.findUnique({
       where: { id: jobApplicationId },
       include: {
-        job: { select: { postedById: true } },
+        // job: { select: { postedById: true } },
+        job: { select: { organizationId: true } },
       },
     });
 
@@ -245,9 +281,9 @@ const deleteVendorCandidate = async (req, res) => {
       });
     }
 
-    if (application.job.postedById !== userAuth.id) {
+    if (application.job.organizationId !== userAuth.organizationId) {
       return res.status(403).json({
-        status: "failed",
+        status: "error",
         message: "Unauthorized",
       });
     }
@@ -271,7 +307,7 @@ const deleteVendorCandidate = async (req, res) => {
   }
 };
 
-
+//update this
 const markCandidateReviewed = async (req, res) => {
   try {
     const userAuth = req.user;
@@ -399,8 +435,19 @@ const getAllCandidates = async (req, res) => {
 const vendorApplyCandidate = async (req, res) => {
   try {
     const vendorId = req.user.id;
+    const { organizationId, permission } = req.user;
+
+    if (!canEdit(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not allowed to edit jobs"
+      });
+    }
+
     const vendor = req.user;
     const { jobId, candidateProfileIds } = req.body;
+
+
 
     const aiProcess = true;
 
@@ -416,15 +463,25 @@ const vendorApplyCandidate = async (req, res) => {
       where: { id: jobId, isDeleted: false },
       include: {
         postedBy: { select: { id: true, name: true, email: true } },
+        organizationId: true,
         _count: { select: { applications: true } },
       }
     });
+
+    
 
     if (!job || job.status !== "Open") {
       return res.status(400).json({
         status: "error",
         message: "Job closed or not found",
       });
+    }
+
+    if(job.organizationId !== organizationId && job.postedBy.id !== vendorId){
+      return  res.status(400).json({
+        status: "error",
+        message: "Unauthorized",
+      })
     }
 
 
@@ -770,12 +827,22 @@ const vendorApplyCandidate = async (req, res) => {
 
 const saveCandidate = async (req, res) => {
   try {
+    const { organizationId, permission, id: recruiterId } = req.user;
+
+    if (!canEdit(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not allowed to edit jobs"
+      });
+    }
+
+
     const { candidateProfileId } = req.body;
-    console.log("candidate",req.user.id)
+
 
     // Validate logged-in user
-    const user = await prisma.users.findUnique({
-      where: { id: req.user.id },
+    const user = await prisma.users.findFirst({
+      where: { id: recruiterId },
     });
 
     if (!user) {
@@ -798,12 +865,11 @@ const saveCandidate = async (req, res) => {
     }
 
     // Prevent duplicate save
-    const existingSave = await prisma.savedCandidate.findUnique({
+    const existingSave = await prisma.savedCandidate.findFirst({
       where: {
-        recruiterId_candidateProfileId: {
-          recruiterId: user.id,
+          recruiterId: recruiterId,
+          organizationId,
           candidateProfileId,
-        },
       },
     });
 
@@ -817,7 +883,8 @@ const saveCandidate = async (req, res) => {
     // Save candidate
     const savedCandidate = await prisma.savedCandidate.create({
       data: {
-        recruiterId: user.id,
+        recruiterId,
+        organizationId,
         candidateProfileId,
       },
     });
@@ -841,6 +908,15 @@ const saveCandidate = async (req, res) => {
 
 const unsaveCandidate = async (req, res) => {
   try {
+    const { organizationId, permission } = req.user;
+
+    if (!canEdit(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not allowed to edit jobs"
+      });
+    }
+
     const { candidateProfileId } = req.body;
     const recruiterId = req.user.id;
 
@@ -854,6 +930,7 @@ const unsaveCandidate = async (req, res) => {
     const deleted = await prisma.savedCandidate.deleteMany({
       where: {
         recruiterId,
+        organizationId,
         candidateProfileId,
       },
     });
@@ -882,14 +959,16 @@ const unsaveCandidate = async (req, res) => {
 
 const getSavedCandidates = async (req, res) => {
   try {
-    const recruiterId = req.user.id;
+
+    const { organizationId } = req.user;
+
     const { page = 1, limit = 10 } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const [savedCandidates, total] = await Promise.all([
       prisma.savedCandidate.findMany({
-        where: { recruiterId },
+        where: { organizationId },
         include: {
           candidateProfile: true,
         },
@@ -897,14 +976,18 @@ const getSavedCandidates = async (req, res) => {
         skip,
         take: parseInt(limit),
       }),
-      prisma.savedCandidate.count({ where: { recruiterId } }),
+      prisma.savedCandidate.count({ where: { organizationId } }),
     ]);
+
+    console.log("candates", savedCandidates)
 
     const formatted = savedCandidates.map(item => ({
       ...item.candidateProfile,
       isSaved: true,
       savedAt: item.createdAt,
     }));
+
+    console.log("candidate formatte", formatted)
 
     return res.status(200).json({
       status: "success",
@@ -920,10 +1003,10 @@ const getSavedCandidates = async (req, res) => {
     });
 
   } catch (error) {
-    logger.error("getSavedCandidates Error:", error.message);
+    console.error("getSavedCandidates Error:", error.message);
     return res.status(500).json({
       status: "error",
-      message: "Failed to fetch saved candidates",
+      message: "Failed to fetch saved candidates"+ error.message,
     });
   }
 };

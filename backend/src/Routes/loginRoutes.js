@@ -2,7 +2,7 @@ import express from 'express'
 import { validateInput } from '../Middleware/inputValidator.js'
 import { googleAuthValidator,OtpGenerateValidator,OtpValidator } from '../validators/userValidators.js';
 import { googleAuth } from '../controllers/authControllers.js';
-import {  userOtpGenerate, userOtpValidator, login, setPassword,resetPassword,forgotPassword,checkUserExists } from '../controllers/loginControllers.js';
+import {  userOtpGenerate, userOtpValidator, login, setPassword,resetPassword,forgotPassword,checkUserExists, refreshAccessToken, logout } from '../controllers/loginControllers.js';
 
 
 const LoginRouters = express.Router()
@@ -18,6 +18,8 @@ LoginRouters.post("/setpassword", setPassword)
 LoginRouters.post("/login",login)
 LoginRouters.post("/forgotpassword", forgotPassword);
 LoginRouters.post("/resetpassword", resetPassword);
+LoginRouters.get("/auth/refresh-token", refreshAccessToken);
+LoginRouters.post("/auth/logout", logout)
 
 
 

@@ -17,14 +17,25 @@ import CVRouters from "./Routes/cvRankerRoutes.js";
 import activityRoutes from "./Routes/activityRoutes.js";
 import { authenticateToken } from "./Middleware/authMiddleware.js";
 import todoRoutes from "./Routes/todoRoutes.js";
+import OrganizationRoutes from "./Routes/organizationRoutes.js";
+import cookieParser from "cookie-parser";
+
+
+
+
+
 
 dotenv.config();
 
 
 const app = express();
 
-app.use(cors())
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json())
+app.use(cookieParser());
 app.use(apiLimiter);
 
 
@@ -36,11 +47,12 @@ app.use(authLimiter, LoginRouters);
 app.use(userRouter)
 app.use(JobRouters)
 app.use(CommonRouters)
-app.use('/vendor',VendorRoutes)
+app.use('/vendor', VendorRoutes)
 app.use("/verification", VerificationRoutes);
 // app.use(authenticateToken, aiUserLimiter, CVRouters);
 app.use(authenticateToken, CVRouters);
 app.use("/api/todos", todoRoutes);
+app.use("/api/v1/organization", OrganizationRoutes);
 
 
 
@@ -48,7 +60,7 @@ app.use("/api/todos", todoRoutes);
 
 const PORT = process.env.PORT
 
-app.listen(PORT || '3001', () =>{
+app.listen(PORT || '3001', () => {
   // console.log(`server Started at http://localhost:${PORT}`);
   logger.info(`server Started at http://localhost:${PORT}`);
 

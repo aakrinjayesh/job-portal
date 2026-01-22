@@ -85,6 +85,7 @@ model Users {
   role             Role             @default(candidate)
   password         String?
   emailverified    Boolean?
+  refreshToken     String?
   isactive         Boolean?
   createdAt        DateTime         @default(now())
   plan             Plan             @default(FREE)
@@ -103,7 +104,6 @@ model Users {
   dashboards       Dashboard[]
 
   recruiterActivities Activity[]          @relation("RecruiterActivities")
-  candidateActivities Activity[]          @relation("CandidateActivities")
   recruiterTodos      RecruiterTodo[]
   candidateRatings    CandidateRating[]
   organizationMember  OrganizationMember?
@@ -170,11 +170,12 @@ model UserProfile {
   verificationOtp String?
   otpExpiry       DateTime?
 
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  jobApplications JobApplication[]
-  organizationId  String?
-  organization    Organization?    @relation(fields: [organizationId], references: [id])
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  jobApplications     JobApplication[]
+  organizationId      String?
+  organization        Organization?    @relation(fields: [organizationId], references: [id])
+  candidateActivities Activity[]       @relation("CandidateActivities")
 }
 
 model Skills {
@@ -267,9 +268,9 @@ model Job {
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  activity       Activity[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 enum ApplicationStatus {
@@ -529,11 +530,14 @@ model Activity {
 
   recruiterId String
   candidateId String
+  jobId       String
 
   category ActivityCategory
 
-  recruiter Users @relation("RecruiterActivities", fields: [recruiterId], references: [id], onDelete: Cascade)
-  candidate Users @relation("CandidateActivities", fields: [candidateId], references: [id], onDelete: Cascade)
+  recruiter Users       @relation("RecruiterActivities", fields: [recruiterId], references: [id], onDelete: Cascade)
+  candidate UserProfile @relation("CandidateActivities", fields: [candidateId], references: [id], onDelete: Cascade)
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   note     ActivityNote?
   schedule ActivitySchedule?
@@ -617,7 +621,6 @@ model RecruiterTodo {
 
   recruiter Users @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
 
-  @@unique([recruiterId, title])
   @@index([recruiterId])
 }
 

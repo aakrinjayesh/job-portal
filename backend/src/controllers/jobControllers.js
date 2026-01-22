@@ -9,6 +9,7 @@ import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
 import {applyFilters} from "../utils/applyFilters.js";
 import { queueRecruiterEmails } from "../utils/BulkEmail/jobEmail.service.js";
+import { canCreate, canDelete, canEdit, canView } from "../utils/permission.js";
 
 
 // User applies for a job
@@ -414,148 +415,509 @@ const userAllApplyedJobs = async (req, res) => {
 };
 
 
+// const userSaveJob = async (req, res) => {
+//   try {
+//     const { jobId } = req.body;
+//     const userId = req.user.id;
+
+//     if (!jobId) {
+//       return res.status(200).json({
+//         status: "failed",
+//         message: "Job ID is required"
+//       });
+//     }
+
+//     // Check if job exists
+//     const job = await prisma.job.findUnique({
+//       where: { id: jobId }
+//     });
+
+//     if (!job) {
+//       logger.warn(`Job not found while saving - ID: ${jobId}`);
+//       return res.status(404).json({
+//         status: "error",
+//         message: "Job not found"
+//       });
+//     }
+
+//     if (job.isDeleted) {
+//       logger.warn(`Attempt to save deleted job - ID: ${jobId}`);
+//       return res.status(400).json({
+//         status: "error",
+//         message: "This job has been deleted"
+//       });
+//     }
+
+//     // Check if already saved
+//     const existingSave = await prisma.savedJob.findUnique({
+//       where: {
+//         jobId_userId: {
+//           jobId,
+//           userId
+//         }
+//       }
+//     });
+
+//     if (existingSave) {
+//       logger.warn(`Job already saved - jobId: ${jobId}, userId: ${userId}`);
+//       return res.status(409).json({
+//         status: "error",
+//         message: "Job already saved"
+//       });
+//     }
+
+//     // Save the job
+//     const savedJob = await prisma.savedJob.create({
+//       data: {
+//         jobId,
+//         userId
+//       },
+//       include: {
+//         job: {
+//           select: {
+//             id: true,
+//             role: true,
+//             companyName: true,
+//             location: true,
+//             salary: true
+//           }
+//         }
+//       }
+//     });
+
+//     return res.status(201).json({
+//       status: "success",
+//       message: "Job saved successfully",
+//       data: savedJob
+//     });
+
+//   } catch (error) {
+//     logger.error("userSaveJob Error:", JSON.stringify(error.message,null,2));
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Failed to save job" +  error.message,
+//     });
+//   }
+// };
+
 const userSaveJob = async (req, res) => {
   try {
     const { jobId } = req.body;
-    const userId = req.user.id;
+    const { id: userId, role, organizationId } = req.user;
 
     if (!jobId) {
-      return res.status(200).json({
-        status: "failed",
-        message: "Job ID is required"
-      });
-    }
-
-    // Check if job exists
-    const job = await prisma.job.findUnique({
-      where: { id: jobId }
-    });
-
-    if (!job) {
-      logger.warn(`Job not found while saving - ID: ${jobId}`);
-      return res.status(404).json({
-        status: "error",
-        message: "Job not found"
-      });
-    }
-
-    if (job.isDeleted) {
-      logger.warn(`Attempt to save deleted job - ID: ${jobId}`);
       return res.status(400).json({
         status: "error",
-        message: "This job has been deleted"
+        message: "Job ID is required",
       });
     }
 
-    // Check if already saved
-    const existingSave = await prisma.savedJob.findUnique({
-      where: {
-        jobId_userId: {
-          jobId,
-          userId
-        }
+    // Validate job
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    if (!job || job.isDeleted) {
+      return res.status(404).json({
+        status: "error",
+        message: "Job not found or deleted",
+      });
+    }
+
+    // -------------------------------
+    //  ROLE: CANDIDATE → Normal save
+    // -------------------------------
+    if (role === "candidate") {
+      const existing = await prisma.savedJob.findUnique({
+        where: {
+          jobId_userId: { jobId, userId }
+        },
+      });
+
+      if (existing) {
+        return res.status(409).json({
+          status: "error",
+          message: "Job already saved",
+        });
       }
+
+      const saved = await prisma.savedJob.create({
+        data: {
+          jobId,
+          userId,
+          organizationId: null,  // candidate should not have org saves
+        },
+      });
+
+      return res.status(201).json({
+        status: "success",
+        message: "Job saved successfully",
+        data: saved,
+      });
+    }
+
+    // -------------------------------
+    //  ROLE: COMPANY → Org-wide save
+    // -------------------------------
+    if (!organizationId) {
+      return res.status(400).json({
+        status: "error",
+        message: "organizationId missing in token",
+      });
+    }
+
+    // Check if organization already saved this job
+    const existingOrgSave = await prisma.savedJob.findUnique({
+      where: {
+        jobId_organizationId: {
+          jobId,
+          organizationId,
+        },
+      },
     });
 
-    if (existingSave) {
-      logger.warn(`Job already saved - jobId: ${jobId}, userId: ${userId}`);
+    if (existingOrgSave) {
+      // If soft-deleted → restore
+      if (existingOrgSave.isDeleted) {
+        const updated = await prisma.savedJob.update({
+          where: { id: existingOrgSave.id },
+          data: {
+            isDeleted: false,
+            deletedAt: null,
+            userId, // who restored it
+            savedAt: new Date(),
+          },
+        });
+
+        return res.status(200).json({
+          status: "success",
+          message: "Job restored for organization",
+          data: updated,
+        });
+      }
+
       return res.status(409).json({
         status: "error",
-        message: "Job already saved"
+        message: "Job already saved for this organization",
       });
     }
 
-    // Save the job
-    const savedJob = await prisma.savedJob.create({
+    // Create new org-wide saved job
+    const saved = await prisma.savedJob.create({
       data: {
         jobId,
-        userId
+        userId,          // recruiter who saved
+        organizationId,
       },
-      include: {
-        job: {
-          select: {
-            id: true,
-            role: true,
-            companyName: true,
-            location: true,
-            salary: true
-          }
-        }
-      }
     });
 
     return res.status(201).json({
       status: "success",
-      message: "Job saved successfully",
-      data: savedJob
+      message: "Job saved for organization",
+      data: saved,
     });
-
   } catch (error) {
-    logger.error("userSaveJob Error:", JSON.stringify(error.message,null,2));
+    logger.error("userSaveJob Error:", error.message);
     return res.status(500).json({
       status: "error",
-      message: "Failed to save job" +  error.message,
+      message: "Internal server error: " + error.message,
     });
   }
 };
 
+
+
+// const userUnsaveJob = async (req, res) => {
+//   try {
+//     logger.info("unsave clicked")
+//     const { jobId } = req.body;
+//     const userId = req.user.id;
+
+//      if (!jobId) {
+//       logger.warn("Job ID missing in userUnsaveJob");
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Job ID is required"
+//       });
+//     }
+
+//     // Delete saved job
+//     const deleted = await prisma.savedJob.deleteMany({
+//       where: {
+//         jobId,
+//         userId
+//       }
+//     });
+
+//     if (deleted.count === 0) {
+//       logger.warn(`Saved job not found - jobId: ${jobId}, userId: ${userId}`);
+//       return res.status(404).json({
+//         status: "error",
+//         message: "Saved job not found"
+//       });
+//     }
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Job removed from saved list"
+//     });
+
+//   } catch (error) {
+//     logger.error("userUnsaveJob Error:", JSON.stringify(error.message,null,2));
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Failed to unsave job" + error.message,
+//     });
+//   }
+// };
 
 const userUnsaveJob = async (req, res) => {
   try {
-    logger.info("unsave clicked")
     const { jobId } = req.body;
-    const userId = req.user.id;
+    const { id: userId, role, organizationId } = req.user;
 
-     if (!jobId) {
-      logger.warn("Job ID missing in userUnsaveJob");
+    if (!jobId) {
       return res.status(400).json({
         status: "error",
-        message: "Job ID is required"
+        message: "Job ID is required",
       });
     }
 
-    // Delete saved job
-    const deleted = await prisma.savedJob.deleteMany({
-      where: {
-        jobId,
-        userId
+    // -----------------------------------------
+    // ROLE: CANDIDATE → Hard delete own saved job
+    // -----------------------------------------
+    if (role === "candidate") {
+      const deleted = await prisma.savedJob.deleteMany({
+        where: { jobId, userId },
+      });
+
+      if (deleted.count === 0) {
+        return res.status(404).json({
+          status: "error",
+          message: "Saved job not found",
+        });
       }
+
+      return res.status(200).json({
+        status: "success",
+        message: "Job removed from saved list",
+      });
+    }
+
+    // -----------------------------------------
+    // ROLE: COMPANY → Soft delete for organization
+    // -----------------------------------------
+    const existing = await prisma.savedJob.findUnique({
+      where: {
+        jobId_organizationId: {
+          jobId,
+          organizationId,
+        },
+      },
     });
 
-    if (deleted.count === 0) {
-      logger.warn(`Saved job not found - jobId: ${jobId}, userId: ${userId}`);
+    if (!existing || existing.isDeleted) {
       return res.status(404).json({
         status: "error",
-        message: "Saved job not found"
+        message: "Job not saved for this organization",
       });
     }
+
+    await prisma.savedJob.update({
+      where: { id: existing.id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
 
     return res.status(200).json({
       status: "success",
-      message: "Job removed from saved list"
+      message: "Job unsaved for organization",
     });
-
   } catch (error) {
-    logger.error("userUnsaveJob Error:", JSON.stringify(error.message,null,2));
+    logger.error("userUnsaveJob Error:", error.message);
     return res.status(500).json({
       status: "error",
-      message: "Failed to unsave job" + error.message,
+      message: "Internal server error: " + error.message,
     });
   }
 };
+
+
+// const userAllSavedJobs = async (req, res) => {
+//   try {
+//      const { id: userId, role, organizationId } = req.user;
+//     const { page = 1, limit = 10 } = req.query;
+
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+
+//     // Get saved jobs with job details
+//     const [savedJobs, total] = await Promise.all([
+//       prisma.savedJob.findMany({
+//         where: { userId },
+//         include: {
+//           job: {
+//             select: {
+//               id: true,
+//               role: true,
+//               companyName: true,
+//               location: true,
+//               salary: true,
+//               employmentType: true,
+//               experience: true,
+//               skills: true,
+//               description: true,
+//               status: true,
+//               applicationDeadline: true,
+//               createdAt: true
+//             }
+//           }
+//         },
+//         orderBy: {
+//           savedAt: "desc"
+//         },
+//         skip,
+//         take: parseInt(limit)
+//       }),
+//       prisma.savedJob.count({ where: { userId } })
+//     ]);
+
+//     // Format response + add deadline warning + add isSaved flag
+//     const formattedJobs = savedJobs.map(saved => {
+//       const deadlineDate = new Date(saved.job.applicationDeadline);
+//       const today = new Date();
+//       const daysUntilDeadline = Math.ceil(
+//         (deadlineDate - today) / (1000 * 60 * 60 * 24)
+//       );
+
+//       return {
+//         ...saved.job,            // flatten job details
+//         isSaved: true,           // ADD THIS → unify with getJobList
+//         savedAt: saved.savedAt,  // keep saved timestamp if needed
+//         deadlineWarning:
+//           daysUntilDeadline <= 7 && daysUntilDeadline > 0,
+//         daysUntilDeadline
+//       };
+//     });
+
+//     return res.status(200).json({
+//       status: "success",
+//       data: {
+//         savedJobs: formattedJobs,
+//         pagination: {
+//           total,
+//           page: parseInt(page),
+//           limit: parseInt(limit),
+//           totalPages: Math.ceil(total / parseInt(limit))
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     logger.error("userAllSavedJobs Error:", JSON.stringify(error.message,null,2));
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Failed to fetch saved jobs" + error.message,
+//     });
+//   }
+// };
+
+
+function formatSavedJob(saved) {
+  const deadlineDate = saved.job.applicationDeadline
+    ? new Date(saved.job.applicationDeadline)
+    : null;
+
+  let daysUntilDeadline = null;
+  let deadlineWarning = false;
+
+  if (deadlineDate) {
+    const today = new Date();
+    daysUntilDeadline = Math.ceil(
+      (deadlineDate - today) / (1000 * 60 * 60 * 24)
+    );
+
+    deadlineWarning =
+      daysUntilDeadline <= 7 && daysUntilDeadline > 0;
+  }
+
+  return {
+    ...saved.job,
+    isSaved: true,
+    savedAt: saved.savedAt,
+    deadlineWarning,
+    daysUntilDeadline,
+  };
+}
 
 
 const userAllSavedJobs = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { id: userId, role, organizationId } = req.user;
     const { page = 1, limit = 10 } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Get saved jobs with job details
-    const [savedJobs, total] = await Promise.all([
+    // --------------------------------------------
+    // 1️⃣ CANDIDATE FLOW — NORMAL SAVE
+    // --------------------------------------------
+    if (role === "candidate") {
+      const [savedJobs, total] = await Promise.all([
+        prisma.savedJob.findMany({
+          where: { userId, isDeleted: false },
+          include: {
+            job: {
+              select: {
+                id: true,
+                role: true,
+                companyName: true,
+                location: true,
+                salary: true,
+                employmentType: true,
+                experience: true,
+                skills: true,
+                clouds: true,
+                description: true,
+                status: true,
+                applicationDeadline: true,
+                createdAt: true,
+                postedBy: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { savedAt: "desc" },
+          skip,
+          take: parseInt(limit)
+        }),
+        prisma.savedJob.count({ where: { userId, isDeleted: false } })
+      ]);
+
+      const formattedJobs = savedJobs.map(saved => formatSavedJob(saved));
+
+      return res.status(200).json({
+        status: "success",
+        data: {
+          savedJobs: formattedJobs,
+          pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / parseInt(limit)),
+          },
+        },
+      });
+    }
+
+    // --------------------------------------------
+    // 2️⃣ COMPANY FLOW — ORGANIZATION-WIDE SAVED JOBS
+    // --------------------------------------------
+    const [orgSavedJobs, total] = await Promise.all([
       prisma.savedJob.findMany({
-        where: { userId },
+        where: { organizationId, isDeleted: false },
         include: {
           job: {
             select: {
@@ -570,36 +932,31 @@ const userAllSavedJobs = async (req, res) => {
               description: true,
               status: true,
               applicationDeadline: true,
-              createdAt: true
+              createdAt: true,
+              postedBy: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
             }
+          },
+          user: {
+            select: { id: true, name: true, email: true } // savedBy
           }
         },
-        orderBy: {
-          savedAt: "desc"
-        },
+        orderBy: { savedAt: "desc" },
         skip,
         take: parseInt(limit)
       }),
-      prisma.savedJob.count({ where: { userId } })
+      prisma.savedJob.count({ where: { organizationId, isDeleted: false } })
     ]);
 
-    // Format response + add deadline warning + add isSaved flag
-    const formattedJobs = savedJobs.map(saved => {
-      const deadlineDate = new Date(saved.job.applicationDeadline);
-      const today = new Date();
-      const daysUntilDeadline = Math.ceil(
-        (deadlineDate - today) / (1000 * 60 * 60 * 24)
-      );
-
-      return {
-        ...saved.job,            // flatten job details
-        isSaved: true,           // ADD THIS → unify with getJobList
-        savedAt: saved.savedAt,  // keep saved timestamp if needed
-        deadlineWarning:
-          daysUntilDeadline <= 7 && daysUntilDeadline > 0,
-        daysUntilDeadline
-      };
-    });
+    const formattedJobs = orgSavedJobs.map(saved => ({
+      ...formatSavedJob(saved),
+      savedBy: saved.user, // who saved this job
+    }));
 
     return res.status(200).json({
       status: "success",
@@ -607,21 +964,22 @@ const userAllSavedJobs = async (req, res) => {
         savedJobs: formattedJobs,
         pagination: {
           total,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(total / parseInt(limit))
-        }
-      }
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / parseInt(limit)),
+        },
+      },
     });
 
   } catch (error) {
-    logger.error("userAllSavedJobs Error:", JSON.stringify(error.message,null,2));
+    logger.error("userAllSavedJobs Error:", error.message);
     return res.status(500).json({
       status: "error",
-      message: "Failed to fetch saved jobs" + error.message,
+      message: "Failed to fetch saved jobs: " + error.message,
     });
   }
 };
+
 
 
 
@@ -705,6 +1063,16 @@ const getJobList = async (req, res) => {
 
 const postJob = async (req, res) => {
   try {
+
+      const { id: recruiterId, organizationId, permission } = req.user;
+
+      if (!canCreate(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not allowed to post jobs"
+      });
+    }
+
       const {
       role,
       description,
@@ -725,9 +1093,8 @@ const postJob = async (req, res) => {
       companyLogo
     } = req.body;
     
-    logger.log('body ##########',JSON.stringify(req.body,null,2));
 
-    const userFromAuth = req.user
+  
 
     const job = await prisma.job.create({
       data: {
@@ -748,7 +1115,8 @@ const postJob = async (req, res) => {
         applicationDeadline,
         ApplicationLimit,
         companyLogo,
-        postedById: userFromAuth.id, // optional
+        postedById: recruiterId, // optional
+        organizationId
       },
     });
 
@@ -807,16 +1175,18 @@ const postedJobs = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const userFromAuth = req.user;
+    
 
-    // ❗ Validate user
-    if (!userFromAuth?.id) {
-      logger.warn("User ID missing in postedJobs");
-      return res.status(400).json({
+    const { organizationId, permission } = req.user;
+
+    if (!canView(permission)) {
+      return res.status(403).json({
         status: "error",
-        message: "User ID is required",
+        message: "You cannot view jobs"
       });
     }
+
+
 
     // 🟢 Fetch jobs + applicant count
     const [jobs, totalCount] = await Promise.all([
@@ -824,7 +1194,7 @@ const postedJobs = async (req, res) => {
         skip,
         take: limit,
         where: {
-          postedById: userFromAuth.id,
+          organizationId,
           isDeleted: false,
         },
         orderBy: { createdAt: "desc" },
@@ -841,7 +1211,7 @@ const postedJobs = async (req, res) => {
 
       prisma.job.count({
         where: {
-          postedById: userFromAuth.id,
+          organizationId,
           isDeleted: false,
         },
       }),
@@ -884,6 +1254,15 @@ const postedJobs = async (req, res) => {
 // Edit job posted by company or vendor
 const editJob = async (req, res) => {
   try {
+    const { organizationId, permission } = req.user;
+
+    if (!canEdit(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not allowed to edit jobs"
+      });
+    }
+
     const {
       id, // the job ID to update
       role,
@@ -906,8 +1285,6 @@ const editJob = async (req, res) => {
       companyLogo
     } = req.body;
 
-    const userFromAuth = req.user;
-
     // Check if job exists first
     const existingJob = await prisma.job.findUnique({
       where: { id: id },
@@ -923,8 +1300,8 @@ const editJob = async (req, res) => {
 
 
     // Optional: check if user is authorized to edit
-    if (existingJob.postedById && existingJob.postedById !== userFromAuth.id) {
-      logger.warn(`Unauthorized job edit attempt - jobId: ${id}, userId: ${userFromAuth.id}`);
+    if (existingJob.organizationId && existingJob.organizationId !== organizationId) {
+      logger.warn(`Unauthorized job edit attempt - jobId: ${id}, userId: ${req.user.id} from ORGID: ${organizationId}`);
       return res.status(403).json({
         status: "error",
         message: "You are not authorized to edit this job",
@@ -979,11 +1356,21 @@ const editJob = async (req, res) => {
 const deleteJob = async (req, res) => {
   logger.info("Delete Job API hit");
   try {
+
+    const { organizationId, permission } = req.user;
+
+    if (!canDelete(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You cannot delete jobs"
+      });
+    }
+
     const { jobIds, deletedReason } = req.body;  // For multiple delete
  
     if (jobIds && Array.isArray(jobIds) && jobIds.length > 0) {
       await prisma.job.updateMany({
-        where: { id: { in: jobIds } },
+        where: { id: { in: jobIds }, organizationId},
         data: {
         isDeleted: true,
         deletedReason,
@@ -1037,46 +1424,50 @@ const getJobDetails = async (req, res) => {
 
 const getApplicantsByJobId = async (req, res) => {
   try {
+    const { organizationId, permission } = req.user;
     const { jobId } = req.body;
 
-    if (!jobId) {
-      logger.warn("Missing jobId in getApplicantsByJobId body");
-      return res.status(400).json({ message: "jobId is missing!" });
+    if (!canView(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You cannot view applicants"
+      });
     }
+
+    const job = await prisma.job.findUnique({
+      where: { id: jobId }
+    });
+
+    if (!job || job.organizationId !== organizationId) {
+      return res.status(404).json({
+        status: "error",
+        message: "Job not found"
+      });
+    }
+
 
     // Fetch data (WITHOUT Prisma sorting)
     const applicants = await prisma.jobApplication.findMany({
       where: { jobId },
-      // include: {
-      //   candidateProfile: true,
-      //   analysis: {
-      //     select: {
-      //       fitPercentage: true,
-      //       details: true,
-      //       status: true
-      //     }
-      //   }
-      // }
-
       include: {
-  candidateProfile: {
-    include: {
-      CandidateRating: {
-        select: {
-          rating: true,
-          comment: true,
+        candidateProfile: {
+          include: {
+            CandidateRating: {
+              select: {
+                rating: true,
+                comment: true,
+              },
+            },
+          },
         },
-      },
-    },
-  },
-  analysis: {
-    select: {
-      fitPercentage: true,
-      details: true,
-      status: true,
-    },
-  },
-}
+        analysis: {
+          select: {
+            fitPercentage: true,
+            details: true,
+            status: true,
+          },
+        },
+      }
 
     });
 
@@ -1119,29 +1510,25 @@ const getApplicantsByJobId = async (req, res) => {
     // }));
 
     const formattedApplicants = applicants.map((app) => {
-  const ratings = app.candidateProfile?.CandidateRating || [];
+    const ratings = app.candidateProfile?.CandidateRating || [];
 
-  const total = ratings.reduce((sum, r) => sum + r.rating, 0);
-  const avgRating = ratings.length ? total / ratings.length : null;
+    const total = ratings.reduce((sum, r) => sum + r.rating, 0);
+    const avgRating = ratings.length ? total / ratings.length : null;
 
-  return {
-    applicationId: app.id,
-    status: app.status,
-    appliedAt: app.appliedAt,
-
-    name: app.candidateProfile?.name,
-    email: app.candidateProfile?.email,
-    profile: app.candidateProfile,
-
-    matchScore: app.analysis?.fitPercentage ?? null,
- aiAnalysis: app.analysis?.details ?? null,
-    // ⭐ NEW FIELDS
-    avgRating,                 // e.g. 3.33
-    ratingCount: ratings.length,
-    ratingReviews: ratings,    // [{ rating, comment }]
-  };
+    return {
+      applicationId: app.id,
+      status: app.status,
+      appliedAt: app.appliedAt,
+      name: app.candidateProfile?.name,
+      email: app.candidateProfile?.email,
+      profile: app.candidateProfile,
+      matchScore: app.analysis?.fitPercentage ?? null,
+      aiAnalysis: app.analysis?.details ?? null,
+      avgRating,                 // e.g. 3.33
+      ratingCount: ratings.length,
+      ratingReviews: ratings,    // [{ rating, comment }]
+    };
 });
-
 
     return res.status(200).json({
       status: "success",
@@ -1195,6 +1582,7 @@ const getUserAppliedJobsId = async (req,res) =>{
       })
   }
 }
+
  const saveCandidateRating = async (req, res) => {
   try {
     const recruiterId = req.user.id;
@@ -1243,16 +1631,16 @@ const getUserAppliedJobsId = async (req,res) =>{
 
 export {
   userApplyJob,
+  userAllApplyedJobs,
   userWithdrawJob,
   userSaveJob,
-  userAllApplyedJobs,
-  userAllSavedJobs,
   userUnsaveJob,
+  userAllSavedJobs,
   getJobList,
   postJob,
-  postedJobs,
   editJob,
   deleteJob,
+  postedJobs,
   getJobDetails,
   getApplicantsByJobId,
   getUserAppliedJobsId,

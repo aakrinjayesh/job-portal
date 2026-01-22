@@ -1,9 +1,10 @@
 import generateOtp from "../utils/generateOtp.js";
 import sendEmail from "../utils/sendEmail.js";
 import prisma from "../config/prisma.js";
-import generateToken from "../utils/generateToken.js";
+import generateToken, { generateRefreshToken } from "../utils/generateToken.js";
 import axios from "axios";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
 
 const otpStore = new Map();
@@ -13,11 +14,11 @@ const otpStore = new Map();
  */
 const userOtpGenerate = async (req, res) => {
   try {
-    const { email, role,name } = req.body;
+    const { email, role, name } = req.body;
     let user = await prisma.users.findFirst({ where: { email } });
 
     // If user not found, create it
-    if (!user) {        
+    if (!user) {
       //const name = email.split("@")[0];
       user = await prisma.users.create({
         data: { name, email, role },
@@ -28,9 +29,9 @@ const userOtpGenerate = async (req, res) => {
     const GenerateOtp = generateOtp();
     otpStore.set(email, GenerateOtp);
     logger.info("🗂️ otpStore:", otpStore);
-    console.log("otpStore",otpStore)
+    console.log("otpStore", otpStore)
     // Send OTP to email
-   const sendmail = await sendEmail({
+    const sendmail = await sendEmail({
       to: email,
       subject: "Your OTP Code",
       text: `Hi, Welcome to QuickHireSF
@@ -41,7 +42,7 @@ const userOtpGenerate = async (req, res) => {
       message: "OTP sent to email",
     });
   } catch (err) {
-    logger.error("Error in userOtpGenerate:", JSON.stringify(err.message,null,2));
+    logger.error("Error in userOtpGenerate:", JSON.stringify(err.message, null, 2));
     return res
       .status(500)
       .json({ status: "error", message: err.message || "Something went wrong" });
@@ -94,14 +95,14 @@ const userOtpValidator = async (req, res) => {
     logger.success(`✅ OTP is correct (Generated: ${savedOtp}, Received: ${otp})`);
     otpStore.delete(email);
 
-   
+
 
     return res.status(200).json({
       status: "success",
       message: "OTP verified successfully",
     });
   } catch (err) {
-    logger.error("❌ OTP validation error:", JSON.stringify(err.message,null,2));
+    logger.error("❌ OTP validation error:", JSON.stringify(err.message, null, 2));
     return res.status(500).json({
       status: "error",
       message: "An error occurred during validation:" + err.message,
@@ -112,52 +113,411 @@ const userOtpValidator = async (req, res) => {
 /**
  * Set password and register on external service
  */
-const setPassword = async (req, res) => {
-  try {
-    const { email, password, role } = req.body;
+// const setPassword = async (req, res) => {
+//   try {
+//     const { email, password, role } = req.body;
 
-    if (!email || !password || !role) {
-      return res.status(400).json({
-        status: "error",
-        message: "Email, password, and role are required",
+//     if (!email || !password || !role) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Email, password, and role are required",
+//       });
+//     }
+
+//     // 1️⃣ Find user
+//     const user = await prisma.users.findUnique({
+//       where: { email },
+//     });
+
+//     if (!user) {
+//       return res.status(404).json({
+//         status: "error",
+//         message: "User not found. Please complete OTP verification first.",
+//       });
+//     }
+
+//     if (user.role !== role) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Invalid role for this user",
+//       });
+//     }
+
+//     // 2️⃣ Hash & set password locally
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const updatedUser = await prisma.users.update({
+//       where: { email },
+//       data: { password: hashedPassword },
+//     });
+
+//     // 3️⃣ Register user in external chat system
+//     let externalUserId = null;
+
+//     try {
+//       const payload = {
+//         email: updatedUser.email,
+//         username: updatedUser.email.split('@')[0].toLocaleLowerCase(),
+//         password, // real password
+//       };
+
+//       const registerResponse = await axios.post(
+//         "http://localhost:8080/api/v1/users/register",
+//         payload,
+//         { headers: { "Content-Type": "application/json" } }
+//       );
+
+//       externalUserId = registerResponse?.data?.data?.user?._id;
+//       console.log('extarnal userId', externalUserId)
+//       if (!externalUserId) {
+//         logger.error("❌ External register succeeded but _id missing");
+//         throw new Error("External user id missing");
+//       }
+
+//       logger.info(
+//         "✅ External Register Success",
+//         JSON.stringify(registerResponse.data, null, 2)
+//       );
+//     } catch (err) {
+//       logger.error(
+//         "❌ External registration failed",
+//         JSON.stringify(err.message, null, 2)
+//       );
+//       const deleteUser = await prisma.users.delete({
+//           where:{
+//             email:email
+//           }
+//         })
+//       console.log('deleted user',deleteUser)
+//       return res.status(500).json({
+//         status: "error",
+//         message: "External chat registration failed",
+//       });
+//     }
+
+//     // 4️⃣ UPSERT UserProfile with chatuserid (FAIL HARD)
+//     try {
+//       await prisma.users.update({
+//         where: { id: user.id },
+//         data: { chatuserid: externalUserId },
+//       });
+
+//       logger.info(
+//         `✅ chatuserid synced for ${role}`,
+//         JSON.stringify(
+//           { userId: user.id, chatuserid: externalUserId },
+//           null,
+//           2
+//         )
+//       );
+//     } catch (err) {
+//       logger.error(
+//         "❌ Failed to upsert UserProfile.chatuserid",
+//         JSON.stringify(err.message, null, 2)
+//       );
+//       return res.status(500).json({
+//         status: "error",
+//         message: "Failed to sync chat user profile",
+//       });
+//     }
+
+//     // 5️⃣ Final success
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Password set successfully",
+//     });
+//   } catch (error) {
+//     logger.error(
+//       "Error in setPassword:",
+//       JSON.stringify(error.message, null, 2)
+//     );
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+// const setPassword = async (req, res) => {
+//   try {
+//     const { email, password, role, token } = req.body;
+
+//     if (!email || !password || !role) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Email, password, and role are required",
+//       });
+//     }
+
+//     let invite = null;
+
+//     /* ─────────────────────────────
+//        1️⃣ INVITE FLOW (only if token exists)
+//     ───────────────────────────── */
+//     if (token) {
+//       invite = await prisma.organizationInvite.findUnique({
+//         where: { token },
+//       });
+
+//       console.log("invite",invite)
+//       if (!invite) {
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invalid or already used invite",
+//         });
+//       }
+
+//       if (invite.expiresAt < new Date()) {
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite has expired",
+//         });
+//       }
+
+//       if (invite.email !== email) {
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite data mismatch",
+//         });
+//       }
+//     }
+
+//     /* ─────────────────────────────
+//        2️⃣ FIND USER
+//     ───────────────────────────── */
+//     const user = await prisma.users.findUnique({
+//       where: { email },
+//     });
+
+//     if (!user) {
+//       return res.status(404).json({
+//         status: "error",
+//         message: "User not found. Please complete OTP verification first.",
+//       });
+//     }
+
+//     if (user.role !== role) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Invalid role for this user",
+//       });
+//     }
+
+//     /* ─────────────────────────────
+//        3️⃣ SET PASSWORD
+//     ───────────────────────────── */
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     await prisma.users.update({
+//       where: { email },
+//       data: { password: hashedPassword },
+//     });
+
+//     /* ─────────────────────────────
+//        4️⃣ EXTERNAL CHAT REGISTRATION
+//     ───────────────────────────── */
+//     let externalUserId;
+
+//     try {
+//       const payload = {
+//         email,
+//         username: email.split("@")[0].toLowerCase(),
+//         password,
+//       };
+
+//       const registerResponse = await axios.post(
+//         "http://localhost:8080/api/v1/users/register",
+//         payload,
+//         { headers: { "Content-Type": "application/json" } }
+//       );
+
+//       externalUserId = registerResponse?.data?.data?.user?._id;
+
+//       if (!externalUserId) {
+//         throw new Error("External user id missing");
+//       }
+//     } catch (err) {
+//       await prisma.users.delete({ where: { email } });
+
+//       return res.status(500).json({
+//         status: "error",
+//         message: "External chat registration failed",
+//       });
+//     }
+
+//     /* ─────────────────────────────
+//        5️⃣ SYNC CHAT USER ID
+//     ───────────────────────────── */
+//     await prisma.users.update({
+//       where: { id: user.id },
+//       data: { chatuserid: externalUserId },
+//     });
+
+//     /* ─────────────────────────────
+//        6️⃣ ORG JOIN (ONLY FOR INVITES)
+//     ───────────────────────────── */
+//     if (invite) {
+//       await prisma.organizationMember.create({
+//         data: {
+//           userId: user.id,
+//           organizationId: invite.organizationId,
+//           role: invite.role,
+//           permissions: invite.permissions,
+//         },
+//       });
+
+//       await prisma.organizationInvite.delete({
+//         where: { id: invite.id },
+//       });
+//     }
+
+//     /* ─────────────────────────────
+//        7️⃣ SUCCESS
+//     ───────────────────────────── */
+//     return res.status(200).json({
+//       status: "success",
+//       message: invite
+//         ? "Password set & organization joined successfully"
+//         : "Password set successfully",
+//     });
+
+//   } catch (error) {
+//     logger.error("Error in setPassword:", error.message);
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
+const setPassword = async (req, res) => {
+  const { email, password, role, token } = req.body;
+
+  if (!email || !password || !role) {
+    return res.status(400).json({
+      status: "error",
+      message: "Email, password, and role are required",
+    });
+  }
+
+  try {
+    let invite = null;
+
+    /* ─────────────────────────────
+       1️⃣ VALIDATE INVITE (IF EXISTS)
+    ───────────────────────────── */
+    if (token) {
+      invite = await prisma.organizationInvite.findUnique({
+        where: { token },
       });
+
+      if (!invite)
+        return res.status(400).json({
+          status: "error",
+          message: "Invalid or already used invite",
+        });
+
+      if (invite.expiresAt < new Date())
+        return res.status(400).json({
+          status: "error",
+          message: "Invite has expired",
+        });
+
+      if (invite.email !== email)
+        return res.status(400).json({
+          status: "error",
+          message: "Invite data mismatch",
+        });
     }
 
-    // 1️⃣ Find user
-    const user = await prisma.users.findUnique({
-      where: { email },
-    });
+    /* ─────────────────────────────
+       2️⃣ FIND USER
+    ───────────────────────────── */
+    const user = await prisma.users.findUnique({ where: { email } });
 
-    if (!user) {
+    if (!user)
       return res.status(404).json({
         status: "error",
         message: "User not found. Please complete OTP verification first.",
       });
-    }
 
-    if (user.role !== role) {
+    if (user.role !== role)
       return res.status(400).json({
         status: "error",
         message: "Invalid role for this user",
       });
-    }
 
-    // 2️⃣ Hash & set password locally
+    /* ─────────────────────────────
+       3️⃣ HASH PASSWORD
+    ───────────────────────────── */
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const updatedUser = await prisma.users.update({
-      where: { email },
-      data: { password: hashedPassword },
+    /* ─────────────────────────────
+       4️⃣ TRANSACTION (USER + ORG)
+    ───────────────────────────── */
+    const result = await prisma.$transaction(async (tx) => {
+      // Update password
+      const updatedUser = await tx.users.update({
+        where: { email },
+        data: { password: hashedPassword },
+      });
+
+      // 🔹 INVITE FLOW → Join existing org
+      if (invite) {
+        await tx.organizationMember.create({
+          data: {
+            userId: updatedUser.id,
+            organizationId: invite.organizationId,
+            role: invite.role, // TRUST INVITE ROLE
+            permissions: invite.permissions,
+          },
+        });
+
+        await tx.organizationInvite.delete({
+          where: { id: invite.id },
+        });
+      }
+
+      // 🔹 NORMAL FLOW → Create org if company
+      if (!invite && role === "company") {
+        const existingMembership =
+          await tx.organizationMember.findFirst({
+            where: { userId: updatedUser.id },
+          });
+
+        if (!existingMembership) {
+          const org = await tx.organization.create({
+            data: {
+              name:
+                updatedUser.companyName ||
+                `${updatedUser.name}'s Organization`,
+            },
+          });
+
+          await tx.organizationMember.create({
+            data: {
+              userId: updatedUser.id,
+              organizationId: org.id,
+              role: "COMPANY_ADMIN",
+            },
+          });
+        }
+      }
+
+      return updatedUser;
     });
 
-    // 3️⃣ Register user in external chat system
-    let externalUserId = null;
+    /* ─────────────────────────────
+       5️⃣ EXTERNAL CHAT REGISTRATION
+    ───────────────────────────── */
+    let externalUserId;
 
     try {
       const payload = {
-        email: updatedUser.email,
-        username: updatedUser.email.split('@')[0].toLocaleLowerCase(),
-        password, // real password
+        email,
+        username: email.split("@")[0].toLowerCase(),
+        password,
       };
 
       const registerResponse = await axios.post(
@@ -167,69 +527,37 @@ const setPassword = async (req, res) => {
       );
 
       externalUserId = registerResponse?.data?.data?.user?._id;
-      console.log('extarnal userId', externalUserId)
-      if (!externalUserId) {
-        logger.error("❌ External register succeeded but _id missing");
-        throw new Error("External user id missing");
-      }
 
-      logger.info(
-        "✅ External Register Success",
-        JSON.stringify(registerResponse.data, null, 2)
-      );
+      if (!externalUserId) throw new Error("Chat user id missing");
     } catch (err) {
-      logger.error(
-        "❌ External registration failed",
-        JSON.stringify(err.message, null, 2)
-      );
-      const deleteUser = await prisma.users.delete({
-          where:{
-            email:email
-          }
-        })
-      console.log('deleted user',deleteUser)
+      // HARD ROLLBACK USER
+      await prisma.users.delete({ where: { email } });
+
       return res.status(500).json({
         status: "error",
         message: "External chat registration failed",
       });
     }
 
-    // 4️⃣ UPSERT UserProfile with chatuserid (FAIL HARD)
-    try {
-      await prisma.users.update({
-        where: { id: user.id },
-        data: { chatuserid: externalUserId },
-      });
+    /* ─────────────────────────────
+       6️⃣ SYNC CHAT USER ID
+    ───────────────────────────── */
+    await prisma.users.update({
+      where: { id: result.id },
+      data: { chatuserid: externalUserId },
+    });
 
-      logger.info(
-        `✅ chatuserid synced for ${role}`,
-        JSON.stringify(
-          { userId: user.id, chatuserid: externalUserId },
-          null,
-          2
-        )
-      );
-    } catch (err) {
-      logger.error(
-        "❌ Failed to upsert UserProfile.chatuserid",
-        JSON.stringify(err.message, null, 2)
-      );
-      return res.status(500).json({
-        status: "error",
-        message: "Failed to sync chat user profile",
-      });
-    }
-
-    // 5️⃣ Final success
+    /* ─────────────────────────────
+       7️⃣ SUCCESS
+    ───────────────────────────── */
     return res.status(200).json({
       status: "success",
-      message: "Password set successfully",
+      message: invite
+        ? "Password set & organization joined successfully"
+        : "Password set & organization created successfully",
     });
   } catch (error) {
-    logger.error(
-      "Error in setPassword:",
-      JSON.stringify(error.message, null, 2)
-    );
+    logger.error("Error in setPassword:", error.message);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -246,7 +574,7 @@ const login = async (req, res) => {
     const { email, password, role } = req.body;
 
     if (!email || !password || !role) {
-logger.warn("⚠️ Missing login fields");
+      logger.warn("⚠️ Missing login fields");
       return res.status(400).json({
         status: "error",
         message: "Please provide email, password, and role",
@@ -283,15 +611,37 @@ logger.warn("⚠️ Missing login fields");
       });
     }
 
+    const member = await prisma.organizationMember.findUnique({
+      where: { userId: user.id }
+    });
+
+    console.log('member',member)
+
+    if (role === "company" && !member) {
+      return res.status(500).json({
+        status: "error",
+        message: "Organization missing for this user. Contact support.",
+      });
+    }
+
+
     // Generate local JWT
     const userjwt = {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-      plan: user.plan
+      plan: user.plan,
+      organizationId: member?.organizationId || null,
+      permission: member?.permissions || null
     };
     const token = generateToken(userjwt);
+    const refreshToken = generateRefreshToken({id: user.id})
+
+    await prisma.users.update({
+    where: { id: user.id },
+    data: { refreshToken },
+  });
 
     // Attempt external login
     let loginResponse = null;
@@ -313,6 +663,12 @@ logger.warn("⚠️ Missing login fields");
       console.error("⚠️ External login failed (continuing local flow):",err.message,null,2);
     }
 
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
 
     // Final response
     return res.status(200).json({
@@ -346,56 +702,56 @@ logger.warn("⚠️ Missing login fields");
 
 
 const forgotPassword = async (req, res) => {
-  logger.info("📨 forgotPassword called", JSON.stringify({ body: req.body },null,2));
+  logger.info("📨 forgotPassword called", JSON.stringify({ body: req.body }, null, 2));
   try {
     const { email, role } = req.body;
- 
+
     if (!email || !role) {
       return res.status(400).json({ status: "error", message: "Email and role are required" });
     }
- 
+
     // ✅ Correct Prisma query
     const user = await prisma.users.findFirst({
       where: { email, role },
     });
- 
+
     if (!user) {
       logger.warn("⚠️ Forgot password user not found:", email);
       return res.status(404).json({ status: "error", message: "User not found. Please Register" });
     }
- 
+
     // Generate OTP
     const otp = Math.floor(1000 + Math.random() * 9000);
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min validity
- 
+
     // Save OTP to DB
     await prisma.users.update({
       where: { id: user.id },
       data: { otp: otp.toString(), otpExpiry },
     });
- 
+
     // Send email (mock or actual)
     logger.info(`OTP for ${email}: ${otp}`);
- 
+
     return res.status(200).json({
       status: "success",
       message: "OTP sent successfully to your email",
     });
   } catch (error) {
-    logger.error("Forgot password error:", JSON.stringify(error.message,null,2));
+    logger.error("Forgot password error:", JSON.stringify(error.message, null, 2));
     res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
     });
   }
 };
- 
+
 
 const resetPassword = async (req, res) => {
   logger.info("📨 resetPassword called", { body: req.body });
   try {
     const { email, password } = req.body;
- 
+
     const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {
       return res.status(404).json({
@@ -403,19 +759,19 @@ const resetPassword = async (req, res) => {
         message: "User not found",
       });
     }
- 
+
     const hashedPassword = await bcrypt.hash(password, 10);
     await prisma.users.update({
       where: { email },
       data: { password: hashedPassword },
     });
- 
+
     return res.status(200).json({
       status: "success",
       message: "Password reset successful",
     });
   } catch (error) {
-    logger.error("Reset password error:", JSON.stringify(error.message,null,2));
+    logger.error("Reset password error:", JSON.stringify(error.message, null, 2));
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -426,28 +782,28 @@ const resetPassword = async (req, res) => {
 const checkUserExists = async (req, res) => {
   try {
     const { email } = req.body;
- 
+
     if (!email) {
       return res.status(400).json({
         status: "failed",
         message: "Email is required",
       });
     }
- 
+
     const user = await prisma.users.findFirst({ where: { email } });
- 
+
     if (user) {
       return res.status(200).json({
         status: "success",
         message: "User already registered. Please login.",
       });
     }
- 
+
     return res.status(200).json({
       status: "error",
       message: "User not registered. You can generate OTP.",
     });
- 
+
   } catch (err) {
     return res.status(500).json({
       status: "error",
@@ -455,7 +811,96 @@ const checkUserExists = async (req, res) => {
     });
   }
 };
- 
+
+const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    // 1️⃣ No refresh token → force login
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Refresh token missing",
+      });
+    }
+
+    // 2️⃣ Verify refresh token
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.R_SECRETKEY
+    );
+
+    // 3️⃣ Find user & match token
+    const user = await prisma.users.findUnique({
+      where: { id: decoded.id },
+      include: {
+        organizationMember: true,
+      },
+    });
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(403).json({
+        message: "Invalid refresh token",
+      });
+    }
+
+    // 4️⃣ Create new access token
+    const accessPayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      plan: user.plan,
+      organizationId: user.organizationMember?.organizationId || null,
+      permission: user.organizationMember?.permissions || null,
+    };
+
+    const newAccessToken = generateToken(accessPayload);
+
+    // (Optional – for later rotation)
+    // const newRefreshToken = generateRefreshToken(user.id);
+
+    return res.status(200).json({
+      token: newAccessToken,
+    });
+  } catch (error) {
+    return res.status(403).json({
+      message: "Refresh token expired or invalid",
+    });
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (refreshToken) {
+      // Remove refresh token from DB
+      await prisma.users.updateMany({
+        where: { refreshToken },
+        data: { refreshToken: null },
+      });
+    }
+
+    // Clear cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: "Logout failed",
+    });
+  }
+};
+
+
 export {
   userOtpGenerate,
   userOtpValidator,
@@ -463,5 +908,7 @@ export {
   login,
   forgotPassword,
   resetPassword,
-  checkUserExists
+  refreshAccessToken,
+  checkUserExists,
+  logout
 };

@@ -8,6 +8,7 @@ import {
 } from "../controllers/activityControllers.js";
 
 import { authenticateToken } from "../Middleware/authMiddleware.js";
+import { ensureCompanyMember } from "../Middleware/organizationMiddleware.js";
 console.log("✅ activityRoutes.js loaded"); // 👈 ADD HERE
 
 const router = express.Router();
@@ -21,6 +22,7 @@ const router = express.Router();
 router.post(
   "/",
   authenticateToken,
+  ensureCompanyMember,
   createActivity
 );
 
@@ -42,6 +44,7 @@ router.get(
 router.put(
   "/:activityId",
   authenticateToken,
+  ensureCompanyMember,
   updateActivity
 );
 
@@ -49,6 +52,7 @@ router.put(
 router.delete(
   "/:activityId",
   authenticateToken,
+  ensureCompanyMember,
   deleteActivity
 );
 

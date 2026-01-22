@@ -65,6 +65,16 @@ export async function login(payload) {
   }
 }
 
+export async function logout() {
+  try {
+    const response = await axiosInstance.post("/auth/logout");
+    return response.data;
+  } catch (error) {
+    console.error("Error in LogOut:", error);
+    throw error;
+  }
+}
+
 
 export const SetPassword = async (payload) => {
   try {
