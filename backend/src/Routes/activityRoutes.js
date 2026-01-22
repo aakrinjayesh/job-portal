@@ -34,8 +34,8 @@ router.get(
 );
 
 // GET Activity Timeline for a Candidate
-router.get(
-  "/candidate/:candidateId",
+router.post(
+  "/candidate",
   authenticateToken,
   getCandidateActivities
 );

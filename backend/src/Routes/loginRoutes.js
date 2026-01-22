@@ -2,7 +2,10 @@ import express from 'express'
 import { validateInput } from '../Middleware/inputValidator.js'
 import { googleAuthValidator,OtpGenerateValidator,OtpValidator } from '../validators/userValidators.js';
 import { googleAuth } from '../controllers/authControllers.js';
-import {  userOtpGenerate, userOtpValidator, login, setPassword,resetPassword,forgotPassword,checkUserExists, refreshAccessToken, logout } from '../controllers/loginControllers.js';
+import {  userOtpGenerate, userOtpValidator, login, setPassword,resetPassword,forgotPassword,checkUserExists, refreshAccessToken, logout, getActiveDevices,
+  logoutSingleDevice,
+  logoutAll } from '../controllers/loginControllers.js';
+import { authenticateToken } from '../Middleware/authMiddleware.js';
 
 
 const LoginRouters = express.Router()
@@ -20,6 +23,9 @@ LoginRouters.post("/forgotpassword", forgotPassword);
 LoginRouters.post("/resetpassword", resetPassword);
 LoginRouters.get("/auth/refresh-token", refreshAccessToken);
 LoginRouters.post("/auth/logout", logout)
+LoginRouters.post("/auth/logout-all",logoutAll)
+LoginRouters.get("/auth/devices",authenticateToken,getActiveDevices)
+LoginRouters.delete("/auth/devices/:sessionId",logoutSingleDevice)
 
 
 

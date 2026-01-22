@@ -327,10 +327,11 @@ export async function GetMyActivity(signal) {
 
 
 // ✅ Candidate Activity Timeline
-export async function GetCandidateActivities(candidateId) {
+export async function GetCandidateActivities(payload) {
   try {
-    const response = await axiosInstance.get(
-      `/api/activity/candidate/${candidateId}`,
+    const response = await axiosInstance.post(
+      `/api/activity/candidate`,
+      payload,
       { headers: { "Content-Type": "application/json" } }
     );
     return response.data;

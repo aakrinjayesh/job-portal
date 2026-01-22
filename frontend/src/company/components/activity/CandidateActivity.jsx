@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -18,7 +16,7 @@ import AddNoteModal from "./AddNoteModal";
 import AddScheduleModal from "./AddScheduleModal";
 import TodoList from "./TodoList";
 
-const CandidateActivity = ({ candidateId  }) => {
+const CandidateActivity = ({ candidateId, jobId }) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -31,7 +29,11 @@ const CandidateActivity = ({ candidateId  }) => {
     try {
       if (!candidateId) return;
       setLoading(true);
-      const res = await GetCandidateActivities(candidateId);
+      const payload = {
+        candidateProfileId: candidateId,
+        jobId,
+      };
+      const res = await GetCandidateActivities(payload);
       if (res.status === "success") {
         setActivities(res.data || []);
       }
@@ -61,9 +63,8 @@ const CandidateActivity = ({ candidateId  }) => {
   };
 
   const addActivityOptimistically = (activity) => {
+    console.log("activity", activity);
     setActivities((prev) => [activity, ...prev]);
-    
-  
   };
 
   const filteredActivities =
@@ -105,9 +106,6 @@ const CandidateActivity = ({ candidateId  }) => {
         >
           Add Note
         </Button>
-
-      
-
       </div>
     );
   };
@@ -136,11 +134,7 @@ const CandidateActivity = ({ candidateId  }) => {
         <Divider style={{ margin: "0 0 12px 0" }} />
 
         {/* ================= TABS ================= */}
-        <Tabs
-          activeKey={activeTab}
-          items={items}
-          onChange={setActiveTab}
-        />
+        <Tabs activeKey={activeTab} items={items} onChange={setActiveTab} />
 
         {/* ================= BODY ================= */}
         <div
@@ -212,7 +206,7 @@ const CandidateActivity = ({ candidateId  }) => {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 10,  
+                      gap: 10,
                       marginBottom: 12,
                     }}
                   >
@@ -221,15 +215,10 @@ const CandidateActivity = ({ candidateId  }) => {
                         borderRadius: 8,
                         padding: "2px 8px",
                         fontWeight: 600,
-                        fontSize: 11, 
+                        fontSize: 11,
                         background:
-                          item.category === "NOTE"
-                            ? "#EBEBFA"
-                            : "#E8FFE8",
-                        color:
-                          item.category === "NOTE"
-                            ? "#3F41D1"
-                            : "#1CAC1C",
+                          item.category === "NOTE" ? "#EBEBFA" : "#E8FFE8",
+                        color: item.category === "NOTE" ? "#3F41D1" : "#1CAC1C",
                         border:
                           item.category === "NOTE"
                             ? "1px solid #3F41D1"
@@ -265,52 +254,57 @@ const CandidateActivity = ({ candidateId  }) => {
                   )} */}
 
                   {item.note && (
-  <>
-    {/* SUBJECT */}
-    <div
-      style={{
-        fontWeight: 600,
-        marginBottom: 2,
-        fontSize: 12,
-      }}
-    >
-      {item.note.subject}
-    </div>
+                    <>
+                      {/* SUBJECT */}
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          marginBottom: 2,
+                          fontSize: 12,
+                        }}
+                      >
+                        {item.note.subject}
+                      </div>
 
-    {/* DESCRIPTION */}
-    <div
-      style={{
-        color: "#666",
-        fontSize: 12,
-      }}
-    >
-      {item.note.description}
-    </div>
+                      {/* DESCRIPTION */}
+                      <div
+                        style={{
+                          color: "#666",
+                          fontSize: 12,
+                        }}
+                      >
+                        {item.note.description}
+                      </div>
 
-    {/* ✅ START–END TIME (THIS IS WHAT YOU WANT) */}
-    {item.note.startTime && item.note.endTime && (
-      <div
-        style={{
-          marginTop: 4,
-          fontSize: 11,
-          color: "#8A8A8A",
-        }}
-      >
-        {dayjs(item.note.startTime).format("h:mm A")}
-        {" – "}
-        {dayjs(item.note.endTime).format("h:mm A")}
-      </div>
-    )}
-  </>
-)}
-
+                      {/* ✅ START–END TIME (THIS IS WHAT YOU WANT) */}
+                      {item.note.startTime && item.note.endTime && (
+                        <div
+                          style={{
+                            marginTop: 4,
+                            fontSize: 11,
+                            color: "#8A8A8A",
+                          }}
+                        >
+                          {dayjs(item.note.startTime).format("h:mm A")}
+                          {" – "}
+                          {dayjs(item.note.endTime).format("h:mm A")}
+                        </div>
+                      )}
+                    </>
+                  )}
 
                   {item.schedule && (
                     <>
-                      <div style={{ fontWeight: 600, marginBottom: 2 , fontSize: 12, }}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          marginBottom: 2,
+                          fontSize: 12,
+                        }}
+                      >
                         {item.schedule.title}
                       </div>
-                      <div style={{ color: "#666" ,fontSize: 11,}}>
+                      <div style={{ color: "#666", fontSize: 11 }}>
                         {item.schedule.notes}
                       </div>
                     </>
@@ -327,8 +321,8 @@ const CandidateActivity = ({ candidateId  }) => {
       {/* ================= MODALS ================= */}
       <AddNoteModal
         open={noteOpen}
-        candidateId={candidateId} 
-
+        jobId={jobId}
+        candidateId={candidateId}
         onClose={() => setNoteOpen(false)}
         // candidateId={candidateId}
         onSuccess={addActivityOptimistically}
@@ -345,4 +339,3 @@ const CandidateActivity = ({ candidateId  }) => {
 };
 
 export default CandidateActivity;
-

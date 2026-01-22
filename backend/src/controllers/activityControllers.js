@@ -118,6 +118,7 @@ export const createActivity = async (req, res) => {
     }
 
     const { jobId, candidateProfileId, category, note, schedule } = req.body;
+    console.log('body',req.body)
 
     if (!jobId || !candidateProfileId || !category) {
       return res.status(400).json({

@@ -23,8 +23,6 @@ import { ArrowLeftOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import CandidateActivity from "../activity/CandidateActivity";
 import { SaveCandidateRating } from "../../api/api";
 
-
-
 const { Title, Paragraph, Text } = Typography;
 
 const CandidateDetails = () => {
@@ -41,52 +39,53 @@ const CandidateDetails = () => {
 
   const [ratingValue, setRatingValue] = useState(0);
 
-const { candidate: initialCandidate, jobId } = location.state || {};
-const [candidate, setCandidate] = useState(initialCandidate);
-const [addReviewLoading, setAddReviewLoading] = useState(false);
+  const { candidate: initialCandidate, jobId } = location.state || {};
+  const [candidate, setCandidate] = useState(initialCandidate);
+  const [addReviewLoading, setAddReviewLoading] = useState(false);
 
+  console.log("location ", location);
+  console.log("location jobId", jobId);
 
-// const reloadCandidate = async () => {
-//   try {
-//     const res = await GetCandidateDeatils({ jobId });
+  // const reloadCandidate = async () => {
+  //   try {
+  //     const res = await GetCandidateDeatils({ jobId });
 
-//     const updatedCandidate = res.data.find(
-//       (c) => c.profile.id === candidate.profile.id
-//     );
+  //     const updatedCandidate = res.data.find(
+  //       (c) => c.profile.id === candidate.profile.id
+  //     );
 
-//     if (updatedCandidate) {
-//       setCandidate(updatedCandidate); // 🔥 THIS updates UI
-//     }
-//   } catch (err) {
-//     console.error("Failed to reload candidate", err);
-//   }
-// };
+  //     if (updatedCandidate) {
+  //       setCandidate(updatedCandidate); // 🔥 THIS updates UI
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to reload candidate", err);
+  //   }
+  // };
 
-const reloadCandidate = async () => {
-  try {
-    const res = await SaveCandidateRating({
-      candidateProfileId: candidate.profile.id,
-      rating: ratingValue,
-      comment: tempReview,
-    });
+  const reloadCandidate = async () => {
+    try {
+      const res = await SaveCandidateRating({
+        candidateProfileId: candidate.profile.id,
+        rating: ratingValue,
+        comment: tempReview,
+      });
 
-    // 🔥 MANUALLY update UI instead of refetching
-    setCandidate((prev) => ({
-      ...prev,
-      avgRating: ratingValue,
-      ratingReviews: [
-        ...(prev.ratingReviews || []),
-        {
-          rating: ratingValue,
-          comment: tempReview,
-        },
-      ],
-    }));
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+      // 🔥 MANUALLY update UI instead of refetching
+      setCandidate((prev) => ({
+        ...prev,
+        avgRating: ratingValue,
+        ratingReviews: [
+          ...(prev.ratingReviews || []),
+          {
+            rating: ratingValue,
+            comment: tempReview,
+          },
+        ],
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const savedReviews = localStorage.getItem("candidateReviews");
@@ -186,27 +185,24 @@ const reloadCandidate = async () => {
     fontWeight: 500,
   };
 
-  
-
   return (
-    
     <div style={{ padding: "0px" }}>
       {contextHolder}
       {addReviewLoading && (
-  <div
-    style={{
-      position: "fixed",
-      inset: 0,
-      background: "rgba(255,255,255,0.85)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 2000,
-    }}
-  >
-    <Spin size="large" />
-  </div>
-)}
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(255,255,255,0.85)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      )}
 
       {/* Back Button */}
       <Button
@@ -222,21 +218,21 @@ const reloadCandidate = async () => {
       <Row gutter={16}>
         {/* <Col span={16}> */}
         <Col span={16} style={{ position: "relative" }}>
-{addReviewLoading && (
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      background: "rgba(255,255,255,0.85)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10,
-    }}
-  >
-    <Spin size="large" />
-  </div>
-)}
+          {addReviewLoading && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(255,255,255,0.85)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+              }}
+            >
+              <Spin size="large" />
+            </div>
+          )}
 
           <Card bordered={false}>
             <div
@@ -260,9 +256,9 @@ const reloadCandidate = async () => {
                       {/* <Rate allowHalf defaultValue={2.5} /> */}
 
                       <Rate
-  disabled
-  value={Math.round(candidate.avgRating || 0)}
-/>
+                        disabled
+                        value={Math.round(candidate.avgRating || 0)}
+                      />
 
                       <Text
                         style={{
@@ -273,7 +269,7 @@ const reloadCandidate = async () => {
                         }}
                         onClick={() => {
                           setTempReview(
-                            reviewsByCandidate[candidate.applicationId] || ""
+                            reviewsByCandidate[candidate.applicationId] || "",
                           );
                           setIsReviewModalOpen(true);
                         }}
@@ -298,7 +294,7 @@ const reloadCandidate = async () => {
 
                         const message = `Hi ${candidate.name},`;
                         const url = `https://wa.me/${number}?text=${encodeURIComponent(
-                          message
+                          message,
                         )}`;
 
                         window.open(url, "_blank");
@@ -340,51 +336,7 @@ const reloadCandidate = async () => {
               </Row>
             </div>
 
-            {/* ⭐ Recruiter Reviews – AVERAGE BASED */}
-{candidate.ratingReviews?.length > 0 && (
-  <div style={{ marginBottom: 20 }}>
-    <Divider style={{ margin: "12px 0" }} />
-
-    <Title level={5} style={{ marginBottom: 8 }}>
-      Recruiter Reviews
-    </Title>
-
-    {/* ⭐ SHOW ONLY ONE AVERAGE STAR */}
-    <Space align="center" size={8} style={{ marginBottom: 12 }}>
-      <Rate
-        disabled
-        value={Math.round(candidate.avgRating || 0)}
-      />
-      <Text type="secondary" style={{ fontSize: 12 }}>
-        ({candidate.ratingReviews.length} reviews)
-      </Text>
-    </Space>
-
-    {/* 🧾 SHOW COMMENTS ONLY */}
-    {candidate.ratingReviews.map((review, index) => (
-      review.comment && (
-        <div
-          key={index}
-          style={{
-            padding: 10,
-            marginBottom: 6,
-            border: "1px solid #EDEDED",
-            borderRadius: 8,
-            background: "#FAFAFA",
-            fontSize: 13,
-          }}
-        >
-          {review.comment}
-        </div>
-      )
-    ))}
-  </div>
-)}
-
-
             {summary?.trim()?.length > 0 && (
-
-              
               <div
                 style={{
                   marginTop: 12,
@@ -587,7 +539,7 @@ const reloadCandidate = async () => {
                           style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
                         >
                           {profile.skillsJson?.filter(
-                            (s) => s.level === "primary"
+                            (s) => s.level === "primary",
                           )?.length ? (
                             profile.skillsJson
                               .filter((s) => s.level === "primary")
@@ -603,12 +555,12 @@ const reloadCandidate = async () => {
 
                         {/* GAP */}
                         {profile.skillsJson?.some(
-                          (s) => s.level === "secondary"
+                          (s) => s.level === "secondary",
                         ) && <Divider style={{ margin: "16px 0 12px" }} />}
 
                         {/* SECONDARY SKILLS */}
                         {profile.skillsJson?.some(
-                          (s) => s.level === "secondary"
+                          (s) => s.level === "secondary",
                         ) && (
                           <>
                             <Text
@@ -1034,7 +986,7 @@ const reloadCandidate = async () => {
                 padding: 24,
               }}
             >
-              <CandidateActivity candidateId={profile.userId} />
+              <CandidateActivity candidateId={profile.id} jobId={jobId} />
             </div>
           </Card>
         </Col>
@@ -1059,7 +1011,6 @@ const reloadCandidate = async () => {
 
         <Rate value={ratingValue} onChange={setRatingValue} />
 
-
         {/* Textarea */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
@@ -1067,39 +1018,34 @@ const reloadCandidate = async () => {
             <div style={{ fontSize: 13, fontWeight: 590 }}>Add review</div>
           </div>
 
-        
-
           <Input.TextArea
-  rows={4}
-  placeholder="Review Description"
-  value={tempReview}
-  maxLength={1000}
-  onChange={(e) => {
-    const value = e.target.value;
+            rows={4}
+            placeholder="Review Description"
+            value={tempReview}
+            maxLength={1000}
+            onChange={(e) => {
+              const value = e.target.value;
 
-    const regex = /^[A-Za-z0-9 .,()\/{}\[\]"';:|\\\s]*$/;
+              const regex = /^[A-Za-z0-9 .,()\/{}\[\]"';:|\\\s]*$/;
 
-    if (!regex.test(value)) {
-      message.error(
-        "Only letters, numbers, spaces and . , ( ) / { } [ ] \" ; : | \\ are allowed"
-      );
-      return;
-    }
+              if (!regex.test(value)) {
+                message.error(
+                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed',
+                );
+                return;
+              }
 
-    setTempReview(value);
-  }}
-  style={{ borderRadius: 8 }}
-/>
-
+              setTempReview(value);
+            }}
+            style={{ borderRadius: 8 }}
+          />
         </div>
 
         {/* Footer */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
           <Button onClick={() => setIsReviewModalOpen(false)}>Cancel</Button>
 
-     
-
-{/* <Button
+          {/* <Button
   type="primary"
   onClick={async () => {
     if (!ratingValue) {
@@ -1115,39 +1061,35 @@ const reloadCandidate = async () => {
   Add
 </Button> */}
 
-<Button
-  type="primary"
-  disabled={addReviewLoading}
-  onClick={async () => {
-    if (!ratingValue) {
-      message.error("Please select rating");
-      return;
-    }
+          <Button
+            type="primary"
+            disabled={addReviewLoading}
+            onClick={async () => {
+              if (!ratingValue) {
+                message.error("Please select rating");
+                return;
+              }
 
-    // 1️⃣ Close modal
-    setIsReviewModalOpen(false);
+              // 1️⃣ Close modal
+              setIsReviewModalOpen(false);
 
-    // 2️⃣ Show RIGHT SIDE loader
-    setAddReviewLoading(true);
+              // 2️⃣ Show RIGHT SIDE loader
+              setAddReviewLoading(true);
 
-    try {
-      await reloadCandidate();
-      message.success("Rating saved");
-    } catch (err) {
-      message.error("Failed to save rating");
-    } finally {
-      setAddReviewLoading(false);
-      setTempReview("");
-      setRatingValue(0);
-    }
-  }}
->
-  Add
-</Button>
-
-
-
-
+              try {
+                await reloadCandidate();
+                message.success("Rating saved");
+              } catch (err) {
+                message.error("Failed to save rating");
+              } finally {
+                setAddReviewLoading(false);
+                setTempReview("");
+                setRatingValue(0);
+              }
+            }}
+          >
+            Add
+          </Button>
         </div>
       </Modal>
     </div>

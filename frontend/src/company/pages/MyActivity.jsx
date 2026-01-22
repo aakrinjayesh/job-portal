@@ -1,301 +1,195 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Card, List, Button, Tag, Spin, message, Empty } from "antd";
+import {
+  Card,
+  List,
+  Avatar,
+  Button,
+  Tag,
+  Spin,
+  Empty,
+  Divider,
+  Typography,
+  message,
+} from "antd";
 import { GetMyActivity } from "../api/api";
 import CandidateActivity from "../components/activity/CandidateActivity";
 import { useLocation } from "react-router-dom";
 
+const { Title, Text } = Typography;
+
 const MyActivity = () => {
-  const [data, setData] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [messageAPI, contextHolder] = message.useMessage();
-
-  // 🔵 Selected candidate
   const [activeCandidateId, setActiveCandidateId] = useState(null);
-
-  // 🔵 Right panel spinner
   const [detailLoading, setDetailLoading] = useState(false);
 
   const controllerRef = useRef(null);
   const location = useLocation();
-  const [hoveredId, setHoveredId] = useState(null);
+  const [messageApi, contextHolder] = message.useMessage();
 
-
-  /* ================= FETCH MY ACTIVITY ================= */
+  /* ================= FETCH ================= */
   const fetchMyActivity = async () => {
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
-
+    if (controllerRef.current) controllerRef.current.abort();
     controllerRef.current = new AbortController();
 
     try {
       setLoading(true);
       const res = await GetMyActivity(controllerRef.current.signal);
       if (res.status === "success") {
-        setData(res.data || []);
+        setJobs(res.data || []);
         setLoading(false);
-        messageAPI.success("Fetched Details Successfully!");
       }
-    } catch (error) {
-      if (error.code === "ERR_CANCELED") return;
-      messageAPI.error("Failed to Load  Activity");
+    } catch (err) {
       setLoading(false);
+      if (err.code !== "ERR_CANCELED") {
+        messageApi.error("Failed to load activity");
+      }
     }
   };
 
-  /* ================= CLEANUP ON TAB SWITCH ================= */
-  useEffect(() => {
-    return () => {
-      if (controllerRef.current) {
-        controllerRef.current.abort();
-      }
-    };
-  }, [location.pathname]);
-
   useEffect(() => {
     fetchMyActivity();
-  }, []);
+    return () => controllerRef.current?.abort();
+  }, [location.pathname]);
 
-  /* ================= HANDLE SELECT ================= */
-  const handleSelectCandidate = (candidateId) => {
+  const handleSelectCandidate = (id) => {
     setDetailLoading(true);
-    setActiveCandidateId(candidateId);
-
-    // ⏳ Stop spinner AFTER render
-    setTimeout(() => {
-      setDetailLoading(false);
-    }, 300);
+    setActiveCandidateId(id);
+    setTimeout(() => setDetailLoading(false), 300);
   };
 
+  /* ================= UI ================= */
   return (
     <>
-      {/* <h2>My Activity</h2> */}
-      <h2 style={{ marginBottom: 12, marginTop: 0 }}>
-  My Activity
-</h2>
-
       {contextHolder}
-      {/* ================= PAGE LOADING ================= */}
-      {loading ? (
-        <div style={{ textAlign: "center", marginTop: 40 }}>
-          <Spin size="large" />
-        </div>
-      ) : (
-        <div style={{ display: "flex", gap: 24 }}>
-          {/* ================= LEFT PANEL (60%) ================= */}
-          {/* <Card style={{ width: "60%" }}> */}
-          <Card
-  style={{
-    width: "60%",
-    height: "100%",
-    // padding: 12,
-    background: "#ffffff",
-    borderRadius: 10,
-  }}
->
-            <List
-              dataSource={data}
-                style={{
-    display: "flex",
-    flexDirection: "column",
-    // gap: 32,
-     gap: 12,
-  }}
-              renderItem={(item) => (
 
-
-<Card
-  hoverable
-  onClick={() => handleSelectCandidate(item.candidate.id)}
-  onMouseEnter={() => setHoveredId(item.candidate.id)}
-  onMouseLeave={() => setHoveredId(null)}
-  bodyStyle={{
-    padding: 12,
-  }}
-  style={{
-    marginBottom: 6,
-    borderRadius: 12,
-
-   background:
-  hoveredId === item.candidate.id ||
-  activeCandidateId === item.candidate.id
-    ? "rgba(22, 119, 255, 0.08)"
-    : "#FFFFFF",
-
-
-
-
-border:
-  activeCandidateId === item.candidate.id
-    ? "1px solid rgba(22, 119, 255, 0.4)"
-    : "1px solid #EDEDED",
-
-boxShadow:
-  activeCandidateId === item.candidate.id
-    ? "0 2px 8px rgba(22,119,255,0.15)"
-    : "0 2px 8px rgba(0,0,0,0.06)",
-
-
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  }}
->
-
-
-  {/* TOP ROW */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 12,
-    }}
-  >
-    {/* LEFT: Avatar + Details */}
-    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: "50%",
-          background: "#1677FF",
-          color: "#fff",
-          fontSize: 18,
-          fontWeight: 600,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {item.candidate.name.charAt(0).toUpperCase()}
-      </div>
-
-      <div>
-        <div
+      <div style={{ display: "flex", gap: 24 }}>
+        {/* ================= LEFT ================= */}
+        <Card
           style={{
-            fontSize: 16,
-            fontWeight: 500,
-            color: "#0A0A0A",
-            lineHeight: "12px",
-            
+            width: "60%",
+            padding: 24,
+            borderRadius: 10,
           }}
         >
-          {item.candidate.name}
-        </div>
-        <div
+          {loading ? (
+            <Spin size="large" style={{ width: "100%" }} />
+          ) : jobs.length === 0 ? (
+            <Empty description="No activity found" />
+          ) : (
+            jobs.map((jobBlock) => (
+              <Card key={jobBlock.job.id} style={{ marginBottom: 32 }}>
+                {/* JOB HEADER */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 24,
+                  }}
+                >
+                  <div>
+                    <Title level={4} style={{ marginBottom: 0 }}>
+                      {jobBlock.job.role}
+                    </Title>
+                    <Text type="secondary">{jobBlock.job.companyName}</Text>
+                  </div>
+
+                  <Button
+                    type="primary"
+                    shape="round"
+                    style={{ background: "#D1E4FF", color: "#310000" }}
+                  >
+                    View Job Profile
+                  </Button>
+                </div>
+
+                <Divider />
+
+                {/* CANDIDATES */}
+                <List
+                  dataSource={jobBlock.candidates}
+                  renderItem={(item) => (
+                    <Card
+                      hoverable
+                      onClick={() => handleSelectCandidate(item.candidate.id)}
+                      style={{
+                        marginBottom: 16,
+                        borderRadius: 16,
+                        background:
+                          activeCandidateId === item.candidate.id
+                            ? "#F4F9FF"
+                            : "#fff",
+                        border:
+                          activeCandidateId === item.candidate.id
+                            ? "1px solid #1677FF"
+                            : "1px solid #E3E3E3",
+                        cursor: "pointer",
+                      }}
+                      bodyStyle={{ padding: 24 }}
+                    >
+                      {/* TOP */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <div style={{ display: "flex", gap: 12 }}>
+                          <Avatar size={44}>
+                            {item.candidate.name.charAt(0).toUpperCase()}
+                          </Avatar>
+
+                          <div>
+                            <Text strong>{item.candidate.name}</Text>
+                            <br />
+                            <Text type="secondary">{item.candidate.email}</Text>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TAGS */}
+                      <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+                        <Tag color="blue">
+                          Total Activities : {item.totalActivities}
+                        </Tag>
+                        <Tag color="blue">
+                          Last Activity :{" "}
+                          {new Date(item.lastActivityAt).toLocaleDateString()}
+                        </Tag>
+                      </div>
+                    </Card>
+                  )}
+                />
+              </Card>
+            ))
+          )}
+        </Card>
+
+        {/* ================= RIGHT ================= */}
+        <Card
           style={{
-            fontSize: 14,
-            color: "#6A7282",
-            lineHeight: "20px",
+            width: "40%",
+            borderRadius: 12,
+            minHeight: 300,
           }}
         >
-          {item.candidate.email}
-        </div>
+          {!activeCandidateId && (
+            <Empty description="Select a candidate to view activity timeline" />
+          )}
+
+          {detailLoading && (
+            <div style={{ textAlign: "center", marginTop: 80 }}>
+              <Spin size="large" />
+            </div>
+          )}
+
+          {!detailLoading && activeCandidateId && (
+            <CandidateActivity candidateId={activeCandidateId} />
+          )}
+        </Card>
       </div>
-    </div>
-
-   
-    {/* <div
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: "50%",
-        background: "#F7F7F7",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <span style={{ fontSize: 18, color: "#666" }}>⋯</span>
-    </div> */}
-  </div>
-
-  {/* TAGS */}
-  <div style={{ display: "flex", gap: 8 }}>
-   
-
-<div
-  style={{
-    padding: "4px 10px",
-    background: "#E7F0FE",          // light blue
-    borderRadius: 100,
-    border: "0.5px solid #1677FF",  // blue border
-    fontSize: 11,
-    lineHeight: "16px",
-    fontWeight: 500,
-    color: "#1677FF",               // blue text
-    whiteSpace: "nowrap",
-  }}
->
-  Total Activities : {item.totalActivities}
-</div>
-
-
-
-
-<div
-  style={{
-    padding: "4px 10px",
-    background: "#F3E8FF",          // light purple
-    borderRadius: 100,
-    border: "0.5px solid #9254DE",  // purple border
-    fontSize: 11,
-    lineHeight: "16px",
-    fontWeight: 500,
-    color: "#9254DE",               // purple text
-    whiteSpace: "nowrap",
-  }}
->
-  Last Activity :{" "}
-  {new Date(item.lastActivityAt).toLocaleDateString()}
-</div>
-
-
-  </div>
-</Card>
-
-              )}
-            />
-          </Card>
-
-          {/* ================= RIGHT PANEL (40%) ================= */}
-          <div
-            style={{
-              width: "40%",
-              minHeight: 300,
-              padding: 16,
-              borderRadius: 12,
-              background: "#fff",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-            }}
-          >
-            {!activeCandidateId && (
-              <div
-                style={{
-                  textAlign: "center",
-                  color: "#999",
-                  marginTop: 80,
-                }}
-              >
-                <Empty description="Select a candidate to view activity timeline" />
-                ;{/* Select a candidate to view activity timeline */}
-              </div>
-            )}
-
-            {detailLoading && (
-              <div style={{ textAlign: "center", marginTop: 80 }}>
-                <Spin size="large" />
-              </div>
-            )}
-
-            {!detailLoading && activeCandidateId && (
-              <CandidateActivity candidateId={activeCandidateId} />
-  
-
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 };

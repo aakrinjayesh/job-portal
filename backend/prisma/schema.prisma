@@ -85,7 +85,7 @@ model Users {
   role             Role             @default(candidate)
   password         String?
   emailverified    Boolean?
-  refreshToken     String?
+  // refreshToken     String?
   isactive         Boolean?
   createdAt        DateTime         @default(now())
   plan             Plan             @default(FREE)
@@ -107,6 +107,22 @@ model Users {
   recruiterTodos      RecruiterTodo[]
   candidateRatings    CandidateRating[]
   organizationMember  OrganizationMember?
+  userSession         UserSession[]
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  revoked      Boolean  @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 enum Role {

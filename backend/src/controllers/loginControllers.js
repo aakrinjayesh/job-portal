@@ -638,10 +638,15 @@ const login = async (req, res) => {
     const token = generateToken(userjwt);
     const refreshToken = generateRefreshToken({id: user.id})
 
-    await prisma.users.update({
-    where: { id: user.id },
-    data: { refreshToken },
-  });
+    await prisma.userSession.create({
+      data: {
+        userId: user.id,
+        refreshToken,
+        userAgent: req.headers["user-agent"],
+        ipAddress: req.ip,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
 
     // Attempt external login
     let loginResponse = null;
@@ -690,7 +695,7 @@ const login = async (req, res) => {
         : null,
     });
   } catch (error) {
-    logger.error("Login error:", JSON.stringify(error.message,null,2));
+    console.log('error', error.message)
     return res.status(500).json({
       status: "error",
       message: "Internal server error" + error.message,
@@ -813,37 +818,47 @@ const checkUserExists = async (req, res) => {
 };
 
 const refreshAccessToken = async (req, res) => {
+  console.log("🔄 refreshAccessToken called");
+
   try {
     const refreshToken = req.cookies.refreshToken;
 
-    // 1️⃣ No refresh token → force login
     if (!refreshToken) {
       return res.status(401).json({
         message: "Refresh token missing",
       });
     }
 
-    // 2️⃣ Verify refresh token
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.R_SECRETKEY
-    );
+    // Verify JWT
+    const decoded = jwt.verify(refreshToken, process.env.R_SECRETKEY);
 
-    // 3️⃣ Find user & match token
-    const user = await prisma.users.findUnique({
-      where: { id: decoded.id },
+    // ✅ Validate SESSION instead of user.refreshToken
+    const session = await prisma.userSession.findFirst({
+      where: {
+        userId: decoded.id,
+        refreshToken,
+        revoked: false,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
       include: {
-        organizationMember: true,
+        user: {
+          include: {
+            organizationMember: true,
+          },
+        },
       },
     });
 
-    if (!user || user.refreshToken !== refreshToken) {
+    if (!session || !session.user) {
       return res.status(403).json({
         message: "Invalid refresh token",
       });
     }
 
-    // 4️⃣ Create new access token
+    const user = session.user;
+
     const accessPayload = {
       id: user.id,
       email: user.email,
@@ -856,32 +871,30 @@ const refreshAccessToken = async (req, res) => {
 
     const newAccessToken = generateToken(accessPayload);
 
-    // (Optional – for later rotation)
-    // const newRefreshToken = generateRefreshToken(user.id);
-
     return res.status(200).json({
       token: newAccessToken,
     });
   } catch (error) {
+    console.log("refresh error", error.message);
     return res.status(403).json({
       message: "Refresh token expired or invalid",
     });
   }
 };
 
+
 const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
     if (refreshToken) {
-      // Remove refresh token from DB
-      await prisma.users.updateMany({
+      // ✅ Revoke only THIS session
+      await prisma.userSession.updateMany({
         where: { refreshToken },
-        data: { refreshToken: null },
+        data: { revoked: true },
       });
     }
 
-    // Clear cookie
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -900,6 +913,130 @@ const logout = async (req, res) => {
   }
 };
 
+const getActiveDevices = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const sessions = await prisma.userSession.findMany({
+      where: {
+        userId,
+        revoked: false,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      select: {
+        id: true,
+        userAgent: true,
+        ipAddress: true,
+        createdAt: true,
+        expiresAt: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      devices: sessions.map((s) => ({
+        sessionId: s.id,
+        device: s.userAgent || "Unknown device",
+        ipAddress: s.ipAddress,
+        loggedInAt: s.createdAt,
+        expiresAt: s.expiresAt,
+      })),
+    });
+  } catch (error) {
+    console.error("❌ Failed to fetch active devices:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch active devices",
+    });
+  }
+};
+
+
+const logoutSingleDevice = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { sessionId } = req.params; 
+
+    if (!sessionId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Session ID is required",
+      });
+    }
+
+    const session = await prisma.userSession.findFirst({
+      where: {
+        id: sessionId,
+        userId,
+        revoked: false,
+      },
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        status: "error",
+        message: "Session not found or already logged out",
+      });
+    }
+
+    await prisma.userSession.update({
+      where: { id: sessionId },
+      data: { revoked: true },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Device logged out successfully",
+    });
+  } catch (error) {
+    console.error("❌ Failed to logout device:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to logout device",
+    });
+  }
+};
+
+const logoutAll = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    await prisma.userSession.updateMany({
+      where: {
+        userId,
+        revoked: false,
+      },
+      data: {
+        revoked: true,
+      },
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Logged out from all devices",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: "Logout from all devices failed",
+    });
+  }
+};
+
+
+
+
 
 export {
   userOtpGenerate,
@@ -910,5 +1047,8 @@ export {
   resetPassword,
   refreshAccessToken,
   checkUserExists,
-  logout
+  logout,
+  getActiveDevices,
+  logoutSingleDevice,
+  logoutAll
 };

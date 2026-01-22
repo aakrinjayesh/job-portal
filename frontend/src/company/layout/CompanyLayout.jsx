@@ -7,7 +7,7 @@ import {
   Button,
   Breadcrumb,
   Space,
-  ConfigProvider
+  ConfigProvider,
 } from "antd";
 import {
   DashboardOutlined,
@@ -42,39 +42,37 @@ const CompanyLayout = ({ children }) => {
   };
 
   /* 🔗 Menu → Route mapping */
- const menuRoutes = {
-  dashboard: ["/company/dashboard"],
+  const menuRoutes = {
+    dashboard: ["/company/dashboard"],
 
-  jobs: [
-    "/company/jobs",
-    //"/company/job", // covers /company/job/details & /company/job/:id
-  ],
-  jobdetails:["/company/job/details"],
+    jobs: [
+      "/company/jobs",
+      //"/company/job", // covers /company/job/details & /company/job/:id
+    ],
+    jobdetails: ["/company/job/details"],
 
-  viewcandidates: ["/company/candidates"],
+    viewcandidates: ["/company/candidates"],
 
-  myactivity: ["/company/my-activity"],
+    myactivity: ["/company/my-activity"],
 
-  findjob: ["/company/job/find"],
+    findjob: ["/company/job/find"],
 
-  savedjobs: ["/company/jobs/saved"],
+    savedjobs: ["/company/jobs/saved"],
 
-  bench: [
-    "/company/bench",
-  ],
+    bench: ["/company/bench"],
 
-  findbench: ["/company/bench/find"],
+    findbench: ["/company/bench/find"],
 
-  savedcandidates: ["/company/bench/saved"],
+    savedcandidates: ["/company/bench/saved"],
 
-  chat: ["/company/chat"],
+    chat: ["/company/chat"],
 
-  profile: ["/company/profile"],
+    profile: ["/company/profile"],
 
-  settings: ["/company/settings"],
-};
+    settings: ["/company/settings"],
+  };
 
-const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       await logout();
     } catch (err) {
@@ -85,27 +83,26 @@ const handleLogout = async () => {
       navigate("/login");
     }
   };
-  
-
 
   /* 🎯 Active menu */
-const selectedKey = React.useMemo(() => {
-  const path = location.pathname;
+  const selectedKey = React.useMemo(() => {
+    const path = location.pathname;
 
-  // 🔑 sort routes by longest path first
-  const sortedRoutes = Object.entries(menuRoutes).sort(
-    (a, b) => Math.max(...b[1].map(p => p.length)) -
-              Math.max(...a[1].map(p => p.length))
-  );
+    // 🔑 sort routes by longest path first
+    const sortedRoutes = Object.entries(menuRoutes).sort(
+      (a, b) =>
+        Math.max(...b[1].map((p) => p.length)) -
+        Math.max(...a[1].map((p) => p.length)),
+    );
 
-  for (const [key, paths] of sortedRoutes) {
-    if (paths.some((p) => path.startsWith(p))) {
-      return key;
+    for (const [key, paths] of sortedRoutes) {
+      if (paths.some((p) => path.startsWith(p))) {
+        return key;
+      }
     }
-  }
 
-  return "dashboard";
-}, [location.pathname]);
+    return "dashboard";
+  }, [location.pathname]);
 
   /* 🧠 Menu click handler */
   const onMenuClick = ({ key }) => {
@@ -114,10 +111,10 @@ const selectedKey = React.useMemo(() => {
       return;
     }
 
-  const route = menuRoutes[key];
-if (route && route.length) {
-  navigate(route[0]); // always navigate to first route
-}
+    const route = menuRoutes[key];
+    if (route && route.length) {
+      navigate(route[0]); // always navigate to first route
+    }
   };
 
   /* 🧭 Breadcrumb + title logic */
@@ -142,20 +139,19 @@ if (route && route.length) {
   return (
     <Layout hasSider>
       {/* 🧭 Sidebar */}
-    <Sider
-  collapsible
-  collapsed={collapsed}
-  onCollapse={setCollapsed}
-  trigger={null}   // 👈 removes collapse icon below logout
-  width={260}
-  style={{
-    background: "#011026",
-    height: "100vh",
-    position: "sticky",
-    top: 0,
-  }}
->
-
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        trigger={null} // 👈 removes collapse icon below logout
+        width={260}
+        style={{
+          background: "#011026",
+          height: "100vh",
+          position: "sticky",
+          top: 0,
+        }}
+      >
         {/* 🧑 Company Info */}
         <div
           style={{
@@ -183,7 +179,7 @@ if (route && route.length) {
         </div>
 
         {/* 📌 Main Menu */}
-       
+
         <ConfigProvider
           theme={{
             components: {
@@ -196,32 +192,41 @@ if (route && route.length) {
             },
           }}
         >
-       <Menu
-  mode="inline"
-  theme="dark"
-  selectedKeys={[selectedKey]}
-  onClick={onMenuClick}
-  style={{ background: "transparent", border: "none" }}
-          items={[
-            { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
-            { key: "jobs", icon: <FileTextOutlined />, label: "My Jobs" },
-            { key: "myactivity", icon: <AppstoreOutlined />, label: "My Activity" },
-            { key: "findjob", icon: <SearchOutlined />, label: "Find Jobs" },
-            { key: "savedjobs", icon: <SaveFilled />, label: "Saved Jobs" },
-            { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
-            { key: "findbench", icon: <SearchOutlined />, label: "Find Candidate" },
-            {
-              key: "savedcandidates",
-              icon: <SaveFilled />,
-              label: "Saved Candidates",
-            },
-            { key: "chat", icon: <MessageOutlined />, label: "Chat" },
-          ]}
-      
-
-        />  </ConfigProvider>
-
-       
+          <Menu
+            mode="inline"
+            theme="dark"
+            selectedKeys={[selectedKey]}
+            onClick={onMenuClick}
+            style={{ background: "transparent", border: "none" }}
+            items={[
+              {
+                key: "dashboard",
+                icon: <DashboardOutlined />,
+                label: "Dashboard",
+              },
+              { key: "jobs", icon: <FileTextOutlined />, label: "My Jobs" },
+              {
+                key: "myactivity",
+                icon: <AppstoreOutlined />,
+                label: "My Activity",
+              },
+              { key: "findjob", icon: <SearchOutlined />, label: "Find Jobs" },
+              { key: "savedjobs", icon: <SaveFilled />, label: "Saved Jobs" },
+              { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
+              {
+                key: "findbench",
+                icon: <SearchOutlined />,
+                label: "Find Candidate",
+              },
+              {
+                key: "savedcandidates",
+                icon: <SaveFilled />,
+                label: "Saved Candidates",
+              },
+              { key: "chat", icon: <MessageOutlined />, label: "Chat" },
+            ]}
+          />{" "}
+        </ConfigProvider>
 
         {/* Divider */}
         <div
@@ -236,17 +241,16 @@ if (route && route.length) {
         {/* ⚙️ Bottom Menu */}
         <Menu
           mode="inline"
-          selectedKeys={[selectedKey]} 
+          selectedKeys={[selectedKey]}
           theme="dark"
           onClick={onMenuClick}
           style={{ background: "transparent", border: "none" }}
           items={[
-            { key: "profile", icon: <UserOutlined />, label: "Profile"},
+            { key: "profile", icon: <UserOutlined />, label: "Profile" },
             { key: "settings", icon: <SettingOutlined />, label: "Settings" },
             { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
           ]}
         />
-        
       </Sider>
 
       {/* 📄 Main Layout */}
@@ -282,10 +286,10 @@ if (route && route.length) {
 
             <div>
               <Breadcrumb
-                // items={[
-                //   { title: "Dashboard" },
-                //   { title: pageTitle },
-                // ]}
+              // items={[
+              //   { title: "Dashboard" },
+              //   { title: pageTitle },
+              // ]}
               />
               <Title level={4} style={{ margin: 0 }}>
                 {pageTitle}
@@ -306,39 +310,37 @@ if (route && route.length) {
               }}
             /> */}
 
-            <Space>
-              <Avatar
-                size={56}
+          <Space>
+            <Avatar
+              size={56}
+              style={{
+                background: "#F0F2F4",
+                color: "#666",
+                fontWeight: 600,
+              }}
+            >
+              {user.name?.slice(0, 2).toUpperCase()}
+            </Avatar>
+
+            <div style={{ lineHeight: 1.2 }}>
+              <Space size={4}>
+                <Text strong style={{ margin: 0 }}>
+                  Hi, {user.name}
+                </Text>
+              </Space>
+
+              <Text
+                type="secondary"
                 style={{
-                  background: "#F0F2F4",
-                  color: "#666",
-                  fontWeight: 600,
+                  display: "block",
+                  fontSize: 12,
+                  marginTop: 2,
                 }}
               >
-                {user.name?.slice(0, 2).toUpperCase()}
-              </Avatar>
-
-             <div style={{ lineHeight: 1.2 }}>
-  <Space size={4}>
-    <Text strong style={{ margin: 0 }}>
-      Hi, {user.name}
-    </Text>
-   
-  </Space>
-
-  <Text
-    type="secondary"
-    style={{
-      display: "block",
-      fontSize: 12,
-      marginTop: 2,
-    }}
-  >
-    {user.role}
-  </Text>
-</div>
-
-            </Space>
+                {user.role}
+              </Text>
+            </div>
+          </Space>
           {/* </Space> */}
         </Header>
 
