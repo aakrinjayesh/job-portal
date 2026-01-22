@@ -12,6 +12,7 @@ const ReusableSelect = ({
   style = { width: "100%" },
   className = "",
   single = true,
+   tagRender, 
 }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -150,6 +151,7 @@ const [error, setError] = useState("");
         placement={"topLeft"}
         className={className}
         placeholder={placeholder}
+        tagRender={tagRender}
         // value={value}
         value={value || []}  
         onChange={onSelectChange}
@@ -184,7 +186,7 @@ const [error, setError] = useState("");
             </Space>
 
              {error ? (
-              <div style={{ padding: "4px 12px 12px", width: "100%" }}>
+              <div style={{ padding: "4px 12px 12px", width: "100%", }}>
                 <Text type="danger">{error}</Text>
               </div>
             ) : null}

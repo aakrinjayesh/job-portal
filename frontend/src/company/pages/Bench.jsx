@@ -408,20 +408,7 @@ const handleOtpChange = (value, index) => {
       ),
     },
 
-    // --------------------------------------------------
-    // FIXED LEFT: NAME COLUMN
-    // --------------------------------------------------
-    // {
-    //   title: "Name",
-    //   dataIndex: "name",
-    //   key: "name",
-    //   width: 150,
-    //   fixed: "left",
-    //   sorter: (a, b) => a.name.localeCompare(b.name),
-    //   render: (text) => (
-    //     <span style={{ color: "#1677ff", fontWeight: 600 }}>{text}</span>
-    //   ),
-    // },
+ 
 
     {
   title: "Name",
@@ -455,12 +442,6 @@ const handleOtpChange = (value, index) => {
 
 
   
-    // {
-    //   title: "Role",
-    //   dataIndex: "title",
-    //   key: "title",
-    //   sorter: (a, b) => a.title?.localeCompare(b.title),
-    // },
 
 
     {
@@ -492,17 +473,7 @@ const handleOtpChange = (value, index) => {
   ),
 },
 
-    // {
-    //   title: "Cloud",
-    //   key: "cloud",
-    //   render: (_, record) =>
-    //     Array.isArray(record.primaryClouds) && record.primaryClouds.length > 0
-    //       ? record.primaryClouds
-    //           .slice(0, 5)
-    //           .map((c) => c.name)
-    //           .join(", ")
-    //       : "-",
-    // },
+ 
 
     {
   title: "Cloud",
@@ -529,30 +500,32 @@ const handleOtpChange = (value, index) => {
         }}
       >
         {visibleClouds.map((cloud, index) => (
-          <div
-            key={index}
-            style={{
-              padding: "6px 8px",
-              background: "#FFF6F8",
-              borderRadius: 4,
-              border: "1px solid #EE1313",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              style={{
-                color: "#EE1313",
-                fontSize: 12,
-                fontWeight: 510,
-                textTransform: "capitalize",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {cloud}
-            </div>
-          </div>
+//         
+<div
+  style={{
+    padding: "6px 12px",
+    background: "#E7F0FE",
+    borderRadius: 100,
+    outline: "0.5px solid #1677FF",
+    outlineOffset: "-0.5px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+  <div
+    style={{
+      color: "#111111",
+      fontSize: 12,
+      fontWeight: 510,
+      textTransform: "capitalize",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {cloud}
+  </div>
+</div>
+
         ))}
 
         {remainingCount > 0 && (
@@ -573,29 +546,6 @@ const handleOtpChange = (value, index) => {
     );
   },
 },
-
-
-    // {
-    //   title: "Skills",
-    //   key: "skills",
-    //   render: (_, record) => {
-    //     const skills =
-    //       record.skillsJson
-    //         ?.filter((s) => s.level === "primary")
-    //         .slice(0, 5)
-    //         .map((s) => s.name) || [];
-
-    //     if (skills.length === 0) return "-";
-
-    //     return (
-    //       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-    //         {skills.map((skill, index) => (
-    //           <span key={index}>{skill}</span>
-    //         ))}
-    //       </div>
-    //     );
-    //   },
-    // },
 
     {
   title: "Skills",
@@ -622,30 +572,32 @@ const handleOtpChange = (value, index) => {
         }}
       >
         {visibleSkills.map((skill, index) => (
-          <div
-            key={index}
-            style={{
-              padding: "6px 8px",
-              background: "#F6FFF5",
-              borderRadius: 4,
-              border: "1px solid #008000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              style={{
-                color: "#008000",
-                fontSize: 12,
-                fontWeight: 510,
-                textTransform: "capitalize",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {skill}
-            </div>
-          </div>
+
+<div
+  style={{
+    padding: "6px 12px",
+    background: "#FBEBFF",
+    borderRadius: 100,
+    outline: "0.5px solid #640080",
+    outlineOffset: "-0.5px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+  <div
+    style={{
+      color: "#111111",
+      fontSize: 12,
+      fontWeight: 510,
+      textTransform: "capitalize",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {skill}
+  </div>
+</div>
+
         ))}
 
         {remainingCount > 0 && (
@@ -749,20 +701,7 @@ const handleOtpChange = (value, index) => {
             <EditOutlined />
           </Button>
 
-          {/* <Popconfirm
-            title="Are you sure you want to delete this candidate?"
-            okText="Yes"
-            cancelText="No"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              handleDelete(record);
-            }}
-            onCancel={(e) => e?.stopPropagation()}
-          >
-            <Button type="link" danger onClick={(e) => e.stopPropagation()}>
-              <DeleteOutlined />
-            </Button>
-          </Popconfirm> */}
+          
 
     <Popconfirm
   open={deleteOpenId === record.id}
@@ -1038,157 +977,15 @@ const Divider = () => (
 
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 0 }}>
       {contextHolder}
-      {/* <h2 style={{ marginBottom: 16 }}>Vendor Candidate List</h2> */}
-      {/* <Title level={4} style={{ color: "rgba(0,0,0,0.75)", marginBottom: 16 }}>
-        Vendor Candidate List
-      </Title> */}
-
-      {/* <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-          background: "#f8f9fa",
-          padding: "10px 16px",
-          borderRadius: 8,
-          border: "1px solid #e5e5e5",
-        }}
-      >
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Button type="primary" onClick={showModal}>
-            Add Candidate
-          </Button>
-          <Button onClick={fetchCandidates}>Refresh</Button>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 24,
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 1,
-          }}
-        >
-         
-          <div
-            style={{
-              fontWeight: 500,
-              color: "#000",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            Verified:
-            <span
-              style={{
-                background: "#52c41a",
-                color: "white",
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontWeight: "bold",
-                fontSize: 14,
-              }}
-            >
-              {verifiedCount}
-            </span>
-          </div>
-
-        
-          <div
-            style={{
-              fontWeight: 500,
-              color: "#000",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            Not Verified:
-            <span
-              style={{
-                background: "#ff4d4f",
-                color: "white",
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontWeight: "bold",
-                fontSize: 14,
-              }}
-            >
-              {unverifiedCount}
-            </span>
-          </div>
-
-        
-          <div
-            style={{
-              fontWeight: 500,
-              color: "#000",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            Total:
-            <span
-              style={{
-                background: "#1677ff",
-                color: "white",
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontWeight: "bold",
-                fontSize: 14,
-              }}
-            >
-              {candidates.length}
-            </span>
-          </div>
-
-         
-          <Button
-            type={activeTab === "active" ? "primary" : "default"}
-            onClick={() => setActiveTab("active")}
-          >
-            Active
-          </Button>
-
-          <Button
-            type={activeTab === "inactive" ? "primary" : "default"}
-            onClick={() => setActiveTab("inactive")}
-          >
-            Inactive
-          </Button>
-
-          <Button
-            type={activeTab === "all" ? "primary" : "default"}
-            onClick={() => setActiveTab("all")}
-          >
-            All
-          </Button>
-        </div>
-      </div> */}
+    
 
       {/* ===== FIGMA TOP BAR 2 ===== */}
 <div
   style={{
     width: "100%",
-    padding: 8,
+    // padding: 8,
     background: "#fff",
     borderRadius: 6,
     display: "flex",
@@ -1198,7 +995,7 @@ const Divider = () => (
   }}
 >
   {/* COUNTERS */}
-  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+  <div style={{ display: "flex",width:280, alignItems: "center", gap: 8 }}>
     <StatBlock label="Total" value={candidates.length} color="#3F41D1" />
     <Divider />
     <StatBlock label="Verified" value={verifiedCount} color="#008000" />
@@ -1208,7 +1005,9 @@ const Divider = () => (
 
   {/* ACTION BUTTONS */}
   <div style={{ display: "flex", gap: 16 }}>
-    <Button style={{ borderRadius: 100 }}>Refresh</Button>
+   
+  
+
     <Button
       style={{
         borderRadius: 100,
@@ -1238,8 +1037,9 @@ const Divider = () => (
     marginBottom: 8,
   }}
 >
+  
   {/* LEFT TABS (CONNECTED TO activeTab) */}
-  <div style={{ display: "flex", gap: 16 }}>
+  <div style={{ display: "flex", gap: 16,width:600 }}>
     {[
       { key: "all", label: `All (${candidates.length})` },
       { key: "active", label: "Active" },
@@ -1271,7 +1071,7 @@ const Divider = () => (
   </div>
 
   {/* SEARCH (UI ONLY, NO LOGIC CHANGE) */}
-  <div
+  {/* <div
     style={{
       width: 300,
       height: 40,
@@ -1285,7 +1085,7 @@ const Divider = () => (
     }}
   >
     Search by name or role
-  </div>
+  </div> */}
 </div>
 
 
@@ -1479,6 +1279,7 @@ const Divider = () => (
   onCancel={handleCancel}
   footer={null}
   closable={false}
+   mask={false}  
   maskClosable={true}
 
   /* 🔑 KEY PART */
@@ -1497,9 +1298,7 @@ const Divider = () => (
     borderRadius: "16px 0 0 16px", // rounded left only
   }}
 >
-
-
-        <UpdateUserProfile
+ <UpdateUserProfile
           handleFormDetails={handleFormDetails}
           Reciviedrole={"candidate"}
           setModalVisible={setIsModalVisible}
@@ -1895,8 +1694,7 @@ const Divider = () => (
     >
       Cancel
     </Button>
-
-    <Button
+<Button
       type="primary"
       onClick={handleVerifyOtp}
       loading={otpVerifying}
@@ -1911,16 +1709,9 @@ const Divider = () => (
     </Button>
   </div>
 </Modal>
- 
-
-
-    </div>
+ </div>
   );
 };
-
-
-
-
 export default Bench;
 
 

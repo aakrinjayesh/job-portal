@@ -14,6 +14,8 @@ import {
   Divider,
   Checkbox,
   Switch,
+  Collapse,
+  Steps,
 } from "antd";
 
 import {
@@ -71,6 +73,8 @@ const UpdateUserProfile = ({
   const [experienceList, setExperienceList] = useState([]);
 
   const [isCandidate, setIsCandidate] = useState(false);
+
+const [currentStep, setCurrentStep] = useState(0);
 
 
   const role = localStorage.getItem("role");
@@ -535,8 +539,52 @@ const UpdateUserProfile = ({
     messageAPI.error("Please check enter all required Fields");
   };
 
+  const renderSection = ({ key, title, children }) => (
+  <Collapse
+    defaultActiveKey={[key]}   // ✅ default open
+    bordered={false}
+    style={{ marginBottom: 24 }}
+  >
+    <Collapse.Panel
+      key={key}
+      header={
+        <span style={{ fontWeight: 600, fontSize: 16 }}>
+          {title}
+        </span>
+      }
+      style={{
+        background: "#fff",
+        borderRadius: 12,
+        border: "1px solid #f0f0f0",
+      }}
+    >
+      {children}
+    </Collapse.Panel>
+  </Collapse>
+);
+
+const sectionRefs = {
+  personal: React.useRef(null),
+  skills: React.useRef(null),
+  education: React.useRef(null),
+  certifications: React.useRef(null),
+  experience: React.useRef(null),
+  
+};
+
+const stepsConfig = [
+  { title: "Personal Information", key: "personal" },
+  { title: "Skills", key: "skills" },
+  { title: "Education", key: "education" },
+  { title: "Certifications", key: "certifications" },
+  { title: "Work Experience", key: "experience" },
+ 
+];
+
+  
+
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
+    <div style={{ padding: 0, maxWidth: 1200, margin: "0 auto" }}>
       {contextHolder}
       <Title level={2}>Resume Extractor</Title>
       <Upload
@@ -555,13 +603,66 @@ const UpdateUserProfile = ({
         </Button>
       </Upload>
 
-      <Card title="Candidate Information Form" style={{ marginTop: 20 }}>
+      <Card title="Candidate Information Form" style={{ marginTop: 20 }}
+        extra={
+    <span
+      onClick={() => setModalVisible(false)}
+      style={{
+        fontSize: 18,
+        cursor: "pointer",
+        color: "#555",
+      }}
+    >
+      ✕
+    </span>
+  }
+      >
+
+        <Steps
+  current={currentStep}
+  style={{ marginBottom: 32 }}
+  items={stepsConfig.map((step, index) => ({
+    title: step.title,
+    onClick: () => {
+      setCurrentStep(index);
+      sectionRefs[step.key]?.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    },
+  }))}
+/>
+
+
+        
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
           onFinishFailed={onFinishFailed}
         >
+<div ref={sectionRefs.skills}>
+       <Collapse
+  defaultActiveKey={["personal-info"]}
+  bordered={false}
+  style={{ marginBottom: 24 }}
+>
+  <Collapse.Panel
+    key="personal-info"
+    header={
+      <span style={{ fontWeight: 600, fontSize: 16 }}>
+        Personal Information
+      </span>
+    }
+    style={{
+      background: "#fff",
+      borderRadius: 12,
+      border: "1px solid #f0f0f0",
+    }}
+  >
+
+  
+
           <Row gutter={16}>
             {/* Profile Picture */}
             <Col span={24}>
@@ -691,9 +792,12 @@ const UpdateUserProfile = ({
               >
                 <Input placeholder="Enter full name" />
               </Form.Item>
-            </Col>
 
-            {Reciviedrole && (
+ </Col>
+
+ 
+
+            {/* {Reciviedrole && (
               <Form.Item
                 name="hideContact"
                 label="Hide Contact Details "
@@ -709,7 +813,7 @@ const UpdateUserProfile = ({
                   onChange={(checked) => setShowContact(checked)}
                 />
               </Form.Item>
-            )}
+            )} */}
 
             {/* {!showContact && ( */}
             <Col xs={24} sm={12} md={12}>
@@ -862,32 +966,7 @@ const UpdateUserProfile = ({
               </Form.Item>
             </Col>
 
-            <Col span={24}>
- <Form.Item
-  label="Professional Summary"
-  name="summary"
-  rules={[
-    {
-      required: true,
-      message: "Professional summary is required",
-    },
   
-    {
-      pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"]+$/,
-      message:
-        "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
-    },
-  ]}
->
-  <Input.TextArea
-    rows={4}
-    showCount
-    maxLength={600}
-    placeholder="Salesforce-focused professional summary (minimum 100 characters)"
-  />
-</Form.Item>
-
-</Col>
 
 
             {/* Preferred & Current Location */}
@@ -1081,15 +1160,51 @@ const UpdateUserProfile = ({
             </Col>
           </Row>
 
-          <Divider />
+         
+
+           <Col span={24}>
+ <Form.Item
+  label="Professional Summary"
+  name="summary"
+  rules={[
+    {
+      required: true,
+      message: "Professional summary is required",
+    },
+  
+    {
+      pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"]+$/,
+      message:
+        "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
+    },
+  ]}
+>
+  <Input.TextArea
+    rows={4}
+    showCount
+    maxLength={600}
+    placeholder="Salesforce-focused professional summary (minimum 100 characters)"
+  />
+</Form.Item>
+
+</Col>
+  
 
           {/* Portfolio, LinkedIn, Trailhead */}
           <Row gutter={16}>
             <Col xs={24} sm={8}>
-              <Form.Item label="Portfolio Link" name="portfolioLink">
+              <Form.Item label="Portfolio Link" name="portfolioLink"
+                rules={[
+      {
+         pattern: /^https:\/\/([a-zA-Z0-9-]+)\.(dev|me|io|site|portfolio|com)(\/(portfolio|projects|work|about)\/?)?$/,
+        message: "Enter a valid portfolio link ",
+      },
+    ]}>
                 <Input placeholder="https://yourportfolio.com (optional)" />
               </Form.Item>
             </Col>
+
+            
 
             <Col xs={24} sm={8}>
               {/* <Form.Item
@@ -1111,7 +1226,7 @@ const UpdateUserProfile = ({
                 <Input placeholder="https://www.linkedin.com/in/yourprofile" />
               </Form.Item> */}
 
-              {isCandidate ? (
+              {!isCandidate ? (
   <Form.Item
     label="LinkedIn URL"
     name="linkedInUrl"
@@ -1171,7 +1286,7 @@ const UpdateUserProfile = ({
               </Form.Item> */}
 
 
-              {isCandidate ? (
+              {!isCandidate ? (
   <Form.Item
     label="Trailhead URL"
     name="trailheadUrl"
@@ -1207,131 +1322,130 @@ const UpdateUserProfile = ({
 
             </Col>
           </Row>
+  </Collapse.Panel>
+</Collapse>
+</div>
 
           <Divider />
 
-          {/* Skills */}
-          <Row gutter={16}>
-            {/* <Col span={24}>
-              <Form.Item name="primarySkills"  noStyle >
-                <SkillManagerCard
-                  title="Primary Skills"
-                  skills={primarySkills}
-                  onSkillsChange={handlePrimarySkillsChange}
-                  fetchFunction={GetSkills}
-                  addFunction={PostSkills}
-                />
-              </Form.Item>
-            </Col> */}
-            <Col span={12}>
-              <Form.Item
-                label="Primary Skills"
-                name="primarySkills"
-                rules={[
-                  {
-                    required: true,
-                  },
-                  {
-                    validator: (_, value) => {
-                      if (!value || value.length === 0) {
-                        return Promise.reject(
-                          "Please add at least one primary skill!"
-                        );
-                      }
-                      return Promise.resolve();
-                    },
-                  },
-                ]}
-              >
-                <SkillManagerCard
-                  title="Primary Skills"
-                  skills={primarySkills}
-                  onSkillsChange={handlePrimarySkillsChange}
-                  fetchFunction={GetSkills}
-                  addFunction={PostSkills}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Secondary Skills"
-                name="secondarySkills"
-                // noStyle
-              >
-                <SkillManagerCard
-                  title="Secondary Skills"
-                  skills={secondarySkills}
-                  onSkillsChange={handleSecondarySkillsChange}
-                  fetchFunction={GetSkills}
-                  addFunction={PostSkills}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
 
-          <Divider />
+<div ref={sectionRefs.skills}>
+ {renderSection({
+  key: "skills",
+  title: "Skills",
+  children: (
+    <Collapse
+    style={{border: "none"}}
+      defaultActiveKey={["primary", "secondary"]}
+      bordered={false}
+    >
+      
+      {/* PRIMARY SKILLS */}
+     
+        <Form.Item
+          name="primarySkills"
+          rules={[
+            { required: true },
+            {
+              validator: (_, value) => {
+                if (!value || value.length === 0) {
+                  return Promise.reject(
+                    "Please add at least one primary skill!"
+                  );
+                }
+                return Promise.resolve();
+              },
+            },
+          ]}
+        >
+          <SkillManagerCard
+            title="Primary Skills"
+            skills={primarySkills}
+            onSkillsChange={handlePrimarySkillsChange}
+            fetchFunction={GetSkills}
+            addFunction={PostSkills}
+          />
+        </Form.Item>
+     
+
+      {/* SECONDARY SKILLS */}
+     
+        <Form.Item name="secondarySkills">
+          <SkillManagerCard
+            title="Secondary Skills"
+            skills={secondarySkills}
+            onSkillsChange={handleSecondarySkillsChange}
+            fetchFunction={GetSkills}
+            addFunction={PostSkills}
+          />
+        </Form.Item>
+     
+    </Collapse>
+  ),
+})}
+</div>
+
+<Divider />
 
           {/* Clouds */}
-          <Row gutter={16}>
-            {/* <Col span={12}>
-              <Form.Item name="primaryClouds" noStyle>
-                <SkillManagerCard
-                  title="Primary Clouds"
-                  skills={primaryClouds}
-                  onSkillsChange={handlePrimaryCloudsChange}
-                  fetchFunction={GetClouds}
-                  addFunction={PostClouds}
-                />
-              </Form.Item>
-            </Col> */}
-            <Col span={12}>
-              <Form.Item
-                label="Primary Clouds"
-                name="primaryClouds"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please add at least one primary cloud!",
-                  },
-                  {
-                    validator: (_, value) => {
-                      if (!value || value.length === 0) {
-                        return Promise.reject(
-                          "Please add at least one primary cloud!"
-                        );
-                      }
-                      return Promise.resolve();
-                    },
-                  },
-                ]}
-              >
-                <SkillManagerCard
-                  title="Primary Clouds"
-                  skills={primaryClouds}
-                  onSkillsChange={handlePrimaryCloudsChange}
-                  fetchFunction={GetClouds}
-                  addFunction={PostClouds}
-                />
-              </Form.Item>
-            </Col>
 
-            <Col span={12}>
-              <Form.Item label="Secondary Clouds" name="secondaryClouds">
-                <SkillManagerCard
-                  title="Secondary Clouds"
-                  skills={secondaryClouds}
-                  onSkillsChange={handleSecondaryCloudsChange}
-                  fetchFunction={GetClouds}
-                  addFunction={PostClouds}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+          {renderSection({
+  key: "clouds",
+  title: "Clouds",
+  children: (
+    <Collapse
+      defaultActiveKey={["primary-clouds", "secondary-clouds"]}
+      bordered={false}
+    >
+      {/* PRIMARY CLOUDS */}
+     
+        <Form.Item
+          name="primaryClouds"
+          rules={[
+            { required: true },
+            {
+              validator: (_, value) => {
+                if (!value || value.length === 0) {
+                  return Promise.reject(
+                    "Please add at least one primary cloud!"
+                  );
+                }
+                return Promise.resolve();
+              },
+            },
+          ]}
+        >
+          <SkillManagerCard
+            title="Primary Clouds"
+            skills={primaryClouds}
+            onSkillsChange={handlePrimaryCloudsChange}
+            fetchFunction={GetClouds}
+            addFunction={PostClouds}
+          />
+        </Form.Item>
+    
+
+      {/* SECONDARY CLOUDS */}
+     
+        <Form.Item name="secondaryClouds">
+          <SkillManagerCard
+            title="Secondary Clouds"
+            skills={secondaryClouds}
+            onSkillsChange={handleSecondaryCloudsChange}
+            fetchFunction={GetClouds}
+            addFunction={PostClouds}
+          />
+        </Form.Item>
+      
+    </Collapse>
+  ),
+})}
+
 
           <Divider />
 
           {/* Education */}
-          <Row>
+          {/* <Row>
             <Col span={24}>
               <Form.Item
                 label="Education Details"
@@ -1349,10 +1463,35 @@ const UpdateUserProfile = ({
                 />
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
+
+<div ref={sectionRefs.education}>
+          {renderSection({
+  key: "education",
+  title: "Education",
+  children: (
+    <Form.Item
+      label="Education Details"
+      name="education"
+      rules={[
+        {
+          required: true,
+          message: "Please enter Education Details!",
+        },
+      ]}
+    >
+      <EducationCard
+        apidata={educationList}
+        onEducationChange={handleEducationChange}
+      />
+    </Form.Item>
+  ),
+})}
+</div>
+<Divider />
 
           {/* Certifications */}
-          <Row gutter={16}>
+          {/* <Row gutter={16}>
             <Col span={24}>
               <Form.Item
                 label="Certifications"
@@ -1361,20 +1500,171 @@ const UpdateUserProfile = ({
                   { required: true, message: "Please enter certifications!" },
                 ]}
               >
-                <ReusableSelect
-                  placeholder="Select or add certifications"
-                  fetchFunction={GetCertifications}
-                  addFunction={PostCertifications}
-                  single={false}
-                />
+               
+
+          <ReusableSelect
+  placeholder="Select or add certifications"
+  fetchFunction={GetCertifications}
+  addFunction={PostCertifications}
+  single={false}
+ 
+  style={{
+    width: "100%",
+  }}
+
+  dropdownStyle={{
+    zIndex: 1050,
+  }}
+
+  popupClassName="cert-popup"   // optional, safe
+
+  tagRender={({ label, closable, onClose }) => {
+    return (
+      <div
+        style={{
+          background: "#E2EEFF",
+          border: "0.5px solid #1677FF",
+          borderRadius: 100,
+          padding: "6px 12px",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 14,
+          fontWeight: 500,
+          color: "#111",
+          cursor: "default",
+          margin: "4px",            // ⭐ THIS IS THE GAP FIX
+          maxWidth: "100%",
+          boxSizing: "border-box",
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <span
+          style={{
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </span>
+
+        {closable && (
+          <span
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            style={{
+              cursor: "pointer",
+              fontSize: 12,
+              color: "#666",
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </span>
+        )}
+      </div>
+    );
+  }}
+/>
+
+
+
+
+
+
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
+
+<div ref={sectionRefs.certifications}></div>
+          {renderSection({
+  key: "certifications",
+  title: "Certifications",
+  children: (
+    <Form.Item
+      label="Certifications"
+      name="certifications"
+      rules={[
+        { required: true, message: "Please enter certifications!" },
+      ]}
+    >
+      <ReusableSelect
+        placeholder="Select or add certifications"
+        fetchFunction={GetCertifications}
+        addFunction={PostCertifications}
+        single={false}
+        style={{ width: "100%" }}
+        dropdownStyle={{ zIndex: 1050 }}
+        popupClassName="cert-popup"
+        tagRender={({ label, closable, onClose }) => (
+          <div
+            style={{
+              background: "#E2EEFF",
+              border: "0.5px solid #1677FF",
+              borderRadius: 100,
+              padding: "6px 12px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 14,
+              fontWeight: 500,
+              color: "#111",
+              cursor: "default",
+              margin: "4px",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <span style={{ whiteSpace: "nowrap" }}>
+              {label}
+            </span>
+
+            {closable && (
+              <span
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                }}
+                style={{
+                  cursor: "pointer",
+                  fontSize: 12,
+                  color: "#666",
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </span>
+            )}
+          </div>
+        )}
+      />
+    </Form.Item>
+  ),
+})}
+
 
           <Divider />
 
           {/* Work Experience */}
-          <Row gutter={16}>
+          {/* <Row gutter={16}>
             <Col span={24}>
               <Form.Item
                 label="Work Experience"
@@ -1392,7 +1682,32 @@ const UpdateUserProfile = ({
                 />
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
+
+<div ref={sectionRefs.experience}>
+          {renderSection({
+  key: "work-experience",
+  title: "Work Experience",
+  children: (
+    <Form.Item
+      label="Work Experience"
+      name="workExperience"
+      rules={[
+        {
+          required: true,
+          message: "Please enter work experience!",
+        },
+      ]}
+    >
+      <ExperienceCard
+        apidata={experienceList}
+        onExperienceChange={handleExperienceChange}
+      />
+    </Form.Item>
+  ),
+})}
+</div>
+
 
           {/* Submit + Generate Resume */}
           <Form.Item style={{ marginTop: 24 }}>

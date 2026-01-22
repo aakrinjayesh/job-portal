@@ -17,6 +17,8 @@ const MyActivity = () => {
 
   const controllerRef = useRef(null);
   const location = useLocation();
+  const [hoveredId, setHoveredId] = useState(null);
+
 
   /* ================= FETCH MY ACTIVITY ================= */
   const fetchMyActivity = async () => {
@@ -67,7 +69,11 @@ const MyActivity = () => {
 
   return (
     <>
-      <h2>My Activity</h2>
+      {/* <h2>My Activity</h2> */}
+      <h2 style={{ marginBottom: 12, marginTop: 0 }}>
+  My Activity
+</h2>
+
       {contextHolder}
       {/* ================= PAGE LOADING ================= */}
       {loading ? (
@@ -77,76 +83,177 @@ const MyActivity = () => {
       ) : (
         <div style={{ display: "flex", gap: 24 }}>
           {/* ================= LEFT PANEL (60%) ================= */}
-          <Card style={{ width: "60%" }}>
+          {/* <Card style={{ width: "60%" }}> */}
+          <Card
+  style={{
+    width: "60%",
+    height: "100%",
+    // padding: 12,
+    background: "#ffffff",
+    borderRadius: 10,
+  }}
+>
             <List
               dataSource={data}
+                style={{
+    display: "flex",
+    flexDirection: "column",
+    // gap: 32,
+     gap: 12,
+  }}
               renderItem={(item) => (
-                <Card
-                  hoverable
-                  // style={{
-                  //   marginBottom: 16,
-                  //   borderRadius: 12,
-                  //   background: "linear-gradient(135deg, #f9f9ff, #eef3ff)",
-                  //   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  // }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    {/* LEFT */}
-                    <div style={{ display: "flex", gap: 16 }}>
-                      <div
-                        style={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: "50%",
-                          background: "#1677ff",
-                          color: "#fff",
-                          fontSize: 20,
-                          fontWeight: 600,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {item.candidate.name.charAt(0).toUpperCase()}
-                      </div>
 
-                      <div>
-                        <div style={{ fontSize: 16, fontWeight: 600 }}>
-                          {item.candidate.name}
-                        </div>
 
-                        <div style={{ color: "#555", fontSize: 13 }}>
-                          {item.candidate.email}
-                        </div>
+<Card
+  hoverable
+  onClick={() => handleSelectCandidate(item.candidate.id)}
+  onMouseEnter={() => setHoveredId(item.candidate.id)}
+  onMouseLeave={() => setHoveredId(null)}
+  bodyStyle={{
+    padding: 12,
+  }}
+  style={{
+    marginBottom: 6,
+    borderRadius: 12,
 
-                        <div style={{ marginTop: 8 }}>
-                          <Tag color="blue">
-                            Total Activities: {item.totalActivities}
-                          </Tag>
+   background:
+  hoveredId === item.candidate.id ||
+  activeCandidateId === item.candidate.id
+    ? "rgba(22, 119, 255, 0.08)"
+    : "#FFFFFF",
 
-                          <Tag color="purple">
-                            Last Activity:{" "}
-                            {new Date(item.lastActivityAt).toLocaleDateString()}
-                          </Tag>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* RIGHT */}
-                    <Button
-                      type="primary"
-                      onClick={() => handleSelectCandidate(item.candidate.id)}
-                    >
-                      View Timeline
-                    </Button>
-                  </div>
-                </Card>
+
+
+border:
+  activeCandidateId === item.candidate.id
+    ? "1px solid rgba(22, 119, 255, 0.4)"
+    : "1px solid #EDEDED",
+
+boxShadow:
+  activeCandidateId === item.candidate.id
+    ? "0 2px 8px rgba(22,119,255,0.15)"
+    : "0 2px 8px rgba(0,0,0,0.06)",
+
+
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  }}
+>
+
+
+  {/* TOP ROW */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    }}
+  >
+    {/* LEFT: Avatar + Details */}
+    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          background: "#1677FF",
+          color: "#fff",
+          fontSize: 18,
+          fontWeight: 600,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {item.candidate.name.charAt(0).toUpperCase()}
+      </div>
+
+      <div>
+        <div
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            color: "#0A0A0A",
+            lineHeight: "12px",
+            
+          }}
+        >
+          {item.candidate.name}
+        </div>
+        <div
+          style={{
+            fontSize: 14,
+            color: "#6A7282",
+            lineHeight: "20px",
+          }}
+        >
+          {item.candidate.email}
+        </div>
+      </div>
+    </div>
+
+   
+    {/* <div
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: "50%",
+        background: "#F7F7F7",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <span style={{ fontSize: 18, color: "#666" }}>⋯</span>
+    </div> */}
+  </div>
+
+  {/* TAGS */}
+  <div style={{ display: "flex", gap: 8 }}>
+   
+
+<div
+  style={{
+    padding: "4px 10px",
+    background: "#E7F0FE",          // light blue
+    borderRadius: 100,
+    border: "0.5px solid #1677FF",  // blue border
+    fontSize: 11,
+    lineHeight: "16px",
+    fontWeight: 500,
+    color: "#1677FF",               // blue text
+    whiteSpace: "nowrap",
+  }}
+>
+  Total Activities : {item.totalActivities}
+</div>
+
+
+
+
+<div
+  style={{
+    padding: "4px 10px",
+    background: "#F3E8FF",          // light purple
+    borderRadius: 100,
+    border: "0.5px solid #9254DE",  // purple border
+    fontSize: 11,
+    lineHeight: "16px",
+    fontWeight: 500,
+    color: "#9254DE",               // purple text
+    whiteSpace: "nowrap",
+  }}
+>
+  Last Activity :{" "}
+  {new Date(item.lastActivityAt).toLocaleDateString()}
+</div>
+
+
+  </div>
+</Card>
+
               )}
             />
           </Card>
@@ -155,7 +262,7 @@ const MyActivity = () => {
           <div
             style={{
               width: "40%",
-              minHeight: 400,
+              minHeight: 300,
               padding: 16,
               borderRadius: 12,
               background: "#fff",
@@ -183,6 +290,8 @@ const MyActivity = () => {
 
             {!detailLoading && activeCandidateId && (
               <CandidateActivity candidateId={activeCandidateId} />
+  
+
             )}
           </div>
         </div>

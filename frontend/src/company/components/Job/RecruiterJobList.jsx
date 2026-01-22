@@ -1022,7 +1022,7 @@ const RecruiterJobList = () => {
                     rules={[
                       { required: true },
                       {
-                        pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+                        pattern:/^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
 
                         message:
                           "Only letters, numbers, spaces and . , / - ( ) are allowed!",
@@ -1031,8 +1031,8 @@ const RecruiterJobList = () => {
                   >
                     <TextArea
                       rows={3}
-                      // maxLength={1000}
-                      // showCount
+                      maxLength={10000}
+                      showCount
                       placeholder="Job Description"
                     />
                   </Form.Item>
@@ -1052,14 +1052,20 @@ const RecruiterJobList = () => {
                         //   message:
                         //     "Only letters, numbers, spaces and . , / - ( ) are allowed!",
                         // },
+                         {
+                        pattern:/^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
+
+                        message:
+                          "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+                      },
                       ]
                     }
                   >
                     {/* <Select mode="tags" placeholder="Add responsibilities" /> */}
                     <TextArea
                       rows={3}
-                      // maxLength={1000}
-                      // showCount
+                      maxLength={10000}
+                      showCount
                       placeholder="Roles & Responsibilities"
                     />
                   </Form.Item>
@@ -1108,10 +1114,11 @@ const RecruiterJobList = () => {
                               required: true,
                               message: "Tenure is Required!",
                             },
-                            {
-                              pattern: /^[0-9]+(\.[0-9]+)?$/,
-                              message: "Only Positive Numbers Are Allowed",
-                            },
+                           {
+  pattern: /^\d{1,2}(\.\d{1,2})?$/,
+  message: "Enter a number with up to 2 digits before and after decimal",
+}
+
                           ]}
                         >
                           <Input
@@ -1150,11 +1157,11 @@ const RecruiterJobList = () => {
                             required: true,
                             message: "Experience is Required!",
                           },
-                          {
-                            pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-                            message:
-                              "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
-                          },
+                         {
+  pattern: /^\d{1,2}(\.\d{1,2})?$/,
+  message: "Enter a number with up to 2 digits before and after decimal",
+}
+
                         ]}
                       >
                         <Input
@@ -1430,9 +1437,9 @@ const RecruiterJobList = () => {
                     <Input placeholder="Company Name" />
                   </Form.Item>
 
-                  <Form.Item name="companyLogo" label="Company Logo">
+                  {/* <Form.Item name="companyLogo" label="Company Logo">
                     <Input placeholder="URL" />
-                  </Form.Item>
+                  </Form.Item> */}
 
                   <Form.Item name="certifications" label="Certifications">
                     <ReusableSelect
@@ -1448,12 +1455,25 @@ const RecruiterJobList = () => {
                     label="Application Deadline"
                     // rules={[{ required: true }]}
                   >
-                    <DatePicker
+                    {/* <DatePicker
                       style={{ width: "100%" }}
                       disabledDate={(current) =>
                         current && current < dayjs().startOf("day")
                       }
-                    />
+                    /> */}
+
+                    <DatePicker
+    style={{ width: "100%" }}
+    disabledDate={(current) => {
+      if (!current) return false;
+
+      const today = dayjs().startOf("day");
+      const sixMonthsLater = today.add(6, "month").endOf("day");
+
+      return current < today || current > sixMonthsLater;
+    }}
+    placeholder="Select date (within next 6 months)"
+  />
                   </Form.Item>
                   <Form.Item name="ApplicationLimit" label="Limit Applications">
                     <InputNumber
@@ -1694,18 +1714,15 @@ const RecruiterJobList = () => {
               <Form.Item
                 label="Job Title(role)"
                 name="role"
-                rules={[
-                  { required: true, message: "Job title is required" },
-                  {
-                    pattern: /^[A-Za-z][A-Za-z0-9 .,\/-]*$/,
-                    message: "Special Characters are not allowed.",
-                  },
-                ]}
+               
               >
-                <Input
-                  placeholder="eg Salesforce Developer"
-                  style={{ borderRadius: 8, height: 36 }}
-                />
+                 <ReusableSelect
+                      placeholder="Select or add Role"
+                      fetchFunction={GetRole}
+                      addFunction={PostRole}
+                      single={true}
+                    />
+               
               </Form.Item>
 
               {/* Experience */}
@@ -1750,6 +1767,24 @@ const RecruiterJobList = () => {
                     message:
                       "Only letters, numbers, space, and , . / - ( ) ' are allowed!",
                   },
+                   {
+      validator: (_, value) => {
+        if (!value) return Promise.resolve();
+
+        const wordCount = value
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean).length;
+
+        if (wordCount > 1000) {
+          return Promise.reject(
+            new Error("Maximum 1000 words allowed")
+          );
+        }
+
+        return Promise.resolve();
+      },
+    },
                 ]}
               >
                 <Input.TextArea

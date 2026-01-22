@@ -51,7 +51,13 @@ const Address = ({ form, editable }) => {
           <Form.Item
             label="Building Number"
             name="doorNumber"
-            rules={[{ required: editable }]}
+            rules={[{ required: editable },
+                {
+      pattern: /^[A-Za-z0-9 \-.,?(){}\[\]/\\|]+$/,
+      message:
+        "Only letters, numbers, spaces and - . , ? ( ) { } [ ] / are allowed",
+    },
+            ]}
           >
             <Input disabled={!editable} />
           </Form.Item>
@@ -61,7 +67,13 @@ const Address = ({ form, editable }) => {
           <Form.Item
             label="Street"
             name="street"
-            rules={[{ required: editable }]}
+            rules={[{ required: editable },
+               {
+      pattern: /^[A-Za-z0-9 \-.,?(){}\[\]/\\|]+$/,
+      message:
+        "Only letters, numbers, spaces and - . , ? ( ) { } [ ] / are allowed",
+    },
+            ]}
           >
             <Input disabled={!editable} />
           </Form.Item>
@@ -70,7 +82,13 @@ const Address = ({ form, editable }) => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item label="City" name="city" rules={[{ required: editable }]}>
+          <Form.Item label="City" name="city" rules={[{ required: editable },
+              {
+      pattern: /^[A-Za-z0-9 \-.,?(){}\[\]/\\|]+$/,
+      message:
+        "Only letters, numbers, spaces and - . , ? ( ) { } [ ] / are allowed",
+    },
+          ]}>
             <Input disabled={!editable} />
           </Form.Item>
         </Col>

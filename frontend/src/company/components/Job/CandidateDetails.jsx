@@ -17,6 +17,7 @@ import {
   message,
   Tooltip,
   Modal,
+  Spin,
 } from "antd";
 import { ArrowLeftOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import CandidateActivity from "../activity/CandidateActivity";
@@ -42,6 +43,7 @@ const CandidateDetails = () => {
 
 const { candidate: initialCandidate, jobId } = location.state || {};
 const [candidate, setCandidate] = useState(initialCandidate);
+const [addReviewLoading, setAddReviewLoading] = useState(false);
 
 
 // const reloadCandidate = async () => {
@@ -184,9 +186,28 @@ const reloadCandidate = async () => {
     fontWeight: 500,
   };
 
+  
+
   return (
+    
     <div style={{ padding: "0px" }}>
       {contextHolder}
+      {addReviewLoading && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(255,255,255,0.85)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2000,
+    }}
+  >
+    <Spin size="large" />
+  </div>
+)}
+
       {/* Back Button */}
       <Button
         type="text"
@@ -199,7 +220,24 @@ const reloadCandidate = async () => {
         Back
       </Button>
       <Row gutter={16}>
-        <Col span={16}>
+        {/* <Col span={16}> */}
+        <Col span={16} style={{ position: "relative" }}>
+{addReviewLoading && (
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      background: "rgba(255,255,255,0.85)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+    }}
+  >
+    <Spin size="large" />
+  </div>
+)}
+
           <Card bordered={false}>
             <div
               style={{
@@ -1029,63 +1067,39 @@ const reloadCandidate = async () => {
             <div style={{ fontSize: 13, fontWeight: 590 }}>Add review</div>
           </div>
 
+        
+
           <Input.TextArea
-            rows={4}
-            placeholder="Review Description"
-            value={tempReview}
-            onChange={(e) => setTempReview(e.target.value)}
-            style={{ borderRadius: 8 }}
-          />
+  rows={4}
+  placeholder="Review Description"
+  value={tempReview}
+  maxLength={1000}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    const regex = /^[A-Za-z0-9 .,()\/{}\[\]"';:|\\\s]*$/;
+
+    if (!regex.test(value)) {
+      message.error(
+        "Only letters, numbers, spaces and . , ( ) / { } [ ] \" ; : | \\ are allowed"
+      );
+      return;
+    }
+
+    setTempReview(value);
+  }}
+  style={{ borderRadius: 8 }}
+/>
+
         </div>
 
         {/* Footer */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
           <Button onClick={() => setIsReviewModalOpen(false)}>Cancel</Button>
 
-          {/* <Button
-            type="primary"
-            onClick={() => {
-              const updatedReviews = {
-                ...reviewsByCandidate,
-                [candidate.applicationId]: tempReview,
-              };
+     
 
-              setReviewsByCandidate(updatedReviews);
-              localStorage.setItem(
-                "candidateReviews",
-                JSON.stringify(updatedReviews)
-              );
-
-              setIsReviewModalOpen(false);
-            }}
-          >
-            Add
-          </Button> */}
-
-          {/* <Button
-  type="primary"
-  onClick={async () => {
-    if (!ratingValue) {
-      message.error("Please select rating");
-      return;
-    }
-
-    await SaveCandidateRating({
-      candidateProfileId: candidate.profile.id,
-      rating: ratingValue,
-      comment: tempReview,
-    });
-
-    await reloadCandidate(); 
-
-    message.success("Rating saved");
-    setIsReviewModalOpen(false);
-  }}
->
-  Add
-</Button> */}
-
-<Button
+{/* <Button
   type="primary"
   onClick={async () => {
     if (!ratingValue) {
@@ -1099,7 +1113,40 @@ const reloadCandidate = async () => {
   }}
 >
   Add
+</Button> */}
+
+<Button
+  type="primary"
+  disabled={addReviewLoading}
+  onClick={async () => {
+    if (!ratingValue) {
+      message.error("Please select rating");
+      return;
+    }
+
+    // 1️⃣ Close modal
+    setIsReviewModalOpen(false);
+
+    // 2️⃣ Show RIGHT SIDE loader
+    setAddReviewLoading(true);
+
+    try {
+      await reloadCandidate();
+      message.success("Rating saved");
+    } catch (err) {
+      message.error("Failed to save rating");
+    } finally {
+      setAddReviewLoading(false);
+      setTempReview("");
+      setRatingValue(0);
+    }
+  }}
+>
+  Add
 </Button>
+
+
+
 
         </div>
       </Modal>

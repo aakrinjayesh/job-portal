@@ -21,6 +21,7 @@ function SavedCandidates() {
   ...c,
 
   // what BenchCard expects
+   id: c.id || c._id, 
   candidateName: c.name,
   role: c.title || "N/A",
   location: c.currentLocation || "N/A",
@@ -74,6 +75,7 @@ setCandidates((prev) =>
 
   const handleRemoveCandidate = (id) => {
     setCandidates((prev) => prev.filter((c) => c.id !== id));
+      message.success("Candidate removed!");
   };
 
   return (

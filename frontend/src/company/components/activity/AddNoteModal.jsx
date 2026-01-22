@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, Form, Input, Select, message } from "antd";
+import { Modal, Form, Input, Select, message ,DatePicker } from "antd";
+import dayjs from "dayjs";
 import { CreateActivity } from "../../api/api";
 import { useState } from "react";
 
@@ -18,6 +19,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
         return;
       }
 
+
       const values = await form.validateFields();
 
       const resp = await CreateActivity({
@@ -27,7 +29,11 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
           subject: values.subject,
           noteType: values.noteType,
           description: values.description,
-          interactedAt: new Date().toISOString(),
+          // interactedAt: new Date().toISOString(),
+          // interactedAt: values.time.toISOString(),
+           startTime: values.time[0].toISOString(),
+          endTime: values.time[1].toISOString(),
+
         },
       });
 
@@ -48,45 +54,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
   };
 
   return (
-    // <Modal
-    //   title="Add Note"
-    //   open={open}
-    //   onOk={() => form.submit()}
-    //   confirmLoading={loading}
-    //   onCancel={() => {
-    //     form.resetFields();
-    //     onClose();
-    //   }}
-    //   destroyOnClose
-    // >
-    //   <Form layout="vertical" form={form} onFinish={handleSubmit}>
-    //     <Form.Item
-    //       name="subject"
-    //       label="Subject"
-    //       rules={[{ required: true, message: "Subject is required" }]}
-    //     >
-    //       <Input />
-    //     </Form.Item>
-
-    //     <Form.Item
-    //       name="noteType"
-    //       label="Type"
-    //       rules={[{ required: true, message: "Type is required" }]}
-    //     >
-    //       <Select
-    //         options={[
-    //           { value: "CALL", label: "Call" },
-    //           { value: "EMAIL", label: "Email" },
-    //           { value: "MESSAGE", label: "Message" },
-    //         ]}
-    //       />
-    //     </Form.Item>
-
-    //     <Form.Item name="description" label="Description">
-    //       <Input.TextArea rows={3} />
-    //     </Form.Item>
-    //   </Form>
-    // </Modal>
+   
 <Modal
   title="Add Note"
   open={open}
@@ -155,7 +123,12 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
         <Form.Item
           name="subject"
           noStyle
-          rules={[{ required: true, message: "Subject is required" }]}
+          rules={[{ required: true, message: "Subject is required" },
+              {
+          pattern: /^[A-Za-z0-9 ]+$/,
+          message: "Only letters, numbers, and spaces are allowed",
+        },
+          ]}
         >
           <Input
             placeholder="Spoke"
@@ -200,6 +173,42 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
       </div>
     </Form.Item>
 
+    {/* ===== Time ===== */}
+<Form.Item
+      label={
+        <span style={{ fontSize: 13, fontWeight: 590 }}>
+          <span style={{ color: "#B60554" }}>*</span> Time
+        </span>
+      }
+      required
+    >
+      <div
+        style={{
+          border: "1px solid #5C5C5C",
+          borderRadius: 8,
+          padding: "6px 8px",
+        }}
+      >
+        <Form.Item
+          name="time"
+          noStyle
+          rules={[{ required: true, message: "Time is required" }]}
+        >
+          <DatePicker.RangePicker
+            bordered={false}
+            showTime
+            use12Hours
+            format="h:mm a"
+            style={{ width: "100%" }}
+            disabledDate={(current) =>
+              current && current < dayjs().startOf("day")
+            }
+          />
+        </Form.Item>
+      </div>
+    </Form.Item>
+
+
     {/* ===== Description ===== */}
     <Form.Item
       label={
@@ -216,7 +225,15 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess }) => {
           padding: 8,
         }}
       >
-        <Form.Item name="description" noStyle>
+        <Form.Item name="description" noStyle
+         rules={[
+        { required: true, message: "Description is required" },
+        {
+          pattern: /^[A-Za-z0-9 ,./()\[\]{}]+$/,
+          message:
+            "Only letters, numbers, spaces, and , . / ( ) [ ] { } are allowed",
+        },
+      ]}>
           <Input.TextArea
             rows={3}
             placeholder="Note Description"

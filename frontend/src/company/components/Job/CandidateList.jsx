@@ -146,11 +146,21 @@ const STATUS_FLAG_MAP = {
   Shortlisted: { label: "Shortlisted", color: "#52c41a" },
   Rejected: { label: "Rejected", color: "#f5222d" },
   Bookmark: { label: "Bookmark", color: "#faad14" }, // gold
-  Clear: { label: "Clear", color: "#d9d9d9" },           // light grey
+  Clear: { label: "Clear", color: "#1677ff" },
 
 };
 
-const MANUAL_STATUS_OPTIONS = ["Shortlisted", "Pending", "Rejected", "Clear","Bookmark",];
+// const MANUAL_STATUS_OPTIONS = [
+//   "Shortlisted", "Pending", "Rejected", "Clear","Bookmark",];
+
+const MANUAL_STATUS_OPTIONS = [
+  "Pending",
+  "Shortlisted",
+  "Rejected",
+  "Bookmark",
+  "Clear",
+];
+
 
 
 // Triangle flag (same as Figma)

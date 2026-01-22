@@ -98,102 +98,232 @@ function EducationCard({ title = "Education", apidata, onEducationChange }) {
     }
   };
 
+  // return (
+  //   <Card
+  //     title={title}
+  //     extra={
+  //       <Space>
+  //         <Button type="primary" onClick={() => openModal()}>
+  //           Add {title}
+  //         </Button>
+  //       </Space>
+  //     }
+  //     style={{
+  //       height: 300,
+  //       overflowY: "auto",
+  //       scrollbarWidth: "none",
+  //     }}
+  //   >
+  //     {educationList.length > 0 ? (
+  //       <List
+  //         dataSource={educationList}
+  //         renderItem={(item, index) => (
+  //           <List.Item
+  //             actions={[
+  //               <Button type="link" onClick={() => openModal(item, index)}>
+  //                 Edit
+  //               </Button>,
+  //               <Popconfirm
+  //                 title="Are you sure you want to delete this education?"
+  //                 okText="Yes"
+  //                 cancelText="No"
+  //                 onConfirm={() => handleDelete(index)}
+  //               >
+  //                 <Button type="link" danger>
+  //                   Delete
+  //                 </Button>
+  //               </Popconfirm>,
+  //             ]}
+  //           >
+  //             <List.Item.Meta
+  //               title={<Text strong>{item.name}</Text>}
+  //               description={`${item.fromYear} - ${item.toYear} | ${item.educationType}`}
+  //             />
+  //           </List.Item>
+  //         )}
+  //       />
+  //     ) : (
+  //       <Text type="secondary">No education records added yet.</Text>
+  //     )}
+
+  //     {/* Modal for Add/Edit */}
+  //     <Modal
+  //       title={editingIndex !== null ? "Edit Education" : "Add Education"}
+  //       open={isModalOpen}
+  //       onOk={handleOk}
+  //       onCancel={handleCancel}
+  //       okText={editingIndex !== null ? "Save Changes" : "Add"}
+  //     >
+  //       <Form form={form} layout="vertical">
+  //         <Form.Item
+  //           name="name"
+  //           label="Education Name"
+  //           rules={[
+  //             { required: true, message: "Please enter education name" },
+  //             {
+  //               pattern: /^[A-Za-z .]+$/,
+  //               message: "Only letters spaces are allowed!",
+  //             },
+  //           ]}
+  //         >
+  //           <Input placeholder="e.g. B.Tech Computer Science" />
+  //         </Form.Item>
+
+  //         <Form.Item
+  //           name="yearRange"
+  //           label="Year Range"
+  //           rules={[{ required: true, message: "Please select year range" }]}
+  //         >
+  //           <RangePicker picker="year" style={{ width: "100%" }} />
+  //         </Form.Item>
+
+  //         <Form.Item
+  //           name="educationType"
+  //           label="Education Type"
+  //           rules={[
+  //             { required: true, message: "Please enter education type" },
+  //             {
+  //               pattern: /^[A-Za-z .,&\-\/']+$/,
+  //               message: "Only letters and spaces are allowed!",
+  //             },
+  //           ]}
+  //         >
+  //           <Input placeholder="e.g. Undergraduate, High School" />
+  //         </Form.Item>
+  //       </Form>
+  //     </Modal>
+  //   </Card>
+  // );
+
   return (
-    <Card
-      title={title}
-      extra={
-        <Space>
-          <Button type="primary" onClick={() => openModal()}>
-            Add {title}
-          </Button>
-        </Space>
-      }
-      style={{
-        height: 300,
-        overflowY: "auto",
-        scrollbarWidth: "none",
-      }}
-    >
-      {educationList.length > 0 ? (
-        <List
-          dataSource={educationList}
-          renderItem={(item, index) => (
-            <List.Item
-              actions={[
-                <Button type="link" onClick={() => openModal(item, index)}>
-                  Edit
-                </Button>,
-                <Popconfirm
-                  title="Are you sure you want to delete this education?"
-                  okText="Yes"
-                  cancelText="No"
-                  onConfirm={() => handleDelete(index)}
-                >
-                  <Button type="link" danger>
-                    Delete
-                  </Button>
-                </Popconfirm>,
-              ]}
-            >
-              <List.Item.Meta
-                title={<Text strong>{item.name}</Text>}
-                description={`${item.fromYear} - ${item.toYear} | ${item.educationType}`}
-              />
-            </List.Item>
-          )}
-        />
-      ) : (
-        <Text type="secondary">No education records added yet.</Text>
-      )}
-
-      {/* Modal for Add/Edit */}
-      <Modal
-        title={editingIndex !== null ? "Edit Education" : "Add Education"}
-        open={isModalOpen}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        okText={editingIndex !== null ? "Save Changes" : "Add"}
+  <Card
+    title={
+      <Text style={{ fontSize: 16, fontWeight: 600 }}>
+        {title}
+      </Text>
+    }
+    extra={
+      <Button
+        type="primary"
+        style={{ borderRadius: 8 }}
+        onClick={() => openModal()}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="name"
-            label="Education Name"
-            rules={[
-              { required: true, message: "Please enter education name" },
-              {
-                pattern: /^[A-Za-z .]+$/,
-                message: "Only letters spaces are allowed!",
-              },
-            ]}
+        Add Education
+      </Button>
+    }
+    style={{
+      background: "#FFFFFF",
+      borderRadius: 12,
+      boxShadow: "0px 0px 24px rgba(0,0,0,0.06)",
+    }}
+    styles={{
+      body: {
+        padding: 24,
+      },
+    }}
+  >
+    {educationList.length > 0 ? (
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        {educationList.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              padding: "16px 20px",
+              borderRadius: 10,
+              border: "1px solid #F0F0F0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
           >
-            <Input placeholder="e.g. B.Tech Computer Science" />
-          </Form.Item>
+            {/* LEFT CONTENT */}
+            <div>
+              <Text style={{ fontSize: 15, fontWeight: 600 }}>
+                {item.name}
+              </Text>
+              <div style={{ marginTop: 4 }}>
+                <Text type="secondary">
+                  {item.fromYear} - {item.toYear} | {item.educationType}
+                </Text>
+              </div>
+            </div>
 
-          <Form.Item
-            name="yearRange"
-            label="Year Range"
-            rules={[{ required: true, message: "Please select year range" }]}
-          >
-            <RangePicker picker="year" style={{ width: "100%" }} />
-          </Form.Item>
+            {/* RIGHT ACTIONS */}
+            <Space size={16}>
+              <Button
+                type="link"
+                onClick={() => openModal(item, index)}
+              >
+                Edit
+              </Button>
 
-          <Form.Item
-            name="educationType"
-            label="Education Type"
-            rules={[
-              { required: true, message: "Please enter education type" },
-              {
-                pattern: /^[A-Za-z .,&\-\/']+$/,
-                message: "Only letters and spaces are allowed!",
-              },
-            ]}
-          >
-            <Input placeholder="e.g. Undergraduate, High School" />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </Card>
-  );
+              <Popconfirm
+                title="Are you sure you want to delete this education?"
+                okText="Yes"
+                cancelText="No"
+                onConfirm={() => handleDelete(index)}
+              >
+                <Button type="link" danger>
+                  Delete
+                </Button>
+              </Popconfirm>
+            </Space>
+          </div>
+        ))}
+      </Space>
+    ) : (
+      <Text type="secondary">No education records added yet.</Text>
+    )}
+
+    {/* ===== MODAL (UNCHANGED) ===== */}
+    <Modal
+      title={editingIndex !== null ? "Edit Education" : "Add Education"}
+      open={isModalOpen}
+      onOk={handleOk}
+      onCancel={handleCancel}
+      okText={editingIndex !== null ? "Save Changes" : "Add"}
+    >
+      <Form form={form} layout="vertical">
+        <Form.Item
+          name="name"
+          label="Education Name"
+          rules={[
+            { required: true, message: "Please enter education name" },
+            {
+              pattern: /^[A-Za-z .]+$/,
+              message: "Only letters spaces are allowed!",
+            },
+          ]}
+        >
+          <Input placeholder="e.g. B.Tech Computer Science" />
+        </Form.Item>
+
+        <Form.Item
+          name="yearRange"
+          label="Year Range"
+          rules={[{ required: true, message: "Please select year range" }]}
+        >
+          <RangePicker picker="year" style={{ width: "100%" }} />
+        </Form.Item>
+
+        <Form.Item
+          name="educationType"
+          label="Education Type"
+          rules={[
+            { required: true, message: "Please enter education type" },
+            {
+              pattern: /^[A-Za-z .,&\-\/']+$/,
+              message: "Only letters and spaces are allowed!",
+            },
+          ]}
+        >
+          <Input placeholder="e.g. Undergraduate, High School" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  </Card>
+);
+
 }
 
 export default EducationCard;

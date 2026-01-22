@@ -1,19 +1,40 @@
 import axiosInstance from "../../candidate/api/axiosInstance";
  
-// ✅ FIXED VERSION
+// ✅ FIXED VERSION  
+// export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
+//   try {
+//     const response = await axiosInstance.post("/jobs/list", {
+//     page,
+//     limit,
+//     filters,
+//   },{signal},{headers: { 'Content-Type': 'application/json' }});
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error fetching jobs:", error);
+//     throw error;
+//   }
+// }
+
 export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
   try {
-    const response = await axiosInstance.post("/jobs/list", {
-    page,
-    limit,
-    filters,
-  },{signal},{headers: { 'Content-Type': 'application/json' }});
+    const response = await axiosInstance.post(
+      "/jobs/list",
+      { page, limit, filters },
+      {
+        signal,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
     throw error;
   }
 }
+
+
 
 
 
