@@ -6,7 +6,6 @@ import Settings from "./candidate/pages/Settings";
 import FAQ from "./candidate/pages/FAQ";
 import DashBoard from "./company/pages/DashBoard";
 import CompanyLayout from "./company/layout/CompanyLayout";
-import AcceptInvite from "./company/pages/AcceptInvite"; // New Component
 import { ConfigProvider, theme } from "antd";
 import CandidateJobDetails from "./candidate/components/Job/CandidateJobDetails";
 import JobDetails from "./company/components/Job/JobDetails";
@@ -288,7 +287,6 @@ function App() {
             </CompanyLayout>
           }
         />
-        <Route path="/accept-invite" element={<AcceptInvite />} />
       </Routes>
       {/* </BrowserRouter> */}
     </ConfigProvider>
