@@ -140,15 +140,6 @@ const MyProfile = () => {
     <div style={{ padding: 24 }}>
       {contextHolder}
 
-      {/* ===== STEPPER HEADER ===== */}
-      <Steps current={0} style={{ maxWidth: 900, margin: "0 auto 24px" }}>
-        <Step title="Personal Information" />
-        <Step title="Skills" />
-        <Step title="Education" />
-        <Step title="Work Experience" />
-        <Step title="Projects" />
-      </Steps>
-
       {/* ===== MAIN CARD ===== */}
       <Card
         style={{
@@ -168,7 +159,6 @@ const MyProfile = () => {
           <Title level={4} style={{ margin: 0 }}>
             Personal Information
           </Title>
-          <Text type="secondary">12/18 Fields Filled</Text>
         </div>
 
         <Divider />
