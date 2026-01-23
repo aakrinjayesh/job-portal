@@ -91,22 +91,64 @@ const RecruiterJobList = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const location = useLocation();
 
+  const [page, setPage] = useState(1);
+const [hasMore, setHasMore] = useState(true);
+const [initialLoading, setInitialLoading] = useState(true);
+
+const LIMIT = 10;
+
+
   const controllerRef = useRef(null);
 
   const [isSalaryRange, setIsSalaryRange] = useState(false);
 
   const [currentStep, setCurrentStep] = useState(0);
 
-  useEffect(() => {
-    fetchJobs();
+  // useEffect(() => {
+  //   fetchJobs();
 
-    return () => {
-      if (controllerRef.current) {
-        console.log("🔥 Aborting Jobs API due to route/tab change");
-        controllerRef.current.abort();
-      }
-    };
-  }, [location.pathname]); // 👈 THIS LINE FIXES YOUR ISSUE
+  //   return () => {
+  //     if (controllerRef.current) {
+  //       console.log("🔥 Aborting Jobs API due to route/tab change");
+  //       controllerRef.current.abort();
+  //     }
+  //   };
+  // }, [location.pathname]); // 👈 THIS LINE FIXES YOUR ISSUE
+
+  useEffect(() => {
+  setPage(1);
+  setHasMore(true);
+  fetchJobs(1);
+
+  return () => {
+    controllerRef.current?.abort();
+  };
+}, [location.pathname]);
+
+
+useEffect(() => {
+  const handleScroll = () => {
+    if (
+      window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 200 &&
+      hasMore &&
+      !loading
+    ) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, [hasMore, loading]);
+
+
+useEffect(() => {
+  if (page > 1) {
+    fetchJobs(page);
+  }
+}, [page]);
+
 
   const showCreateModal = () => {
     setIsEditing(false);
@@ -179,36 +221,102 @@ const RecruiterJobList = () => {
 
   // ✅ Fetch job list
 
-  const fetchJobs = async () => {
-    // 🔴 Abort previous request if still running
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
+  // const fetchJobs = async () => {
+  //   // 🔴 Abort previous request if still running
+  //   if (controllerRef.current) {
+  //     controllerRef.current.abort();
+  //   }
 
-    // ✅ Create new AbortController
-    const controller = new AbortController();
-    controllerRef.current = controller;
+  //   // ✅ Create new AbortController
+  //   const controller = new AbortController();
+  //   controllerRef.current = controller;
 
-    try {
-      // setLoading(true);
-      const response = await PostedJobsList(1, 10, controller.signal);
-      const jobList = response?.jobs || [];
-      setJobs(jobList);
-      setLoading(false);
-      // console.log("Jobs with applicant counts:", jobsWithCounts);
-    } catch (error) {
-      if (error.code === "ERR_CANCELED") {
-        // console.log("✅ fetchJobs aborted");
-        return;
-      }
+  //   try {
+  //     // setLoading(true);
+  //     const response = await PostedJobsList(1, 10, controller.signal);
+  //     const jobList = response?.jobs || [];
+  //     setJobs(jobList);
+  //     setLoading(false);
+  //     // console.log("Jobs with applicant counts:", jobsWithCounts);
+  //   } catch (error) {
+  //     if (error.code === "ERR_CANCELED") {
+  //       // console.log("✅ fetchJobs aborted");
+  //       return;
+  //     }
 
-      console.error("Error fetching jobs:", error);
-      setLoading(false);
-      messageApi.error("Failed to fetch jobs");
-    } finally {
-      // setLoading(false);
-    }
-  };
+  //     console.error("Error fetching jobs:", error);
+  //     setLoading(false);
+  //     messageApi.error("Failed to fetch jobs");
+  //   } finally {
+  //     // setLoading(false);
+  //   }
+  // };
+
+  const fetchJobs = async (pageNumber = 1) => {
+  if (controllerRef.current) {
+    controllerRef.current.abort();
+  }
+
+  const controller = new AbortController();
+  controllerRef.current = controller;
+
+  // try {
+  //   setLoading(true);
+
+  //   const response = await PostedJobsList(
+  //     pageNumber,
+  //     LIMIT,
+  //     controller.signal
+  //   );
+
+  //   const newJobs = response?.jobs || [];
+
+  //   setJobs((prev) =>
+  //     pageNumber === 1 ? newJobs : [...prev, ...newJobs]
+  //   );
+
+  //   if (newJobs.length < LIMIT) {
+  //     setHasMore(false); // 🔥 no more jobs
+  //   }
+  // } catch (error) {
+  //   if (error.code !== "ERR_CANCELED") {
+  //     messageApi.error("Failed to fetch jobs");
+  //   }
+  // } finally {
+  //   setLoading(false);
+  // }
+  try {
+  if (pageNumber === 1) {
+    setInitialLoading(true); // 🔥 initial loader
+  }
+  setLoading(true);
+
+  const response = await PostedJobsList(
+    pageNumber,
+    LIMIT,
+    controller.signal
+  );
+
+  const newJobs = response?.jobs || [];
+
+  setJobs((prev) =>
+    pageNumber === 1 ? newJobs : [...prev, ...newJobs]
+  );
+
+  if (newJobs.length < LIMIT) {
+    setHasMore(false);
+  }
+} catch (error) {
+  if (error.code !== "ERR_CANCELED") {
+    messageApi.error("Failed to fetch jobs");
+  }
+} finally {
+  setLoading(false);
+  setInitialLoading(false); // 🔥 stop initial loader
+}
+
+};
+
 
   // ✅ Handle selecting/deselecting a job
   const handleSelect = (jobId) => {
@@ -486,21 +594,21 @@ const RecruiterJobList = () => {
     }
   };
 
-  if (loading) {
-    console.log("loading true");
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "400px",
-        }}
-      >
-        <Spin />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   console.log("loading true");
+  //   return (
+  //     <div
+  //       style={{
+  //         display: "flex",
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         minHeight: "400px",
+  //       }}
+  //     >
+  //       <Spin />
+  //     </div>
+  //   );
+  // }
 
   const Experienceoptions = [
     {
@@ -649,6 +757,22 @@ const RecruiterJobList = () => {
       </Modal>
 
       <Row gutter={[16, 16]}>
+     {initialLoading ? (
+    <Col span={24}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "300px",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    </Col>
+  ) : (
+    <>
+
         {jobs?.map((job) => (
           <Col span={24} key={job.id}>
             <Card
@@ -911,6 +1035,21 @@ const RecruiterJobList = () => {
             </Card>
           </Col>
         ))}
+          {loading && jobs.length > 0 && hasMore && (
+        <Col span={24}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "24px 0",
+            }}
+          >
+            <Spin />
+          </div>
+        </Col>
+      )}
+    </>
+  )}
       </Row>
 
       <Modal

@@ -1,28 +1,28 @@
-import prisma from "../config/prisma.js"
+import prisma from "../config/prisma.js";
 import sendEmail from "../utils/sendEmail.js";
-import puppeteer from 'puppeteer';
+import puppeteer from "puppeteer";
 import { generateResumeHTML } from "../utils/resumeTemplate.js";
-import fs from 'fs'
-import path from 'path'
+import fs from "fs";
+import path from "path";
 // import { extractResumeSections } from "../utils/llmTextExtractor.js";
 import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
-import {applyFilters} from "../utils/applyFilters.js";
+import { applyFilters } from "../utils/applyFilters.js";
 import { queueRecruiterEmails } from "../utils/BulkEmail/jobEmail.service.js";
 import { canCreate, canDelete, canEdit, canView } from "../utils/permission.js";
 
-
 // User applies for a job
-
 
 const userApplyJob = async (req, res) => {
   try {
     const { jobId } = req.body;
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
     if (!jobId) {
       logger.warn("Job ID missing in userApplyJob");
-      return res.status(400).json({ status: "error", message: "Job ID is required" });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Job ID is required" });
     }
 
     // 1. Fetch Job
@@ -31,16 +31,20 @@ const userApplyJob = async (req, res) => {
       include: {
         postedBy: { select: { id: true, name: true, email: true } },
         _count: {
-          select: { applications: true }
-        }
-      }
+          select: { applications: true },
+        },
+      },
     });
 
     if (!job) {
-      return res.status(404).json({ status: "error", message: "Job not found" });
+      return res
+        .status(404)
+        .json({ status: "error", message: "Job not found" });
     }
-    if (job.status !== 'Open') {
-      return res.status(200).json({ status: "error", message: "No Longer Accepting Jobs" });
+    if (job.status !== "Open") {
+      return res
+        .status(200)
+        .json({ status: "error", message: "No Longer Accepting Jobs" });
     }
 
     if (
@@ -57,46 +61,50 @@ const userApplyJob = async (req, res) => {
         message: "Application limit reached. Job is closed.",
       });
     }
- 
+
     // 2. Fetch User Profile
     const user = await prisma.users.findUnique({
       where: { id: userId },
-      include: { CandidateProfile: true }
+      include: { CandidateProfile: true },
     });
 
     if (!user) {
       logger.warn(`User not found - ID: ${userId}`);
-      return res.status(404).json({ status: "error", message: "User not found" });
+      return res
+        .status(404)
+        .json({ status: "error", message: "User not found" });
     }
 
-    if(!user.CandidateProfile){
+    if (!user.CandidateProfile) {
       return res.status(404).json({
-        status:"error",
-        message: "Fill The Candidate Details First!"
-      })
+        status: "error",
+        message: "Fill The Candidate Details First!",
+      });
     }
 
     const profile = user.CandidateProfile;
-// 3. Check Existing Application
+    // 3. Check Existing Application
     const existingApplication = await prisma.jobApplication.findUnique({
       where: {
         jobId_candidateProfileId: {
           jobId,
-          candidateProfileId: profile.id
-        }
-      }
+          candidateProfileId: profile.id,
+        },
+      },
     });
 
     if (existingApplication) {
-      logger.warn(`User already applied - jobId: ${jobId}, user profile id: ${profile.id}`);
-      return res.status(409).json({ status: "error", message: "Already applied" });
+      logger.warn(
+        `User already applied - jobId: ${jobId}, user profile id: ${profile.id}`
+      );
+      return res
+        .status(409)
+        .json({ status: "error", message: "Already applied" });
     }
-
-
 
     // STEP 4: AI ANALYSIS (Real-time)
     let aiAnalysisResult = null;
-    
+
     const jobDescription = {
       job_id: job?.id,
       role: job?.role,
@@ -111,11 +119,8 @@ const userApplyJob = async (req, res) => {
       experience: job?.experience || "",
       experienceLevel: job?.experienceLevel || "",
       location: job?.location || "",
-      companyName: job?.companyName || ""
+      companyName: job?.companyName || "",
     };
-
-    
-
 
     const candidateDetails = {
       // id: profile?.id,
@@ -142,19 +147,20 @@ const userApplyJob = async (req, res) => {
       workExperience: profile?.workExperience || [],
       education: profile?.education || [],
       linkedInUrl: profile?.linkedInUrl || null,
-      trailheadUrl: profile?.trailheadUrl || null
+      trailheadUrl: profile?.trailheadUrl || null,
     };
 
     // Only run AI if candidate has a profile
     if (user.CandidateProfile) {
-        aiAnalysisResult = await extractAIText("CV_RANKING","cvranker",{jobDescription, candidateDetails});
-        logger.info('aicvranker', JSON.stringify(aiAnalysisResult,null,2))
+      aiAnalysisResult = await extractAIText("CV_RANKING", "cvranker", {
+        jobDescription,
+        candidateDetails,
+      });
+      logger.info("aicvranker", JSON.stringify(aiAnalysisResult, null, 2));
     }
-
 
     // STEP 5: SAVE TO DB (Transaction)
     const application = await prisma.$transaction(async (tx) => {
-
       const currentCount = await tx.jobApplication.count({
         where: { jobId },
       });
@@ -178,8 +184,8 @@ const userApplyJob = async (req, res) => {
           userId,
           candidateProfileId: profile.id,
           appliedById: userId,
-          status: 'Pending'
-        }
+          status: "Pending",
+        },
       });
 
       // Create the Analysis (if AI succeeded)
@@ -189,8 +195,8 @@ const userApplyJob = async (req, res) => {
             jobApplicationId: newApp.id,
             fitPercentage: aiAnalysisResult.fit_percentage || 0,
             details: aiAnalysisResult, // Stores the full JSON
-            status: 'COMPLETED'
-          }
+            status: "COMPLETED",
+          },
         });
       }
 
@@ -207,19 +213,24 @@ const userApplyJob = async (req, res) => {
       return newApp;
     });
 
-
     // Generate resume HTML
     const resumeHTML = generateResumeHTML(user, user.CandidateProfile, job);
     let pdfBuffer;
-    
+
     try {
-      const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
+      const browser = await puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox"],
+      });
       const page = await browser.newPage();
-      await page.setContent(resumeHTML, { waitUntil: 'networkidle0' });
-      pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+      await page.setContent(resumeHTML, { waitUntil: "networkidle0" });
+      pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
       await browser.close();
     } catch (pdfError) {
-      logger.error('PDF Generation Error:', JSON.stringify(pdfError.message,null,2));
+      logger.error(
+        "PDF Generation Error:",
+        JSON.stringify(pdfError.message, null, 2)
+      );
     }
 
     // Send Email to Recruiter
@@ -238,23 +249,58 @@ const userApplyJob = async (req, res) => {
                 <h2 style="color: #333; margin-top: 0;">Application Details</h2>
                 
                 <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                  <p style="margin: 10px 0;"><strong>Job Position:</strong> ${job.role}</p>
-                  <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
-                  <p style="margin: 10px 0;"><strong>Candidate Name:</strong> ${user.name}</p>
-                  <p style="margin: 10px 0;"><strong>Candidate Email:</strong> ${user.email}</p>
-                  <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <p style="margin: 10px 0;"><strong>Job Position:</strong> ${
+                    job.role
+                  }</p>
+                  <p style="margin: 10px 0;"><strong>Company:</strong> ${
+                    job.companyName
+                  }</p>
+                  <p style="margin: 10px 0;"><strong>Candidate Name:</strong> ${
+                    user.name
+                  }</p>
+                  <p style="margin: 10px 0;"><strong>Candidate Email:</strong> ${
+                    user.email
+                  }</p>
+                  <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
+                    "en-US",
+                    { year: "numeric", month: "long", day: "numeric" }
+                  )}</p>
                 </div>
 
-                ${user.CandidateProfile ? `
+                ${
+                  user.CandidateProfile
+                    ? `
                 <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                   <h3 style="color: #667eea; margin-top: 0;">Quick Summary</h3>
-                  ${user.CandidateProfile.title ? `<p><strong>Current Role:</strong> ${user.CandidateProfile.title}</p>` : ''}
-                  ${user.CandidateProfile.totalExperience ? `<p><strong>Experience:</strong> ${user.CandidateProfile.totalExperience}</p>` : ''}
-                  ${user.CandidateProfile.currentLocation ? `<p><strong>Location:</strong> ${user.CandidateProfile.currentLocation}</p>` : ''}
-                  ${user.CandidateProfile.expectedCTC ? `<p><strong>Expected CTC:</strong> ₹${user.CandidateProfile.expectedCTC}</p>` : ''}
-                  ${user.CandidateProfile.joiningPeriod ? `<p><strong>Notice Period:</strong> ${user.CandidateProfile.joiningPeriod}</p>` : ''}
+                  ${
+                    user.CandidateProfile.title
+                      ? `<p><strong>Current Role:</strong> ${user.CandidateProfile.title}</p>`
+                      : ""
+                  }
+                  ${
+                    user.CandidateProfile.totalExperience
+                      ? `<p><strong>Experience:</strong> ${user.CandidateProfile.totalExperience}</p>`
+                      : ""
+                  }
+                  ${
+                    user.CandidateProfile.currentLocation
+                      ? `<p><strong>Location:</strong> ${user.CandidateProfile.currentLocation}</p>`
+                      : ""
+                  }
+                  ${
+                    user.CandidateProfile.expectedCTC
+                      ? `<p><strong>Expected CTC:</strong> ₹${user.CandidateProfile.expectedCTC}</p>`
+                      : ""
+                  }
+                  ${
+                    user.CandidateProfile.joiningPeriod
+                      ? `<p><strong>Notice Period:</strong> ${user.CandidateProfile.joiningPeriod}</p>`
+                      : ""
+                  }
                 </div>
-                ` : ''}
+                `
+                    : ""
+                }
 
                 <p style="color: #666; font-size: 14px; margin-top: 30px;">
                   📎 Please find the detailed resume attached to this email.
@@ -266,14 +312,21 @@ const userApplyJob = async (req, res) => {
               </div>
             </div>
           `,
-          attachments: pdfBuffer ? [{
-            filename: `${user.name.replace(/\s+/g, '_')}_Resume.pdf`,
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-          }] : []
+          attachments: pdfBuffer
+            ? [
+                {
+                  filename: `${user.name.replace(/\s+/g, "_")}_Resume.pdf`,
+                  content: pdfBuffer,
+                  contentType: "application/pdf",
+                },
+              ]
+            : [],
         });
       } catch (emailError) {
-        logger.error('Error sending email to poster:', JSON.stringify(emailError.message,null,2));
+        logger.error(
+          "Error sending email to poster:",
+          JSON.stringify(emailError.message, null, 2)
+        );
       }
     }
 
@@ -294,10 +347,19 @@ const userApplyJob = async (req, res) => {
               <p style="color: #666;">Your application has been successfully submitted for the following position:</p>
               
               <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 10px 0;"><strong>Position:</strong> ${job.role}</p>
-                <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
-                <p style="margin: 10px 0;"><strong>Location:</strong> ${job.location || 'Not specified'}</p>
-                <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p style="margin: 10px 0;"><strong>Position:</strong> ${
+                  job.role
+                }</p>
+                <p style="margin: 10px 0;"><strong>Company:</strong> ${
+                  job.companyName
+                }</p>
+                <p style="margin: 10px 0;"><strong>Location:</strong> ${
+                  job.location || "Not specified"
+                }</p>
+                <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
+                  "en-US",
+                  { year: "numeric", month: "long", day: "numeric" }
+                )}</p>
               </div>
 
               <p style="color: #666;">The employer will review your application and get back to you if your profile matches their requirements.</p>
@@ -309,10 +371,13 @@ const userApplyJob = async (req, res) => {
               </p>
             </div>
           </div>
-        `
+        `,
       });
     } catch (emailError) {
-      logger.error('Error sending confirmation email:', JSON.stringify(emailError.message,null,2));
+      logger.error(
+        "Error sending confirmation email:",
+        JSON.stringify(emailError.message, null, 2)
+      );
     }
 
     return res.status(201).json({
@@ -324,11 +389,10 @@ const userApplyJob = async (req, res) => {
           jobId: application.jobId,
           status: application.status,
           // Return the score to the frontend immediately if you want
-          matchScore: aiAnalysisResult?.fit_percentage
-        }
-      }
+          matchScore: aiAnalysisResult?.fit_percentage,
+        },
+      },
     });
-
   } catch (error) {
     if (error.message === "APPLICATION_LIMIT_REACHED") {
       return res.status(400).json({
@@ -336,15 +400,13 @@ const userApplyJob = async (req, res) => {
         message: "Application limit reached. Job is closed.",
       });
     }
-    logger.error("userApplyJob Error:",error.message);
+    logger.error("userApplyJob Error:", error.message);
     return res.status(500).json({
       status: "error",
       message: "Failed to submit application:" + error.message,
     });
   }
 };
-
-
 
 const userAllApplyedJobs = async (req, res) => {
   try {
@@ -355,7 +417,7 @@ const userAllApplyedJobs = async (req, res) => {
 
     // Build where clause
     const where = {
-      userId
+      userId,
     };
 
     if (status) {
@@ -379,17 +441,17 @@ const userAllApplyedJobs = async (req, res) => {
               skills: true,
               description: true,
               status: true,
-              createdAt: true
-            }
-          }
+              createdAt: true,
+            },
+          },
         },
         orderBy: {
-          appliedAt: 'desc'
+          appliedAt: "desc",
         },
         skip,
-        take: parseInt(limit)
+        take: parseInt(limit),
       }),
-      prisma.jobApplication.count({ where })
+      prisma.jobApplication.count({ where }),
     ]);
 
     return res.status(200).json({
@@ -400,20 +462,21 @@ const userAllApplyedJobs = async (req, res) => {
           total,
           page: parseInt(page),
           limit: parseInt(limit),
-          totalPages: Math.ceil(total / parseInt(limit))
-        }
-      }
+          totalPages: Math.ceil(total / parseInt(limit)),
+        },
+      },
     });
-
   } catch (error) {
-    logger.error("userAllAppliedJobs Error:", JSON.stringify(error.message,null,2));
+    logger.error(
+      "userAllAppliedJobs Error:",
+      JSON.stringify(error.message, null, 2)
+    );
     return res.status(500).json({
       status: "error",
-      message: "Failed to fetch applied jobs"+ error.message,
+      message: "Failed to fetch applied jobs" + error.message,
     });
   }
 };
-
 
 // const userSaveJob = async (req, res) => {
 //   try {
@@ -527,14 +590,21 @@ const userSaveJob = async (req, res) => {
     if (role === "candidate") {
       const existing = await prisma.savedJob.findUnique({
         where: {
-          jobId_userId: { jobId, userId }
+          jobId_userId: { jobId, userId },
         },
       });
 
+      // if (existing) {
+      //   return res.status(409).json({
+      //     status: "error",
+      //     message: "Job already saved",
+      //   });
+      // }
       if (existing) {
-        return res.status(409).json({
-          status: "error",
+        return res.status(200).json({
+          status: "success",
           message: "Job already saved",
+          data: existing,
         });
       }
 
@@ -542,7 +612,7 @@ const userSaveJob = async (req, res) => {
         data: {
           jobId,
           userId,
-          organizationId: null,  // candidate should not have org saves
+          organizationId: null, // candidate should not have org saves
         },
       });
 
@@ -593,9 +663,14 @@ const userSaveJob = async (req, res) => {
         });
       }
 
-      return res.status(409).json({
-        status: "error",
+      // return res.status(409).json({
+      //   status: "error",
+      //   message: "Job already saved for this organization",
+      // });
+      return res.status(200).json({
+        status: "success",
         message: "Job already saved for this organization",
+        data: existingOrgSave,
       });
     }
 
@@ -603,7 +678,7 @@ const userSaveJob = async (req, res) => {
     const saved = await prisma.savedJob.create({
       data: {
         jobId,
-        userId,          // recruiter who saved
+        userId, // recruiter who saved
         organizationId,
       },
     });
@@ -621,8 +696,6 @@ const userSaveJob = async (req, res) => {
     });
   }
 };
-
-
 
 // const userUnsaveJob = async (req, res) => {
 //   try {
@@ -741,7 +814,6 @@ const userUnsaveJob = async (req, res) => {
   }
 };
 
-
 // const userAllSavedJobs = async (req, res) => {
 //   try {
 //      const { id: userId, role, organizationId } = req.user;
@@ -820,7 +892,6 @@ const userUnsaveJob = async (req, res) => {
 //   }
 // };
 
-
 function formatSavedJob(saved) {
   const deadlineDate = saved.job.applicationDeadline
     ? new Date(saved.job.applicationDeadline)
@@ -835,8 +906,7 @@ function formatSavedJob(saved) {
       (deadlineDate - today) / (1000 * 60 * 60 * 24)
     );
 
-    deadlineWarning =
-      daysUntilDeadline <= 7 && daysUntilDeadline > 0;
+    deadlineWarning = daysUntilDeadline <= 7 && daysUntilDeadline > 0;
   }
 
   return {
@@ -847,7 +917,6 @@ function formatSavedJob(saved) {
     daysUntilDeadline,
   };
 }
-
 
 const userAllSavedJobs = async (req, res) => {
   try {
@@ -883,20 +952,20 @@ const userAllSavedJobs = async (req, res) => {
                   select: {
                     id: true,
                     name: true,
-                    email: true
-                  }
-                }
-              }
-            }
+                    email: true,
+                  },
+                },
+              },
+            },
           },
           orderBy: { savedAt: "desc" },
           skip,
-          take: parseInt(limit)
+          take: parseInt(limit),
         }),
-        prisma.savedJob.count({ where: { userId, isDeleted: false } })
+        prisma.savedJob.count({ where: { userId, isDeleted: false } }),
       ]);
 
-      const formattedJobs = savedJobs.map(saved => formatSavedJob(saved));
+      const formattedJobs = savedJobs.map((saved) => formatSavedJob(saved));
 
       return res.status(200).json({
         status: "success",
@@ -929,6 +998,7 @@ const userAllSavedJobs = async (req, res) => {
               employmentType: true,
               experience: true,
               skills: true,
+              clouds: true,
               description: true,
               status: true,
               applicationDeadline: true,
@@ -937,23 +1007,23 @@ const userAllSavedJobs = async (req, res) => {
                 select: {
                   id: true,
                   name: true,
-                  email: true
-                }
-              }
-            }
+                  email: true,
+                },
+              },
+            },
           },
           user: {
-            select: { id: true, name: true, email: true } // savedBy
-          }
+            select: { id: true, name: true, email: true }, // savedBy
+          },
         },
         orderBy: { savedAt: "desc" },
         skip,
-        take: parseInt(limit)
+        take: parseInt(limit),
       }),
-      prisma.savedJob.count({ where: { organizationId, isDeleted: false } })
+      prisma.savedJob.count({ where: { organizationId, isDeleted: false } }),
     ]);
 
-    const formattedJobs = orgSavedJobs.map(saved => ({
+    const formattedJobs = orgSavedJobs.map((saved) => ({
       ...formatSavedJob(saved),
       savedBy: saved.user, // who saved this job
     }));
@@ -970,7 +1040,6 @@ const userAllSavedJobs = async (req, res) => {
         },
       },
     });
-
   } catch (error) {
     logger.error("userAllSavedJobs Error:", error.message);
     return res.status(500).json({
@@ -979,9 +1048,6 @@ const userAllSavedJobs = async (req, res) => {
     });
   }
 };
-
-
-
 
 const userWithdrawJob = async (req, res) => {
   try {
@@ -992,19 +1058,19 @@ const userWithdrawJob = async (req, res) => {
     // - Return success response
     return res.status(501).json({
       status: "not_implemented",
-      message: "User withdraw job functionality pending"
-    })
+      message: "User withdraw job functionality pending",
+    });
   } catch (error) {
-    logger.error("userWithdrawJob Error:", JSON.stringify(error.message,null,2));
+    logger.error(
+      "userWithdrawJob Error:",
+      JSON.stringify(error.message, null, 2)
+    );
     return res.status(500).json({
       status: "error",
-      error: error.message || "Internal server error"
-    })
+      error: error.message || "Internal server error",
+    });
   }
-}
-
-
-
+};
 
 const getJobList = async (req, res) => {
   try {
@@ -1013,33 +1079,48 @@ const getJobList = async (req, res) => {
     const filters = req.body.filters || {};
 
     const userId = req.user?.id;
+    const role = req.user?.role;
+    const organizationId = req.user?.organizationId;
 
-    // Step 1: Fetch ALL jobs from database (we'll filter in-memory)
+    // --------------------------------------------
+    // STEP 1: FETCH ALL JOBS
+    // --------------------------------------------
     const allJobs = await prisma.job.findMany({
       where: {
         isDeleted: false,
       },
       orderBy: { createdAt: "desc" },
-      include: userId
-        ? {
-            savedBy: {
-              where: { userId },
-              select: { id: true },
-            },
-          }
-        : false,
+      include: {
+        savedBy: {
+          where: {
+            isDeleted: false,
+            ...(role === "candidate"
+              ? { userId } // candidate → only own saves
+              : { organizationId }), // company → anyone in org
+          },
+          select: {
+            id: true,
+          },
+        },
+      },
     });
 
-    // Step 2: Add isSaved flag
+    // --------------------------------------------
+    // STEP 2: ADD isSaved FLAG
+    // --------------------------------------------
     const jobsWithSavedStatus = allJobs.map((job) => ({
       ...job,
       isSaved: job.savedBy && job.savedBy.length > 0,
     }));
 
-    // Step 3: Apply filters
+    // --------------------------------------------
+    // STEP 3: APPLY FILTERS (IN-MEMORY)
+    // --------------------------------------------
     const filteredJobs = applyFilters(jobsWithSavedStatus, filters);
 
-    // Step 4: Apply pagination to filtered results
+    // --------------------------------------------
+    // STEP 4: PAGINATION
+    // --------------------------------------------
     const totalCount = filteredJobs.length;
     const totalPages = Math.ceil(totalCount / limit);
     const skip = (page - 1) * limit;
@@ -1063,17 +1144,16 @@ const getJobList = async (req, res) => {
 
 const postJob = async (req, res) => {
   try {
+    const { id: recruiterId, organizationId, permission } = req.user;
 
-      const { id: recruiterId, organizationId, permission } = req.user;
-
-      if (!canCreate(permission)) {
+    if (!canCreate(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You are not allowed to post jobs"
+        message: "You are not allowed to post jobs",
       });
     }
 
-      const {
+    const {
       role,
       description,
       employmentType,
@@ -1090,11 +1170,8 @@ const postJob = async (req, res) => {
       jobType,
       applicationDeadline,
       ApplicationLimit,
-      companyLogo
+      companyLogo,
     } = req.body;
-    
-
-  
 
     const job = await prisma.job.create({
       data: {
@@ -1116,7 +1193,7 @@ const postJob = async (req, res) => {
         ApplicationLimit,
         companyLogo,
         postedById: recruiterId, // optional
-        organizationId
+        organizationId,
       },
     });
 
@@ -1132,7 +1209,7 @@ const postJob = async (req, res) => {
       try {
         const recruiters = await prisma.users.findMany({
           where: {
-            role: "company"
+            role: "company",
           },
           select: {
             email: true,
@@ -1150,7 +1227,6 @@ const postJob = async (req, res) => {
         console.log(
           `Queued job emails for ${recruiters.length} recruiters (jobId: ${job.id})`
         );
-
       } catch (emailError) {
         // ❗ DO NOT throw — email failure should not break job posting
         logger.error(
@@ -1159,15 +1235,14 @@ const postJob = async (req, res) => {
         );
       }
     })();
-
   } catch (error) {
-    logger.error("postJob Error:", JSON.stringify(error.message,null,2));
+    logger.error("postJob Error:", JSON.stringify(error.message, null, 2));
     return res.status(500).json({
       status: "error",
-      error: error.message || "Internal server error"
-    })
+      error: error.message || "Internal server error",
+    });
   }
-}
+};
 
 const postedJobs = async (req, res) => {
   try {
@@ -1175,18 +1250,14 @@ const postedJobs = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    
-
     const { organizationId, permission } = req.user;
 
     if (!canView(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You cannot view jobs"
+        message: "You cannot view jobs",
       });
     }
-
-
 
     // 🟢 Fetch jobs + applicant count
     const [jobs, totalCount] = await Promise.all([
@@ -1235,7 +1306,6 @@ const postedJobs = async (req, res) => {
       totalPages: Math.ceil(totalCount / limit),
       jobs: jobsWithApplicantCount,
     });
-
   } catch (error) {
     logger.error(
       "postedJobs POST Error:",
@@ -1249,8 +1319,6 @@ const postedJobs = async (req, res) => {
   }
 };
 
-
-
 // Edit job posted by company or vendor
 const editJob = async (req, res) => {
   try {
@@ -1259,7 +1327,7 @@ const editJob = async (req, res) => {
     if (!canEdit(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You are not allowed to edit jobs"
+        message: "You are not allowed to edit jobs",
       });
     }
 
@@ -1282,7 +1350,7 @@ const editJob = async (req, res) => {
       status,
       applicationDeadline,
       ApplicationLimit,
-      companyLogo
+      companyLogo,
     } = req.body;
 
     // Check if job exists first
@@ -1298,10 +1366,14 @@ const editJob = async (req, res) => {
       });
     }
 
-
     // Optional: check if user is authorized to edit
-    if (existingJob.organizationId && existingJob.organizationId !== organizationId) {
-      logger.warn(`Unauthorized job edit attempt - jobId: ${id}, userId: ${req.user.id} from ORGID: ${organizationId}`);
+    if (
+      existingJob.organizationId &&
+      existingJob.organizationId !== organizationId
+    ) {
+      logger.warn(
+        `Unauthorized job edit attempt - jobId: ${id}, userId: ${req.user.id} from ORGID: ${organizationId}`
+      );
       return res.status(403).json({
         status: "error",
         message: "You are not authorized to edit this job",
@@ -1330,7 +1402,7 @@ const editJob = async (req, res) => {
         status,
         applicationDeadline,
         ApplicationLimit,
-        companyLogo
+        companyLogo,
       },
     });
 
@@ -1342,85 +1414,84 @@ const editJob = async (req, res) => {
       job: updatedJob,
     });
   } catch (error) {
-    logger.error("editJob Error:", JSON.stringify(error.message,null,2));
+    logger.error("editJob Error:", JSON.stringify(error.message, null, 2));
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
     });
   }
 };
-
 
 // shruthi
 // Delete job posted by company or vendor
 const deleteJob = async (req, res) => {
   logger.info("Delete Job API hit");
   try {
-
     const { organizationId, permission } = req.user;
 
     if (!canDelete(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You cannot delete jobs"
+        message: "You cannot delete jobs",
       });
     }
 
-    const { jobIds, deletedReason } = req.body;  // For multiple delete
- 
+    const { jobIds, deletedReason } = req.body; // For multiple delete
+
     if (jobIds && Array.isArray(jobIds) && jobIds.length > 0) {
       await prisma.job.updateMany({
-        where: { id: { in: jobIds }, organizationId},
+        where: { id: { in: jobIds }, organizationId },
         data: {
-        isDeleted: true,
-        deletedReason,
-        deletedAt: new Date()
-      },
+          isDeleted: true,
+          deletedReason,
+          deletedAt: new Date(),
+        },
       });
- 
+
       return res.status(200).json({
         status: "success",
-        message: "jobs deleted successfully"
+        message: "jobs deleted successfully",
       });
     }
   } catch (error) {
-    logger.error("deleteJob Error:", JSON.stringify(error.message,null,2));
+    logger.error("deleteJob Error:", JSON.stringify(error.message, null, 2));
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
     });
   }
 };
- 
-const getJobDetails = async (req, res) => {
-  try{
-    const {jobid} = req.body
-    
-    const job= await prisma.job.findFirst({
-      where:{id: jobid}
-    })
 
-    if(!job){
+const getJobDetails = async (req, res) => {
+  try {
+    const { jobid } = req.body;
+
+    const job = await prisma.job.findFirst({
+      where: { id: jobid },
+    });
+
+    if (!job) {
       logger.warn(`Job not found - ID: ${jobid}`);
-      return res.status(404).json({ status:"error", message:"Job not found" })
+      return res
+        .status(404)
+        .json({ status: "error", message: "Job not found" });
     }
 
     return res.status(200).json({
       status: "Success",
-      job
-    })
-
-  }catch(error){
-    logger.error("getJobDetails Error:", JSON.stringify(error.message,null,2));
+      job,
+    });
+  } catch (error) {
+    logger.error(
+      "getJobDetails Error:",
+      JSON.stringify(error.message, null, 2)
+    );
     return res.status(500).json({
       status: "error",
-      message: error.message || "Internal server error"
-    })
+      message: error.message || "Internal server error",
+    });
   }
 };
-
-
-
 
 const getApplicantsByJobId = async (req, res) => {
   try {
@@ -1430,21 +1501,20 @@ const getApplicantsByJobId = async (req, res) => {
     if (!canView(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You cannot view applicants"
+        message: "You cannot view applicants",
       });
     }
 
     const job = await prisma.job.findUnique({
-      where: { id: jobId }
+      where: { id: jobId },
     });
 
     if (!job || job.organizationId !== organizationId) {
       return res.status(404).json({
         status: "error",
-        message: "Job not found"
+        message: "Job not found",
       });
     }
-
 
     // Fetch data (WITHOUT Prisma sorting)
     const applicants = await prisma.jobApplication.findMany({
@@ -1467,8 +1537,7 @@ const getApplicantsByJobId = async (req, res) => {
             status: true,
           },
         },
-      }
-
+      },
     });
 
     if (applicants.length === 0) {
@@ -1476,7 +1545,7 @@ const getApplicantsByJobId = async (req, res) => {
       return res.status(200).json({
         status: "success",
         message: "No applications found",
-        data: []
+        data: [],
       });
     }
 
@@ -1484,8 +1553,8 @@ const getApplicantsByJobId = async (req, res) => {
     // ⭐ CUSTOM SORT (JS Layer)
     // -------------------------
     applicants.sort((a, b) => {
-      const scoreA = a.analysis?.fitPercentage ?? -1;  // NULL → -1
-      const scoreB = b.analysis?.fitPercentage ?? -1;  // NULL → -1
+      const scoreA = a.analysis?.fitPercentage ?? -1; // NULL → -1
+      const scoreB = b.analysis?.fitPercentage ?? -1; // NULL → -1
 
       // 1️⃣ Match score high → low
       if (scoreA !== scoreB) return scoreB - scoreA;
@@ -1506,29 +1575,28 @@ const getApplicantsByJobId = async (req, res) => {
     //   matchScore: app.analysis?.fitPercentage ?? null,
     //   aiAnalysis: app.analysis?.details ?? null
 
-      
     // }));
 
     const formattedApplicants = applicants.map((app) => {
-    const ratings = app.candidateProfile?.CandidateRating || [];
+      const ratings = app.candidateProfile?.CandidateRating || [];
 
-    const total = ratings.reduce((sum, r) => sum + r.rating, 0);
-    const avgRating = ratings.length ? total / ratings.length : null;
+      const total = ratings.reduce((sum, r) => sum + r.rating, 0);
+      const avgRating = ratings.length ? total / ratings.length : null;
 
-    return {
-      applicationId: app.id,
-      status: app.status,
-      appliedAt: app.appliedAt,
-      name: app.candidateProfile?.name,
-      email: app.candidateProfile?.email,
-      profile: app.candidateProfile,
-      matchScore: app.analysis?.fitPercentage ?? null,
-      aiAnalysis: app.analysis?.details ?? null,
-      avgRating,                 // e.g. 3.33
-      ratingCount: ratings.length,
-      ratingReviews: ratings,    // [{ rating, comment }]
-    };
-});
+      return {
+        applicationId: app.id,
+        status: app.status,
+        appliedAt: app.appliedAt,
+        name: app.candidateProfile?.name,
+        email: app.candidateProfile?.email,
+        profile: app.candidateProfile,
+        matchScore: app.analysis?.fitPercentage ?? null,
+        aiAnalysis: app.analysis?.details ?? null,
+        avgRating, // e.g. 3.33
+        ratingCount: ratings.length,
+        ratingReviews: ratings, // [{ rating, comment }]
+      };
+    });
 
     return res.status(200).json({
       status: "success",
@@ -1536,7 +1604,6 @@ const getApplicantsByJobId = async (req, res) => {
       count: formattedApplicants.length,
       data: formattedApplicants,
     });
-
   } catch (error) {
     logger.error("Error fetching applicants:", JSON.stringify(error, null, 2));
     return res.status(500).json({
@@ -1546,44 +1613,45 @@ const getApplicantsByJobId = async (req, res) => {
   }
 };
 
-
-const getUserAppliedJobsId = async (req,res) =>{
+const getUserAppliedJobsId = async (req, res) => {
   try {
-    const userAuth = req.user
+    const userAuth = req.user;
     const userJobid = await prisma.jobApplication.findMany({
-      where:{
-        userId: userAuth.id
+      where: {
+        userId: userAuth.id,
       },
-      select:{
-        jobId: true
-      }
-    })
+      select: {
+        jobId: true,
+      },
+    });
 
-    if(!userJobid){
-      logger.warn("User applied jobs fetch failed")
+    if (!userJobid) {
+      logger.warn("User applied jobs fetch failed");
       return res.status(500).json({
-        status:"error",
-        message: "Could not Fetch Job Details"
-      })
+        status: "error",
+        message: "Could not Fetch Job Details",
+      });
     }
 
     const jobids = userJobid.map((item) => item.jobId);
 
     res.status(200).json({
-      status:"success",
+      status: "success",
       message: "successfully fetched job details",
-      jobids
-    })
+      jobids,
+    });
   } catch (error) {
-    logger.error(`getUserAppliedJobsId Error: ${JSON.stringify(error.message,null,2)}`)
+    logger.error(
+      `getUserAppliedJobsId Error: ${JSON.stringify(error.message, null, 2)}`
+    );
     return res.status(500).json({
-        status:"error",
-        message: `Something went wrong!${error.message}`
-      })
+      status: "error",
+      message: `Something went wrong!${error.message}`,
+    });
   }
-}
+};
 
- const saveCandidateRating = async (req, res) => {
+const saveCandidateRating = async (req, res) => {
   try {
     const recruiterId = req.user.id;
     const { candidateProfileId, rating, comment } = req.body;
@@ -1628,7 +1696,6 @@ const getUserAppliedJobsId = async (req,res) =>{
   }
 };
 
-
 export {
   userApplyJob,
   userAllApplyedJobs,
@@ -1644,5 +1711,5 @@ export {
   getJobDetails,
   getApplicantsByJobId,
   getUserAppliedJobsId,
- saveCandidateRating,
-}
+  saveCandidateRating,
+};

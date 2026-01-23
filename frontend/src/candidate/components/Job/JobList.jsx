@@ -14,7 +14,7 @@ import {
   Button,
   Modal,
   Select,
-  Dropdown
+  Dropdown,
 } from "antd";
 import {
   StarFilled,
@@ -53,6 +53,7 @@ const JobList = ({
   const navigate = useNavigate();
   const [sortedJobs, setSortedJobs] = useState(jobs);
   const [savedJobIds, setSavedJobIds] = useState(jobids || []);
+
   const [messageApi, contextHolder] = message.useMessage();
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
@@ -153,7 +154,6 @@ const JobList = ({
     onClick: ({ key }) => handleSort(key),
   };
 
-
   const handleCardClick = (job) => {
     if (portal === "company") {
       navigate("/company/job/details", {
@@ -230,7 +230,6 @@ const JobList = ({
       </Space>
     );
   };
-
 
   const CompactAnalytics = ({ data }) => {
     const a = data?.analysis;
@@ -326,14 +325,12 @@ const JobList = ({
               </span>
             </Dropdown>
           </div>
-
         </Col>
       )}
 
       {/* JOB CARDS */}
       {sortedJobs?.map((job, index) => {
         const isLastJob = index === sortedJobs?.length - 1;
-        const isSaved = savedJobIds.includes(job.id);
 
         return (
           <Col xs={24} key={job.id} ref={isLastJob ? lastJobRef : null}>
@@ -471,9 +468,7 @@ const JobList = ({
                   <EnvironmentOutlined /> {job.location}
                 </span>
                 <Divider type="vertical" />
-                <span>
-                  ₹ {job.salary} LPA
-                </span>
+                <span>₹ {job.salary} LPA</span>
                 <Divider type="vertical" />
                 <span>
                   <ClockCircleOutlined /> {job.employmentType}
@@ -533,8 +528,6 @@ const JobList = ({
                             border: "1px solid #1677FF",
                           }}
                         />
-
-
                       </div>
                     </div>
                   )}
@@ -576,7 +569,6 @@ const JobList = ({
                             border: "1px solid #800080",
                           }}
                         />
-
                       </div>
                     </div>
                   )}

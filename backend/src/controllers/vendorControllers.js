@@ -10,11 +10,9 @@ import sendEmail from "../utils/sendEmail.js";
 import { applyCandidateFilters } from "../utils/applyFilters.js";
 import { canCreate, canDelete, canEdit } from "../utils/permission.js";
 
-
 const getVendorCandidates = async (req, res) => {
   try {
     const { organizationId } = req.user;
-
 
     if (!organizationId) {
       return res.status(403).json({
@@ -46,7 +44,7 @@ const getVendorCandidates = async (req, res) => {
 const createVendorCandidate = async (req, res) => {
   try {
     const userAuth = req.user;
-    const {organizationId, permission} = req.user
+    const { organizationId, permission } = req.user;
 
     if (!organizationId || !permission) {
       return res.status(403).json({
@@ -91,7 +89,7 @@ const createVendorCandidate = async (req, res) => {
         linkedInUrl: data.linkedInUrl,
         trailheadUrl: data.trailheadUrl,
         profilePicture: data.profilePicture,
-        chatuserid: user.chatuserid
+        chatuserid: user.chatuserid,
       },
     });
 
@@ -109,12 +107,11 @@ const createVendorCandidate = async (req, res) => {
   }
 };
 
-
 const updateVendorCandidate = async (req, res) => {
   try {
     const userAuth = req.user;
-    
-     const {organizationId, permission} = req.user
+
+    const { organizationId, permission } = req.user;
 
     if (!organizationId || !permission) {
       return res.status(403).json({
@@ -126,18 +123,18 @@ const updateVendorCandidate = async (req, res) => {
     if (!canEdit(permission)) {
       return res.status(403).json({
         status: "failed",
-        message: "You do not have permission to create or edit vendor candidates.",
+        message:
+          "You do not have permission to create or edit vendor candidates.",
       });
     }
 
     const { id, ...data } = req.body;
 
-    
     const existingCandidate = await prisma.userProfile.findFirst({
       where: {
         id,
         vendorId: userAuth.id,
-        organizationId
+        organizationId,
       },
     });
 
@@ -172,14 +169,13 @@ const updateVendorCandidate = async (req, res) => {
   }
 };
 
-
 // ✅ Delete vendor candidate (hard delete)
 const deleteVendorCandidate = async (req, res) => {
   try {
     const userAuth = req.user;
     const { id } = req.body;
 
-     const {organizationId, permission} = req.user
+    const { organizationId, permission } = req.user;
 
     if (!organizationId || !permission) {
       return res.status(403).json({
@@ -194,7 +190,6 @@ const deleteVendorCandidate = async (req, res) => {
         message: "You do not have permission to create vendor candidates.",
       });
     }
-
 
     const existingCandidate = await prisma.userProfile.findFirst({
       where: {
@@ -225,10 +220,7 @@ const deleteVendorCandidate = async (req, res) => {
   }
 };
 
-
-
-
- const updateCandidateStatus = async (req, res) => {
+const updateCandidateStatus = async (req, res) => {
   try {
     const userAuth = req.user;
     // const { organizationId, permission } = req.user;
@@ -236,11 +228,11 @@ const deleteVendorCandidate = async (req, res) => {
     if (!canEdit(userAuth.permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You are not allowed to edit jobs"
+        message: "You are not allowed to edit jobs",
       });
     }
 
-    const { jobApplicationId, status } = req.body;
+    const { jobApplicationId, status, candidateIds } = req.body;
 
     if (userAuth.role !== "company") {
       return res.status(403).json({
@@ -248,6 +240,37 @@ const deleteVendorCandidate = async (req, res) => {
         message: "Only recruiters can update status",
       });
     }
+
+    /* ======================================================
+       🟢 NEW FLOW: BENCH CANDIDATE ACTIVATE / DEACTIVATE
+       ====================================================== */
+    if (Array.isArray(candidateIds) && candidateIds.length > 0) {
+      const allowedCandidateStatuses = ["active", "inactive"];
+
+      if (!allowedCandidateStatuses.includes(status)) {
+        return res.status(400).json({
+          status: "failed",
+          message: "Invalid candidate status",
+        });
+      }
+
+      await prisma.userProfile.updateMany({
+        where: {
+          id: { in: candidateIds },
+          organizationId: userAuth.organizationId,
+        },
+        data: { status },
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Candidate status updated successfully",
+      });
+    }
+
+    /* ======================================================
+       🔵 EXISTING FLOW: JOB APPLICATION STATUS (UNCHANGED)
+       ====================================================== */
 
     if (!jobApplicationId || !status) {
       return res.status(400).json({
@@ -269,7 +292,6 @@ const deleteVendorCandidate = async (req, res) => {
     const application = await prisma.jobApplication.findUnique({
       where: { id: jobApplicationId },
       include: {
-        // job: { select: { postedById: true } },
         job: { select: { organizationId: true } },
       },
     });
@@ -359,10 +381,21 @@ const markCandidateReviewed = async (req, res) => {
   }
 };
 
-
 const getAllCandidates = async (req, res) => {
   try {
     const userAuth = req.user;
+    const savedCandidates = await prisma.savedCandidate.findMany({
+      where: {
+        organizationId: userAuth.organizationId,
+      },
+      select: {
+        candidateProfileId: true,
+      },
+    });
+
+    const savedCandidateIds = savedCandidates.map(
+      (item) => item.candidateProfileId
+    );
 
     if (userAuth.role !== "company") {
       return res.status(403).json({
@@ -380,8 +413,8 @@ const getAllCandidates = async (req, res) => {
       orderBy: { createdAt: "desc" },
       include: {
         vendor: {
-          select: { id: true, name: true, email: true, phoneNumber: true},
-        }
+          select: { id: true, name: true, email: true, phoneNumber: true },
+        },
         // user: {
         //   select: { id: true, name: true, email: true },
         // },
@@ -389,36 +422,30 @@ const getAllCandidates = async (req, res) => {
     });
 
     // Step 2: Apply filters (in-memory)
-    const filteredCandidates = applyCandidateFilters(
-      allCandidates,
-      filters
-    );
+    const filteredCandidates = applyCandidateFilters(allCandidates, filters);
 
     // Step 3: Pagination
     const totalCount = filteredCandidates?.length || 0;
     const totalPages = Math.ceil(totalCount / limit);
     const skip = (page - 1) * limit;
 
-    const paginatedCandidates = filteredCandidates.slice(
-      skip,
-      skip + limit
-    );
+    const paginatedCandidates = filteredCandidates.slice(skip, skip + limit);
 
-    const candidatesWithVendorFlag = paginatedCandidates.map(
-      (candidate) => {
-        const isVendor = !!candidate.vendor;
-
-        return {
-          ...candidate,
-          isVendor,
-        };
-      }
-    );
+    const candidatesWithVendorFlag = paginatedCandidates.map((candidate) => {
+      const isVendor = !!candidate.vendor;
+      const isSaved = savedCandidateIds.includes(candidate.id);
+      return {
+        ...candidate,
+        isVendor,
+        isSaved,
+      };
+    });
 
     return res.status(200).json({
       status: "success",
       candidates: candidatesWithVendorFlag,
       totalCount,
+      savedCandidateIds,
       currentPage: page,
       totalPages,
     });
@@ -431,7 +458,6 @@ const getAllCandidates = async (req, res) => {
   }
 };
 
-
 const vendorApplyCandidate = async (req, res) => {
   try {
     const vendorId = req.user.id;
@@ -440,14 +466,12 @@ const vendorApplyCandidate = async (req, res) => {
     if (!canEdit(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You are not allowed to edit jobs"
+        message: "You are not allowed to edit jobs",
       });
     }
 
     const vendor = req.user;
     const { jobId, candidateProfileIds } = req.body;
-
-
 
     const aiProcess = true;
 
@@ -465,10 +489,8 @@ const vendorApplyCandidate = async (req, res) => {
         postedBy: { select: { id: true, name: true, email: true } },
         organizationId: true,
         _count: { select: { applications: true } },
-      }
+      },
     });
-
-    
 
     if (!job || job.status !== "Open") {
       return res.status(400).json({
@@ -477,13 +499,12 @@ const vendorApplyCandidate = async (req, res) => {
       });
     }
 
-    if(job.organizationId !== organizationId && job.postedBy.id !== vendorId){
-      return  res.status(400).json({
+    if (job.organizationId !== organizationId && job.postedBy.id !== vendorId) {
+      return res.status(400).json({
         status: "error",
         message: "Unauthorized",
-      })
+      });
     }
-
 
     const currentCount = job._count.applications;
     const limit = job.ApplicationLimit;
@@ -529,8 +550,10 @@ const vendorApplyCandidate = async (req, res) => {
       select: { candidateProfileId: true },
     });
 
-    const alreadyAppliedIds = new Set(existingApps.map(a => a.candidateProfileId));
-    let newProfiles = profiles.filter(p => !alreadyAppliedIds.has(p.id));
+    const alreadyAppliedIds = new Set(
+      existingApps.map((a) => a.candidateProfileId)
+    );
+    let newProfiles = profiles.filter((p) => !alreadyAppliedIds.has(p.id));
 
     if (limit !== null) {
       newProfiles = newProfiles.slice(0, remainingSlots);
@@ -561,7 +584,7 @@ const vendorApplyCandidate = async (req, res) => {
 
     for (const profile of newProfiles) {
       let pdfBuffer = null; // Initialize pdfBuffer for each profile
-      
+
       try {
         let aiAnalysisResult = null;
 
@@ -583,20 +606,21 @@ const vendorApplyCandidate = async (req, res) => {
           };
 
           try {
-            aiAnalysisResult = await extractAIText(
-              "CV_RANKING",
-              "cvranker",
-              { jobDescription, candidateDetails }
-            );
+            aiAnalysisResult = await extractAIText("CV_RANKING", "cvranker", {
+              jobDescription,
+              candidateDetails,
+            });
           } catch (aiError) {
-            logger.error(`AI Analysis failed for profile ${profile.id}:`, aiError.message);
+            logger.error(
+              `AI Analysis failed for profile ${profile.id}:`,
+              aiError.message
+            );
             // Continue without AI analysis
           }
         }
 
         // Transaction for this candidate
         await prisma.$transaction(async (tx) => {
-
           const count = await tx.jobApplication.count({ where: { jobId } });
 
           if (limit !== null && count >= limit) {
@@ -647,20 +671,23 @@ const vendorApplyCandidate = async (req, res) => {
           const page = await browser.newPage();
           await page.setContent(resumeHTML, { waitUntil: "networkidle0" });
 
-          pdfBuffer = await page.pdf({ 
-            format: "A4", 
+          pdfBuffer = await page.pdf({
+            format: "A4",
             printBackground: true,
             margin: {
-              top: '20px',
-              right: '20px',
-              bottom: '20px',
-              left: '20px'
-            }
+              top: "20px",
+              right: "20px",
+              bottom: "20px",
+              left: "20px",
+            },
           });
-          
+
           await browser.close();
         } catch (pdfErr) {
-          logger.error(`PDF generation failed for profile ${profile.id}:`, pdfErr.message);
+          logger.error(
+            `PDF generation failed for profile ${profile.id}:`,
+            pdfErr.message
+          );
           // Continue without PDF
         }
 
@@ -668,32 +695,27 @@ const vendorApplyCandidate = async (req, res) => {
         appliedCandidates.push({
           candidateProfileId: profile.id,
           candidateName: profile.name, // Fix: was missing this field
-          matchScore: aiProcess ? (aiAnalysisResult?.fit_percentage || 0) : null,
+          matchScore: aiProcess ? aiAnalysisResult?.fit_percentage || 0 : null,
           pdfBuffer,
-          name: profile.name
+          name: profile.name,
         });
-
       } catch (error) {
         if (e.message === "APPLICATION_LIMIT_REACHED") break;
         logger.error(`Failed to apply profile ${profile.id}:`, error.message);
         failedApplications.push({
           candidateProfileId: profile.id,
           candidateName: profile.name,
-          error: error.message
+          error: error.message,
         });
       }
     }
 
-    if (
-      limit !== null &&
-      currentCount + appliedCandidates.length >= limit
-    ) {
+    if (limit !== null && currentCount + appliedCandidates.length >= limit) {
       await prisma.job.update({
         where: { id: jobId },
         data: { status: "Closed" },
       });
     }
-
 
     // 6️⃣ Email to Recruiter (only if there are successful applications)
     if (job.postedBy?.email && appliedCandidates.length > 0) {
@@ -701,8 +723,7 @@ const vendorApplyCandidate = async (req, res) => {
         await sendEmail({
           to: job.postedBy.email,
           subject: `New Vendor Applications – ${job.role}`,
-          html: 
-            `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 
             <!-- HEADER -->
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
@@ -716,20 +737,30 @@ const vendorApplyCandidate = async (req, res) => {
 
               <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <p style="margin: 10px 0;"><strong>Job:</strong> ${job.role}</p>
-                <p style="margin: 10px 0;"><strong>Total Candidates:</strong> ${appliedCandidates.length}</p>
-                <p style="margin: 10px 0;"><strong>AI Ranking:</strong> ${aiProcess ? "Enabled" : "Disabled"}</p>
+                <p style="margin: 10px 0;"><strong>Total Candidates:</strong> ${
+                  appliedCandidates.length
+                }</p>
+                <p style="margin: 10px 0;"><strong>AI Ranking:</strong> ${
+                  aiProcess ? "Enabled" : "Disabled"
+                }</p>
               </div>
 
               <!-- CANDIDATE LIST -->
               <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="color: #667eea; margin-top: 0;">Submitted Candidates</h3>
 
-                ${appliedCandidates.map(c => `
+                ${appliedCandidates
+                  .map(
+                    (c) => `
                   <p style="margin: 8px 0;">
                     <strong>${c.name}</strong>
-                    ${aiProcess ? ` – Fit Score: ${c.matchScore ?? "N/A"}%` : ""}
+                    ${
+                      aiProcess ? ` – Fit Score: ${c.matchScore ?? "N/A"}%` : ""
+                    }
                   </p>
-                `).join("")}
+                `
+                  )
+                  .join("")}
               </div>
 
               <p style="color: #666; font-size: 14px; margin-top: 30px;">
@@ -744,8 +775,8 @@ const vendorApplyCandidate = async (req, res) => {
           </div>
           `,
           attachments: appliedCandidates
-            .filter(c => c.pdfBuffer)
-            .map(c => ({
+            .filter((c) => c.pdfBuffer)
+            .map((c) => ({
               filename: `${c.name.replace(/\s+/g, "_")}_Resume.pdf`,
               content: c.pdfBuffer,
               contentType: "application/pdf",
@@ -774,16 +805,33 @@ const vendorApplyCandidate = async (req, res) => {
                 <p style="color: #666;">Your application has been successfully submitted for the following position:</p>
                 
                 <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <p style="margin: 10px 0;"><strong>Position:</strong> ${job.role}</p>
-                  <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
-                  <p style="margin: 10px 0;"><strong>Location:</strong> ${job.location || 'Not specified'}</p>
-                  <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  <p><strong>Total Candidates:</strong> ${appliedCandidates.length}</p>
+                  <p style="margin: 10px 0;"><strong>Position:</strong> ${
+                    job.role
+                  }</p>
+                  <p style="margin: 10px 0;"><strong>Company:</strong> ${
+                    job.companyName
+                  }</p>
+                  <p style="margin: 10px 0;"><strong>Location:</strong> ${
+                    job.location || "Not specified"
+                  }</p>
+                  <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
+                    "en-US",
+                    { year: "numeric", month: "long", day: "numeric" }
+                  )}</p>
+                  <p><strong>Total Candidates:</strong> ${
+                    appliedCandidates.length
+                  }</p>
                   <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;"/>
 
-                  ${appliedCandidates.map(c => `
-                    <p style="margin: 5px 0;">• ${c.candidateName} ${aiProcess ? `(Match Score: ${c.matchScore}%)` : ""}</p>
-                  `).join("")}
+                  ${appliedCandidates
+                    .map(
+                      (c) => `
+                    <p style="margin: 5px 0;">• ${c.candidateName} ${
+                        aiProcess ? `(Match Score: ${c.matchScore}%)` : ""
+                      }</p>
+                  `
+                    )
+                    .join("")}
                 </div>
 
                 <p style="color: #666;">The employer will review your application and get back to you if your profile matches their requirements.</p>
@@ -795,15 +843,15 @@ const vendorApplyCandidate = async (req, res) => {
                 </p>
               </div>
             </div>
-          `
+          `,
         });
       } catch (emailError) {
-        logger.error('Error sending confirmation email:', emailError.message);
+        logger.error("Error sending confirmation email:", emailError.message);
       }
     }
 
     // Remove pdfBuffer from response to reduce payload size
-    appliedCandidates.forEach(c => delete c.pdfBuffer);
+    appliedCandidates.forEach((c) => delete c.pdfBuffer);
 
     return res.status(201).json({
       status: "success",
@@ -815,7 +863,6 @@ const vendorApplyCandidate = async (req, res) => {
       alreadyAppliedCandidates: [...alreadyAppliedIds],
       ...(failedApplications.length > 0 && { failedApplications }),
     });
-
   } catch (error) {
     logger.error("Vendor Apply Error:", error.message);
     return res.status(500).json({
@@ -832,13 +879,11 @@ const saveCandidate = async (req, res) => {
     if (!canEdit(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You are not allowed to edit jobs"
+        message: "You are not allowed to edit jobs",
       });
     }
 
-
     const { candidateProfileId } = req.body;
-
 
     // Validate logged-in user
     const user = await prisma.users.findFirst({
@@ -867,9 +912,9 @@ const saveCandidate = async (req, res) => {
     // Prevent duplicate save
     const existingSave = await prisma.savedCandidate.findFirst({
       where: {
-          recruiterId: recruiterId,
-          organizationId,
-          candidateProfileId,
+        recruiterId: recruiterId,
+        organizationId,
+        candidateProfileId,
       },
     });
 
@@ -894,7 +939,6 @@ const saveCandidate = async (req, res) => {
       message: "Candidate saved successfully",
       data: savedCandidate,
     });
-
   } catch (error) {
     console.error("saveCandidate error:", error);
     return res.status(500).json({
@@ -904,8 +948,6 @@ const saveCandidate = async (req, res) => {
   }
 };
 
-
-
 const unsaveCandidate = async (req, res) => {
   try {
     const { organizationId, permission } = req.user;
@@ -913,7 +955,7 @@ const unsaveCandidate = async (req, res) => {
     if (!canEdit(permission)) {
       return res.status(403).json({
         status: "error",
-        message: "You are not allowed to edit jobs"
+        message: "You are not allowed to edit jobs",
       });
     }
 
@@ -946,7 +988,6 @@ const unsaveCandidate = async (req, res) => {
       status: "success",
       message: "Candidate removed from saved list",
     });
-
   } catch (error) {
     logger.error("unsaveCandidate Error:", error.message);
     return res.status(500).json({
@@ -956,10 +997,8 @@ const unsaveCandidate = async (req, res) => {
   }
 };
 
-
 const getSavedCandidates = async (req, res) => {
   try {
-
     const { organizationId } = req.user;
 
     const { page = 1, limit = 10 } = req.query;
@@ -979,15 +1018,15 @@ const getSavedCandidates = async (req, res) => {
       prisma.savedCandidate.count({ where: { organizationId } }),
     ]);
 
-    console.log("candates", savedCandidates)
+    console.log("candates", savedCandidates);
 
-    const formatted = savedCandidates.map(item => ({
+    const formatted = savedCandidates.map((item) => ({
       ...item.candidateProfile,
       isSaved: true,
       savedAt: item.createdAt,
     }));
 
-    console.log("candidate formatte", formatted)
+    console.log("candidate formatte", formatted);
 
     return res.status(200).json({
       status: "success",
@@ -1001,27 +1040,25 @@ const getSavedCandidates = async (req, res) => {
         },
       },
     });
-
   } catch (error) {
     console.error("getSavedCandidates Error:", error.message);
     return res.status(500).json({
       status: "error",
-      message: "Failed to fetch saved candidates"+ error.message,
+      message: "Failed to fetch saved candidates" + error.message,
     });
   }
 };
-
 
 export {
   getVendorCandidates,
   createVendorCandidate,
   updateVendorCandidate,
   deleteVendorCandidate,
-   updateCandidateStatus,
-   getAllCandidates,
-   vendorApplyCandidate,
-   saveCandidate,
-   unsaveCandidate,
-   getSavedCandidates,
-   markCandidateReviewed,
+  updateCandidateStatus,
+  getAllCandidates,
+  vendorApplyCandidate,
+  saveCandidate,
+  unsaveCandidate,
+  getSavedCandidates,
+  markCandidateReviewed,
 };

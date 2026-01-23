@@ -21,7 +21,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
 
       const resp = await CreateActivity({
         candidateProfileId: candidateId,
-        jobId,
+        jobId: jobId || null,
         category: "NOTE",
         note: {
           subject: values.subject,

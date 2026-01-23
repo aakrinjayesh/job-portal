@@ -21,6 +21,7 @@ const MyActivity = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeCandidateId, setActiveCandidateId] = useState(null);
+  const [activeJobId, setActiveJobId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const controllerRef = useRef(null);
@@ -52,9 +53,10 @@ const MyActivity = () => {
     return () => controllerRef.current?.abort();
   }, [location.pathname]);
 
-  const handleSelectCandidate = (id) => {
+  const handleSelectCandidate = (candidateId, jobId) => {
     setDetailLoading(true);
-    setActiveCandidateId(id);
+    setActiveCandidateId(candidateId);
+    setActiveJobId(jobId); // 👈 store jobId
     setTimeout(() => setDetailLoading(false), 300);
   };
 
@@ -112,7 +114,12 @@ const MyActivity = () => {
                   renderItem={(item) => (
                     <Card
                       hoverable
-                      onClick={() => handleSelectCandidate(item.candidate.id)}
+                      onClick={() =>
+                        handleSelectCandidate(
+                          item.candidate.id,
+                          jobBlock.job.id
+                        )
+                      }
                       style={{
                         marginBottom: 16,
                         borderRadius: 16,
@@ -186,7 +193,10 @@ const MyActivity = () => {
           )}
 
           {!detailLoading && activeCandidateId && (
-            <CandidateActivity candidateId={activeCandidateId} />
+            <CandidateActivity
+              candidateId={activeCandidateId}
+              jobId={activeJobId}
+            />
           )}
         </Card>
       </div>

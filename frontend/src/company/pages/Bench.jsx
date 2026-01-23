@@ -67,8 +67,10 @@ const Bench = () => {
   const controllerRef = useRef(null);
   const location = useLocation();
 
-  const [deleteOpenId, setDeleteOpenId] = useState(null);
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
 
+  const [deleteOpenId, setDeleteOpenId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -101,17 +103,16 @@ const Bench = () => {
   }, [isCounting, timer]);
 
   useEffect(() => {
-  if (isModalVisible) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
+    if (isModalVisible) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
 
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, [isModalVisible]);
-
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isModalVisible]);
 
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
@@ -128,16 +129,25 @@ const Bench = () => {
         const list = Array.isArray(res?.data) && res.data;
         setAllCandidates(list || []);
         setCandidates(list || []);
-        // --- NEW: update verified / unverified counts ---
+
         if (Array.isArray(list)) {
           const verified = list.filter((c) => !!c.isVerified).length;
           const unverified = list.length - verified;
+
+          const active = list.filter((c) => c.status !== "inactive").length;
+          const inactive = list.filter((c) => c.status === "inactive").length;
+
           setVerifiedCount(verified);
           setUnverifiedCount(unverified);
+          setActiveCount(active);
+          setInactiveCount(inactive);
         } else {
           setVerifiedCount(0);
           setUnverifiedCount(0);
+          setActiveCount(0);
+          setInactiveCount(0);
         }
+
         setLoading(false);
       }
     } catch (error) {
@@ -325,16 +335,15 @@ const Bench = () => {
   };
 
   // 🔹 Handle single OTP digit change (UI only)
-const handleOtpChange = (value, index) => {
-  if (!/^\d?$/.test(value)) return;
+  const handleOtpChange = (value, index) => {
+    if (!/^\d?$/.test(value)) return;
 
-  const otpArray = otp.split("");
-  otpArray[index] = value;
+    const otpArray = otp.split("");
+    otpArray[index] = value;
 
-  const newOtp = otpArray.join("").slice(0, 6);
-  setOtp(newOtp);
-};
-
+    const newOtp = otpArray.join("").slice(0, 6);
+    setOtp(newOtp);
+  };
 
   const handleCheckboxChange = (id, checked) => {
     if (checked) {
@@ -361,7 +370,8 @@ const handleOtpChange = (value, index) => {
       // 🔹 Optimistic UI update
       const updated = candidates.map((c) =>
         selectedRowKeys.includes(c.id)
-          ? { ...c, status: status === "active" }
+          ? //  { ...c, status: status === "active" }
+            { ...c, status }
           : c
       );
       setAllCandidates(updated);
@@ -389,9 +399,6 @@ const handleOtpChange = (value, index) => {
 
   // 🔹 Table Columns (UPDATED)
   const columns = [
-    // --------------------------------------------------
-    // FIXED LEFT: CHECKBOX COLUMN
-    // --------------------------------------------------
     {
       title: "",
       dataIndex: "select",
@@ -408,213 +415,206 @@ const handleOtpChange = (value, index) => {
       ),
     },
 
- 
-
     {
-  title: "Name",
-  dataIndex: "name",
-  key: "name",
-  width: 150,
-  fixed: "left",
-  sorter: (a, b) => a.name.localeCompare(b.name),
-  render: (text) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        padding: "16px 0",
-      }}
-    >
-      <div
-        style={{
-          color: "#666666",
-          fontSize: 14,
-          fontWeight: 400,
-          textTransform: "capitalize",
-          lineHeight: "20px",
-        }}
-      >
-        {text}
-      </div>
-    </div>
-  ),
-},
-
-    {
-  title: "Role",
-  dataIndex: "title",
-  key: "title",
-  sorter: (a, b) => a.title?.localeCompare(b.title),
-  render: (text) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        padding: "16px 0",
-      }}
-    >
-      <div
-        style={{
-          color: "#666666",
-          fontSize: 14,
-          fontWeight: 400,
-          textTransform: "capitalize",
-          lineHeight: "20px",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {text || "-"}
-      </div>
-    </div>
-  ),
-},
-
- 
-
-    {
-  title: "Cloud",
-  key: "cloud",
-  width: 260,
-  render: (_, record) => {
-    const clouds =
-      Array.isArray(record.primaryClouds)
-        ? record.primaryClouds.map((c) => c.name)
-        : [];
-
-    if (clouds.length === 0) return "-";
-
-    const visibleClouds = clouds.slice(0, 3);
-    const remainingCount = clouds.length - visibleClouds.length;
-
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
-        {visibleClouds.map((cloud, index) => (
-//         
-<div
-  style={{
-    padding: "6px 12px",
-    background: "#E7F0FE",
-    borderRadius: 100,
-    outline: "0.5px solid #1677FF",
-    outlineOffset: "-0.5px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
->
-  <div
-    style={{
-      color: "#111111",
-      fontSize: 12,
-      fontWeight: 510,
-      textTransform: "capitalize",
-      whiteSpace: "nowrap",
-    }}
-  >
-    {cloud}
-  </div>
-</div>
-
-        ))}
-
-        {remainingCount > 0 && (
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      width: 150,
+      fixed: "left",
+      sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (text) => (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "16px 0",
+          }}
+        >
           <div
             style={{
-              color: "#0055F3",
+              color: "#666666",
               fontSize: 14,
-              fontWeight: 510,
-              textDecoration: "underline",
-              cursor: "pointer",
+              fontWeight: 400,
+              textTransform: "capitalize",
+              lineHeight: "20px",
+            }}
+          >
+            {text}
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      title: "Role",
+      dataIndex: "title",
+      key: "title",
+      sorter: (a, b) => a.title?.localeCompare(b.title),
+      render: (text) => (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "16px 0",
+          }}
+        >
+          <div
+            style={{
+              color: "#666666",
+              fontSize: 14,
+              fontWeight: 400,
+              textTransform: "capitalize",
+              lineHeight: "20px",
               whiteSpace: "nowrap",
             }}
           >
-            +{remainingCount} more
+            {text || "-"}
           </div>
-        )}
-      </div>
-    );
-  },
-},
+        </div>
+      ),
+    },
 
     {
-  title: "Skills",
-  key: "skills",
-  width: 260,
-  render: (_, record) => {
-    const skills =
-      record.skillsJson
-        ?.filter((s) => s.level === "primary")
-        .map((s) => s.name) || [];
+      title: "Cloud",
+      key: "cloud",
+      // width: 260,
+      width: 380,
+      render: (_, record) => {
+        const clouds = Array.isArray(record.primaryClouds)
+          ? record.primaryClouds.map((c) => c.name)
+          : [];
 
-    if (skills.length === 0) return "-";
+        if (clouds.length === 0) return "-";
 
-    const visibleSkills = skills.slice(0, 3);
-    const remainingCount = skills.length - visibleSkills.length;
+        const visibleClouds = clouds.slice(0, 3);
+        const remainingCount = clouds.length - visibleClouds.length;
 
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
-        {visibleSkills.map((skill, index) => (
-
-<div
-  style={{
-    padding: "6px 12px",
-    background: "#FBEBFF",
-    borderRadius: 100,
-    outline: "0.5px solid #640080",
-    outlineOffset: "-0.5px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
->
-  <div
-    style={{
-      color: "#111111",
-      fontSize: 12,
-      fontWeight: 510,
-      textTransform: "capitalize",
-      whiteSpace: "nowrap",
-    }}
-  >
-    {skill}
-  </div>
-</div>
-
-        ))}
-
-        {remainingCount > 0 && (
+        return (
           <div
             style={{
-              color: "#0055F3",
-              fontSize: 14,
-              fontWeight: 510,
-              textDecoration: "underline",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              alignItems: "center",
             }}
           >
-            +{remainingCount} more
-          </div>
-        )}
-      </div>
-    );
-  },
-},
+            {visibleClouds.map((cloud, index) => (
+              //
+              <div
+                style={{
+                  padding: "6px 12px",
+                  background: "#E7F0FE",
+                  borderRadius: 100,
+                  outline: "0.5px solid #1677FF",
+                  outlineOffset: "-0.5px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#111111",
+                    fontSize: 12,
+                    fontWeight: 510,
+                    textTransform: "capitalize",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {cloud}
+                </div>
+              </div>
+            ))}
 
+            {remainingCount > 0 && (
+              <div
+                style={{
+                  color: "#0055F3",
+                  fontSize: 14,
+                  fontWeight: 510,
+                  // textDecoration: "underline",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                +{remainingCount} more
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+
+    {
+      title: "Skills",
+      key: "skills",
+      // width: 260,
+      width: 380,
+      render: (_, record) => {
+        const skills =
+          record.skillsJson
+            ?.filter((s) => s.level === "primary")
+            .map((s) => s.name) || [];
+
+        if (skills.length === 0) return "-";
+
+        const visibleSkills = skills.slice(0, 3);
+        const remainingCount = skills.length - visibleSkills.length;
+
+        return (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              alignItems: "center",
+            }}
+          >
+            {visibleSkills.map((skill, index) => (
+              <div
+                style={{
+                  padding: "6px 12px",
+                  background: "#FBEBFF",
+                  borderRadius: 100,
+                  outline: "0.5px solid #640080",
+                  outlineOffset: "-0.5px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#111111",
+                    fontSize: 12,
+                    fontWeight: 510,
+                    textTransform: "capitalize",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {skill}
+                </div>
+              </div>
+            ))}
+
+            {remainingCount > 0 && (
+              <div
+                style={{
+                  color: "#0055F3",
+                  fontSize: 14,
+                  fontWeight: 510,
+                  // textDecoration: "underline",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                +{remainingCount} more
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
 
     {
       title: "Preferred Locations",
@@ -697,129 +697,133 @@ const handleOtpChange = (value, index) => {
             <EditOutlined />
           </Button>
 
-          
+          <Popconfirm
+            open={deleteOpenId === record.id}
+            placement="left"
+            icon={null}
+            title={null}
+            okButtonProps={{ style: { display: "none" } }}
+            cancelButtonProps={{ style: { display: "none" } }}
+            onOpenChange={(open) => {
+              if (!open) setDeleteOpenId(null);
+            }}
+            description={
+              <div
+                style={{
+                  padding: 24,
+                  background: "white",
+                  borderRadius: 16,
+                  border: "1px solid #F3F4F6",
+                  boxShadow: "0px 1px 2px -1px rgba(0,0,0,0.10)",
+                  width: 420,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 64,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* HEADER */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 510,
+                        color: "#101828",
+                      }}
+                    >
+                      Delete Candidate
+                    </div>
+                    <div style={{ fontSize: 14, color: "#101828" }}>
+                      Are you sure you want to delete this candidate?
+                    </div>
+                  </div>
 
-    <Popconfirm
-  open={deleteOpenId === record.id}
-  placement="left"
-  icon={null}
-  title={null}
-  okButtonProps={{ style: { display: "none" } }}
-  cancelButtonProps={{ style: { display: "none" } }}
-  onOpenChange={(open) => {
-    if (!open) setDeleteOpenId(null);
-  }}
-  description={
-    <div
-      style={{
-        padding: 24,
-        background: "white",
-        borderRadius: 16,
-        border: "1px solid #F3F4F6",
-        boxShadow: "0px 1px 2px -1px rgba(0,0,0,0.10)",
-        width: 420,
-        display: "flex",
-        flexDirection: "column",
-        gap: 64,
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* HEADER */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 24, fontWeight: 510, color: "#101828" }}>
-            Delete Candidate
-          </div>
-          <div style={{ fontSize: 14, color: "#101828" }}>
-            Are you sure you want to delete this candidate?
-          </div>
-        </div>
+                  {/* ✕ CLOSE ICON */}
+                  <div
+                    onClick={() => setDeleteOpenId(null)}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      background: "#F9F9F9",
+                      borderRadius: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✕
+                  </div>
+                </div>
 
-        {/* ✕ CLOSE ICON */}
-        <div
-          onClick={() => setDeleteOpenId(null)}
-          style={{
-            width: 40,
-            height: 40,
-            background: "#F9F9F9",
-            borderRadius: 8,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          ✕
-        </div>
-      </div>
+                {/* ACTION BUTTONS */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 16,
+                  }}
+                >
+                  {/* CANCEL */}
+                  <Button
+                    onClick={() => setDeleteOpenId(null)}
+                    style={{
+                      height: 40,
+                      padding: "10px 24px",
+                      borderRadius: 100,
+                      border: "1px solid #666666",
+                      background: "transparent",
+                      color: "#666666",
+                      fontSize: 14,
+                      fontWeight: 590,
+                    }}
+                  >
+                    Cancel
+                  </Button>
 
-      {/* ACTION BUTTONS */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 16,
-        }}
-      >
-        {/* CANCEL */}
-        <Button
-          onClick={() => setDeleteOpenId(null)}
-          style={{
-            height: 40,
-            padding: "10px 24px",
-            borderRadius: 100,
-            border: "1px solid #666666",
-            background: "transparent",
-            color: "#666666",
-            fontSize: 14,
-            fontWeight: 590,
-          }}
-        >
-          Cancel
-        </Button>
-
-        {/* DELETE */}
-        <Button
-          onClick={() => {
-            handleDelete(record); // ✅ SAME FUNCTION
-            setDeleteOpenId(null); // close popup
-          }}
-          style={{
-            height: 40,
-            padding: "10px 24px",
-            borderRadius: 100,
-            background: "#1677FF",
-            border: "none",
-            color: "#FFFFFF",
-            fontSize: 14,
-            fontWeight: 590,
-          }}
-        >
-          Delete
-        </Button>
-      </div>
-    </div>
-  }
->
-  <Button
-    type="link"
-    danger
-    onClick={(e) => {
-      e.stopPropagation();
-      setDeleteOpenId(record.id); // 👈 OPEN POPUP
-    }}
-  >
-    <DeleteOutlined />
-  </Button>
-</Popconfirm>
-
-
+                  {/* DELETE */}
+                  <Button
+                    onClick={() => {
+                      handleDelete(record); // ✅ SAME FUNCTION
+                      setDeleteOpenId(null); // close popup
+                    }}
+                    style={{
+                      height: 40,
+                      padding: "10px 24px",
+                      borderRadius: 100,
+                      background: "#1677FF",
+                      border: "none",
+                      color: "#FFFFFF",
+                      fontSize: 14,
+                      fontWeight: 590,
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            }
+          >
+            <Button
+              type="link"
+              danger
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteOpenId(record.id); // 👈 OPEN POPUP
+              }}
+            >
+              <DeleteOutlined />
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -961,118 +965,125 @@ const handleOtpChange = (value, index) => {
   };
 
   const StatBlock = ({ label, value, color }) => (
-  <div style={{ width: 104, textAlign: "center" }}>
-    <div style={{ fontSize: 20, fontWeight: 590, color }}>{value}</div>
-    <div style={{ fontSize: 14, color }}>{label}</div>
-  </div>
-);
+    <div style={{ width: 104, textAlign: "center" }}>
+      <div style={{ fontSize: 20, fontWeight: 590, color }}>{value}</div>
+      <div style={{ fontSize: 14, color }}>{label}</div>
+    </div>
+  );
 
-const Divider = () => (
-  <div style={{ width: 1, height: 40, background: "#F4F6F9" }} />
-);
-
+  const Divider = () => (
+    <div style={{ width: 1, height: 40, background: "#F4F6F9" }} />
+  );
 
   return (
     <div style={{ padding: 0 }}>
       {contextHolder}
-    
 
       {/* ===== FIGMA TOP BAR 2 ===== */}
-<div
-  style={{
-    width: "100%",
-    // padding: 8,
-    background: "#fff",
-    borderRadius: 6,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    // marginBottom: 16,
-  }}
->
-  {/* COUNTERS */}
-  <div style={{ display: "flex",width:280, alignItems: "center", gap: 8 }}>
-    <StatBlock label="Total" value={candidates.length} color="#3F41D1" />
-    <Divider />
-    <StatBlock label="Verified" value={verifiedCount} color="#008000" />
-    <Divider />
-    <StatBlock label="Not Verified" value={unverifiedCount} color="#FF0000" />
-  </div>
-
-  {/* ACTION BUTTONS */}
-  <div style={{ display: "flex", gap: 16 }}>
-   
-  
-
-    <Button
-      style={{
-        borderRadius: 100,
-        background: "#D1E4FF",
-        border: "none",
-        fontWeight: 590,
-      }}
-      onClick={showModal}
-    >
-      + Add Candidate
-    </Button>
-  </div>
-</div>
-
-
-
-{/* ===== FIGMA TOP BAR 1 (UI ONLY, LOGIC SAFE) ===== */}
-<div
-  style={{
-    width: "100%",
-    padding: 8,
-    background: "#fff",
-    borderRadius: 6,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  }}
->
-  
-  {/* LEFT TABS (CONNECTED TO activeTab) */}
-  <div style={{ display: "flex", gap: 16,width:600 }}>
-    {[
-      { key: "all", label: `All (${candidates.length})` },
-      { key: "active", label: "Active" },
-      { key: "inactive", label: "Inactive" },
-    ].map((item) => {
-      const isActive = activeTab === item.key;
-      return (
+      <div
+        style={{
+          width: "100%",
+          // padding: 8,
+          background: "#fff",
+          borderRadius: 6,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          // marginBottom: 16,
+        }}
+      >
+        {/* COUNTERS */}
         <div
-          key={item.key}
-          onClick={() => setActiveTab(item.key)}
           style={{
-            height: 36,
-            padding: "6px 16px",
-            borderRadius: 8,
-            border: `1px solid ${isActive ? "#3F41D1" : "#A3A3A3"}`,
-            background: isActive ? "#EBEBFA" : "#fff",
-            color: isActive ? "#3F41D1" : "#666",
-            fontWeight: isActive ? 590 : 400,
             display: "flex",
+            width: 280,
             alignItems: "center",
-            cursor: "pointer",
-            userSelect: "none",
+            gap: 8,
+            padding: 10,
           }}
         >
-          {item.label}
+          <StatBlock label="Total" value={candidates.length} color="#3F41D1" />
+          <Divider />
+          <StatBlock label="Verified" value={verifiedCount} color="#008000" />
+          <Divider />
+          <StatBlock
+            label="Not Verified"
+            value={unverifiedCount}
+            color="#FF0000"
+          />
         </div>
-      );
-    })}
-  </div>
-      <div style={{ width: 150 }}>
-  <SearchWithTextArea
-    handleFiltersChange={handleFiltersChange}
-    apifunction={AiCandidateFilter}
-    handleClearFilters={handleClearFilters}
-  />
-</div>
-</div>
+
+        {/* ACTION BUTTONS */}
+        <div style={{ display: "flex", gap: 16, padding: 10 }}>
+          <Button
+            style={{
+              borderRadius: 100,
+              background: "#D1E4FF",
+              border: "none",
+              fontWeight: 590,
+            }}
+            onClick={showModal}
+          >
+            + Add Candidate
+          </Button>
+        </div>
+      </div>
+
+      {/* ===== FIGMA TOP BAR 1 (UI ONLY, LOGIC SAFE) ===== */}
+      <div
+        style={{
+          width: "100%",
+          padding: 8,
+          background: "#fff",
+          borderRadius: 6,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
+      >
+        {/* LEFT TABS (CONNECTED TO activeTab) */}
+        <div style={{ display: "flex", gap: 16, width: 600 }}>
+          {[
+            // { key: "all", label: `All (${candidates.length})` },
+            // { key: "active", label: "Active" },
+            // { key: "inactive", label: "Inactive" },
+            { key: "all", label: `All (${allcandidates.length})` },
+            { key: "active", label: `Active (${activeCount})` },
+            { key: "inactive", label: `Inactive (${inactiveCount})` },
+          ].map((item) => {
+            const isActive = activeTab === item.key;
+            return (
+              <div
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                style={{
+                  height: 36,
+                  padding: "6px 16px",
+                  borderRadius: 8,
+                  border: `1px solid ${isActive ? "#3F41D1" : "#A3A3A3"}`,
+                  background: isActive ? "#EBEBFA" : "#fff",
+                  color: isActive ? "#3F41D1" : "#666",
+                  fontWeight: isActive ? 590 : 400,
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  userSelect: "none",
+                }}
+              >
+                {item.label}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ width: 150 }}>
+          <SearchWithTextArea
+            handleFiltersChange={handleFiltersChange}
+            apifunction={AiCandidateFilter}
+            handleClearFilters={handleClearFilters}
+          />
+        </div>
+      </div>
 
       <Spin spinning={loading}>
         {/* 🔍 SEARCH INPUT */}
@@ -1108,70 +1119,85 @@ const Divider = () => (
           })}
         /> */}
 
-        <Table
-  columns={columns}
-  dataSource={
-    activeTab === "all"
-      ? candidates
-      : activeTab === "active"
-      ? candidates.filter((c) => c.status !== "inactive")
-      : candidates.filter((c) => c.status === "inactive")
-  }
-  rowKey={(record) => record.id || record.name}
-  pagination={false}
-  scroll={{ x: "max-content" }}
-  style={{ cursor: "pointer" }}
-  
-
-  /* 🔹 ROW UI ONLY */
-  rowClassName={(_, index) =>
-    index % 2 === 0 ? "bench-row-light" : "bench-row-dark"
-  }
-
-  /* 🔹 HEADER + ROW HEIGHT */
-  components={{
-    header: {
-      cell: (props) => (
-        <th
-          {...props}
+        <div
           style={{
-            background: "#F0F2F4",
-            color: "#666666",
-            fontWeight: 400,
-            height: 54,
-            borderBottom: "1px solid #E0E0E0",
+            // height: "calc(100vh - 420px)", // 👈 fixed height
+            height: "calc(100vh - 300px)",
+            overflowY: "auto", // 👈 enables scroll
           }}
-        />
-      ),
-    },
-    body: {
-      cell: (props) => (
-        <td
-          {...props}
-          style={{
-            height: 54,
-            borderBottom: "1px solid #E0E0E0",
-            color: "#666666",
-            fontSize: 14,
-          }}
-        />
-      ),
-    },
-  }}
+        >
+          <Table
+            columns={columns}
+            dataSource={
+              activeTab === "all"
+                ? candidates
+                : activeTab === "active"
+                ? candidates.filter((c) => c.status !== "inactive")
+                : candidates.filter((c) => c.status === "inactive")
+            }
+            rowKey={(record) => record.id || record.name}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+            style={{ cursor: "pointer" }}
+            /* 🔹 ROW UI ONLY */
+            rowClassName={(_, index) =>
+              index % 2 === 0 ? "bench-row-light" : "bench-row-dark"
+            }
+            /* 🔹 HEADER + ROW HEIGHT */
+            components={{
+              header: {
+                cell: (props) => (
+                  <th
+                    {...props}
+                    // style={{
+                    //   background: "#F0F2F4",
+                    //   color: "#666666",
+                    //   fontWeight: 400,
+                    //   height: 54,
+                    //   borderBottom: "1px solid #E0E0E0",
+                    // }}
 
-  /* 🔹 ROW HOVER (SUBTLE – NO BLUE) */
-  onRow={(record) => ({
-    onClick: () => {
-      navigate("/company/bench/candidates", {
-        state: { candidate: record, from: "mybench" },
-      });
-    },
-    style: {
-      cursor: "pointer",
-    },
-  })}
-/>
-
+                    style={{
+                      height: 56, // ✅ FIXED HEIGHT
+                      maxHeight: 56, // ✅ IMPORTANT
+                      overflow: "hidden", // ✅ IMPORTANT
+                      whiteSpace: "nowrap", // ✅ NO WRAP
+                      textOverflow: "ellipsis", // ✅ ...
+                      borderBottom: "1px solid #E0E0E0",
+                      color: "#666666",
+                      fontSize: 14,
+                      verticalAlign: "middle", // ✅ CENTER CONTENT
+                    }}
+                  />
+                ),
+              },
+              body: {
+                cell: (props) => (
+                  <td
+                    {...props}
+                    style={{
+                      height: 54,
+                      borderBottom: "1px solid #E0E0E0",
+                      color: "#666666",
+                      fontSize: 14,
+                    }}
+                  />
+                ),
+              },
+            }}
+            /* 🔹 ROW HOVER (SUBTLE – NO BLUE) */
+            onRow={(record) => ({
+              onClick: () => {
+                navigate("/company/bench/candidates", {
+                  state: { candidate: record, from: "mybench" },
+                });
+              },
+              style: {
+                cursor: "pointer",
+              },
+            })}
+          />
+        </div>
 
         {/* <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
           <Button
@@ -1192,56 +1218,53 @@ const Divider = () => (
         </div> */}
 
         {/* ===== BOTTOM CTAs (FIGMA EXACT) ===== */}
-<div
-  style={{
-    width: "100%",
-    padding: "22px 24px",
-    background: "#FBFBFB",
-    display: "flex",
-    justifyContent: "flex-end",
-  }}
->
-  <div style={{ display: "flex", gap: 24 }}>
-    {/* DEACTIVATE SELECTED — OUTLINED */}
-    <Button
-      disabled={selectedRowKeys.length === 0}
-      onClick={() => updateStatus("inactive")}
-      style={{
-        height: 40,
-        borderRadius: 100,
-        padding: "10px 24px",
-        background: "transparent",
-        border: "1px solid #666666",
-        color: "#666666",
-        fontSize: 14,
-        fontWeight: 590,
-        textTransform: "capitalize",
-      }}
-    >
-      Deactivate Selected
-    </Button>
+        <div
+          style={{
+            width: "100%",
+            padding: "22px 24px",
+            background: "#FBFBFB",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <div style={{ display: "flex", gap: 24 }}>
+            <Button
+              disabled={selectedRowKeys.length === 0}
+              onClick={() => updateStatus("inactive")}
+              style={{
+                height: 35,
+                borderRadius: 100,
+                padding: "10px 24px",
+                background: "transparent",
+                border: "1px solid #666666",
+                color: "#666666",
+                fontSize: 14,
+                fontWeight: 590,
+                textTransform: "capitalize",
+              }}
+            >
+              Deactivate Selected
+            </Button>
 
-    {/* ACTIVATE SELECTED — FILLED */}
-    <Button
-      disabled={selectedRowKeys.length === 0}
-      onClick={() => updateStatus("active")}
-      style={{
-        height: 40,
-        borderRadius: 100,
-        padding: "10px 24px",
-        background: "#1677FF",
-        border: "none",
-        color: "#FFFFFF",
-        fontSize: 14,
-        fontWeight: 590,
-        textTransform: "capitalize",
-      }}
-    >
-      Activate Selected
-    </Button>
-  </div>
-</div>
-
+            <Button
+              disabled={selectedRowKeys.length === 0}
+              onClick={() => updateStatus("active")}
+              style={{
+                height: 40,
+                borderRadius: 100,
+                padding: "10px 24px",
+                background: "#1677FF",
+                border: "none",
+                color: "#FFFFFF",
+                fontSize: 14,
+                fontWeight: 590,
+                textTransform: "capitalize",
+              }}
+            >
+              Activate Selected
+            </Button>
+          </div>
+        </div>
       </Spin>
 
       {/* ✅ Add/Edit Candidate Modal */}
@@ -1252,31 +1275,29 @@ const Divider = () => (
         footer={null}
         width={900}
       > */}
-     <Modal
-  open={isModalVisible}
-  onCancel={handleCancel}
-  footer={null}
-  closable={false}
-   mask={false}  
-  maskClosable={true}
-
-  /* 🔑 KEY PART */
-  width={`calc(100vw - 280px)`}   // sidebar width
-  style={{
-    top: 0,
-    left: 260,                   // 👈 START AFTER SIDEBAR
-    margin: 0,
-    padding: 0,
-  }}
-
-  bodyStyle={{
-    height: "100vh",
-    overflowY: "auto",
-    padding: 24,
-    borderRadius: "16px 0 0 16px", // rounded left only
-  }}
->
- <UpdateUserProfile
+      <Modal
+        open={isModalVisible}
+        onCancel={handleCancel}
+        footer={null}
+        closable={false}
+        mask={false}
+        maskClosable={true}
+        /* 🔑 KEY PART */
+        width={`calc(100vw - 280px)`} // sidebar width
+        style={{
+          top: 0,
+          left: 260, // 👈 START AFTER SIDEBAR
+          margin: 0,
+          padding: 0,
+        }}
+        bodyStyle={{
+          height: "100vh",
+          overflowY: "auto",
+          padding: 24,
+          borderRadius: "16px 0 0 16px", // rounded left only
+        }}
+      >
+        <UpdateUserProfile
           handleFormDetails={handleFormDetails}
           Reciviedrole={"candidate"}
           setModalVisible={setIsModalVisible}
@@ -1473,103 +1494,103 @@ const Divider = () => (
         </div>
       </Modal> */}
 
- <Modal
-  open={verifyModalVisible}
-  footer={null}
-  centered
-  closable={false}
-  width={571}
-  bodyStyle={{
-    padding: 24,
-    borderRadius: 16,
-    border: "1px solid #F3F4F6",
-    boxShadow: "0px 1px 2px -1px rgba(0,0,0,0.10)",
-  }}
->
-  {/* HEADER */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 32,
-    }}
-  >
-    <div>
-      <div style={{ fontSize: 24, fontWeight: 510, color: "#101828" }}>
-        Verify Candidate
-      </div>
-      <div style={{ fontSize: 14, color: "#101828" }}>
-        Process to verify the candidate with OTP verification.
-      </div>
-    </div>
+      <Modal
+        open={verifyModalVisible}
+        footer={null}
+        centered
+        closable={false}
+        width={571}
+        bodyStyle={{
+          padding: 24,
+          borderRadius: 16,
+          border: "1px solid #F3F4F6",
+          boxShadow: "0px 1px 2px -1px rgba(0,0,0,0.10)",
+        }}
+      >
+        {/* HEADER */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 32,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 510, color: "#101828" }}>
+              Verify Candidate
+            </div>
+            <div style={{ fontSize: 14, color: "#101828" }}>
+              Process to verify the candidate with OTP verification.
+            </div>
+          </div>
 
-    {/* CLOSE */}
-    <div
-      onClick={() => setVerifyModalVisible(false)}
-      style={{
-        width: 40,
-        height: 40,
-        background: "#F9F9F9",
-        borderRadius: 8,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      ✕
-    </div>
-  </div>
+          {/* CLOSE */}
+          <div
+            onClick={() => setVerifyModalVisible(false)}
+            style={{
+              width: 40,
+              height: 40,
+              background: "#F9F9F9",
+              borderRadius: 8,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            ✕
+          </div>
+        </div>
 
-  {/* EMAIL + SEND OTP */}
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 24,
-      marginBottom: 32,
-    }}
-  >
-    <div
-      style={{
-        flex: 1,
-        padding: 16,
-        borderRadius: 8,
-        border: "1px solid #F1F1F1",
-      }}
-    >
-      <div style={{ fontSize: 18, fontWeight: 510 }}>
-        Email :
-        <span style={{ color: "#0B0BD6", marginLeft: 6 }}>
-          {verifyCandidate?.email}
-        </span>
-      </div>
-    </div>
+        {/* EMAIL + SEND OTP */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 24,
+            marginBottom: 32,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              padding: 16,
+              borderRadius: 8,
+              border: "1px solid #F1F1F1",
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 510 }}>
+              Email :
+              <span style={{ color: "#0B0BD6", marginLeft: 6 }}>
+                {verifyCandidate?.email}
+              </span>
+            </div>
+          </div>
 
-    <Button
-      onClick={handleSendOtp}
-      loading={otpSending}
-      disabled={otpSending || isCounting}
-      style={{
-        height: 40,
-        borderRadius: 100,
-        background: "#D1E4FF",
-        border: "none",
-        fontWeight: 590,
-      }}
-    >
-      Send OTP
-    </Button>
-  </div>
+          <Button
+            onClick={handleSendOtp}
+            loading={otpSending}
+            disabled={otpSending || isCounting}
+            style={{
+              height: 40,
+              borderRadius: 100,
+              background: "#D1E4FF",
+              border: "none",
+              fontWeight: 590,
+            }}
+          >
+            Send OTP
+          </Button>
+        </div>
 
-  {/* OTP LABEL */}
-  <div style={{ fontSize: 16, fontWeight: 510, marginBottom: 16 }}>
-    Enter 6 digit OTP
-  </div>
+        {/* OTP LABEL */}
+        <div style={{ fontSize: 16, fontWeight: 510, marginBottom: 16 }}>
+          Enter 6 digit OTP
+        </div>
 
-  {/* OTP INPUT */}
-  {/* <Input
+        {/* OTP INPUT */}
+        {/* <Input
     value={otp}
     onChange={(e) => setOtp(e.target.value)}
     maxLength={6}
@@ -1584,112 +1605,105 @@ const Divider = () => (
     }}
   /> */}
 
-  <div
-  style={{
-    display: "flex",
-    gap: 16,
-    marginBottom: 16,
-  }}
->
-  {[...Array(6)].map((_, index) => {
-    const digit = otp[index] || "";
-    const isActive = otp.length === index;
-
-    return (
-      <div
-        key={index}
-        style={{
-          flex: 1,
-          height: 46,
-          display: "flex",
-        }}
-      >
-        <input
-          type="text"
-          value={digit}
-          maxLength={1}
-          onChange={(e) => handleOtpChange(e.target.value, index)}
-          onKeyDown={(e) => {
-            if (e.key === "Backspace" && !digit && index > 0) {
-              const otpArray = otp.split("");
-              otpArray[index - 1] = "";
-              setOtp(otpArray.join(""));
-            }
-          }}
+        <div
           style={{
-            width: "100%",
-            height: "100%",
-            textAlign: "center",
-            fontSize: 16,
-            borderRadius: 6,
-            outline: "none",
-            border: `1px solid ${
-              digit
-                ? "#666666"
-                : isActive
-                ? "#3F41D1"
-                : "#E0E0E0"
-            }`,
-            color: digit ? "#212121" : "#E0E0E0",
+            display: "flex",
+            gap: 16,
+            marginBottom: 16,
           }}
-        />
-      </div>
-    );
-  })}
-</div>
+        >
+          {[...Array(6)].map((_, index) => {
+            const digit = otp[index] || "";
+            const isActive = otp.length === index;
 
+            return (
+              <div
+                key={index}
+                style={{
+                  flex: 1,
+                  height: 46,
+                  display: "flex",
+                }}
+              >
+                <input
+                  type="text"
+                  value={digit}
+                  maxLength={1}
+                  onChange={(e) => handleOtpChange(e.target.value, index)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Backspace" && !digit && index > 0) {
+                      const otpArray = otp.split("");
+                      otpArray[index - 1] = "";
+                      setOtp(otpArray.join(""));
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    textAlign: "center",
+                    fontSize: 16,
+                    borderRadius: 6,
+                    outline: "none",
+                    border: `1px solid ${
+                      digit ? "#666666" : isActive ? "#3F41D1" : "#E0E0E0"
+                    }`,
+                    color: digit ? "#212121" : "#E0E0E0",
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
 
-  {/* TIMER + COUNT */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 32,
-    }}
-  >
-    <div style={{ color: "#06C270", fontSize: 14 }}>
-      {isCounting ? `00:${timer.toString().padStart(2, "0")}` : ""}
+        {/* TIMER + COUNT */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 32,
+          }}
+        >
+          <div style={{ color: "#06C270", fontSize: 14 }}>
+            {isCounting ? `00:${timer.toString().padStart(2, "0")}` : ""}
+          </div>
+          <div style={{ color: "#666", fontSize: 14 }}>{otp.length}/6</div>
+        </div>
+
+        {/* FOOTER BUTTONS */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 16,
+          }}
+        >
+          <Button
+            onClick={() => setVerifyModalVisible(false)}
+            style={{
+              height: 40,
+              borderRadius: 100,
+              border: "1px solid #666",
+              fontWeight: 590,
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            onClick={handleVerifyOtp}
+            loading={otpVerifying}
+            disabled={!otp || otpExpired}
+            style={{
+              height: 40,
+              borderRadius: 100,
+              fontWeight: 590,
+            }}
+          >
+            Verify
+          </Button>
+        </div>
+      </Modal>
     </div>
-    <div style={{ color: "#666", fontSize: 14 }}>{otp.length}/6</div>
-  </div>
-
-  {/* FOOTER BUTTONS */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "flex-end",
-      gap: 16,
-    }}
-  >
-    <Button
-      onClick={() => setVerifyModalVisible(false)}
-      style={{
-        height: 40,
-        borderRadius: 100,
-        border: "1px solid #666",
-        fontWeight: 590,
-      }}
-    >
-      Cancel
-    </Button>
-<Button
-      type="primary"
-      onClick={handleVerifyOtp}
-      loading={otpVerifying}
-      disabled={!otp || otpExpired}
-      style={{
-        height: 40,
-        borderRadius: 100,
-        fontWeight: 590,
-      }}
-    >
-      Verify
-    </Button>
-  </div>
-</Modal>
- </div>
   );
 };
 export default Bench;
-
-
