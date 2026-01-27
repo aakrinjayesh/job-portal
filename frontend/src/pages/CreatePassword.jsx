@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Typography, message } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SetPassword } from "../candidate/api/api";
-
+import cloudImage from "../assets/Fill-1.png";
 import personImg from "../assets/login_design.png";
 import jobroleImg from "../assets/jobrole.png";
 import groupImg from "../assets/Group.png";
@@ -149,7 +149,9 @@ const CreatePassword = () => {
         </div>
 
         {/* RIGHT */}
-        <div style={styles.right}>
+          <div style={styles.right}>
+                         <img src={cloudImage} alt="cloud" style={styles.cloud} />
+                         <img src={personImg} alt="person" style={styles.person} />
           {/* HERO TEXT */}
           <div style={styles.heroText}>
             <Title

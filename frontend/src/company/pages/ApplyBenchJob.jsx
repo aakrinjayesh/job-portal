@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Table, Spin, message, Button } from "antd";
 import { GetVendorCandidates } from "../api/api";
 import { ApplyBenchCandidate } from "../api/api";
+import TableDesign from "./TableDesign";
 
 import { Tag, Tooltip } from "antd";
 
@@ -238,6 +239,7 @@ const ApplyBenchJob = ({ jobId }) => {
     height: 32,
     fontSize: 13,
     fontWeight: 500,
+    marginTop: 20,
   }}
 >
   Apply With Selected Bench
@@ -245,14 +247,16 @@ const ApplyBenchJob = ({ jobId }) => {
 
 </div>
 
-      <Table
-        rowSelection={rowSelection}
-        columns={columns}
-        scroll={{ y: 400 }}
-        dataSource={candidates}
-        rowKey="id"
-        // scroll={{ x: 1200, y: 500 }}
-      />
+     <TableDesign
+  loading={loading}
+  columns={columns}
+  dataSource={candidates}
+  rowKey="id"
+  rowSelection={rowSelection}
+  scroll={{ y: 400 }}
+  emptyText="No bench candidates available"
+/>
+
     </Spin>
   );
 };

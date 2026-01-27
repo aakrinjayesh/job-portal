@@ -34,6 +34,8 @@ import {
   GetLocations,
   PostLocations,
   GetClouds,
+  GetRole,
+  PostRole,
   PostClouds,
   uploadProfilePicture,
 } from "../api/api";
@@ -929,40 +931,12 @@ const stepsConfig = [
                 ]}
               >
                 {/* <Input placeholder="e.g., Salesforce Developer" /> */}
-                <Select
-                  placeholder="e.g., Salesforce Developer"
-                  tokenSeparators={[","]}
-                  value={form.getFieldValue("title")}
-                  onChange={(val) => {
-                    // ❌ Allow only one role
-                    // const onlyOne = val.slice(0, 1);
-                    form.setFieldsValue({ title: val });
-                  }}
-                  onInputKeyDown={(e) => {
-                    // ❌ Block numbers and special characters
-                    if (
-                      !/^[A-Za-z ]$/.test(e.key) &&
-                      e.key !== "Backspace" &&
-                      e.key !== " "
-                    ) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <Select.Option value="Salesforce Developer">
-                    Salesforce Developer
-                  </Select.Option>
-                  <Select.Option value="Salesforce Admin">
-                    Salesforce Admin
-                  </Select.Option>
-                  <Select.Option value="Apex Developer">
-                    Apex Developer
-                  </Select.Option>
-                  <Select.Option value="QA Engineer">QA Engineer</Select.Option>
-                  <Select.Option value="Frontend Developer">
-                    Frontend Developer
-                  </Select.Option>
-                </Select>
+                <ReusableSelect
+                                  placeholder="Select Role"
+                                  fetchFunction={GetRole}
+                                  addFunction={PostRole}
+                                  single={true}
+                                />
               </Form.Item>
             </Col>
 
