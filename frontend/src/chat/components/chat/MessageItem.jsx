@@ -1,187 +1,15 @@
-// import {
-//   ArrowDownTrayIcon,
-//   EllipsisVerticalIcon,
-//   MagnifyingGlassPlusIcon,
-//   PaperClipIcon,
-//   TrashIcon,
-//   XMarkIcon,
-// } from "@heroicons/react/20/solid";
-// import moment from "moment";
-// import { useState } from "react";
-// import { classNames } from "../../utils";
-
-// const MessageItem = ({
-//   isOwnMessage,
-//   isGroupChatMessage,
-//   message,
-//   deleteChatMessage,
-// }) => {
-//   const [resizedImage, setResizedImage] = useState(null);
-//   const [openOptions, setOpenOptions] = useState(false);
-
-//   return (
-//     <>
-//       {resizedImage && (
-//         <div className="h-full z-40 p-8 absolute inset-0 bg-black/70 flex justify-center items-center">
-//           <XMarkIcon
-//             className="absolute top-5 right-5 w-9 h-9 text-white cursor-pointer"
-//             onClick={() => setResizedImage(null)}
-//           />
-//           <img
-//             className="w-full h-full object-contain"
-//             src={resizedImage}
-//             alt="chat image"
-//           />
-//         </div>
-//       )}
-
-//       <div
-//         className={classNames(
-//           "flex justify-start items-end gap-3 max-w-lg",
-//           isOwnMessage ? "ml-auto" : ""
-//         )}
-//       >
-//         <img
-//           src={message.sender?.avatar?.url}
-//           alt={message.sender?.username}
-//           className={classNames(
-//             "h-7 w-7 rounded-full object-cover",
-//             isOwnMessage ? "order-2" : "order-1"
-//           )}
-//         />
-
-//         <div
-//           onMouseLeave={() => setOpenOptions(false)}
-//           className={classNames(
-//             "p-4 rounded-3xl flex flex-col cursor-pointer group",
-//             isOwnMessage
-//               ? "order-1 bg-primary rounded-br-none"
-//               : "order-2 bg-secondary rounded-bl-none"
-//           )}
-//         >
-//           {isGroupChatMessage && !isOwnMessage && (
-//             <p className="text-xs font-semibold mb-2 text-success">
-//               {message.sender?.username}
-//             </p>
-//           )}
-
-//           {message?.attachments?.length > 0 && (
-//             <div>
-//               {isOwnMessage && (
-//                 <button
-//                   className="self-center p-1 relative"
-//                   onClick={() => setOpenOptions(!openOptions)}
-//                 >
-//                   <EllipsisVerticalIcon className="w-4 text-zinc-300" />
-//                   {openOptions && (
-//                     <div className="absolute z-30 bg-dark p-2 rounded-lg border border-secondary">
-//                       <p
-//                         onClick={() => {
-//                           if (confirm("Delete this message?")) {
-//                             deleteChatMessage(message);
-//                           }
-//                         }}
-//                         className="text-danger cursor-pointer text-xs flex items-center"
-//                       >
-//                         <TrashIcon className="h-4 w-4 mr-1" /> Delete Message
-//                       </p>
-//                     </div>
-//                   )}
-//                 </button>
-//               )}
-
-//               <div
-//                 className={classNames(
-//                   "grid gap-2",
-//                   message.attachments.length === 1
-//                     ? "grid-cols-1"
-//                     : message.attachments.length === 2
-//                     ? "grid-cols-2"
-//                     : "grid-cols-3"
-//                 )}
-//               >
-//                 {message.attachments.map((file) => (
-//                   <div
-//                     key={file._id}
-//                     className="relative aspect-square rounded-xl overflow-hidden cursor-pointer"
-//                   >
-//                     <button
-//                       onClick={() => setResizedImage(file.url)}
-//                       className="absolute inset-0 flex justify-center items-center bg-black/60 opacity-0 group-hover:opacity-100 transition"
-//                     >
-//                       <MagnifyingGlassPlusIcon className="h-6 w-6 text-white" />
-//                       <a
-//                         href={file.url}
-//                         download
-//                         onClick={(e) => e.stopPropagation()}
-//                       >
-//                         <ArrowDownTrayIcon className="h-6 w-6 text-white ml-2" />
-//                       </a>
-//                     </button>
-//                     <img
-//                       src={file.url}
-//                       alt="attachment"
-//                       className="h-full w-full object-cover"
-//                     />
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-
-//           {message.content && (
-//             <div className="relative flex justify-between">
-//               {isOwnMessage && (
-//                 <button
-//                   onClick={() => setOpenOptions(!openOptions)}
-//                   className="relative"
-//                 >
-//                   <EllipsisVerticalIcon className="w-4 text-zinc-300" />
-//                   {openOptions && (
-//                     <div className="absolute left-[-100%] top-[-50%] bg-dark p-2 rounded-lg border border-secondary">
-//                       <p
-//                         onClick={() => {
-//                           if (confirm("Delete this message?")) {
-//                             deleteChatMessage(message);
-//                           }
-//                         }}
-//                         className="text-danger cursor-pointer text-xs flex items-center"
-//                       >
-//                         <TrashIcon className="h-4 w-4 mr-1" /> Delete Message
-//                       </p>
-//                     </div>
-//                   )}
-//                 </button>
-//               )}
-//               <p className="text-sm">{message.content}</p>
-//             </div>
-//           )}
-
-//           <p
-//             className={classNames(
-//               "mt-1 text-[10px] flex items-center justify-end",
-//               isOwnMessage ? "text-zinc-50" : "text-zinc-400"
-//             )}
-//           >
-//             {message.attachments.length > 0 && (
-//               <PaperClipIcon className="h-3 w-3 mr-1" />
-//             )}
-//             {moment(message.updatedAt).fromNow()}
-//           </p>
-//         </div>
-//       </div>
-//     </>
-//   );
-// };
-
-// export default MessageItem;
-
-import { Avatar, Dropdown, Modal, Image, Tag } from "antd";
+import { Avatar, Dropdown, Modal, Image, Tag, Button } from "antd";
 import {
   MoreOutlined,
   DeleteOutlined,
   PaperClipOutlined,
   DownloadOutlined,
+  FileOutlined,
+  FilePdfOutlined,
+  FileWordOutlined,
+  FileExcelOutlined,
+  FileTextOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import { useState } from "react";
@@ -214,36 +42,73 @@ const MessageItem = ({
     },
   ];
 
- const messageContainerStyle = {
-  display: "flex",
-  justifyContent: isOwnMessage ? "flex-end" : "flex-start",
-  alignItems: "flex-end",
-  gap: 12,
-  marginLeft: isOwnMessage ? "auto" : 0,
-  marginRight: isOwnMessage ? 0 : "auto",
-  marginBottom: 16,
-};
+  // Helper to determine if file is an image
+  const isImageFile = (url) => {
+    const imageExtensions = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".webp",
+      ".bmp",
+      ".svg",
+    ];
+    return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
+  };
 
+  // Helper to get file icon based on extension
+  const getFileIcon = (url) => {
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes(".pdf"))
+      return <FilePdfOutlined style={{ fontSize: 24, color: "#ff4d4f" }} />;
+    if (lowerUrl.includes(".doc") || lowerUrl.includes(".docx"))
+      return <FileWordOutlined style={{ fontSize: 24, color: "#1890ff" }} />;
+    if (lowerUrl.includes(".xls") || lowerUrl.includes(".xlsx"))
+      return <FileExcelOutlined style={{ fontSize: 24, color: "#52c41a" }} />;
+    if (lowerUrl.includes(".txt"))
+      return <FileTextOutlined style={{ fontSize: 24, color: "#8c8c8c" }} />;
+    return <FileOutlined style={{ fontSize: 24, color: "#722ed1" }} />;
+  };
 
- const bubbleStyle = {
-  padding: "8px 12px",          // smaller & cleaner
-  borderRadius: 16,
-  background: isOwnMessage ? "#1890ff" : "#f5f5f5",
-  color: isOwnMessage ? "#fff" : "#000",
-  position: "relative",
+  // Helper to get filename from URL
+  const getFileName = (url) => {
+    const parts = url.split("/");
+    return parts[parts.length - 1];
+  };
 
-  display: "inline-flex",      // ✅ KEY
-  width: "fit-content",        // ✅ auto size
-  maxWidth: "100%",            // controlled by parent
-  wordBreak: "break-word",
-};
+  const messageContainerStyle = {
+    display: "flex",
+    justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+    alignItems: "flex-end",
+    gap: 12,
+    marginLeft: isOwnMessage ? "auto" : 0,
+    marginRight: isOwnMessage ? 0 : "auto",
+    marginBottom: 16,
+  };
 
+  const bubbleStyle = {
+    padding: "8px 12px",
+    borderRadius: 16,
+    background: isOwnMessage ? "#1890ff" : "#f5f5f5",
+    color: isOwnMessage ? "#fff" : "#000",
+    position: "relative",
+    display: "inline-flex",
+    width: "fit-content",
+    maxWidth: "100%",
+    wordBreak: "break-word",
+  };
 
   if (isOwnMessage) {
     bubbleStyle.borderBottomRightRadius = 4;
   } else {
     bubbleStyle.borderBottomLeftRadius = 4;
   }
+
+  // Separate images and files
+  const images =
+    message?.attachments?.filter((file) => isImageFile(file.url)) || [];
+  const files =
+    message?.attachments?.filter((file) => !isImageFile(file.url)) || [];
 
   return (
     <>
@@ -259,13 +124,12 @@ const MessageItem = ({
             <Avatar src={message.sender?.avatar?.url} size={32} />
           )}
 
-         <div
-  style={{
-    display: "inline-flex",
-    maxWidth: "70%",
-  }}
->
-
+          <div
+            style={{
+              display: "inline-flex",
+              maxWidth: "70%",
+            }}
+          >
             <div style={bubbleStyle}>
               {isGroupChatMessage && !isOwnMessage && (
                 <Tag
@@ -276,8 +140,13 @@ const MessageItem = ({
                 </Tag>
               )}
 
-              {message?.attachments?.length > 0 && (
-                <div style={{ marginBottom: message.content ? 8 : 0 }}>
+              {/* RENDER IMAGES */}
+              {images.length > 0 && (
+                <div
+                  style={{
+                    marginBottom: message.content || files.length > 0 ? 8 : 0,
+                  }}
+                >
                   {isOwnMessage && (
                     <Dropdown
                       menu={{ items: menuItems }}
@@ -291,6 +160,16 @@ const MessageItem = ({
                           right: 8,
                           cursor: "pointer",
                           fontSize: 16,
+                          color: isOwnMessage ? "#fff" : "#000",
+                          background: isOwnMessage
+                            ? "rgba(0,0,0,0.2)"
+                            : "rgba(0,0,0,0.05)",
+                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -302,14 +181,14 @@ const MessageItem = ({
                       display: "grid",
                       gap: 8,
                       gridTemplateColumns:
-                        message.attachments.length === 1
+                        images.length === 1
                           ? "1fr"
-                          : message.attachments.length === 2
-                          ? "1fr 1fr"
-                          : "1fr 1fr 1fr",
+                          : images.length === 2
+                            ? "1fr 1fr"
+                            : "1fr 1fr 1fr",
                     }}
                   >
-                    {message.attachments.map((file) => (
+                    {images.map((file) => (
                       <div
                         key={file._id}
                         style={{
@@ -318,6 +197,7 @@ const MessageItem = ({
                           borderRadius: 8,
                           overflow: "hidden",
                           cursor: "pointer",
+                          minWidth: images.length === 1 ? 200 : 100,
                         }}
                       >
                         <Image
@@ -330,14 +210,23 @@ const MessageItem = ({
                           }}
                           preview={{
                             mask: (
-                              <div style={{ display: "flex", gap: 8 }}>
-                                <span>Preview</span>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 12,
+                                  alignItems: "center",
+                                }}
+                              >
+                                <EyeOutlined style={{ fontSize: 18 }} />
                                 <a
                                   href={file.url}
                                   download
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
+                                  style={{ color: "white" }}
                                 >
-                                  <DownloadOutlined />
+                                  <DownloadOutlined style={{ fontSize: 18 }} />
                                 </a>
                               </div>
                             ),
@@ -349,6 +238,100 @@ const MessageItem = ({
                 </div>
               )}
 
+              {/* RENDER NON-IMAGE FILES */}
+              {files.length > 0 && (
+                <div style={{ marginBottom: message.content ? 8 : 0 }}>
+                  {files.map((file) => (
+                    <div
+                      key={file._id}
+                      style={{
+                        padding: "10px 12px",
+                        background: isOwnMessage
+                          ? "rgba(255,255,255,0.15)"
+                          : "#fff",
+                        borderRadius: 8,
+                        marginBottom: 6,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        border: isOwnMessage
+                          ? "1px solid rgba(255,255,255,0.2)"
+                          : "1px solid #E5E7EB",
+                        maxWidth: 280,
+                      }}
+                    >
+                      {getFileIcon(file.url)}
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: isOwnMessage ? "#fff" : "#000",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {getFileName(file.url)}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: isOwnMessage
+                              ? "rgba(255,255,255,0.7)"
+                              : "#8c8c8c",
+                            marginTop: 2,
+                          }}
+                        >
+                          {file.url.toLowerCase().includes(".pdf") &&
+                            "PDF Document"}
+                          {file.url.toLowerCase().includes(".doc") &&
+                            "Word Document"}
+                          {file.url.toLowerCase().includes(".xls") &&
+                            "Excel Spreadsheet"}
+                          {!file.url.toLowerCase().includes(".pdf") &&
+                            !file.url.toLowerCase().includes(".doc") &&
+                            !file.url.toLowerCase().includes(".xls") &&
+                            "File"}
+                        </div>
+                      </div>
+
+                      <a
+                        href={file.url}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={
+                            <DownloadOutlined
+                              style={{
+                                fontSize: 16,
+                                color: isOwnMessage ? "#fff" : "#1890ff",
+                              }}
+                            />
+                          }
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                          }}
+                        />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* RENDER TEXT CONTENT */}
               {message.content && (
                 <div style={{ position: "relative" }}>
                   {isOwnMessage && !message.attachments?.length && (
@@ -373,6 +356,7 @@ const MessageItem = ({
                 </div>
               )}
 
+              {/* TIMESTAMP */}
               <div
                 style={{
                   marginTop: 4,

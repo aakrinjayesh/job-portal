@@ -104,10 +104,11 @@ model Users {
   dashboards       Dashboard[]
 
   recruiterActivities Activity[]          @relation("RecruiterActivities")
-  recruiterTodos      RecruiterTodo[]
   candidateRatings    CandidateRating[]
   organizationMember  OrganizationMember?
   userSession         UserSession[]
+  taskTemplate        TaskTemplate[]
+  candidateTaskList   CandidateTaskList[]
 }
 
 model UserSession {
@@ -186,12 +187,13 @@ model UserProfile {
   verificationOtp String?
   otpExpiry       DateTime?
 
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
   jobApplications     JobApplication[]
   organizationId      String?
-  organization        Organization?    @relation(fields: [organizationId], references: [id])
-  candidateActivities Activity[]       @relation("CandidateActivities")
+  organization        Organization?       @relation(fields: [organizationId], references: [id])
+  candidateActivities Activity[]          @relation("CandidateActivities")
+  candidateTaskList   CandidateTaskList[]
 }
 
 model Skills {
@@ -282,11 +284,12 @@ model Job {
   applications JobApplication[]
   savedBy      SavedJob[]
 
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  activity       Activity[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  organizationId    String?
+  organization      Organization?       @relation(fields: [organizationId], references: [id])
+  activity          Activity[]
+  candidateTaskList CandidateTaskList[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 enum ApplicationStatus {
@@ -625,19 +628,54 @@ model SavedCandidate {
   @@index([candidateProfileId])
 }
 
-model RecruiterTodo {
-  id          String @id @default(uuid())
+model TaskTemplate {
+  id          String   @id @default(uuid())
   recruiterId String
-
-  title     String
-  completed Boolean  @default(false)
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  title       String
+  order       Int
+  isDefault   Boolean  @default(false) // system provided
+  isActive    Boolean  @default(true) // recruiter can disable without deleting
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   recruiter Users @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
 
   @@index([recruiterId])
+}
+
+model CandidateTaskList {
+  id          String   @id @default(uuid())
+  recruiterId String
+  candidateId String
+  jobId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  recruiter Users       @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  candidate UserProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job       Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  tasks CandidateTask[]
+
+  @@unique([recruiterId, candidateId, jobId]) // 🚨 prevents duplicate checklists
+  @@index([candidateId])
+}
+
+model CandidateTask {
+  id            String    @id @default(uuid())
+  taskListId    String
+  title         String
+  completed     Boolean   @default(false)
+  order         Int
+  isActive      Boolean   @default(true) // hide task without deleting history
+  dueDate       DateTime?
+  createdFromId String? // reference to TaskTemplate.id
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  taskList CandidateTaskList @relation(fields: [taskListId], references: [id], onDelete: Cascade)
+
+  @@index([taskListId])
 }
 
 model CandidateRating {

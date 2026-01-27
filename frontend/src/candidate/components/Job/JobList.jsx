@@ -343,11 +343,7 @@ const JobList = ({
           <Col xs={24} key={job.id} ref={isLastJob ? lastJobRef : null}>
             <Card
               hoverable
-              onClick={() =>
-                navigate("/company/job/details", {
-                  state: { job },
-                })
-              }
+              onClick={() => handleCardClick(job)}
               style={{
                 borderRadius: 12,
                 background: "#fff",
@@ -368,12 +364,6 @@ const JobList = ({
               >
                 {/* Left */}
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  {/* <Checkbox
-        checked={selectedJobs.includes(job.id)}
-        onClick={(e) => e.stopPropagation()}
-        onChange={() => handleSelect(job.id)}
-      /> */}
-
                   <div>
                     {job.companyLogo ? (
                       <img

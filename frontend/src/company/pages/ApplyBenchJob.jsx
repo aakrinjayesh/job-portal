@@ -52,7 +52,6 @@ const renderGreenTags = (items = [], max = 3) => {
   );
 };
 
-
 const renderPinkTags = (items = [], max = 3) => {
   if (!items.length) return "-";
 
@@ -98,9 +97,6 @@ const renderPinkTags = (items = [], max = 3) => {
     </div>
   );
 };
-
-
-
 
 const renderTagsWithMore = (items = [], max = 3) => {
   if (!items.length) return "-";
@@ -180,7 +176,7 @@ const ApplyBenchJob = ({ jobId }) => {
       },
     },
 
-     // ✅ SKILLS COLUMN
+    // ✅ SKILLS COLUMN
     {
       title: "Skills",
       key: "skills",
@@ -217,46 +213,63 @@ const ApplyBenchJob = ({ jobId }) => {
 
   return (
     <Spin spinning={loading}>
-     <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  }}
->
-  <h3 style={{ margin: 0 }}>Candidate List</h3>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <h3 style={{ margin: 0 }}>Candidate List</h3>
+        <div>
+          <Button
+            // onClick={handleApply}
+            disabled={true}
+            style={{
+              background: "#E6F0FF",
+              color: "#1D4ED8",
+              border: "1px solid #C7D2FE",
+              borderRadius: 20,
+              padding: "4px 16px",
+              height: 32,
+              fontSize: 13,
+              fontWeight: 500,
+              marginRight: 5,
+            }}
+          >
+            AI Eligibility Check
+          </Button>
 
-  <Button
-  onClick={handleApply}
-  disabled={!selectedRowKeys.length}
-  style={{
-    background: "#E6F0FF",
-    color: "#1D4ED8",
-    border: "1px solid #C7D2FE",
-    borderRadius: 20,
-    padding: "4px 16px",
-    height: 32,
-    fontSize: 13,
-    fontWeight: 500,
-    marginTop: 20,
-  }}
->
-  Apply With Selected Bench
-</Button>
+          <Button
+            onClick={handleApply}
+            disabled={!selectedRowKeys.length}
+            style={{
+              background: "#E6F0FF",
+              color: "#1D4ED8",
+              border: "1px solid #C7D2FE",
+              borderRadius: 20,
+              padding: "4px 16px",
+              height: 32,
+              fontSize: 13,
+              fontWeight: 500,
+              marginTop: 20,
+            }}
+          >
+            Apply With Selected Bench
+          </Button>
+        </div>
+      </div>
 
-</div>
-
-     <TableDesign
-  loading={loading}
-  columns={columns}
-  dataSource={candidates}
-  rowKey="id"
-  rowSelection={rowSelection}
-  scroll={{ y: 400 }}
-  emptyText="No bench candidates available"
-/>
-
+      <TableDesign
+        loading={loading}
+        columns={columns}
+        dataSource={candidates}
+        rowKey="id"
+        rowSelection={rowSelection}
+        scroll={{ y: 400 }}
+        emptyText="No bench candidates available"
+      />
     </Spin>
   );
 };

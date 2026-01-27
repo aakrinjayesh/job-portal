@@ -1,106 +1,152 @@
 import prisma from "../config/prisma.js";
 
-export const getTodos = async (req, res) => {
-  if (req.user.role !== "company") {
-    return res.status(403).json({ message: "Access denied" });
+export const getAllTodo = async (req, res) => {
+  try {
+    const recruiterId = req.user.id;
+
+    const tasks = await prisma.taskTemplate.findMany({
+      where: { recruiterId },
+      orderBy: { order: "asc" },
+    });
+
+    res.json({ status: "success", data: tasks });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
   }
-
-  const todos = await prisma.recruiterTodo.findMany({
-    where: { recruiterId: req.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 6
-  });
-
-  res.json({ status: "success", data: todos });
 };
-
-// export const getTodos = async (req, res) => {
-//   if (req.user.role !== "company") {
-//     return res.status(403).json({ message: "Access denied" });
-//   }
-
-//   const todos = await prisma.recruiterTodo.findMany({
-//     where: {
-//       recruiterId: req.user.id,
-//       candidateId: { not: null }   // ✅ IMPORTANT
-//     },
-//     orderBy: { createdAt: "desc" },
-//     take: 6,
-//     include: {
-//       candidate: {
-//         select: {
-//           id: true,
-//           name: true,
-//           email: true
-//         }
-//       }
-//     }
-//   });
-
-//   res.json({ status: "success", data: todos });
-// };
-
 
 export const createTodo = async (req, res) => {
-  if (req.user.role !== "company") {
-    return res.status(403).json({ message: "Access denied" });
+  try {
+    const recruiterId = req.user.id;
+    const { title } = req.body;
+
+    const last = await prisma.taskTemplate.findFirst({
+      where: { recruiterId },
+      orderBy: { order: "desc" },
+    });
+
+    const task = await prisma.taskTemplate.create({
+      data: {
+        recruiterId,
+        title,
+        order: (last?.order || 0) + 1,
+        isDefault: false,
+      },
+    });
+
+    res.json({ status: "success", data: task });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
   }
-
-  const todo = await prisma.recruiterTodo.create({
-    data: {
-      recruiterId: req.user.id,
-      title: req.body.title
-    }
-  });
-
-  res.status(201).json({ status: "success", data: todo });
 };
 
-// export const createTodo = async (req, res) => {
-//   if (req.user.role !== "company") {
-//     return res.status(403).json({ message: "Access denied" });
-//   }
+export const editTodo = async (req, res) => {
+  try {
+    const { id, title } = req.body;
 
-//   const { title, candidateId } = req.body;
+    const task = await prisma.taskTemplate.update({
+      where: { id },
+      data: { title },
+    });
 
-//   if (!candidateId) {
-//     return res.status(400).json({
-//       message: "candidateId is required"
-//     });
-//   }
-
-//   const todo = await prisma.recruiterTodo.create({
-//     data: {
-//       recruiterId: req.user.id,
-//       candidateId,          // ✅ ADD THIS
-//       title
-//     }
-//   });
-
-//   res.status(201).json({ status: "success", data: todo });
-// };
-
-
-export const updateTodo = async (req, res) => {
-  const { id } = req.params;
-
-  const todo = await prisma.recruiterTodo.findUnique({ where: { id } });
-  if (!todo) return res.status(404).json({ message: "Not found" });
-
-  const updated = await prisma.recruiterTodo.update({
-    where: { id },
-    data: {
-      title: req.body.title,
-      completed: req.body.completed
-    }
-  });
-
-  res.json({ status: "success", data: updated });
+    res.json({ status: "success", data: task });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
 };
 
 export const deleteTodo = async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.body;
 
-  await prisma.recruiterTodo.delete({ where: { id } });
-  res.json({ status: "success" });
+    await prisma.taskTemplate.delete({ where: { id } });
+
+    res.json({ status: "success", message: "Task deleted" });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};
+
+function isBoolean(value) {
+  return typeof value === "boolean";
+}
+
+export const toggleActiveTodo = async (req, res) => {
+  try {
+    const { id, isActive } = req.body;
+
+    const check = isBoolean(isActive);
+
+    if (!check) {
+      res
+        .status(200)
+        .json({ status: "error", message: "isActive should be Boolean Only" });
+    }
+
+    const task = await prisma.taskTemplate.update({
+      where: { id },
+      data: { isActive },
+    });
+
+    res.json({ status: "success", data: task });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};
+
+export const getCandidateTasks = async (req, res) => {
+  try {
+    const recruiterId = req.user.id;
+    const { candidateId, jobId } = req.query;
+
+    let list = await prisma.candidateTaskList.findUnique({
+      where: {
+        recruiterId_candidateId_jobId: { recruiterId, candidateId, jobId },
+      },
+      include: { tasks: { orderBy: { order: "asc" } } },
+    });
+
+    // If not exist → create from templates
+    if (!list) {
+      const templates = await prisma.taskTemplate.findMany({
+        where: { recruiterId, isActive: true },
+        orderBy: { order: "asc" },
+      });
+
+      list = await prisma.candidateTaskList.create({
+        data: {
+          recruiterId,
+          candidateId,
+          jobId,
+          tasks: {
+            create: templates.map((t) => ({
+              title: t.title,
+              order: t.order,
+              createdFromId: t.id,
+            })),
+          },
+        },
+        include: { tasks: true },
+      });
+    }
+
+    res.json({ status: "success", data: list.tasks });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};
+
+export const checkUpdate = async (req, res) => {
+  try {
+    const { taskId, completed } = req.body;
+
+    const task = await prisma.candidateTask.update({
+      where: { id: taskId },
+      data: { completed },
+    });
+
+    res.json({ status: "success", data: task });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
 };

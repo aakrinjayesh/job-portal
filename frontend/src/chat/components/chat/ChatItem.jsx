@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { Avatar, Badge, Typography, Dropdown, Popconfirm } from "antd";
-import { MoreOutlined, DeleteOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import {
+  MoreOutlined,
+  DeleteOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 import moment from "moment";
 import { useAuth } from "../../context/AuthContext";
 import { getChatObjectMetadata, requestHandler } from "../../utils";
@@ -9,7 +13,13 @@ import GroupChatDetailsModal from "./GroupChatDetailsModal";
 
 const { Text } = Typography;
 
-const ChatItem = ({ chat, onClick, isActive, unreadCount = 0, onChatDelete }) => {
+const ChatItem = ({
+  chat,
+  onClick,
+  isActive,
+  unreadCount = 0,
+  onChatDelete,
+}) => {
   const { user } = useAuth();
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
 
@@ -19,7 +29,7 @@ const ChatItem = ({ chat, onClick, isActive, unreadCount = 0, onChatDelete }) =>
     await requestHandler(
       async () => await deleteOneOnOneChat(chat._id),
       null,
-      () => onChatDelete(chat._id)
+      () => onChatDelete(chat._id),
     );
   };
 
@@ -134,7 +144,7 @@ const ChatItem = ({ chat, onClick, isActive, unreadCount = 0, onChatDelete }) =>
               justifyContent: "space-between",
               height: 48,
               marginLeft: 12,
-              color:"white"
+              color: "white",
             }}
           >
             <Text
