@@ -74,6 +74,7 @@ const RecruiterJobList = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -90,13 +91,13 @@ const RecruiterJobList = () => {
   const [aiForm] = Form.useForm();
   const [aiLoading, setAiLoading] = useState(false);
   const location = useLocation();
+  const [deleteForm] = Form.useForm();
 
   const [page, setPage] = useState(1);
-const [hasMore, setHasMore] = useState(true);
-const [initialLoading, setInitialLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
 
-const LIMIT = 10;
-
+  const LIMIT = 10;
 
   const controllerRef = useRef(null);
 
@@ -105,50 +106,53 @@ const LIMIT = 10;
   const [currentStep, setCurrentStep] = useState(0);
 
   // useEffect(() => {
-  //   fetchJobs();
+  //   setPage(1);
+  //   setHasMore(true);
+  //   fetchJobs(1);
 
   //   return () => {
-  //     if (controllerRef.current) {
-  //       console.log("🔥 Aborting Jobs API due to route/tab change");
-  //       controllerRef.current.abort();
+  //     // abort ONLY when navigating away, not during initial render
+  //     if (page > 1) {
+  //       controllerRef.current?.abort();
   //     }
   //   };
-  // }, [location.pathname]); // 👈 THIS LINE FIXES YOUR ISSUE
+  // }, [location.pathname]);
 
   useEffect(() => {
-  setPage(1);
-  setHasMore(true);
-  fetchJobs(1);
+    setInitialLoading(true);
+    setPage(1);
+    setJobs([]);
+    setHasMore(true);
+    fetchJobs(1);
 
-  return () => {
-    controllerRef.current?.abort();
-  };
-}, [location.pathname]);
+    return () => {
+      controllerRef.current?.abort();
+    };
+  }, [location.pathname]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        // window.innerHeight + window.scrollY >=
+        //   document.body.offsetHeight - 200 &&
+        window.innerHeight + window.scrollY >=
+          document.documentElement.scrollHeight - 200 &&
+        hasMore &&
+        !loading
+      ) {
+        setPage((prev) => prev + 1);
+      }
+    };
 
-useEffect(() => {
-  const handleScroll = () => {
-    if (
-      window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 200 &&
-      hasMore &&
-      !loading
-    ) {
-      setPage((prev) => prev + 1);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasMore, loading]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchJobs(page);
     }
-  };
-
-  window.addEventListener("scroll", handleScroll);
-  return () => window.removeEventListener("scroll", handleScroll);
-}, [hasMore, loading]);
-
-
-useEffect(() => {
-  if (page > 1) {
-    fetchJobs(page);
-  }
-}, [page]);
-
+  }, [page]);
 
   const showCreateModal = () => {
     setIsEditing(false);
@@ -219,104 +223,90 @@ useEffect(() => {
     setCurrentStep(0);
   };
 
-  // ✅ Fetch job list
-
-  // const fetchJobs = async () => {
-  //   // 🔴 Abort previous request if still running
+  // const fetchJobs = async (pageNumber = 1) => {
   //   if (controllerRef.current) {
   //     controllerRef.current.abort();
   //   }
 
-  //   // ✅ Create new AbortController
   //   const controller = new AbortController();
   //   controllerRef.current = controller;
 
   //   try {
-  //     // setLoading(true);
-  //     const response = await PostedJobsList(1, 10, controller.signal);
-  //     const jobList = response?.jobs || [];
-  //     setJobs(jobList);
-  //     setLoading(false);
-  //     // console.log("Jobs with applicant counts:", jobsWithCounts);
-  //   } catch (error) {
-  //     if (error.code === "ERR_CANCELED") {
-  //       // console.log("✅ fetchJobs aborted");
-  //       return;
+  //     if (pageNumber === 1) {
+  //       setInitialLoading(true); // 🔥 initial loader
   //     }
+  //     setLoading(true);
 
-  //     console.error("Error fetching jobs:", error);
-  //     setLoading(false);
-  //     messageApi.error("Failed to fetch jobs");
+  //     const response = await PostedJobsList(
+  //       pageNumber,
+  //       LIMIT,
+  //       controller.signal
+  //     );
+
+  //     const newJobs = response?.jobs || [];
+
+  //     setJobs((prev) => (pageNumber === 1 ? newJobs : [...prev, ...newJobs]));
+
+  //     if (newJobs.length < LIMIT) {
+  //       setHasMore(false);
+  //     }
+  //   } catch (error) {
+  //     if (error.code !== "ERR_CANCELED") {
+  //       messageApi.error("Failed to fetch jobs");
+  //     }
   //   } finally {
-  //     // setLoading(false);
+  //     setLoading(false);
+  //     setInitialLoading(false); // 🔥 stop initial loader
   //   }
   // };
 
   const fetchJobs = async (pageNumber = 1) => {
-  if (controllerRef.current) {
-    controllerRef.current.abort();
-  }
+    // ✅ Abort ONLY when reloading first page
+    if (pageNumber === 1 && controllerRef.current) {
+      controllerRef.current.abort();
+    }
 
-  const controller = new AbortController();
-  controllerRef.current = controller;
+    const controller = new AbortController();
+    controllerRef.current = controller;
 
-  // try {
-  //   setLoading(true);
+    try {
+      if (pageNumber === 1) {
+        setInitialLoading(true);
+        setHasMore(true);
+      }
 
-  //   const response = await PostedJobsList(
-  //     pageNumber,
-  //     LIMIT,
-  //     controller.signal
-  //   );
+      setLoading(true);
 
-  //   const newJobs = response?.jobs || [];
+      const response = await PostedJobsList(
+        pageNumber,
+        LIMIT,
+        controller.signal
+      );
 
-  //   setJobs((prev) =>
-  //     pageNumber === 1 ? newJobs : [...prev, ...newJobs]
-  //   );
+      const newJobs = response?.jobs || [];
 
-  //   if (newJobs.length < LIMIT) {
-  //     setHasMore(false); // 🔥 no more jobs
-  //   }
-  // } catch (error) {
-  //   if (error.code !== "ERR_CANCELED") {
-  //     messageApi.error("Failed to fetch jobs");
-  //   }
-  // } finally {
-  //   setLoading(false);
-  // }
-  try {
-  if (pageNumber === 1) {
-    setInitialLoading(true); // 🔥 initial loader
-  }
-  setLoading(true);
+      setJobs((prev) => (pageNumber === 1 ? newJobs : [...prev, ...newJobs]));
 
-  const response = await PostedJobsList(
-    pageNumber,
-    LIMIT,
-    controller.signal
-  );
+      if (newJobs.length < LIMIT) {
+        setHasMore(false);
+      }
+    } catch (error) {
+      // if (error.name === "AbortError") return;
+      // messageApi.error("Failed to fetch jobs");
+      // ✅ Ignore aborted requests (tab switch, refresh, re-fetch)
+      if (error.name === "AbortError" || error.code === "ERR_CANCELED") {
+        return;
+      }
 
-  const newJobs = response?.jobs || [];
-
-  setJobs((prev) =>
-    pageNumber === 1 ? newJobs : [...prev, ...newJobs]
-  );
-
-  if (newJobs.length < LIMIT) {
-    setHasMore(false);
-  }
-} catch (error) {
-  if (error.code !== "ERR_CANCELED") {
-    messageApi.error("Failed to fetch jobs");
-  }
-} finally {
-  setLoading(false);
-  setInitialLoading(false); // 🔥 stop initial loader
-}
-
-};
-
+      // ❗ Show error ONLY for real failures
+      messageApi.error("Failed to fetch jobs");
+    } finally {
+      setLoading(false);
+      if (pageNumber === 1) {
+        setInitialLoading(false);
+      }
+    }
+  };
 
   // ✅ Handle selecting/deselecting a job
   const handleSelect = (jobId) => {
@@ -564,7 +554,9 @@ useEffect(() => {
 
   const handleConfirmDelete = async () => {
     try {
-      const values = await form.validateFields();
+      // const values = await form.validateFields();
+      const values = await deleteForm.validateFields();
+
       const { reason, customReason } = values;
       const finalReason = reason === "Other" ? customReason : reason;
 
@@ -583,7 +575,9 @@ useEffect(() => {
 
       setJobs((prev) => prev.filter((job) => !selectedJobs.includes(job.id)));
       setSelectedJobs([]);
-      form.resetFields();
+      // form.resetFields();
+      deleteForm.resetFields();
+
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error deleting jobs:", error);
@@ -654,7 +648,7 @@ useEffect(() => {
           }}
         >
           {/* Delete Selected (Outlined / Disabled style) */}
-          <div
+          {/* <div
             style={{
               height: 40,
               borderRadius: 100,
@@ -669,6 +663,33 @@ useEffect(() => {
               if (selectedJobs.length > 0) showDeleteModal();
             }}
           >
+            Delete Selected
+          </div> */}
+          <div
+            style={{
+              height: 40,
+              borderRadius: 100,
+              padding: "0 24px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+
+              /* 🔥 Dynamic styles */
+              background: selectedJobs.length > 0 ? "#FEE2E2" : "#FFFFFF",
+              border:
+                selectedJobs.length > 0
+                  ? "1px solid #DC2626"
+                  : "1px solid #EBEBEB",
+              color: selectedJobs.length > 0 ? "#DC2626" : "#A3A3A3",
+
+              cursor: selectedJobs.length > 0 ? "pointer" : "not-allowed",
+              fontWeight: 590,
+            }}
+            onClick={() => {
+              if (selectedJobs.length > 0) showDeleteModal();
+            }}
+          >
+            <DeleteOutlined />
             Delete Selected
           </div>
 
@@ -694,7 +715,7 @@ useEffect(() => {
 
       {contextHolder}
 
-       <Modal
+      <Modal
         title="Delete Selected Job(s)"
         open={isModalOpen}
         onOk={handleConfirmDelete}
@@ -706,7 +727,8 @@ useEffect(() => {
         okText="Submit"
         cancelText="Cancel"
       >
-        <Form form={form} layout="vertical">
+        {/* <Form form={form} layout="vertical"> */}
+        <Form form={deleteForm} layout="vertical">
           <Form.Item
             label="Select Reason"
             name="reason"
@@ -740,7 +762,7 @@ useEffect(() => {
                   rules={[
                     { required: true, message: "Please enter your reason" },
                     {
-                      pattern: /^[A-Za-z]+$/,
+                      pattern: /^[A-Za-z\s]+$/,
                       message: "Only letters, numbers, and spaces are allowed",
                     },
                   ]}
@@ -757,299 +779,293 @@ useEffect(() => {
       </Modal>
 
       <Row gutter={[16, 16]}>
-     {initialLoading ? (
-    <Col span={24}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "300px",
-        }}
-      >
-        <Spin size="large" />
-      </div>
-    </Col>
-  ) : (
-    <>
-
-        {jobs?.map((job) => (
-          <Col span={24} key={job.id}>
-            <Card
-              hoverable
-              onClick={() =>
-                navigate("/company/job/details", {
-                  state: { job },
-                })
-              }
+        {initialLoading ? (
+          <Col span={24}>
+            <div
               style={{
-                borderRadius: 12,
-                background: "#fff",
-                padding: 0,
-                cursor: "pointer",
-                border: "1px solid #EEEEEE",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: "300px",
               }}
             >
-              {/* ===== Header ===== */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 16,
-                  flexWrap: "wrap",
-                }}
-              >
-                {/* Left */}
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <Checkbox
-                    checked={selectedJobs.includes(job.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => handleSelect(job.id)}
-                  />
-
-                  <div>
-                    {job.companyLogo ? (
-                      <img
-                        src={job.companyLogo}
-                        alt="logo"
-                        style={{
-                          width: 60,
-                          height: 60,
-                          borderRadius: 6,
-                          border: "1px solid #F5F5F5",
-                        }}
+              <Spin size="large" />
+            </div>
+          </Col>
+        ) : (
+          <>
+            {jobs?.map((job) => (
+              <Col span={24} key={job.id}>
+                <Card
+                  hoverable
+                  onClick={() =>
+                    navigate("/company/job/details", {
+                      state: { job },
+                    })
+                  }
+                  style={{
+                    borderRadius: 12,
+                    background: "#fff",
+                    padding: 0,
+                    cursor: "pointer",
+                    border: "1px solid #EEEEEE",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 16,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{ display: "flex", gap: 12, alignItems: "center" }}
+                    >
+                      <Checkbox
+                        checked={selectedJobs.includes(job.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => handleSelect(job.id)}
                       />
-                    ) : (
-                      <div
+
+                      <div>
+                        {job.companyLogo ? (
+                          <img
+                            src={job.companyLogo}
+                            alt="logo"
+                            style={{
+                              width: 60,
+                              height: 60,
+                              borderRadius: 6,
+                              border: "1px solid #F5F5F5",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 56,
+                              height: 56,
+                              borderRadius: 12,
+                              background:
+                                "linear-gradient(135deg, #1677FF, #69B1FF)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 22,
+                              fontWeight: 700,
+                              color: "#FFFFFF",
+                              boxShadow: "0 4px 10px rgba(22, 119, 255, 0.25)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {(job.companyName || job.role || job.title || "")
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div
+                          style={{
+                            fontSize: 16,
+                            fontWeight: 590,
+                            color: "#212121",
+                          }}
+                        >
+                          {job.role || job.title}
+                        </div>
+                        <div style={{ fontSize: 14, color: "#666666" }}>
+                          {job.companyName}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#A3A3A3" }}>
+                          Posted{" "}
+                          {job?.updatedAt
+                            ? dayjs(job.updatedAt).fromNow()
+                            : "Recently"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <Button
                         style={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: 12,
-                          background:
-                            "linear-gradient(135deg, #1677FF, #69B1FF)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 22,
-                          fontWeight: 700,
-                          color: "#FFFFFF",
-                          boxShadow: "0 4px 10px rgba(22, 119, 255, 0.25)",
-                          flexShrink: 0,
+                          background: "#F0F2F4",
+                          borderRadius: 100,
+                          color: "#666",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showEditModal(job);
                         }}
                       >
-                        {(job.companyName || job.role || job.title || "")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
-                    )}
+                        Edit
+                      </Button>
+
+                      <Button
+                        style={{
+                          background: "#D1E4FF",
+                          borderRadius: 100,
+                          fontWeight: 590,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/company/candidates", {
+                            state: { id: job.id, jobRole: job.role },
+                          });
+                        }}
+                      >
+                        View Candidates ({job.applicantCount || 0})
+                      </Button>
+                    </div>
                   </div>
 
-                  <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 16,
+                      marginTop: 20,
+                      flexWrap: "wrap",
+                      color: "#666",
+                      fontSize: 14,
+                    }}
+                  >
+                    <span>
+                      <EnvironmentOutlined /> {job.jobType} ({job.location})
+                    </span>
+                    <Divider type="vertical" />
+                    <span>
+                      <DollarOutlined /> {job.salary} PA
+                    </span>
+                    <Divider type="vertical" />
+                    <span>
+                      <ClockCircleOutlined /> {job.employmentType}
+                    </span>
+                    <Divider type="vertical" />
+                    <span>
+                      <UserOutlined /> {job.experience?.number}{" "}
+                      {job.experience?.type}
+                    </span>
+                  </div>
+
+                  {(job.clouds?.length > 0 || job.skills?.length > 0) && (
                     <div
                       style={{
-                        fontSize: 16,
-                        fontWeight: 590,
-                        color: "#212121",
+                        display: "flex",
+                        gap: 16,
+                        marginTop: 20,
+                        width: "100%",
+                        flexWrap: "wrap", // responsive
                       }}
                     >
-                      {job.role || job.title}
+                      {job.clouds?.length > 0 && (
+                        <div
+                          style={{
+                            flex: 1,
+                            padding: 16,
+                            border: "1px solid #EEEEEE",
+                            borderRadius: 8,
+                            minWidth: 260,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 510,
+                              marginBottom: 8,
+                              color: "#444444",
+                            }}
+                          >
+                            Related Clouds
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {job.clouds.map((cloud, i) => (
+                              <Tag
+                                key={i}
+                                style={{
+                                  background: "#E7F0FE",
+                                  borderRadius: 100,
+                                  border: "1px solid #1677FF",
+                                }}
+                              >
+                                {cloud}
+                              </Tag>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {job.skills?.length > 0 && (
+                        <div
+                          style={{
+                            flex: 1,
+                            padding: 16,
+                            border: "1px solid #EEEEEE",
+                            borderRadius: 8,
+                            minWidth: 260,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 510,
+                              marginBottom: 8,
+                              color: "#444444",
+                            }}
+                          >
+                            Related Skills
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {job.skills.map((skill, i) => (
+                              <Tag
+                                key={i}
+                                style={{
+                                  background: "#FBEBFF",
+                                  borderRadius: 100,
+                                  border: "1px solid #800080",
+                                }}
+                              >
+                                {skill}
+                              </Tag>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontSize: 14, color: "#666666" }}>
-                      {job.companyName}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#A3A3A3" }}>
-                      Posted{" "}
-                      {job?.updatedAt
-                        ? dayjs(job.updatedAt).fromNow()
-                        : "Recently"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right */}
-                <div style={{ display: "flex", gap: 12 }}>
-                  <Button
-                    style={{
-                      background: "#F0F2F4",
-                      borderRadius: 100,
-                      color: "#666",
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      showEditModal(job);
-                    }}
-                  >
-                    Edit
-                  </Button>
-
-                  <Button
-                    style={{
-                      background: "#D1E4FF",
-                      borderRadius: 100,
-                      fontWeight: 590,
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate("/company/candidates", {
-                        state: { id: job.id, jobRole: job.role },
-                      });
-                    }}
-                  >
-                    View Candidates ({job.applicantCount || 0})
-                  </Button>
-                </div>
-              </div>
-
-              {/* ===== Job Meta ===== */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: 16,
-                  marginTop: 20,
-                  flexWrap: "wrap",
-                  color: "#666",
-                  fontSize: 14,
-                }}
-              >
-                <span>
-                  <EnvironmentOutlined /> {job.jobType} ({job.location})
-                </span>
-                <Divider type="vertical" />
-                <span>
-                  <DollarOutlined /> {job.salary} PA
-                </span>
-                <Divider type="vertical" />
-                <span>
-                  <ClockCircleOutlined /> {job.employmentType}
-                </span>
-                <Divider type="vertical" />
-                <span>
-                  <UserOutlined /> {job.experience?.number}{" "}
-                  {job.experience?.type}
-                </span>
-              </div>
-
-              {/* ===== Clouds + Skills (ONE LINE) ===== */}
-              {(job.clouds?.length > 0 || job.skills?.length > 0) && (
+                  )}
+                </Card>
+              </Col>
+            ))}
+            {loading && jobs.length > 0 && hasMore && (
+              <Col span={24}>
                 <div
                   style={{
                     display: "flex",
-                    gap: 16,
-                    marginTop: 20,
-                    width: "100%",
-                    flexWrap: "wrap", // responsive
+                    justifyContent: "center",
+                    padding: "24px 0",
                   }}
                 >
-                  {/* ===== Related Clouds ===== */}
-                  {job.clouds?.length > 0 && (
-                    <div
-                      style={{
-                        flex: 1,
-                        padding: 16,
-                        border: "1px solid #EEEEEE",
-                        borderRadius: 8,
-                        minWidth: 260,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 510,
-                          marginBottom: 8,
-                          color: "#444444",
-                        }}
-                      >
-                        Related Clouds
-                      </div>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {job.clouds.map((cloud, i) => (
-                          <Tag
-                            key={i}
-                            style={{
-                              background: "#E7F0FE",
-                              borderRadius: 100,
-                              border: "1px solid #1677FF",
-                            }}
-                          >
-                            {cloud}
-                          </Tag>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ===== Related Skills ===== */}
-                  {job.skills?.length > 0 && (
-                    <div
-                      style={{
-                        flex: 1,
-                        padding: 16,
-                        border: "1px solid #EEEEEE",
-                        borderRadius: 8,
-                        minWidth: 260,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 510,
-                          marginBottom: 8,
-                          color: "#444444",
-                        }}
-                      >
-                        Related Skills
-                      </div>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {job.skills.map((skill, i) => (
-                          <Tag
-                            key={i}
-                            style={{
-                              background: "#FBEBFF",
-                              borderRadius: 100,
-                              border: "1px solid #800080",
-                            }}
-                          >
-                            {skill}
-                          </Tag>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <Spin />
                 </div>
-              )}
-            </Card>
-          </Col>
-        ))}
-          {loading && jobs.length > 0 && hasMore && (
-        <Col span={24}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              padding: "24px 0",
-            }}
-          >
-            <Spin />
-          </div>
-        </Col>
-      )}
-    </>
-  )}
+              </Col>
+            )}
+          </>
+        )}
       </Row>
 
       <Modal
@@ -1161,7 +1177,7 @@ useEffect(() => {
                     rules={[
                       { required: true },
                       {
-                        pattern:/^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
+                        pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
 
                         message:
                           "Only letters, numbers, spaces and . , / - ( ) are allowed!",
@@ -1179,26 +1195,24 @@ useEffect(() => {
                   <Form.Item
                     name="responsibilities"
                     label="Roles & Responsibilities"
-                    rules={
-                      [
-                        // { required: true },
-                        // {
-                        //   pattern: /^[A-Za-z0-9 ]+$/,
-                        //   message: "Only letters, numbers, and spaces are allowed",
-                        // },
-                        // {
-                        //   pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
-                        //   message:
-                        //     "Only letters, numbers, spaces and . , / - ( ) are allowed!",
-                        // },
-                         {
-                        pattern:/^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
+                    rules={[
+                      // { required: true },
+                      // {
+                      //   pattern: /^[A-Za-z0-9 ]+$/,
+                      //   message: "Only letters, numbers, and spaces are allowed",
+                      // },
+                      // {
+                      //   pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+                      //   message:
+                      //     "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+                      // },
+                      {
+                        pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
 
                         message:
                           "Only letters, numbers, spaces and . , / - ( ) are allowed!",
                       },
-                      ]
-                    }
+                    ]}
                   >
                     {/* <Select mode="tags" placeholder="Add responsibilities" /> */}
                     <TextArea
@@ -1253,11 +1267,11 @@ useEffect(() => {
                               required: true,
                               message: "Tenure is Required!",
                             },
-                           {
-  pattern: /^\d{1,2}(\.\d{1,2})?$/,
-  message: "Enter a number with up to 2 digits before and after decimal",
-}
-
+                            {
+                              pattern: /^\d{1,2}(\.\d{1,2})?$/,
+                              message:
+                                "Enter a number with up to 2 digits before and after decimal",
+                            },
                           ]}
                         >
                           <Input
@@ -1296,11 +1310,11 @@ useEffect(() => {
                             required: true,
                             message: "Experience is Required!",
                           },
-                         {
-  pattern: /^\d{1,2}(\.\d{1,2})?$/,
-  message: "Enter a number with up to 2 digits before and after decimal",
-}
-
+                          {
+                            pattern: /^\d{1,2}(\.\d{1,2})?$/,
+                            message:
+                              "Enter a number with up to 2 digits before and after decimal",
+                          },
                         ]}
                       >
                         <Input
@@ -1602,17 +1616,19 @@ useEffect(() => {
                     /> */}
 
                     <DatePicker
-    style={{ width: "100%" }}
-    disabledDate={(current) => {
-      if (!current) return false;
+                      style={{ width: "100%" }}
+                      disabledDate={(current) => {
+                        if (!current) return false;
 
-      const today = dayjs().startOf("day");
-      const sixMonthsLater = today.add(6, "month").endOf("day");
+                        const today = dayjs().startOf("day");
+                        const sixMonthsLater = today
+                          .add(6, "month")
+                          .endOf("day");
 
-      return current < today || current > sixMonthsLater;
-    }}
-    placeholder="Select date (within next 6 months)"
-  />
+                        return current < today || current > sixMonthsLater;
+                      }}
+                      placeholder="Select date (within next 6 months)"
+                    />
                   </Form.Item>
                   <Form.Item name="ApplicationLimit" label="Limit Applications">
                     <InputNumber
@@ -1850,18 +1866,13 @@ useEffect(() => {
           <div style={{ width: 602 }}>
             <Form layout="vertical" form={aiForm} onFinish={handleAiGenerateJD}>
               {/* Job Title */}
-              <Form.Item
-                label="Job Title(role)"
-                name="role"
-               
-              >
-                 <ReusableSelect
-                      placeholder="Select or add Role"
-                      fetchFunction={GetRole}
-                      addFunction={PostRole}
-                      single={true}
-                    />
-               
+              <Form.Item label="Job Title(role)" name="role">
+                <ReusableSelect
+                  placeholder="Select or add Role"
+                  fetchFunction={GetRole}
+                  addFunction={PostRole}
+                  single={true}
+                />
               </Form.Item>
 
               {/* Experience */}
@@ -1906,24 +1917,24 @@ useEffect(() => {
                     message:
                       "Only letters, numbers, space, and , . / - ( ) ' are allowed!",
                   },
-                   {
-      validator: (_, value) => {
-        if (!value) return Promise.resolve();
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
 
-        const wordCount = value
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean).length;
+                      const wordCount = value
+                        .trim()
+                        .split(/\s+/)
+                        .filter(Boolean).length;
 
-        if (wordCount > 1000) {
-          return Promise.reject(
-            new Error("Maximum 1000 words allowed")
-          );
-        }
+                      if (wordCount > 1000) {
+                        return Promise.reject(
+                          new Error("Maximum 1000 words allowed")
+                        );
+                      }
 
-        return Promise.resolve();
-      },
-    },
+                      return Promise.resolve();
+                    },
+                  },
                 ]}
               >
                 <Input.TextArea

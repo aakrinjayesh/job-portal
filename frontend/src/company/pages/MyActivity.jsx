@@ -65,16 +65,45 @@ const MyActivity = () => {
     <>
       {contextHolder}
 
-      <div style={{ display: "flex", gap: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 24,
+          height: "calc(100vh - 100px)", // adjust if your header is taller
+          overflow: "hidden", // 🚫 disables page scroll
+        }}
+      >
         {/* ================= LEFT ================= */}
         <Card
           style={{
             width: "60%",
-            padding: 24,
+            padding: "8px 16px",
             borderRadius: 10,
+            height: "100%", // 🔑 fill parent height
+            overflowY: "auto", // ✅ LEFT CARD SCROLLS
+            position: "relative",
           }}
         >
-          {loading ? (
+          {loading && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "100%",
+                background: "rgba(255,255,255,0.7)",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "center",
+                paddingTop: 80,
+                zIndex: 10,
+              }}
+            >
+              <Spin size="large" />
+            </div>
+          )}
+          {jobs.length === 0 && !loading ? (
             <Spin size="large" style={{ width: "100%" }} />
           ) : jobs.length === 0 ? (
             <Empty description="No activity found" />
@@ -91,7 +120,7 @@ const MyActivity = () => {
                   }}
                 >
                   <div>
-                    <Title level={4} style={{ marginBottom: 0 }}>
+                    <Title level={4} style={{ margin: 0, lineHeight: 1.3 }}>
                       {jobBlock.job.role}
                     </Title>
                     <Text type="secondary">{jobBlock.job.companyName}</Text>
@@ -135,7 +164,6 @@ const MyActivity = () => {
                       }}
                       bodyStyle={{ padding: 24 }}
                     >
-                      {/* TOP */}
                       <div
                         style={{
                           display: "flex",
@@ -156,7 +184,6 @@ const MyActivity = () => {
                         </div>
                       </div>
 
-                      {/* TAGS */}
                       <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
                         <Tag color="blue">
                           Total Activities : {item.totalActivities}
@@ -179,7 +206,8 @@ const MyActivity = () => {
           style={{
             width: "40%",
             borderRadius: 12,
-            minHeight: 300,
+            // minHeight: 300,
+            height: "100%",
           }}
         >
           {!activeCandidateId && (

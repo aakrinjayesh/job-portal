@@ -89,7 +89,8 @@ const createVendorCandidate = async (req, res) => {
         linkedInUrl: data.linkedInUrl,
         trailheadUrl: data.trailheadUrl,
         profilePicture: data.profilePicture,
-        chatuserid: user.chatuserid,
+        // chatuserid: user.chatuserid,
+        chatuserid: userAuth.chatuserid,
       },
     });
 

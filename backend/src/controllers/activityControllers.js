@@ -108,7 +108,6 @@ import { canCreate, canView, canDelete, canEdit } from "../utils/permission.js";
 //   }
 // };
 
-
 export const createActivity = async (req, res) => {
   try {
     const { id: recruiterId, organizationId, permission } = req.user;
@@ -118,18 +117,18 @@ export const createActivity = async (req, res) => {
     }
 
     const { jobId, candidateProfileId, category, note, schedule } = req.body;
-    console.log('body',req.body)
+    console.log("body", req.body);
 
     if (!jobId || !candidateProfileId || !category) {
       return res.status(400).json({
         status: "error",
-        message: "jobId, candidateProfileId and category are required"
+        message: "jobId, candidateProfileId and category are required",
       });
     }
 
     // ✅ Validate Job
     const job = await prisma.job.findFirst({
-      where: { id: jobId, organizationId, isDeleted: false }
+      where: { id: jobId, organizationId, isDeleted: false },
     });
 
     if (!job) {
@@ -141,14 +140,14 @@ export const createActivity = async (req, res) => {
       where: {
         jobId,
         candidateProfileId,
-        organizationId
-      }
+        organizationId,
+      },
     });
 
     if (!application) {
       return res.status(400).json({
         status: "error",
-        message: "Candidate has not applied to this job"
+        message: "Candidate has not applied to this job",
       });
     }
 
@@ -159,8 +158,8 @@ export const createActivity = async (req, res) => {
           candidateId: candidateProfileId,
           jobId,
           organizationId,
-          category
-        }
+          category,
+        },
       });
 
       if (category === "NOTE") {
@@ -170,8 +169,10 @@ export const createActivity = async (req, res) => {
             subject: note.subject,
             noteType: note.noteType,
             description: note.description,
-            interactedAt: new Date(note.interactedAt)
-          }
+            interactedAt: new Date(note.interactedAt),
+            startTime: note.startTime ? new Date(note.startTime) : null,
+            endTime: note.endTime ? new Date(note.endTime) : null,
+          },
         });
       }
 
@@ -183,25 +184,25 @@ export const createActivity = async (req, res) => {
             scheduleType: schedule.scheduleType,
             startTime: new Date(schedule.startTime),
             endTime: new Date(schedule.endTime),
-            notes: schedule.notes
-          }
+            notes: schedule.notes,
+          },
         });
       }
 
       return tx.activity.findUnique({
         where: { id: activity.id },
-        include: { note: true, schedule: true }
+        include: { note: true, schedule: true },
       });
     });
 
     return res.status(201).json({ status: "success", data: result });
-
   } catch (error) {
     console.error("Create Activity Error:", error);
-    return res.status(500).json({ status: "error", message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
-
 
 // export const getMyActivity = async (req, res) => {
 //   try {
@@ -270,8 +271,6 @@ export const createActivity = async (req, res) => {
 //   }
 // };
 
-
-
 //CANDIDATE ACTIVITY TIMELINE
 
 export const getMyActivity = async (req, res) => {
@@ -291,18 +290,18 @@ export const getMyActivity = async (req, res) => {
             role: true,
             companyName: true,
             status: true,
-            location: true
-          }
+            location: true,
+          },
         },
         candidate: {
-          select: { id: true, name: true, email: true, profilePicture: true }
+          select: { id: true, name: true, email: true, profilePicture: true },
         },
         recruiter: {
-          select: { id: true, name: true, email: true }
+          select: { id: true, name: true, email: true },
         },
-        schedule: true
+        schedule: true,
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
 
     const jobMap = {};
@@ -314,7 +313,7 @@ export const getMyActivity = async (req, res) => {
       if (!jobMap[jobKey]) {
         jobMap[jobKey] = {
           job: activity.job,
-          candidates: {}
+          candidates: {},
         };
       }
 
@@ -324,7 +323,7 @@ export const getMyActivity = async (req, res) => {
           recruiters: {},
           totalActivities: 0,
           lastActivityAt: activity.createdAt,
-          nextSchedule: null
+          nextSchedule: null,
         };
       }
 
@@ -357,18 +356,18 @@ export const getMyActivity = async (req, res) => {
       ...job,
       candidates: Object.values(job.candidates).map((c) => ({
         ...c,
-        recruiters: Object.values(c.recruiters)
-      }))
+        recruiters: Object.values(c.recruiters),
+      })),
     }));
 
     return res.status(200).json({ status: "success", data: response });
-
   } catch (error) {
     console.error("My Activity Error:", error);
-    return res.status(500).json({ status: "error", message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
-
 
 // export const getCandidateActivities = async (req, res) => {
 //   try {
@@ -422,7 +421,6 @@ export const getMyActivity = async (req, res) => {
 //   }
 // };
 
-
 //UPDATE ACTIVITY
 
 export const getCandidateActivities = async (req, res) => {
@@ -438,24 +436,24 @@ export const getCandidateActivities = async (req, res) => {
       where: {
         organizationId,
         jobId,
-        candidateId: candidateProfileId
+        candidateId: candidateProfileId,
       },
       include: {
         note: true,
         schedule: true,
-        recruiter: { select: { id: true, name: true, email: true } }
+        recruiter: { select: { id: true, name: true, email: true } },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
 
     return res.status(200).json({ status: "success", data: activities });
-
   } catch (error) {
     console.error("Candidate Activity Error:", error);
-    return res.status(500).json({ status: "error", message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
-
 
 // export const updateActivity = async (req, res) => {
 //   try {
@@ -521,7 +519,6 @@ export const getCandidateActivities = async (req, res) => {
 //   }
 // };
 
-
 export const updateActivity = async (req, res) => {
   try {
     const { id: recruiterId, permission, organizationId } = req.user;
@@ -534,11 +531,13 @@ export const updateActivity = async (req, res) => {
 
     const activity = await prisma.activity.findFirst({
       where: { id: activityId, recruiterId, organizationId },
-      include: { note: true, schedule: true }
+      include: { note: true, schedule: true },
     });
 
     if (!activity) {
-      return res.status(404).json({ status: "error", message: "Activity not found" });
+      return res
+        .status(404)
+        .json({ status: "error", message: "Activity not found" });
     }
 
     if (activity.category === "NOTE") {
@@ -548,8 +547,8 @@ export const updateActivity = async (req, res) => {
           subject: note.subject,
           noteType: note.noteType,
           description: note.description,
-          interactedAt: new Date(note.interactedAt)
-        }
+          interactedAt: new Date(note.interactedAt),
+        },
       });
     }
 
@@ -561,19 +560,19 @@ export const updateActivity = async (req, res) => {
           scheduleType: schedule.scheduleType,
           startTime: new Date(schedule.startTime),
           endTime: new Date(schedule.endTime),
-          notes: schedule.notes
-        }
+          notes: schedule.notes,
+        },
       });
     }
 
     return res.status(200).json({ status: "success" });
-
   } catch (error) {
     console.error("Update Activity Error:", error);
-    return res.status(500).json({ status: "error", message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
-
 
 //DELETE ACTIVITY
 
@@ -613,7 +612,6 @@ export const updateActivity = async (req, res) => {
 //   }
 // };
 
-
 export const deleteActivity = async (req, res) => {
   try {
     const { id: recruiterId, permission, organizationId } = req.user;
@@ -624,22 +622,25 @@ export const deleteActivity = async (req, res) => {
     }
 
     const activity = await prisma.activity.findFirst({
-      where: { id: activityId, recruiterId, organizationId }
+      where: { id: activityId, recruiterId, organizationId },
     });
 
     if (!activity) {
-      return res.status(404).json({ status: "error", message: "Activity not found" });
+      return res
+        .status(404)
+        .json({ status: "error", message: "Activity not found" });
     }
 
     await prisma.activity.delete({ where: { id: activityId } });
 
     return res.status(200).json({
       status: "success",
-      message: "Activity deleted successfully"
+      message: "Activity deleted successfully",
     });
-
   } catch (error) {
     console.error("Delete Activity Error:", error);
-    return res.status(500).json({ status: "error", message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };

@@ -83,7 +83,7 @@ const BenchCandidateDetails = () => {
         padding: "24px 32px",
       }}
     >
-      <div style={{ marginBottom: 20 }}>
+      {/* <div style={{ marginBottom: 20 }}>
         <button
           onClick={() =>
             navigate(
@@ -103,7 +103,7 @@ const BenchCandidateDetails = () => {
         >
           <ArrowLeftOutlined /> Back
         </button>
-      </div>
+      </div> */}
 
       {/* Header Section */}
       <Row align="middle" gutter={16}>

@@ -1,7 +1,17 @@
-
 import React from "react";
 import { useState, useEffect } from "react";
-import { Card, Avatar, Tag, Button, message, Row, Col, Space, Tooltip   ,Typography, } from "antd";
+import {
+  Card,
+  Avatar,
+  Tag,
+  Button,
+  message,
+  Row,
+  Col,
+  Space,
+  Tooltip,
+  Typography,
+} from "antd";
 import { SaveCandidate, UnsaveCandidate } from "../../api/api";
 import { LuBookmark } from "react-icons/lu";
 import { LuBookmarkCheck } from "react-icons/lu";
@@ -25,9 +35,8 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
   const [sortedCandidates, setSortedCandidates] = useState([]);
 
   useEffect(() => {
-  setSaved(candidate?.isSaved || false);
-}, [candidate?.isSaved]);
-
+    setSaved(candidate?.isSaved || false);
+  }, [candidate?.isSaved]);
 
   // Experience
   const expYears =
@@ -103,40 +112,43 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
     handleSaveToggle(candidate.id);
   };
 
-const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
-  const visible = items.slice(0, max);
-  const remainingCount = items.length - max;
+  const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
+    const visible = items.slice(0, max);
+    const remainingCount = items.length - max;
 
-  return (
-    <Space size={[8, 8]} wrap>
-      {visible.map((item, index) => (
-        <Tag key={index} style={tagStyle}>
-          {item}
-        </Tag>
-      ))}
+    return (
+      <Space size={[8, 8]} wrap>
+        {visible.map((item, index) => (
+          <Tag key={index} style={tagStyle}>
+            {item}
+          </Tag>
+        ))}
 
-      {remainingCount > 0 && (
-        <Typography.Text
-          style={{
-            color: "#1677ff",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: "default", // 👈 looks like text, not clickable
-          }}
-        >
-          +{remainingCount} more
-        </Typography.Text>
-      )}
-    </Space>
-  );
-};
-
-
+        {remainingCount > 0 && (
+          <Typography.Text
+            style={{
+              color: "#1677ff",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "default", // 👈 looks like text, not clickable
+            }}
+          >
+            +{remainingCount} more
+          </Typography.Text>
+        )}
+      </Space>
+    );
+  };
 
   return (
     <Card
       hoverable
-      style={{ width: "100%", borderRadius: 12, position: "relative" }}
+      style={{
+        width: "100%",
+        borderRadius: 12,
+        position: "relative",
+        marginBottom: 20,
+      }}
       bodyStyle={{ padding: 20 }}
       onClick={() =>
         navigate("/company/bench/candidates", {
@@ -155,9 +167,7 @@ const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
               {candidate?.name || "Unknown Candidate"}
             </Typography.Text>
             <br />
-            <Typography.Text type="secondary">
-              {role}
-            </Typography.Text>
+            <Typography.Text type="secondary">{role}</Typography.Text>
           </div>
         </Space>
 
@@ -167,20 +177,17 @@ const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
             {candidate?.isVendor ? "Vendor Candidate" : "Individual Candidate"}
           </Tag>
 
-         
-
           <Button
-  type="text"
-  onClick={handleStarClick}
- icon={
-        saved ? (
-          <LuBookmarkCheck style={{ color:"#1677ff", fontSize: 18 }} />
-        ) : (
-          <LuBookmark style={{ fontSize: 18 }} />
-        )
-      }
-/>
-
+            type="text"
+            onClick={handleStarClick}
+            icon={
+              saved ? (
+                <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 18 }} />
+              ) : (
+                <LuBookmark style={{ fontSize: 18 }} />
+              )
+            }
+          />
         </Space>
       </Row>
 
@@ -219,16 +226,14 @@ const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
               <Card size="small" bordered>
                 <Typography.Text strong>Related Clouds</Typography.Text>
                 <div style={{ marginTop: 12 }}>
-                 
                   <TagsWithMore
-  items={clouds}
-  tagStyle={{
-    background: "#E7F0FE",
-    border: "1px solid #1677FF",
-    borderRadius: 100,
-  }}
-/>
-
+                    items={clouds}
+                    tagStyle={{
+                      background: "#E7F0FE",
+                      border: "1px solid #1677FF",
+                      borderRadius: 100,
+                    }}
+                  />
                 </div>
               </Card>
             </Col>
@@ -239,16 +244,14 @@ const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
               <Card size="small" bordered>
                 <Typography.Text strong>Related Skills</Typography.Text>
                 <div style={{ marginTop: 12 }}>
-                 
                   <TagsWithMore
-  items={skills}
-  tagStyle={{
-    background: "#FBEBFF",
-    border: "1px solid #800080",
-    borderRadius: 100,
-  }}
-/>
-
+                    items={skills}
+                    tagStyle={{
+                      background: "#FBEBFF",
+                      border: "1px solid #800080",
+                      borderRadius: 100,
+                    }}
+                  />
                 </div>
               </Card>
             </Col>

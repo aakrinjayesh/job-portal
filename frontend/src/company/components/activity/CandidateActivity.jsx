@@ -93,12 +93,6 @@ const CandidateActivity = ({ candidateId, jobId }) => {
           paddingTop: 12,
         }}
       >
-        {/* <Button
-          style={{ borderRadius: 100 }}
-          onClick={() => setScheduleOpen(true)}
-        >
-          Schedule
-        </Button> */}
         <Button
           type="primary"
           style={{ borderRadius: 100 }}

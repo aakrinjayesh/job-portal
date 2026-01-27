@@ -205,7 +205,7 @@ const CandidateDetails = () => {
       )}
 
       {/* Back Button */}
-      <Button
+      {/* <Button
         type="text"
         style={{ marginBottom: 5, height: 25 }}
         onClick={() =>
@@ -214,7 +214,7 @@ const CandidateDetails = () => {
         icon={<ArrowLeftOutlined />}
       >
         Back
-      </Button>
+      </Button> */}
       <Row gutter={16}>
         {/* <Col span={16}> */}
         <Col span={16} style={{ position: "relative" }}>
@@ -269,7 +269,7 @@ const CandidateDetails = () => {
                         }}
                         onClick={() => {
                           setTempReview(
-                            reviewsByCandidate[candidate.applicationId] || "",
+                            reviewsByCandidate[candidate.applicationId] || ""
                           );
                           setIsReviewModalOpen(true);
                         }}
@@ -294,7 +294,7 @@ const CandidateDetails = () => {
 
                         const message = `Hi ${candidate.name},`;
                         const url = `https://wa.me/${number}?text=${encodeURIComponent(
-                          message,
+                          message
                         )}`;
 
                         window.open(url, "_blank");
@@ -539,7 +539,7 @@ const CandidateDetails = () => {
                           style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
                         >
                           {profile.skillsJson?.filter(
-                            (s) => s.level === "primary",
+                            (s) => s.level === "primary"
                           )?.length ? (
                             profile.skillsJson
                               .filter((s) => s.level === "primary")
@@ -555,12 +555,12 @@ const CandidateDetails = () => {
 
                         {/* GAP */}
                         {profile.skillsJson?.some(
-                          (s) => s.level === "secondary",
+                          (s) => s.level === "secondary"
                         ) && <Divider style={{ margin: "16px 0 12px" }} />}
 
                         {/* SECONDARY SKILLS */}
                         {profile.skillsJson?.some(
-                          (s) => s.level === "secondary",
+                          (s) => s.level === "secondary"
                         ) && (
                           <>
                             <Text
@@ -1030,7 +1030,7 @@ const CandidateDetails = () => {
 
               if (!regex.test(value)) {
                 message.error(
-                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed',
+                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed'
                 );
                 return;
               }

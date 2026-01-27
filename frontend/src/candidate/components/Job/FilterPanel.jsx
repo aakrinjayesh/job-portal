@@ -6,14 +6,14 @@ import {
   InputNumber,
   Button,
   Tooltip,
-  Collapse
+  Collapse,
 } from "antd";
 import {
   CaretDownOutlined,
   CaretRightOutlined,
   UpOutlined,
   DownOutlined,
-  SearchOutlined
+  SearchOutlined,
 } from "@ant-design/icons";
 import FilterSection from "./FilterSection";
 import AddSkillInput from "./AddSkillInput";
@@ -60,13 +60,12 @@ const CollapseLabel = ({ title, isOpen }) => (
   </div>
 );
 
-
 const FiltersPanel = ({
   onFiltersChange,
   showCandidateType,
   isFilterOpen,
   handleClearFilters,
-  toggleFilter
+  toggleFilter,
 }) => {
   const [experience, setExperience] = useState(30);
   const [selectedLocations, setSelectedLocations] = useState([]);
@@ -87,8 +86,7 @@ const FiltersPanel = ({
     clouds: false,
   });
 
-  const toggle = (key) =>
-    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key) => setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const locationOptions = [
     { label: "Bangalore", count: 4543 },
@@ -113,7 +111,7 @@ const FiltersPanel = ({
     { label: "Hybrid" },
   ];
 
-   const salesforceSkillSuggestions = [
+  const salesforceSkillSuggestions = [
     "Apex",
     "Approvals",
     "Advanced Approvals",
@@ -204,8 +202,7 @@ const FiltersPanel = ({
     "Salesforce Media Cloud",
   ];
 
-
-   const updateCandidateType = (type, checked) => {
+  const updateCandidateType = (type, checked) => {
     if (checked) {
       setCandidateType((prev) => [...prev, type]);
     } else {
@@ -234,45 +231,35 @@ const FiltersPanel = ({
     candidateType,
   ]);
 
-   const collapseItems = [
-   {
-  key: "experience",
-  label: (
-    <CollapseLabel
-      title="Experience"
-      isOpen={open.experience}
-    />
-  ),
-  children: (
-    <>
-      <Slider
-        min={0}
-        max={30}
-        value={experience}
-        tooltip={{
-          formatter: (val) => (val === 30 ? "Any" : `${val} yrs`),
-        }}
-        onChange={setExperience}
-      />
-      <InputNumber
-        min={0}
-        max={30}
-        value={experience}
-        onChange={(v) => setExperience(v || 0)}
-        style={{ width: "100%" }}
-      />
-    </>
-  ),
-},
+  const collapseItems = [
+    {
+      key: "experience",
+      label: <CollapseLabel title="Experience" isOpen={open.experience} />,
+      children: (
+        <>
+          <Slider
+            min={0}
+            max={30}
+            value={experience}
+            tooltip={{
+              formatter: (val) => (val === 30 ? "Any" : `${val} yrs`),
+            }}
+            onChange={setExperience}
+          />
+          <InputNumber
+            min={0}
+            max={30}
+            value={experience}
+            onChange={(v) => setExperience(v || 0)}
+            style={{ width: "100%" }}
+          />
+        </>
+      ),
+    },
 
     {
       key: "location",
-      label: (
-  <CollapseLabel
-    title="Location"
-    isOpen={open.location}
-  />
-),
+      label: <CollapseLabel title="Location" isOpen={open.location} />,
       children: (
         <FilterSection
           options={locationOptions}
@@ -285,11 +272,8 @@ const FiltersPanel = ({
     showCandidateType && {
       key: "candidateType",
       label: (
-  <CollapseLabel
-    title="Candidate Type"
-    isOpen={open.candidateType}
-  />
-),
+        <CollapseLabel title="Candidate Type" isOpen={open.candidateType} />
+      ),
       children: (
         <>
           {["vendor", "individual"].map((type) => (
@@ -305,14 +289,10 @@ const FiltersPanel = ({
               <input
                 type="checkbox"
                 checked={candidateType.includes(type)}
-                onChange={(e) =>
-                  updateCandidateType(type, e.target.checked)
-                }
+                onChange={(e) => updateCandidateType(type, e.target.checked)}
                 style={{ marginRight: 8 }}
               />
-              {type === "vendor"
-                ? "Vendor Candidate"
-                : "Individual Candidate"}
+              {type === "vendor" ? "Vendor Candidate" : "Individual Candidate"}
             </label>
           ))}
         </>
@@ -320,12 +300,7 @@ const FiltersPanel = ({
     },
     {
       key: "jobType",
-     label: (
-  <CollapseLabel
-    title="Job Type"
-    isOpen={open.jobType}
-  />
-),
+      label: <CollapseLabel title="Job Type" isOpen={open.jobType} />,
 
       children: (
         <FilterSection
@@ -337,12 +312,7 @@ const FiltersPanel = ({
     },
     {
       key: "employment",
-      label: (
-  <CollapseLabel
-    title="Employee Type"
-    isOpen={open.employment}
-  />
-),
+      label: <CollapseLabel title="Employee Type" isOpen={open.employment} />,
       children: (
         <FilterSection
           options={employeeTypeOptions}
@@ -353,12 +323,7 @@ const FiltersPanel = ({
     },
     {
       key: "skills",
-     label: (
-  <CollapseLabel
-    title="Skills"
-    isOpen={open.skills}
-  />
-),
+      label: <CollapseLabel title="Skills" isOpen={open.skills} />,
       children: (
         <AddSkillInput
           values={skills}
@@ -369,12 +334,7 @@ const FiltersPanel = ({
     },
     {
       key: "clouds",
-      label: (
-  <CollapseLabel
-    title="Clouds"
-    isOpen={open.clouds}
-  />
-),
+      label: <CollapseLabel title="Clouds" isOpen={open.clouds} />,
       children: (
         <AddSkillInput
           values={clouds}
@@ -385,19 +345,17 @@ const FiltersPanel = ({
     },
   ].filter(Boolean);
 
-
   return (
     <div
       style={{
         width: 250, // ✅ reduced width
-        height: "calc(100vh - 120px)", // ✅ smaller scroll area
+        // height: "calc(100vh - 30px)", // ✅ smaller scroll area
         borderRight: "1px solid #eee",
         padding: 14,
-        overflowY: "auto",
+        // overflowY: "auto",
         background: "#fff",
       }}
     >
-
       {/* SEARCH */}
 
       {/* <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
@@ -420,12 +378,12 @@ const FiltersPanel = ({
         handleClearFilters={handleClearFilters}
         type="candidate"
       />
-       <div
+      <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           marginBottom: 12,
-          marginTop: 12
+          marginTop: 12,
         }}
       >
         <Text strong>All Filters</Text>
@@ -441,21 +399,19 @@ const FiltersPanel = ({
       <Divider style={{ margin: "12px 0" }} />
 
       {/* EXPERIENCE */}
-   <Collapse
-  bordered={false}
-  ghost
-  items={collapseItems}
-  activeKey={Object.keys(open).filter((k) => open[k])}
- expandIcon={() => null}
-  onChange={(keys) => {
-    const updated = {};
-    Object.keys(open).forEach(
-      (k) => (updated[k] = keys.includes(k))
-    );
-    setOpen(updated);
-  }}
-/>
- <Divider />
+      <Collapse
+        bordered={false}
+        ghost
+        items={collapseItems}
+        activeKey={Object.keys(open).filter((k) => open[k])}
+        expandIcon={() => null}
+        onChange={(keys) => {
+          const updated = {};
+          Object.keys(open).forEach((k) => (updated[k] = keys.includes(k)));
+          setOpen(updated);
+        }}
+      />
+      <Divider />
     </div>
   );
 };

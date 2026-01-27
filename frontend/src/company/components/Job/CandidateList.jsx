@@ -612,8 +612,8 @@ const CandidateList = () => {
                 // c.id === record.id
                 c.applicationId === record.applicationId
                   ? { ...c, status: "Reviewed" }
-                  : c,
-              ),
+                  : c
+              )
             );
 
             // ✅ 3. ALWAYS navigate
@@ -649,14 +649,14 @@ const CandidateList = () => {
       >
         {/* LEFT SIDE – TOGGLES */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Button
+          {/* <Button
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/company/jobs")}
             style={{ marginBottom: 8, marginRight: 10 }}
           >
             Back
-          </Button>
+          </Button> */}
 
           {/* ALL */}
           <div

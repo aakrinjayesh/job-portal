@@ -27,6 +27,7 @@ import {
   FileTextOutlined,
   ClockCircleOutlined,
   UserOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
 import { LuBookmark } from "react-icons/lu";
 import { LuBookmarkCheck } from "react-icons/lu";
@@ -299,11 +300,17 @@ const JobList = ({
             }}
           >
             <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
-              <Button
+              {/* <Button
                 type="text"
                 onClick={toggleFilter}
                 style={{ fontSize: 20 }}
                 icon={isFilterOpen ? <LeftOutlined /> : <LeftOutlined />}
+              /> */}
+              <Button
+                type="text"
+                onClick={toggleFilter}
+                style={{ fontSize: 20 }}
+                icon={isFilterOpen ? <LeftOutlined /> : <RightOutlined />}
               />
             </Tooltip>
 

@@ -76,7 +76,6 @@
 
 //       {/* ➕ ADD TODO */}
 //       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-       
 
 //         <Input
 //   placeholder="Add todo"
@@ -97,7 +96,6 @@
 //   }}
 // />
 
-
 //         <Button
 //           type="primary"
 //           htmlType="button"
@@ -111,7 +109,7 @@
 //       {/* 📋 TODO LIST */}
 //       <List
 //         dataSource={allTodos}
-        
+
 //         renderItem={(todo) => (
 //           <List.Item
 //             actions={
@@ -168,8 +166,6 @@
 
 // export default TodoList;
 
-
-
 import { useEffect, useState } from "react";
 import { Input, Checkbox, Button, List, Progress, message } from "antd";
 
@@ -192,8 +188,10 @@ const TodoList = () => {
         setLoading(true);
         const res = await GetMyTodos();
 
-        if (Array.isArray(res?.data?.data)) {
-          setTodos(res.data.data);
+        // if (Array.isArray(res?.data?.data)) {
+        //   setTodos(res.data.data);
+        if (Array.isArray(res?.data)) {
+          setTodos(res.data);
         } else {
           setTodos([]);
         }
@@ -214,11 +212,17 @@ const TodoList = () => {
     if (!text.trim()) return;
 
     try {
+      // const res = await CreateRecruiterTodo({ title: text.trim() });
+
+      // if (res?.data?.data) {
+      //   // ✅ add to bottom (keeps backend order)
+      //   setTodos((prev) => [...prev, res.data.data]);
+      //   setText("");
+      // }
       const res = await CreateRecruiterTodo({ title: text.trim() });
 
-      if (res?.data?.data) {
-        // ✅ add to bottom (keeps backend order)
-        setTodos((prev) => [...prev, res.data.data]);
+      if (res?.data) {
+        setTodos((prev) => [...prev, res.data]);
         setText("");
       }
     } catch (err) {
@@ -281,6 +285,7 @@ const TodoList = () => {
 
       {/* 📋 TODO LIST */}
       <List
+        rowKey="id"
         loading={loading}
         dataSource={todos}
         locale={{ emptyText: "No todos" }}
@@ -320,9 +325,7 @@ const TodoList = () => {
                   // ✅ optimistic UI update
                   setTodos((prev) =>
                     prev.map((t) =>
-                      t.id === todo.id
-                        ? { ...t, completed: !t.completed }
-                        : t
+                      t.id === todo.id ? { ...t, completed: !t.completed } : t
                     )
                   );
                 } catch (err) {
@@ -340,4 +343,3 @@ const TodoList = () => {
 };
 
 export default TodoList;
-
