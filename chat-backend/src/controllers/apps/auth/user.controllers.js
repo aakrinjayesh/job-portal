@@ -31,7 +31,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
   } catch (error) {
     throw new ApiError(
       500,
-      "Something went wrong while generating the access token"
+      "Something went wrong while generating the access token",
     );
   }
 };
@@ -39,7 +39,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { email, username, password, role } = req.body;
 
-  console.log("register body", req.body)
+  console.log("register body", req.body);
 
   const existedUser = await User.findOne({
     $or: [{ username }, { email }],
@@ -56,7 +56,7 @@ const registerUser = asyncHandler(async (req, res) => {
     role: role || UserRolesEnum.USER,
   });
 
-  console.log("user from register", user)
+  console.log("user from register", user);
 
   /**
    * unHashedToken: unHashed token is something we will send to the user's mail
@@ -86,7 +86,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // });
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
   );
 
   if (!createdUser) {
@@ -99,22 +99,21 @@ const registerUser = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { user: createdUser },
-        "Users registered successfully and verification email has been sent on your email."
-      )
+        "Users registered successfully and verification email has been sent on your email.",
+      ),
     );
 });
 
+const deleteUser = asyncHandler(async (req, res) => {
+  const { email } = req.body;
 
-const deleteUser = asyncHandler(async (req,res)=> {
-   const { email } = req.body;
-
-    if (!email) {
+  if (!email) {
     throw new ApiError(400, "Username or email is required");
   }
 
   const user = await User.findOne({
-    $or: [{ email }]
-  })
+    $or: [{ email }],
+  });
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -124,15 +123,14 @@ const deleteUser = asyncHandler(async (req,res)=> {
 
   res.status(200).json({
     success: true,
-    message: "User deleted successfully"
+    message: "User deleted successfully",
   });
-
-})
+});
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
-  console.log('login body', req.body)
+  console.log("login body", req.body);
 
   if (!username && !email) {
     throw new ApiError(400, "Username or email is required");
@@ -155,7 +153,7 @@ const loginUser = asyncHandler(async (req, res) => {
         user.loginType?.toLowerCase() +
         ". Please use the " +
         user.loginType?.toLowerCase() +
-        " login option to access your account."
+        " login option to access your account.",
     );
   }
 
@@ -167,12 +165,12 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-    user._id
+    user._id,
   );
 
   // get the user document ignoring the password and refreshToken field
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
   );
 
   // TODO: Add more options to make cookie more secure and reliable
@@ -189,8 +187,8 @@ const loginUser = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { user: loggedInUser, accessToken, refreshToken }, // send access and refresh token in response if client decides to save them by themselves
-        "User logged in successfully"
-      )
+        "User logged in successfully",
+      ),
     );
 });
 
@@ -199,10 +197,10 @@ const logoutUser = asyncHandler(async (req, res) => {
     req.user._id,
     {
       $set: {
-        refreshToken: '',
+        refreshToken: "",
       },
     },
-    { new: true }
+    { new: true },
   );
 
   const options = {
@@ -284,8 +282,8 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
     mailgenContent: emailVerificationMailgenContent(
       user.username,
       `${req.protocol}://${req.get(
-        "host"
-      )}/api/v1/users/verify-email/${unHashedToken}`
+        "host",
+      )}/api/v1/users/verify-email/${unHashedToken}`,
     ),
   });
   return res
@@ -298,13 +296,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     req.cookies.refreshToken || req.body.refreshToken;
 
   if (!incomingRefreshToken) {
-    throw new ApiError(401, "Unauthorized request");
+    throw new ApiError(401, "Unauthorized request 1");
   }
 
   try {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
+      process.env.REFRESH_TOKEN_SECRET,
     );
     const user = await User.findById(decodedToken?._id);
     if (!user) {
@@ -338,8 +336,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           { accessToken, refreshToken: newRefreshToken },
-          "Access token refreshed"
-        )
+          "Access token refreshed",
+        ),
       );
   } catch (error) {
     throw new ApiError(401, error?.message || "Invalid refresh token");
@@ -373,7 +371,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
       user.username,
       // ! NOTE: Following link should be the link of the frontend page responsible to request password reset
       // ! Frontend will send the below token with the new password in the request body to the backend reset password endpoint
-      `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`
+      `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`,
     ),
   });
   return res
@@ -382,8 +380,8 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {},
-        "Password reset mail has been sent on your mail id"
-      )
+        "Password reset mail has been sent on your mail id",
+      ),
     );
 });
 
@@ -476,7 +474,7 @@ const handleSocialLogin = asyncHandler(async (req, res) => {
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-    user._id
+    user._id,
   );
 
   const options = {
@@ -490,7 +488,7 @@ const handleSocialLogin = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, options) // set the refresh token in the cookie
     .redirect(
       // redirect user to the frontend with access and refresh token in case user is not using cookies
-      `${process.env.CLIENT_SSO_REDIRECT_URL}?accessToken=${accessToken}&refreshToken=${refreshToken}`
+      `${process.env.CLIENT_SSO_REDIRECT_URL}?accessToken=${accessToken}&refreshToken=${refreshToken}`,
     );
 });
 
@@ -518,9 +516,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         },
       },
     },
-    { new: true }
+    { new: true },
   ).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
   );
 
   // remove the old avatar
