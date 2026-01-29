@@ -4,13 +4,16 @@ import crypto from "crypto";
 
 export const sendInvite = async (req, res) => {
   try {
-    const { email, role="COMPANY_USER", permissions } = req.body;
+    const { email, role = "COMPANY_USER", permissions } = req.body;
     const organizationId = req.user.organizationId;
 
     if (!organizationId) {
       return res
         .status(400)
-        .json({ status: "error", message: "User is not part of an organization" });
+        .json({
+          status: "error",
+          message: "User is not part of an organization",
+        });
     }
 
     // Check existing membership
@@ -45,11 +48,11 @@ export const sendInvite = async (req, res) => {
       data: {
         name,
         email,
-        role:"company",
+        role: "company",
       },
     });
 
-    console.log("user", user)
+    console.log("user", user);
 
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -66,12 +69,12 @@ export const sendInvite = async (req, res) => {
       },
     });
 
-    console.log("invite",invite)
+    console.log("invite", invite);
 
     // const acceptLink = `${process.env.FRONTEND_URL}/createpassword`;
-    const acceptLink = `http://localhost:5173/createpassword?email=${encodeURIComponent(
-      email
-    )}&role=company&token=${token}`
+    const acceptLink = `${process.env.FRONTEND_URL}/createpassword?email=${encodeURIComponent(
+      email,
+    )}&role=company&token=${token}`;
     const rejectLink = `${process.env.BACKEND_URL}/api/v1/organization/invite/reject?token=${token}`;
 
     await sendEmail({
@@ -94,8 +97,6 @@ export const sendInvite = async (req, res) => {
     res.status(500).json({ status: "error", message: "Server Error" });
   }
 };
-
-
 
 export const acceptInvite = async (req, res) => {
   try {
@@ -128,7 +129,6 @@ export const acceptInvite = async (req, res) => {
   }
 };
 
-
 export const rejectInvite = async (req, res) => {
   try {
     const { token } = req.query;
@@ -157,7 +157,6 @@ export const rejectInvite = async (req, res) => {
     res.status(500).send("<h2>Server Error</h2>");
   }
 };
-
 
 export const confirmInviteSwitch = async (req, res) => {
   const { token } = req.body;
@@ -194,9 +193,7 @@ export const confirmInviteSwitch = async (req, res) => {
         });
       } else {
         // Reassign admin
-        const newAdmin = members.find(
-          (m) => m.userId !== userId
-        );
+        const newAdmin = members.find((m) => m.userId !== userId);
 
         await tx.organizationMember.update({
           where: { id: newAdmin.id },

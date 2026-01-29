@@ -1,11 +1,14 @@
 import express from "express";
-import cors from 'cors'
-import dotenv from 'dotenv';
+import cors from "cors";
+import dotenv from "dotenv";
 import path from "path";
 import { logger } from "./utils/logger.js";
-import { apiLimiter, authLimiter, aiLimiter } from "./Middleware/rateLimiter.js";
+import {
+  apiLimiter,
+  authLimiter,
+  aiLimiter,
+} from "./Middleware/rateLimiter.js";
 import { aiUserLimiter } from "./Middleware/aiRateLimiter.js";
-
 
 import userRouter from "./Routes/profileRoutes.js";
 import JobRouters from "./Routes/jobRoutes.js";
@@ -19,50 +22,38 @@ import { authenticateToken } from "./Middleware/authMiddleware.js";
 import todoRoutes from "./Routes/todoRoutes.js";
 import OrganizationRoutes from "./Routes/organizationRoutes.js";
 import cookieParser from "cookie-parser";
-
-
-
-
-
+// import billingRoutes from "./Routes/billingRoutes.js";
 
 dotenv.config();
 
-
 const app = express();
 
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
-}));
-app.use(express.json())
+app.use(
+  cors({
+    origin: `${process.env.FRONTEND_URL}`,
+    credentials: true,
+  }),
+);
+app.use(express.json());
 app.use(cookieParser());
 app.use(apiLimiter);
-
-
-
 
 app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(authLimiter, LoginRouters);
-app.use(userRouter)
-app.use(JobRouters)
-app.use(CommonRouters)
-app.use('/vendor', VendorRoutes)
+app.use(userRouter);
+app.use(JobRouters);
+app.use(CommonRouters);
+app.use("/vendor", VendorRoutes);
 app.use("/verification", VerificationRoutes);
 // app.use(authenticateToken, aiUserLimiter, CVRouters);
 app.use(authenticateToken, CVRouters);
 app.use("/api/todos", todoRoutes);
 app.use("/api/v1/organization", OrganizationRoutes);
 
+const PORT = process.env.PORT;
 
-
-
-
-const PORT = process.env.PORT
-
-app.listen(PORT || '3001', () => {
+app.listen(PORT || "3001", () => {
   // console.log(`server Started at http://localhost:${PORT}`);
   logger.info(`server Started at http://localhost:${PORT}`);
-
-})
-
+});

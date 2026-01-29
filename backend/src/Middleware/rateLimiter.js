@@ -1,20 +1,17 @@
 import rateLimit from "express-rate-limit";
 
-
-
 // General API limiter (most routes)
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300,                // 300 requests per IP
+  max: 300, // 300 requests per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     status: "error",
-    message: "Too many requests. Please try again later1."
-  }
+    message: "Too many requests. Please try again later1.",
+  },
 });
-
 
 // Auth / Login limiter (brute-force protection)
 export const authLimiter = rateLimit({
@@ -22,10 +19,9 @@ export const authLimiter = rateLimit({
   max: 300, // only 10 login attempts per 15 min
   message: {
     status: "error",
-    message: "Too many login attempts. Try again later2."
-  }
+    message: "Too many login attempts. Try again later2.",
+  },
 });
-
 
 // AI-heavy routes limiter
 export const aiLimiter = rateLimit({
@@ -33,6 +29,11 @@ export const aiLimiter = rateLimit({
   max: 20, // 20 AI calls per hour
   message: {
     status: "error",
-    message: "AI usage limit reached. Upgrade your plan."
-  }
+    message: "AI usage limit reached. Upgrade your plan.",
+  },
+});
+
+export const refreshLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 100,
 });

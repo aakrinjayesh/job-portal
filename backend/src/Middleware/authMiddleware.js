@@ -1,26 +1,54 @@
-import jwt from 'jsonwebtoken'
-import dotenv from 'dotenv';
+// import jwt from 'jsonwebtoken'
+// import dotenv from 'dotenv';
 
+// dotenv.config();
+
+// const authenticateToken = (req, res, next) => {
+//   console.log("inside middleware")
+//   const authHeader = req.headers['authorization']
+//   const token = authHeader && authHeader.split(' ')[1]
+//   if (!token) {
+//     return res.status(403).json({ message: "Missing access token" })
+//   }
+//   jwt.verify(token, process.env.SECRETKEY , (err, user) => {
+//     if (err) {
+//       return res.status(401).json({ message: "Invalid or expired token" + err.message });
+//     }
+//     console.log("user from middleware", user)
+//     // req.body = user
+//     req.user = user
+//     next()
+//   })
+// }
+
+// export {
+//   authenticateToken
+// }
+
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 dotenv.config();
 
 const authenticateToken = (req, res, next) => {
-  console.log("inside middleware")
-  const authHeader = req.headers['authorization']
-  const token = authHeader && authHeader.split(' ')[1]
-  if (!token) {
-    return res.status(403).json({ message: "Missing access token" })
-  }
-  jwt.verify(token, process.env.SECRETKEY , (err, user) => {
-    if (err) {
-      return res.status(401).json({ message: "Invalid or expired token" + err.message });
-    }
-    console.log("user from middleware", user)
-    // req.body = user
-    req.user = user
-    next()
-  })
-}
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
-export {
-  authenticateToken
-}
+  if (!token) {
+    return res.status(403).json({ code: "TOKEN_MISSING" });
+  }
+
+  jwt.verify(token, process.env.SECRETKEY, (err, user) => {
+    if (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ code: "TOKEN_EXPIRED" });
+      }
+
+      return res.status(401).json({ code: "TOKEN_INVALID" });
+    }
+
+    req.user = user;
+    next();
+  });
+};
+
+export { authenticateToken };

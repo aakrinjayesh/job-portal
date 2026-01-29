@@ -31,10 +31,13 @@ import MyActivity from "./company/pages/MyActivity";
 import MyProfile from "./company/pages/MyProfile";
 import { useEffect } from "react";
 import LandingRedirect from "./pages/LandingRedirect";
+import { useLocation } from "react-router-dom";
 
 function App() {
+  const location = useLocation();
+
   useEffect(() => {
-    if (window.location.pathname === "/login") return;
+    if (location.pathname === "/login") return;
 
     const initAuth = async () => {
       try {

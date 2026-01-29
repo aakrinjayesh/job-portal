@@ -34,7 +34,7 @@ const LoginPage = () => {
     if (role) setActiveTab(role);
   }, [role]);
 
-   /* ================= EMAIL HELPERS ================= */
+  /* ================= EMAIL HELPERS ================= */
   const personalDomains = [
     "gmail.com",
     "yahoo.com",
@@ -66,7 +66,7 @@ const LoginPage = () => {
         localStorage.setItem("astoken", res?.chatmeatadata?.accessToken);
         localStorage.setItem(
           "asuser",
-          JSON.stringify(res?.chatmeatadata?.user)
+          JSON.stringify(res?.chatmeatadata?.user),
         );
 
         login(res?.chatmeatadata?.user, res?.chatmeatadata?.accessToken);
@@ -76,7 +76,7 @@ const LoginPage = () => {
           res?.user?.role === "candidate"
             ? // ? "/candidate/dashboard"
               "/candidate/profile"
-            : "/company/dashboard"
+            : "/company/dashboard",
         );
       } else {
         messageApi.error(res.message || "Login Failed!");
@@ -90,54 +90,52 @@ const LoginPage = () => {
 
   const LoginForm = useMemo(
     () =>
-      ({ role }) =>
-        (
-          <Form layout="vertical" onFinish={(v) => onFinish(v, role)}>
-            <Form.Item
-                           name="email"
-                           rules={[
-                             { required: true, message: "Enter email" },
-                           {
-             pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-             message:
-               "Spaces and invalid formats are not allowed.",
-           },
-            {
-                               validator: (_, value) => {
-                                 if (!value) return Promise.resolve();
-                                 if (role === "candidate" && !isPersonalEmail(value))
-                                   return Promise.reject(
-                                     "Use personal email (gmail, outlook, etc.)"
-                                   );
-                                 if (role === "company" && !isCompanyEmail(value))
-                                   return Promise.reject("Use company email");
-                                 return Promise.resolve();
-                               },
-                             },
-                           ]}
-                         >
-                           <Input size="large" placeholder="Email" />
-                         </Form.Item>
+      ({ role }) => (
+        <Form layout="vertical" onFinish={(v) => onFinish(v, role)}>
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Enter email" },
+              {
+                pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                message: "Spaces and invalid formats are not allowed.",
+              },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  if (role === "candidate" && !isPersonalEmail(value))
+                    return Promise.reject(
+                      "Use personal email (gmail, outlook, etc.)",
+                    );
+                  if (role === "company" && !isCompanyEmail(value))
+                    return Promise.reject("Use company email");
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Input size="large" placeholder="Email" />
+          </Form.Item>
 
-            <Form.Item
-              name="password"
-              rules={[{ required: true, message: "Enter password" }]}
-            >
-              <Input.Password size="large" placeholder="Password" />
-            </Form.Item>
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: "Enter password" }]}
+          >
+            <Input.Password size="large" placeholder="Password" />
+          </Form.Item>
 
-            <Button
-              type="primary"
-              htmlType="submit"
-              block
-              size="large"
-              loading={submitting}
-            >
-              Login
-            </Button>
-          </Form>
-        ),
-    [submitting]
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            size="large"
+            loading={submitting}
+          >
+            Login
+          </Button>
+        </Form>
+      ),
+    [submitting],
   );
 
   return (

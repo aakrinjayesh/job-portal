@@ -74,7 +74,6 @@ const RecruiterJobList = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  // const [loading, setLoading] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -280,12 +279,16 @@ const RecruiterJobList = () => {
       const response = await PostedJobsList(
         pageNumber,
         LIMIT,
-        controller.signal
+        controller.signal,
       );
 
       const newJobs = response?.jobs || [];
 
       setJobs((prev) => (pageNumber === 1 ? newJobs : [...prev, ...newJobs]));
+      setLoading(false);
+      if (pageNumber === 1) {
+        setInitialLoading(false);
+      }
 
       if (newJobs.length < LIMIT) {
         setHasMore(false);
@@ -300,12 +303,13 @@ const RecruiterJobList = () => {
 
       // ❗ Show error ONLY for real failures
       messageApi.error("Failed to fetch jobs");
-    } finally {
-      setLoading(false);
-      if (pageNumber === 1) {
-        setInitialLoading(false);
-      }
     }
+    // finally {
+    //   setLoading(false);
+    //   if (pageNumber === 1) {
+    //     setInitialLoading(false);
+    //   }
+    // }
   };
 
   // ✅ Handle selecting/deselecting a job
@@ -313,7 +317,7 @@ const RecruiterJobList = () => {
     setSelectedJobs((prev) =>
       prev.includes(jobId)
         ? prev.filter((id) => id !== jobId)
-        : [...prev, jobId]
+        : [...prev, jobId],
     );
   };
 
@@ -450,7 +454,7 @@ const RecruiterJobList = () => {
       console.error("Error saving job:", error);
       // messageApi.error("Failed to save job:" + error.response.data.message);
       messageApi.error(
-        error?.response?.data?.message?.message || "Failed to save job"
+        error?.response?.data?.message?.message || "Failed to save job",
       );
       messageApi.error(error?.response?.data?.message || "Failed to save job");
 
@@ -498,7 +502,7 @@ const RecruiterJobList = () => {
     } catch (error) {
       console.error(error);
       messageApi.error(
-        "Upload failed. Try again:" + error.response.data.message
+        "Upload failed. Try again:" + error.response.data.message,
       );
       setUploadLoading(false);
     } finally {
@@ -1236,12 +1240,14 @@ const RecruiterJobList = () => {
                       onChange={(value) => {
                         // Show Tenure for Part Time, Contract, Freelancer
                         setShowTenure(
-                          ["Contract", "PartTime", "Freelancer"].includes(value)
+                          ["Contract", "PartTime", "Freelancer"].includes(
+                            value,
+                          ),
                         );
 
                         if (
                           !["Contract", "PartTime", "Freelancer"].includes(
-                            value
+                            value,
                           )
                         ) {
                           form.setFieldsValue({ tenure: undefined }); // clear if not needed
@@ -1388,7 +1394,7 @@ const RecruiterJobList = () => {
                           validator: (_, value) => {
                             if (value && value.length > 3) {
                               return Promise.reject(
-                                "You can select up to 3 locations only"
+                                "You can select up to 3 locations only",
                               );
                             }
                             return Promise.resolve();
@@ -1460,8 +1466,8 @@ const RecruiterJobList = () => {
                             if (digitsOnly.length > 10) {
                               return Promise.reject(
                                 new Error(
-                                  "Maximum 10 digits allowed (including decimals)"
-                                )
+                                  "Maximum 10 digits allowed (including decimals)",
+                                ),
                               );
                             }
 
@@ -1500,8 +1506,8 @@ const RecruiterJobList = () => {
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)"
-                                    )
+                                      "Maximum 10 digits allowed (including decimals)",
+                                    ),
                                   );
                                 }
 
@@ -1538,8 +1544,8 @@ const RecruiterJobList = () => {
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)"
-                                    )
+                                      "Maximum 10 digits allowed (including decimals)",
+                                    ),
                                   );
                                 }
 
@@ -1551,7 +1557,7 @@ const RecruiterJobList = () => {
                                 const min = getFieldValue(["salary", "min"]);
                                 if (min && value && value < min) {
                                   return Promise.reject(
-                                    "Max salary must be greater than Min salary"
+                                    "Max salary must be greater than Min salary",
                                   );
                                 }
                                 return Promise.resolve();
@@ -1928,7 +1934,7 @@ const RecruiterJobList = () => {
 
                       if (wordCount > 1000) {
                         return Promise.reject(
-                          new Error("Maximum 1000 words allowed")
+                          new Error("Maximum 1000 words allowed"),
                         );
                       }
 
