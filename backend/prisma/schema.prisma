@@ -20,17 +20,29 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members         OrganizationMember[]
+  // 👥 Members & Access
+  members OrganizationMember[]
+  invites OrganizationInvite[]
+
+  // 💼 Hiring & Jobs
   jobs            Job[]
   jobApplications JobApplication[]
-  savedCandidates SavedCandidate[]
-  activities      Activity[]
-  userProfile     UserProfile[]
   savedJobs       SavedJob[]
-  invites         OrganizationInvite[]
-  subscription    OrganizationSubscription?
-  credits         CreditLedger[]
-  payments        PaymentAttempt[]
+  savedCandidates SavedCandidate[]
+
+  // 👤 Candidates
+  userProfile UserProfile[]
+
+  // 📝 Activities & Tasks
+  activities        Activity[]
+  taskTemplates     TaskTemplate[]
+  candidateTaskList CandidateTaskList[]
+  candidateTasks    CandidateTask[]
+
+  // 💳 Billing & Usage
+  subscription OrganizationSubscription?
+  credits      CreditLedger[]
+  payments     PaymentAttempt[]
 }
 
 model OrganizationMember {
@@ -631,53 +643,65 @@ model SavedCandidate {
 }
 
 model TaskTemplate {
-  id          String   @id @default(uuid())
-  recruiterId String
-  title       String
-  order       Int
-  isDefault   Boolean  @default(false) // system provided
-  isActive    Boolean  @default(true) // recruiter can disable without deleting
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String @id @default(uuid())
+  recruiterId    String
+  organizationId String
 
-  recruiter Users @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  title     String
+  order     Int
+  isDefault Boolean  @default(false) // system provided
+  isActive  Boolean  @default(true) // recruiter can disable without deleting
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recruiter    Users        @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([recruiterId])
+  @@index([organizationId])
 }
 
 model CandidateTaskList {
-  id          String   @id @default(uuid())
-  recruiterId String
-  candidateId String
-  jobId       String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  recruiterId    String
+  candidateId    String
+  jobId          String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  recruiter Users       @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
-  candidate UserProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  job       Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  recruiter    Users        @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  candidate    UserProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job          Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   tasks CandidateTask[]
 
-  @@unique([recruiterId, candidateId, jobId]) // 🚨 prevents duplicate checklists
+  @@unique([recruiterId, candidateId, jobId, organizationId])
   @@index([candidateId])
+  @@index([organizationId])
 }
 
 model CandidateTask {
-  id            String    @id @default(uuid())
-  taskListId    String
-  title         String
-  completed     Boolean   @default(false)
-  order         Int
-  isActive      Boolean   @default(true) // hide task without deleting history
-  dueDate       DateTime?
-  createdFromId String? // reference to TaskTemplate.id
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id             String @id @default(uuid())
+  taskListId     String
+  organizationId String
 
-  taskList CandidateTaskList @relation(fields: [taskListId], references: [id], onDelete: Cascade)
+  title     String
+  completed Boolean   @default(false)
+  order     Int
+  isActive  Boolean   @default(true)
+  dueDate   DateTime?
+
+  createdFromId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  taskList     CandidateTaskList @relation(fields: [taskListId], references: [id], onDelete: Cascade)
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([taskListId])
+  @@index([organizationId])
 }
 
 model CandidateRating {
