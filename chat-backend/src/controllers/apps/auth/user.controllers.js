@@ -276,16 +276,17 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
   user.emailVerificationExpiry = tokenExpiry;
   await user.save({ validateBeforeSave: false });
 
-  await sendEmail({
-    email: user?.email,
-    subject: "Please verify your email",
-    mailgenContent: emailVerificationMailgenContent(
-      user.username,
-      `${req.protocol}://${req.get(
-        "host",
-      )}/api/v1/users/verify-email/${unHashedToken}`,
-    ),
-  });
+  // await sendEmail({
+  //   email: user?.email,
+  //   subject: "Please verify your email",
+  //   mailgenContent: emailVerificationMailgenContent(
+  //     user.username,
+  //     `${req.protocol}://${req.get(
+  //       "host",
+  //     )}/api/v1/users/verify-email/${unHashedToken}`,
+  //   ),
+  // });
+
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Mail has been sent to your mail ID"));
@@ -364,16 +365,17 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   // Send mail with the password reset link. It should be the link of the frontend url with token
-  await sendEmail({
-    email: user?.email,
-    subject: "Password reset request",
-    mailgenContent: forgotPasswordMailgenContent(
-      user.username,
-      // ! NOTE: Following link should be the link of the frontend page responsible to request password reset
-      // ! Frontend will send the below token with the new password in the request body to the backend reset password endpoint
-      `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`,
-    ),
-  });
+  // await sendEmail({
+  //   email: user?.email,
+  //   subject: "Password reset request",
+  //   mailgenContent: forgotPasswordMailgenContent(
+  //     user.username,
+  //     // ! NOTE: Following link should be the link of the frontend page responsible to request password reset
+  //     // ! Frontend will send the below token with the new password in the request body to the backend reset password endpoint
+  //     `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`,
+  //   ),
+  // });
+
   return res
     .status(200)
     .json(
