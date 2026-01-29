@@ -1,29 +1,22 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button, message } from "antd";
 import { FileTextOutlined } from "@ant-design/icons";
 
-function GenerateResume({ form }) {
+function GenerateResume({ candidate }) {
   const [generateLoading, setGenerateLoading] = useState(false);
 
-  const generateResumeButton = async () => {
+  const generateResumeButton = async (e) => {
+    e.stopPropagation(); // ✅ prevent card click navigation
     try {
       setGenerateLoading(true);
 
-      // Get current form values
-      const values = form.getFieldsValue();
-      console.log("Generating resume with values:", values);
-
-      // Create HTML content for the resume
-      const resumeHTML = createResumeHTML(values);
-
-      // Create and download PDF
+      const resumeHTML = createResumeHTML(candidate);
       await downloadResumePDF(resumeHTML);
 
-      message.success("Resume generated and downloaded successfully!");
+      message.success("Resume generated successfully!");
     } catch (error) {
       console.error("Resume generation error:", error);
-      message.error("Failed to generate resume. Please try again.");
+      message.error("Failed to generate resume");
     } finally {
       setGenerateLoading(false);
     }
@@ -31,293 +24,156 @@ function GenerateResume({ form }) {
 
   const createResumeHTML = (values) => {
     const {
+      name,
+      title,
+      currentLocation,
       preferredLocation = [],
-      preferredJobType = [],
-      currentCTC,
-      expectedCTC,
       joiningPeriod,
       totalExperience,
       relevantSalesforceExperience,
-      skills = [],
+      rateCardPerHour,
+      skillsJson = [],
       certifications = [],
+      primaryClouds = [],
+      secondaryClouds = [],
       workExperience = [],
+      isVendor,
     } = values;
 
+    const skills = skillsJson.map((s) => s.name);
+
     return `
-      <!DOCTYPE html>
-      <html lang="en">
+    <!DOCTYPE html>
+    <html>
       <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
         <title>Resume</title>
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
           body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #fff;
-          }
-          
-          .resume-container {
-            max-width: 800px;
-            margin: 0 auto;
+            font-family: Arial, sans-serif;
             padding: 40px;
-            background: #fff;
+            color: #333;
           }
-          
-          .header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #2563eb;
-          }
-          
-          .header h1 {
-            font-size: 2.5em;
+          h1 {
             color: #1e40af;
-            margin-bottom: 10px;
-            font-weight: 700;
+            margin-bottom: 4px;
           }
-          
-          .header .subtitle {
-            font-size: 1.2em;
-            color: #64748b;
-            font-weight: 300;
+          h3 {
+            color: #555;
+            margin-top: 0;
           }
-          
+          hr {
+            margin: 20px 0;
+          }
+          ul {
+            padding-left: 18px;
+          }
           .section {
-            margin-bottom: 30px;
-          }
-          
-          .section-title {
-            font-size: 1.4em;
-            color: #1e40af;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #e2e8f0;
-            font-weight: 600;
-          }
-          
-          .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
             margin-bottom: 20px;
-          }
-          
-          .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f5f9;
-          }
-          
-          .info-label {
-            font-weight: 600;
-            color: #475569;
-            min-width: 150px;
-          }
-          
-          .info-value {
-            color: #334155;
-            text-align: right;
-          }
-          
-          .skills-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-          }
-          
-          .skill-tag {
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 500;
-          }
-          
-          .experience-item, .cert-item {
-            background: #f8fafc;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #2563eb;
-          }
-          
-          .cert-item {
-            background: #f0f9ff;
-            border-left-color: #0ea5e9;
-          }
-          
-          @media print {
-            body { print-color-adjust: exact; }
-            .resume-container { margin: 0; padding: 20px; }
           }
         </style>
       </head>
       <body>
-        <div class="resume-container">
-          <div class="header">
-            <h1>Professional Resume</h1>
-          </div>
-          
-          <div class="section">
-            <h2 class="section-title">Professional Summary</h2>
-            <p>A dedicated professional with ${
-              totalExperience || "extensive"
-            } years of experience, including ${
-      relevantSalesforceExperience || "significant"
-    } years of expertise in Salesforce development. Seeking ${
-      preferredJobType.length > 0 ? preferredJobType.join(" or ") : "suitable"
-    } opportunities${
-      preferredLocation.length > 0 ? ` in ${preferredLocation.join(", ")}` : ""
-    }.</p>
-          </div>
-          
-          <div class="section">
-            <h2 class="section-title">Key Information</h2>
-            <div class="info-grid">
-              ${
-                totalExperience
-                  ? `<div class="info-item">
-                <span class="info-label">Total Experience:</span>
-                <span class="info-value">${totalExperience}</span>
-              </div>`
-                  : ""
-              }
-              ${
-                relevantSalesforceExperience
-                  ? `<div class="info-item">
-                <span class="info-label">Salesforce Experience:</span>
-                <span class="info-value">${relevantSalesforceExperience}</span>
-              </div>`
-                  : ""
-              }
-              ${
-                currentCTC
-                  ? `<div class="info-item">
-                <span class="info-label">Current CTC:</span>
-                <span class="info-value">${currentCTC}</span>
-              </div>`
-                  : ""
-              }
-              ${
-                expectedCTC
-                  ? `<div class="info-item">
-                <span class="info-label">Expected CTC:</span>
-                <span class="info-value">${expectedCTC}</span>
-              </div>`
-                  : ""
-              }
-              ${
-                joiningPeriod
-                  ? `<div class="info-item">
-                <span class="info-label">Joining Period:</span>
-                <span class="info-value">${joiningPeriod}</span>
-              </div>`
-                  : ""
-              }
-            </div>
-          </div>
-          
-          ${
-            skills.length > 0
-              ? `<div class="section">
-            <h2 class="section-title">Technical Skills</h2>
-            <div class="skills-container">
-              ${skills
-                .map((skill) => `<span class="skill-tag">${skill}</span>`)
-                .join("")}
-            </div>
-          </div>`
-              : ""
-          }
-          
-          ${
-            workExperience.length > 0
-              ? `<div class="section">
-            <h2 class="section-title">Work Experience</h2>
-            ${workExperience
-              .map((exp) => `<div class="experience-item">${exp}</div>`)
-              .join("")}
-          </div>`
-              : ""
-          }
-          
-          ${
-            certifications.length > 0
-              ? `<div class="section">
-            <h2 class="section-title">Certifications</h2>
-            ${certifications
-              .map((cert) => `<div class="cert-item">${cert}</div>`)
-              .join("")}
-          </div>`
-              : ""
-          }
-          
-          <div class="section">
-            <h2 class="section-title">Preferences</h2>
-            <div class="info-grid">
-              ${
-                preferredJobType.length > 0
-                  ? `<div class="info-item">
-                <span class="info-label">Preferred Job Type:</span>
-                <span class="info-value">${preferredJobType.join(", ")}</span>
-              </div>`
-                  : ""
-              }
-              ${
-                preferredLocation.length > 0
-                  ? `<div class="info-item">
-                <span class="info-label">Preferred Location:</span>
-                <span class="info-value">${preferredLocation.join(", ")}</span>
-              </div>`
-                  : ""
-              }
-            </div>
-          </div>
+        <h1>${name || "Candidate"}</h1>
+        <h3>${title || ""}</h3>
+        <p><b>Profile Type:</b> ${
+          isVendor ? "Vendor Candidate" : "Individual Candidate"
+        }</p>
+
+        <hr />
+
+        <div class="section">
+          <p><b>Location:</b> ${
+            currentLocation || preferredLocation.join(", ") || "-"
+          }</p>
+          <p><b>Total Experience:</b> ${totalExperience || "-"}</p>
+          <p><b>Salesforce Experience:</b> ${
+            relevantSalesforceExperience || "-"
+          }</p>
+          <p><b>Joining Period:</b> ${joiningPeriod || "-"}</p>
+          <p><b>Rate:</b> ${
+            rateCardPerHour?.value ? `₹ ${rateCardPerHour.value}` : "-"
+          }</p>
         </div>
+
+        <hr />
+
+        ${
+          skills.length > 0
+            ? `<div class="section">
+                <h3>Skills</h3>
+                <ul>
+                  ${skills.map((s) => `<li>${s}</li>`).join("")}
+                </ul>
+              </div>`
+            : ""
+        }
+
+        ${
+          primaryClouds.length > 0
+            ? `<div class="section">
+                <h3>Primary Clouds</h3>
+                <ul>
+                  ${primaryClouds
+                    .map((c) => `<li>${c.name} (${c.experience} yrs)</li>`)
+                    .join("")}
+                </ul>
+              </div>`
+            : ""
+        }
+
+        ${
+          certifications.length > 0
+            ? `<div class="section">
+                <h3>Certifications</h3>
+                <ul>
+                  ${certifications.map((c) => `<li>${c}</li>`).join("")}
+                </ul>
+              </div>`
+            : ""
+        }
+
+        ${
+          workExperience.length > 0
+            ? `<div class="section">
+                <h3>Work Experience</h3>
+                ${workExperience
+                  .map(
+                    (exp) => `
+                  <p><b>${exp.role}</b> - ${exp.payrollCompanyName}</p>
+                `
+                  )
+                  .join("")}
+              </div>`
+            : ""
+        }
       </body>
-      </html>
+    </html>
     `;
   };
 
   const downloadResumePDF = async (htmlContent) => {
-    // Create a new window to render the HTML
     const printWindow = window.open("", "_blank");
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 
-    // Wait for content to load, then trigger print
     printWindow.onload = () => {
       setTimeout(() => {
-        printWindow.print();
+        printWindow.print(); // user chooses Save as PDF
         printWindow.close();
       }, 500);
     };
   };
 
   return (
-    <>
-      <Button
-        type="default"
-        icon={<FileTextOutlined />}
-        size="large"
-        loading={generateLoading}
-        onClick={generateResumeButton}
-        style={{ flex: 1 }}
-      >
-        Generate Resume
-      </Button>
-    </>
+    <Button
+      type="default"
+      icon={<FileTextOutlined />}
+      loading={generateLoading}
+      onClick={generateResumeButton}
+    >
+      Generate Resume
+    </Button>
   );
 }
 

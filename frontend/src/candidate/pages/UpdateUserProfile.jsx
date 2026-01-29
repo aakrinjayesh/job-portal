@@ -76,15 +76,13 @@ const UpdateUserProfile = ({
 
   const [isCandidate, setIsCandidate] = useState(false);
 
-const [currentStep, setCurrentStep] = useState(0);
-
+  const [currentStep, setCurrentStep] = useState(0);
 
   const role = localStorage.getItem("role");
 
   useEffect(() => {
     if (editRecord && Reciviedrole) {
-
-       setIsCandidate(!!editRecord.userId); 
+      setIsCandidate(!!editRecord.userId);
       console.log("edit true");
       // Reset previous values
       form.resetFields();
@@ -188,7 +186,6 @@ const [currentStep, setCurrentStep] = useState(0);
         const user = res?.user;
 
         setIsCandidate(!!user.userId);
-
 
         // Extract skills from skillsJson
         const skillsJson = user?.skillsJson || [];
@@ -542,48 +539,40 @@ const [currentStep, setCurrentStep] = useState(0);
   };
 
   const renderSection = ({ key, title, children }) => (
-  <Collapse
-    defaultActiveKey={[key]}   // ✅ default open
-    bordered={false}
-    style={{ marginBottom: 24 }}
-  >
-    <Collapse.Panel
-      key={key}
-      header={
-        <span style={{ fontWeight: 600, fontSize: 16 }}>
-          {title}
-        </span>
-      }
-      style={{
-        background: "#fff",
-        borderRadius: 12,
-        border: "1px solid #f0f0f0",
-      }}
+    <Collapse
+      defaultActiveKey={[key]} // ✅ default open
+      bordered={false}
+      style={{ marginBottom: 24 }}
     >
-      {children}
-    </Collapse.Panel>
-  </Collapse>
-);
+      <Collapse.Panel
+        key={key}
+        header={<span style={{ fontWeight: 600, fontSize: 16 }}>{title}</span>}
+        style={{
+          background: "#fff",
+          borderRadius: 12,
+          border: "1px solid #f0f0f0",
+        }}
+      >
+        {children}
+      </Collapse.Panel>
+    </Collapse>
+  );
 
-const sectionRefs = {
-  personal: React.useRef(null),
-  skills: React.useRef(null),
-  education: React.useRef(null),
-  certifications: React.useRef(null),
-  experience: React.useRef(null),
-  
-};
+  const sectionRefs = {
+    personal: React.useRef(null),
+    skills: React.useRef(null),
+    education: React.useRef(null),
+    certifications: React.useRef(null),
+    experience: React.useRef(null),
+  };
 
-const stepsConfig = [
-  { title: "Personal Information", key: "personal" },
-  { title: "Skills", key: "skills" },
-  { title: "Education", key: "education" },
-  { title: "Certifications", key: "certifications" },
-  { title: "Work Experience", key: "experience" },
- 
-];
-
-  
+  const stepsConfig = [
+    { title: "Personal Information", key: "personal" },
+    { title: "Skills", key: "skills" },
+    { title: "Education", key: "education" },
+    { title: "Certifications", key: "certifications" },
+    { title: "Work Experience", key: "experience" },
+  ];
 
   return (
     <div style={{ padding: 0, maxWidth: 1200, margin: "0 auto" }}>
@@ -605,201 +594,202 @@ const stepsConfig = [
         </Button>
       </Upload>
 
-      <Card title="Candidate Information Form" style={{ marginTop: 20 }}
+      <Card
+        title="Candidate Information Form"
+        style={{ marginTop: 20 }}
         extra={
-    <span
-      onClick={() => setModalVisible(false)}
-      style={{
-        fontSize: 18,
-        cursor: "pointer",
-        color: "#555",
-      }}
-    >
-      ✕
-    </span>
-  }
+          <span
+            onClick={() => setModalVisible(false)}
+            style={{
+              fontSize: 18,
+              cursor: "pointer",
+              color: "#555",
+            }}
+          >
+            ✕
+          </span>
+        }
       >
-
         <Steps
-  current={currentStep}
-  style={{ marginBottom: 32 }}
-  items={stepsConfig.map((step, index) => ({
-    title: step.title,
-    onClick: () => {
-      setCurrentStep(index);
-      sectionRefs[step.key]?.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    },
-  }))}
-/>
+          current={currentStep}
+          style={{ marginBottom: 32 }}
+          items={stepsConfig.map((step, index) => ({
+            title: step.title,
+            onClick: () => {
+              setCurrentStep(index);
+              sectionRefs[step.key]?.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            },
+          }))}
+        />
 
-
-        
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
           onFinishFailed={onFinishFailed}
         >
-<div ref={sectionRefs.skills}>
-       <Collapse
-  defaultActiveKey={["personal-info"]}
-  bordered={false}
-  style={{ marginBottom: 24 }}
->
-  <Collapse.Panel
-    key="personal-info"
-    header={
-      <span style={{ fontWeight: 600, fontSize: 16 }}>
-        Personal Information
-      </span>
-    }
-    style={{
-      background: "#fff",
-      borderRadius: 12,
-      border: "1px solid #f0f0f0",
-    }}
-  >
-
-  
-
-          <Row gutter={16}>
-            {/* Profile Picture */}
-            <Col span={24}>
-              <Form.Item
-                label="Upload Profile Picture .Jpg,.Png,.Jpeg(limit 200KB)"
-                name="profilePicture"
+          <div ref={sectionRefs.skills}>
+            <Collapse
+              defaultActiveKey={["personal-info"]}
+              bordered={false}
+              style={{ marginBottom: 24 }}
+            >
+              <Collapse.Panel
+                key="personal-info"
+                header={
+                  <span style={{ fontWeight: 600, fontSize: 16 }}>
+                    Personal Information
+                  </span>
+                }
+                style={{
+                  background: "#fff",
+                  borderRadius: 12,
+                  border: "1px solid #f0f0f0",
+                }}
               >
-                <Upload
-                  listType="picture-card"
-                  style={{
-                    borderRadius: "50%", // 👉 makes the upload area circular
-                    overflow: "hidden", // 👉 keeps uploaded photo inside circle
-                    width: 120,
-                    height: 120,
-                  }}
-                  fileList={fileList}
-                  maxCount={1}
-                  accept=".jpg,.jpeg,.png"
-                  previewFile={(file) => {
-                    return Promise.resolve(URL.createObjectURL(file));
-                  }}
-                  showUploadList={{
-                    showPreviewIcon: true,
-                    showRemoveIcon: true,
-                    itemRender: (originNode, file, fileList, actions) => (
-                      <div
+                <Row gutter={16}>
+                  {/* Profile Picture */}
+                  <Col span={24}>
+                    <Form.Item
+                      label="Upload Profile Picture .Jpg,.Png,.Jpeg(limit 200KB)"
+                      name="profilePicture"
+                    >
+                      <Upload
+                        listType="picture-card"
                         style={{
+                          borderRadius: "50%", // 👉 makes the upload area circular
+                          overflow: "hidden", // 👉 keeps uploaded photo inside circle
                           width: 120,
                           height: 120,
-                          borderRadius: "50%",
-                          overflow: "hidden",
-                          position: "relative",
+                        }}
+                        fileList={fileList}
+                        maxCount={1}
+                        accept=".jpg,.jpeg,.png"
+                        previewFile={(file) => {
+                          return Promise.resolve(URL.createObjectURL(file));
+                        }}
+                        showUploadList={{
+                          showPreviewIcon: true,
+                          showRemoveIcon: true,
+                          itemRender: (originNode, file, fileList, actions) => (
+                            <div
+                              style={{
+                                width: 120,
+                                height: 120,
+                                borderRadius: "50%",
+                                overflow: "hidden",
+                                position: "relative",
+                              }}
+                            >
+                              <img
+                                src={file.thumbUrl || file.url}
+                                alt="profile"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  borderRadius: "50%",
+                                }}
+                              />
+
+                              {/* eye icon */}
+                              <span
+                                onClick={() =>
+                                  window.open(file.thumbUrl || file.url)
+                                }
+                                style={{
+                                  position: "absolute",
+                                  bottom: 8,
+                                  left: 8,
+                                  background: "rgba(0,0,0,0.6)",
+                                  color: "#fff",
+                                  borderRadius: "50%",
+                                  padding: "2px 6px",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                👁
+                              </span>
+
+                              {/* delete icon */}
+                              <span
+                                onClick={actions.remove}
+                                style={{
+                                  position: "absolute",
+                                  bottom: 8,
+                                  right: 8,
+                                  background: "rgba(0,0,0,0.6)",
+                                  color: "#fff",
+                                  borderRadius: "50%",
+                                  padding: "2px 6px",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                ✖
+                              </span>
+                            </div>
+                          ),
+                        }}
+                        // beforeUpload={() => false}
+                        beforeUpload={(file) => {
+                          const allowed = [
+                            "image/jpeg",
+                            "image/png",
+                            "image/jpg",
+                          ];
+                          if (!allowed.includes(file.type)) {
+                            message.error(
+                              "Only JPG, JPEG, PNG images are allowed!"
+                            );
+                            return Upload.LIST_IGNORE;
+                          }
+                          const maxSize = 200 * 1024; // 200 KB
+
+                          if (file.size > maxSize) {
+                            message.error("Image must be smaller than 2MB!");
+                            return Upload.LIST_IGNORE;
+                          }
+
+                          return false;
+                        }}
+                        onChange={(info) => {
+                          // form.setFieldsValue({ profilePicture: info.file });
+                          // form.setFieldsValue({ profilePicture: info.file.originFileObj });
+                          setFileList(info.fileList);
+                          form.setFieldsValue({ profilePicture: info.file });
                         }}
                       >
-                        <img
-                          src={file.thumbUrl || file.url}
-                          alt="profile"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            borderRadius: "50%",
-                          }}
-                        />
+                        <div>
+                          <UserOutlined />
+                          <div style={{ marginTop: 8 }}>Upload</div>
+                        </div>
+                      </Upload>
+                    </Form.Item>
+                  </Col>
 
-                        {/* eye icon */}
-                        <span
-                          onClick={() => window.open(file.thumbUrl || file.url)}
-                          style={{
-                            position: "absolute",
-                            bottom: 8,
-                            left: 8,
-                            background: "rgba(0,0,0,0.6)",
-                            color: "#fff",
-                            borderRadius: "50%",
-                            padding: "2px 6px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                          }}
-                        >
-                          👁
-                        </span>
+                  {/* Name, Phone, Email */}
+                  <Col xs={24} sm={12} md={12}>
+                    <Form.Item
+                      label="Full Name"
+                      name="name"
+                      rules={[
+                        { required: true, message: "Please enter full name" },
+                        {
+                          pattern: /^[A-Za-z ]+$/,
+                          message: "Only letters and spaces are allowed",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="Enter full name" />
+                    </Form.Item>
+                  </Col>
 
-                        {/* delete icon */}
-                        <span
-                          onClick={actions.remove}
-                          style={{
-                            position: "absolute",
-                            bottom: 8,
-                            right: 8,
-                            background: "rgba(0,0,0,0.6)",
-                            color: "#fff",
-                            borderRadius: "50%",
-                            padding: "2px 6px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                          }}
-                        >
-                          ✖
-                        </span>
-                      </div>
-                    ),
-                  }}
-                  // beforeUpload={() => false}
-                  beforeUpload={(file) => {
-                    const allowed = ["image/jpeg", "image/png", "image/jpg"];
-                    if (!allowed.includes(file.type)) {
-                      message.error("Only JPG, JPEG, PNG images are allowed!");
-                      return Upload.LIST_IGNORE;
-                    }
-                    const maxSize = 200 * 1024; // 200 KB
-
-                    if (file.size > maxSize) {
-                      message.error("Image must be smaller than 2MB!");
-                      return Upload.LIST_IGNORE;
-                    }
-
-                    return false;
-                  }}
-                  onChange={(info) => {
-                    // form.setFieldsValue({ profilePicture: info.file });
-                    // form.setFieldsValue({ profilePicture: info.file.originFileObj });
-                    setFileList(info.fileList);
-                    form.setFieldsValue({ profilePicture: info.file });
-                  }}
-                >
-                  <div>
-                    <UserOutlined />
-                    <div style={{ marginTop: 8 }}>Upload</div>
-                  </div>
-                </Upload>
-              </Form.Item>
-            </Col>
-
-            {/* Name, Phone, Email */}
-            <Col xs={24} sm={12} md={12}>
-              <Form.Item
-                label="Full Name"
-                name="name"
-                rules={[
-                  { required: true, message: "Please enter full name" },
-                  {
-                    pattern: /^[A-Za-z ]+$/,
-                    message: "Only letters and spaces are allowed",
-                  },
-                ]}
-              >
-                <Input placeholder="Enter full name" />
-              </Form.Item>
-
- </Col>
-
- 
-
-            {/* {Reciviedrole && (
+                  {/* {Reciviedrole && (
               <Form.Item
                 name="hideContact"
                 label="Hide Contact Details "
@@ -817,656 +807,624 @@ const stepsConfig = [
               </Form.Item>
             )} */}
 
-            {/* {!showContact && ( */}
-            <Col xs={24} sm={12} md={12}>
-              <Form.Item
-                label="Phone Number"
-                name="phoneNumber"
-                rules={[
-                  {
-                    //  required: true,
-                    message: "Please enter phone number",
-                  },
-                  {
-                    pattern: /^[0-9]{10}$/,
-                    message: "Format: 9XXXXXXXX2",
-                  },
-                ]}
-              >
-                <Input
-                  addonBefore={
-                    <Select defaultValue="+91">
-                      <Select.Option value="+91">🇮🇳 +91</Select.Option>
-                      <Select.Option value="+1">🇺🇸 +1</Select.Option>
-                      <Select.Option value="+44">🇬🇧 +44</Select.Option>
-                      <Select.Option value="+61">🇦🇺 +61</Select.Option>
-                      <Select.Option value="+971">🇦🇪 +971</Select.Option>
-                    </Select>
-                  }
-                  placeholder="Enter 10-digit phone number"
-                  maxLength={10}
-                  onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            {/* )} */}
-
-            {/* {!showContact && ( */}
-            <Col xs={24} sm={12} md={12}>
-              <Form.Item
-                label="Email"
-                name="email"
-                rules={[
-                  { required: true, message: "Please enter email" },
-                  { type: "email", message: "Enter valid email" },
-                  {
-                    validator: (_, value) => {
-                      if (!value) return Promise.reject("Email is required");
-                      if (!Reciviedrole) {
-                        const allowedDomains = [
-                          "gmail.com",
-                          "yahoo.com",
-                          "outlook.com",
-                          "hotmail.com",
-                          "protonmail.com",
-                          "icloud.com",
-                          "aol.com",
-                          "zoho.com",
-                          "yandex.com",
-                        ];
-
-                        const emailDomain = value.toLowerCase().split("@")[1];
-                        if (allowedDomains.includes(emailDomain)) {
-                          return Promise.resolve();
-                        }
-
-                        return Promise.reject("Please provide a personal ID.");
-                      }
-
-                      const allowedDomains = [
-                        "gmail.com",
-                        "yahoo.com",
-                        "outlook.com",
-                        "hotmail.com",
-                        "protonmail.com",
-                        "icloud.com",
-                        "aol.com",
-                        "zoho.com",
-                        "yandex.com",
-                      ];
-
-                      const emailDomain = value.toLowerCase().split("@")[1];
-                      if (!allowedDomains.includes(emailDomain)) {
-                        return Promise.resolve();
-                      }
-
-                      return Promise.reject("Please provide a work email ID.");
-                    },
-                  },
-                ]}
-              >
-                <Input placeholder="e.g., user@aakrin.com" />
-              </Form.Item>
-            </Col>
-            {/* )} */}
-
-            {/* Title / Role */}
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Title / Role (candidate is looking for)"
-                name="title"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please enter the candidate's role!",
-                  },
-                  {
-                    pattern: /^[A-Za-z ]+$/,
-                    message: "Only letters spaces are allowed!",
-                  },
-                ]}
-              >
-                {/* <Input placeholder="e.g., Salesforce Developer" /> */}
-                <ReusableSelect
-                                  placeholder="Select Role"
-                                  fetchFunction={GetRole}
-                                  addFunction={PostRole}
-                                  single={true}
-                                />
-              </Form.Item>
-            </Col>
-
-  
-
-
-            {/* Preferred & Current Location */}
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Preferred Location (Select up to 3)"
-                name="preferredLocation"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please select preferred location!",
-                  },
-                ]}
-              >
-                <ReusableSelect
-                  placeholder="Select locations"
-                  fetchFunction={GetLocations}
-                  addFunction={PostLocations}
-                  single={false}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} sm={12}>
-              <Form.Item label="Current Job Location" name="currentLocation">
-                <ReusableSelect
-                  single={true}
-                  placeholder="Select Current Job Location"
-                  fetchFunction={GetLocations}
-                  addFunction={PostLocations}
-                />
-              </Form.Item>
-            </Col>
-
-            {/* Current/Expected CTC or Rate Card */}
-            {!Reciviedrole ? (
-              <>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Current Annual CTC"
-                    name="currentCTC"
-                    rules={[
-                      { required: true, message: "Please enter current CTC!" },
-                      {
-                        pattern: /^[0-9]+(\.[0-9]+)?$/,
-                        message: "Only positive numbers are allowed!",
-                      },
-                    ]}
-                  >
-                    <Input type="number" min={0} placeholder="e.g.,800000" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Expected CTC"
-                    name="expectedCTC"
-                    rules={[
-                      { required: true, message: "Please enter expected CTC!" },
-                      {
-                        pattern: /^[0-9]+(\.[0-9]+)?$/,
-                        message: "Only positive numbers are allowed!",
-                      },
-                    ]}
-                  >
-                    <Input type="number" min={1} placeholder="e.g., 1200000" />
-                  </Form.Item>
-                </Col>
-              </>
-            ) : (
-              <Col xs={24} sm={12}>
-                <Form.Item
-                  label="Rate Card Per Month"
-                  name="rateCardPerHour"
-                  rules={[
-                    { required: true, message: "Enter rate card per hour" },
-                  ]}
-                >
-                  <Input.Group compact>
+                  {/* {!showContact && ( */}
+                  <Col xs={24} sm={12} md={12}>
                     <Form.Item
-                      name={["rateCardPerHour", "value"]}
-                      noStyle
+                      label="Phone Number"
+                      name="phoneNumber"
                       rules={[
-                        { required: true, message: "Enter rate value" },
+                        {
+                          //  required: true,
+                          message: "Please enter phone number",
+                        },
+                        {
+                          pattern: /^[0-9]{10}$/,
+                          message: "Format: 9XXXXXXXX2",
+                        },
+                      ]}
+                    >
+                      <Input
+                        addonBefore={
+                          <Select defaultValue="+91">
+                            <Select.Option value="+91">🇮🇳 +91</Select.Option>
+                            <Select.Option value="+1">🇺🇸 +1</Select.Option>
+                            <Select.Option value="+44">🇬🇧 +44</Select.Option>
+                            <Select.Option value="+61">🇦🇺 +61</Select.Option>
+                            <Select.Option value="+971">🇦🇪 +971</Select.Option>
+                          </Select>
+                        }
+                        placeholder="Enter 10-digit phone number"
+                        maxLength={10}
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  {/* )} */}
+
+                  {/* {!showContact && ( */}
+                  <Col xs={24} sm={12} md={12}>
+                    <Form.Item
+                      label="Email"
+                      name="email"
+                      rules={[
+                        { required: true, message: "Please enter email" },
+                        { type: "email", message: "Enter valid email" },
                         {
                           validator: (_, value) => {
-                            if (
-                              value === undefined ||
-                              value === null ||
-                              value === ""
-                            ) {
+                            if (!value)
+                              return Promise.reject("Email is required");
+                            if (!Reciviedrole) {
+                              const allowedDomains = [
+                                "gmail.com",
+                                "yahoo.com",
+                                "outlook.com",
+                                "hotmail.com",
+                                "protonmail.com",
+                                "icloud.com",
+                                "aol.com",
+                                "zoho.com",
+                                "yandex.com",
+                              ];
+
+                              const emailDomain = value
+                                .toLowerCase()
+                                .split("@")[1];
+                              if (allowedDomains.includes(emailDomain)) {
+                                return Promise.resolve();
+                              }
+
+                              return Promise.reject(
+                                "Please provide a personal ID."
+                              );
+                            }
+
+                            const allowedDomains = [
+                              "gmail.com",
+                              "yahoo.com",
+                              "outlook.com",
+                              "hotmail.com",
+                              "protonmail.com",
+                              "icloud.com",
+                              "aol.com",
+                              "zoho.com",
+                              "yandex.com",
+                            ];
+
+                            const emailDomain = value
+                              .toLowerCase()
+                              .split("@")[1];
+                            if (!allowedDomains.includes(emailDomain)) {
                               return Promise.resolve();
                             }
-                            if (/^[0-9]+$/.test(String(value))) {
-                              return Promise.resolve();
-                            }
-                            return Promise.reject("Only numbers are allowed!");
+
+                            return Promise.reject(
+                              "Please provide a work email ID."
+                            );
                           },
                         },
                       ]}
                     >
-                      <InputNumber
-                        style={{ width: "70%" }}
-                        placeholder="Enter rate per Month"
-                        parser={(val) => val.replace(/[^0-9]/g, "")}
+                      <Input placeholder="e.g., user@aakrin.com" />
+                    </Form.Item>
+                  </Col>
+                  {/* )} */}
+
+                  {/* Title / Role */}
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      label="Title / Role (candidate is looking for)"
+                      name="title"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter the candidate's role!",
+                        },
+                        {
+                          pattern: /^[A-Za-z ]+$/,
+                          message: "Only letters spaces are allowed!",
+                        },
+                      ]}
+                    >
+                      {/* <Input placeholder="e.g., Salesforce Developer" /> */}
+                      <ReusableSelect
+                        placeholder="Select Role"
+                        fetchFunction={GetRole}
+                        addFunction={PostRole}
+                        single={true}
                       />
                     </Form.Item>
+                  </Col>
 
+                  {/* Preferred & Current Location */}
+                  <Col xs={24} sm={12}>
                     <Form.Item
-                      name={["rateCardPerHour", "currency"]}
-                      noStyle
-                      initialValue="INR"
-                      rules={[{ required: true, message: "Select currency" }]}
+                      label="Preferred Location (Select up to 3)"
+                      name="preferredLocation"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select preferred location!",
+                        },
+                      ]}
                     >
-                      <Select style={{ width: "30%" }}>
-                        <Select.Option value="INR">INR</Select.Option>
-                        <Select.Option value="EURO">EURO</Select.Option>
-                        <Select.Option value="USD">USD</Select.Option>
+                      <ReusableSelect
+                        placeholder="Select locations"
+                        fetchFunction={GetLocations}
+                        addFunction={PostLocations}
+                        single={false}
+                      />
+                    </Form.Item>
+                  </Col>
+
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      label="Current Job Location"
+                      name="currentLocation"
+                    >
+                      <ReusableSelect
+                        single={true}
+                        placeholder="Select Current Job Location"
+                        fetchFunction={GetLocations}
+                        addFunction={PostLocations}
+                      />
+                    </Form.Item>
+                  </Col>
+
+                  {/* Current/Expected CTC or Rate Card */}
+                  {!Reciviedrole ? (
+                    <>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Current Annual CTC"
+                          name="currentCTC"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter current CTC!",
+                            },
+                            {
+                              pattern: /^[0-9]+(\.[0-9]+)?$/,
+                              message: "Only positive numbers are allowed!",
+                            },
+                          ]}
+                        >
+                          <Input
+                            type="number"
+                            min={0}
+                            placeholder="e.g.,800000"
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Expected CTC"
+                          name="expectedCTC"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter expected CTC!",
+                            },
+                            {
+                              pattern: /^[0-9]+(\.[0-9]+)?$/,
+                              message: "Only positive numbers are allowed!",
+                            },
+                          ]}
+                        >
+                          <Input
+                            type="number"
+                            min={1}
+                            placeholder="e.g., 1200000"
+                          />
+                        </Form.Item>
+                      </Col>
+                    </>
+                  ) : (
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Rate Card Per Month"
+                        name="rateCardPerHour"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Enter rate card per hour",
+                          },
+                        ]}
+                      >
+                        <Input.Group compact>
+                          <Form.Item
+                            name={["rateCardPerHour", "value"]}
+                            noStyle
+                            rules={[
+                              { required: true, message: "Enter rate value" },
+                              {
+                                validator: (_, value) => {
+                                  if (
+                                    value === undefined ||
+                                    value === null ||
+                                    value === ""
+                                  ) {
+                                    return Promise.resolve();
+                                  }
+                                  if (/^[0-9]+$/.test(String(value))) {
+                                    return Promise.resolve();
+                                  }
+                                  return Promise.reject(
+                                    "Only numbers are allowed!"
+                                  );
+                                },
+                              },
+                            ]}
+                          >
+                            <InputNumber
+                              style={{ width: "70%" }}
+                              placeholder="Enter rate per Month"
+                              parser={(val) => val.replace(/[^0-9]/g, "")}
+                            />
+                          </Form.Item>
+
+                          <Form.Item
+                            name={["rateCardPerHour", "currency"]}
+                            noStyle
+                            initialValue="INR"
+                            rules={[
+                              { required: true, message: "Select currency" },
+                            ]}
+                          >
+                            <Select style={{ width: "30%" }}>
+                              <Select.Option value="INR">INR</Select.Option>
+                              <Select.Option value="EURO">EURO</Select.Option>
+                              <Select.Option value="USD">USD</Select.Option>
+                            </Select>
+                          </Form.Item>
+                        </Input.Group>
+                      </Form.Item>
+                    </Col>
+                  )}
+
+                  {/* Joining Period */}
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      label="Joining Period"
+                      name="joiningPeriod"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select joining period!",
+                        },
+                      ]}
+                    >
+                      <Select placeholder="Select joining period">
+                        <Option value="Immediately">Immediately</Option>
+                        <Option value="15 days">15 days</Option>
+                        <Option value="1 month">1 month</Option>
+                        <Option value="2 months">2 months</Option>
+                        <Option value="3 months">3 months</Option>
                       </Select>
                     </Form.Item>
-                  </Input.Group>
-                </Form.Item>
-              </Col>
-            )}
+                  </Col>
 
-            {/* Joining Period */}
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Joining Period"
-                name="joiningPeriod"
-                rules={[
-                  { required: true, message: "Please select joining period!" },
-                ]}
-              >
-                <Select placeholder="Select joining period">
-                  <Option value="Immediately">Immediately</Option>
-                  <Option value="15 days">15 days</Option>
-                  <Option value="1 month">1 month</Option>
-                  <Option value="2 months">2 months</Option>
-                  <Option value="3 months">3 months</Option>
-                </Select>
-              </Form.Item>
-            </Col>
+                  {/* Total Experience */}
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      label="Total Experience"
+                      name="totalExperience"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter total experience!",
+                        },
+                        {
+                          pattern: /^(?:\d{1,2})(?:\.\d{1,2})?$/,
+                          message: "Up to 2 digits before & after decimal",
+                        },
+                      ]}
+                    >
+                      <Input
+                        type="number"
+                        min={0}
+                        step="1"
+                        placeholder="e.g., 6 , 6.2 "
+                      />
+                    </Form.Item>
+                  </Col>
 
-            {/* Total Experience */}
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Total Experience"
-                name="totalExperience"
-                rules={[
-                  { required: true, message: "Please enter total experience!" },
-                  {
-                    pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-                    message:
-                      "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
-                  },
-                ]}
-              >
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="e.g., 6 , 6.2 "
-                />
-              </Form.Item>
-            </Col>
+                  {/* Relevant Salesforce Experience */}
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      label="Relevant Experience in Salesforce"
+                      name="relevantSalesforceExperience"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter Salesforce experience!",
+                        },
+                        {
+                          pattern: /^(?:\d{1,2})(?:\.\d{1,2})?$/,
+                          message: "Up to 2 digits before & after decimal",
+                        },
+                      ]}
+                    >
+                      <Input
+                        type="number"
+                        min={0}
+                        step="1"
+                        placeholder="e.g., 4 years"
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-            {/* Relevant Salesforce Experience */}
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Relevant Experience in Salesforce"
-                name="relevantSalesforceExperience"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please enter Salesforce experience!",
-                  },
-                  {
-                    pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-                    message:
-                      "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
-                  },
-                ]}
-              >
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="e.g., 4 years"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+                <Col span={24}>
+                  <Form.Item
+                    label="Professional Summary"
+                    name="summary"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Professional summary is required",
+                      },
 
-         
+                      {
+                        pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"]+$/,
+                        message:
+                          "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
+                      },
+                    ]}
+                  >
+                    <Input.TextArea
+                      rows={4}
+                      showCount
+                      maxLength={600}
+                      placeholder="Salesforce-focused professional summary (minimum 100 characters)"
+                    />
+                  </Form.Item>
+                </Col>
 
-           <Col span={24}>
- <Form.Item
-  label="Professional Summary"
-  name="summary"
-  rules={[
-    {
-      required: true,
-      message: "Professional summary is required",
-    },
-  
-    {
-      pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"]+$/,
-      message:
-        "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
-    },
-  ]}
->
-  <Input.TextArea
-    rows={4}
-    showCount
-    maxLength={600}
-    placeholder="Salesforce-focused professional summary (minimum 100 characters)"
-  />
-</Form.Item>
+                {/* Portfolio, LinkedIn, Trailhead */}
+                <Row gutter={16}>
+                  <Col xs={24} sm={8}>
+                    <Form.Item
+                      label="Portfolio Link"
+                      name="portfolioLink"
+                      rules={[
+                        {
+                          pattern:
+                            /^https:\/\/([a-zA-Z0-9-]+)\.(dev|me|io|site|portfolio|com)(\/(portfolio|projects|work|about)\/?)?$/,
+                          message: "Enter a valid portfolio link ",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="https://yourportfolio.com (optional)" />
+                    </Form.Item>
+                  </Col>
 
-</Col>
-  
+                  <Col xs={24} sm={8}>
+                    {!isCandidate ? (
+                      <Form.Item
+                        label="LinkedIn URL"
+                        name="linkedInUrl"
+                        rules={[
+                          {
+                            required: true,
+                            message: "LinkedIn URL is required",
+                          },
+                          {
+                            pattern:
+                              /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
+                            message:
+                              "Please enter a valid LinkedIn profile URL",
+                          },
+                        ]}
+                      >
+                        <Input placeholder="https://www.linkedin.com/in/yourprofile" />
+                      </Form.Item>
+                    ) : (
+                      <Form.Item
+                        label="LinkedIn URL"
+                        name="linkedInUrl"
+                        rules={[
+                          {
+                            pattern:
+                              /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
+                            message:
+                              "Please enter a valid LinkedIn profile URL",
+                          },
+                        ]}
+                      >
+                        <Input placeholder="https://www.linkedin.com/in/yourprofile" />
+                      </Form.Item>
+                    )}
+                  </Col>
 
-          {/* Portfolio, LinkedIn, Trailhead */}
-          <Row gutter={16}>
-            <Col xs={24} sm={8}>
-              <Form.Item label="Portfolio Link" name="portfolioLink"
-                rules={[
-      {
-         pattern: /^https:\/\/([a-zA-Z0-9-]+)\.(dev|me|io|site|portfolio|com)(\/(portfolio|projects|work|about)\/?)?$/,
-        message: "Enter a valid portfolio link ",
-      },
-    ]}>
-                <Input placeholder="https://yourportfolio.com (optional)" />
-              </Form.Item>
-            </Col>
-
-            
-
-            <Col xs={24} sm={8}>
-              {/* <Form.Item
-                label="LinkedIn URL"
-                name="linkedInUrl"
-                rules={[
-                  // {
-                  //   required: true,
-                  //   message: "Please enter LinkedIn URL!" },
-                  {
-                    pattern:
-                      /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
-
-                    message:
-                      "Please enter a valid LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourprofile)",
-                  },
-                ]}
-              >
-                <Input placeholder="https://www.linkedin.com/in/yourprofile" />
-              </Form.Item> */}
-
-              {!isCandidate ? (
-  <Form.Item
-    label="LinkedIn URL"
-    name="linkedInUrl"
-    rules={[
-      {
-        required: true,
-        message: "LinkedIn URL is required",
-      },
-      {
-        pattern:
-          /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
-        message: "Please enter a valid LinkedIn profile URL",
-      },
-    ]}
-  >
-    <Input placeholder="https://www.linkedin.com/in/yourprofile" />
-  </Form.Item>
-) : (
-  <Form.Item
-    label="LinkedIn URL"
-    name="linkedInUrl"
-    rules={[
-      {
-        
-        pattern:
-          /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
-        message: "Please enter a valid LinkedIn profile URL",
-      },
-    ]}
-  >
-    <Input placeholder="https://www.linkedin.com/in/yourprofile" />
-  </Form.Item>
-)}
-
-            </Col>
-
-            <Col xs={24} sm={8}>
-              {/* <Form.Item
-                label="Trailhead URL"
-                name="trailheadUrl"
-                rules={[
-                  {
-                    // required: true,
-                    message: "Please enter Trailhead URL!",
-                  },
-                  {
-                    // pattern:
-                    //   /^https:\/\/(www\.)?trailblazer\.me\/id\/[A-Za-z0-9_-]+\/?$/,
-                    pattern:
-                      /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
-                    message:
-                      "Please enter a valid Trailhead URL (e.g. https://www.salesforce.com/trailblazer/yourprofile)",
-                  },
-                ]}
-              >
-                <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
-              </Form.Item> */}
-
-
-              {!isCandidate ? (
-  <Form.Item
-    label="Trailhead URL"
-    name="trailheadUrl"
-    rules={[
-      {
-        required: true,
-        message: "Trailhead URL is required",
-      },
-      {
-        pattern:
-          /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
-        message: "Please enter a valid Trailhead URL",
-      },
-    ]}
-  >
-    <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
-  </Form.Item>
-) : (
-  <Form.Item
-    label="Trailhead URL"
-    name="trailheadUrl"
-    rules={[
-      {
-        pattern:
-          /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
-        message: "Please enter a valid Trailhead URL",
-      },
-    ]}
-  >
-    <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
-  </Form.Item>
-)}
-
-            </Col>
-          </Row>
-  </Collapse.Panel>
-</Collapse>
-</div>
+                  <Col xs={24} sm={8}>
+                    {!isCandidate ? (
+                      <Form.Item
+                        label="Trailhead URL"
+                        name="trailheadUrl"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Trailhead URL is required",
+                          },
+                          {
+                            pattern:
+                              /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
+                            message: "Please enter a valid Trailhead URL",
+                          },
+                        ]}
+                      >
+                        <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
+                      </Form.Item>
+                    ) : (
+                      <Form.Item
+                        label="Trailhead URL"
+                        name="trailheadUrl"
+                        rules={[
+                          {
+                            pattern:
+                              /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
+                            message: "Please enter a valid Trailhead URL",
+                          },
+                        ]}
+                      >
+                        <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
+                      </Form.Item>
+                    )}
+                  </Col>
+                </Row>
+              </Collapse.Panel>
+            </Collapse>
+          </div>
 
           <Divider />
 
+          <div ref={sectionRefs.skills}>
+            {renderSection({
+              key: "skills",
+              title: "Skills",
+              children: (
+                <Collapse
+                  style={{ border: "none" }}
+                  defaultActiveKey={["primary", "secondary"]}
+                  bordered={false}
+                >
+                  {/* PRIMARY SKILLS */}
 
-<div ref={sectionRefs.skills}>
- {renderSection({
-  key: "skills",
-  title: "Skills",
-  children: (
-    <Collapse
-    style={{border: "none"}}
-      defaultActiveKey={["primary", "secondary"]}
-      bordered={false}
-    >
-      
-      {/* PRIMARY SKILLS */}
-     
-        <Form.Item
-          name="primarySkills"
-          rules={[
-            { required: true },
-            {
-              validator: (_, value) => {
-                if (!value || value.length === 0) {
-                  return Promise.reject(
-                    "Please add at least one primary skill!"
-                  );
-                }
-                return Promise.resolve();
-              },
-            },
-          ]}
-        >
-          <SkillManagerCard
-            title="Primary Skills"
-            skills={primarySkills}
-            onSkillsChange={handlePrimarySkillsChange}
-            fetchFunction={GetSkills}
-            addFunction={PostSkills}
-          />
-        </Form.Item>
-     
+                  <Form.Item
+                    name="primarySkills"
+                    rules={[
+                      { required: true },
+                      {
+                        validator: (_, value) => {
+                          if (!value || value.length === 0) {
+                            return Promise.reject(
+                              "Please add at least one primary skill!"
+                            );
+                          }
+                          return Promise.resolve();
+                        },
+                      },
+                    ]}
+                  >
+                    <SkillManagerCard
+                      title="Primary Skills"
+                      skills={primarySkills}
+                      onSkillsChange={handlePrimarySkillsChange}
+                      fetchFunction={GetSkills}
+                      addFunction={PostSkills}
+                    />
+                  </Form.Item>
 
-      {/* SECONDARY SKILLS */}
-     
-        <Form.Item name="secondarySkills">
-          <SkillManagerCard
-            title="Secondary Skills"
-            skills={secondarySkills}
-            onSkillsChange={handleSecondarySkillsChange}
-            fetchFunction={GetSkills}
-            addFunction={PostSkills}
-          />
-        </Form.Item>
-     
-    </Collapse>
-  ),
-})}
-</div>
+                  {/* SECONDARY SKILLS */}
 
-<Divider />
+                  <Form.Item name="secondarySkills">
+                    <SkillManagerCard
+                      title="Secondary Skills"
+                      skills={secondarySkills}
+                      onSkillsChange={handleSecondarySkillsChange}
+                      fetchFunction={GetSkills}
+                      addFunction={PostSkills}
+                    />
+                  </Form.Item>
+                </Collapse>
+              ),
+            })}
+          </div>
+
+          <Divider />
 
           {/* Clouds */}
 
           {renderSection({
-  key: "clouds",
-  title: "Clouds",
-  children: (
-    <Collapse
-      defaultActiveKey={["primary-clouds", "secondary-clouds"]}
-      bordered={false}
-    >
-      {/* PRIMARY CLOUDS */}
-     
-        <Form.Item
-          name="primaryClouds"
-          rules={[
-            { required: true },
-            {
-              validator: (_, value) => {
-                if (!value || value.length === 0) {
-                  return Promise.reject(
-                    "Please add at least one primary cloud!"
-                  );
-                }
-                return Promise.resolve();
-              },
-            },
-          ]}
-        >
-          <SkillManagerCard
-            title="Primary Clouds"
-            skills={primaryClouds}
-            onSkillsChange={handlePrimaryCloudsChange}
-            fetchFunction={GetClouds}
-            addFunction={PostClouds}
-          />
-        </Form.Item>
-    
+            key: "clouds",
+            title: "Clouds",
+            children: (
+              <Collapse
+                defaultActiveKey={["primary-clouds", "secondary-clouds"]}
+                bordered={false}
+              >
+                {/* PRIMARY CLOUDS */}
 
-      {/* SECONDARY CLOUDS */}
-     
-        <Form.Item name="secondaryClouds">
-          <SkillManagerCard
-            title="Secondary Clouds"
-            skills={secondaryClouds}
-            onSkillsChange={handleSecondaryCloudsChange}
-            fetchFunction={GetClouds}
-            addFunction={PostClouds}
-          />
-        </Form.Item>
-      
-    </Collapse>
-  ),
-})}
+                <Form.Item
+                  name="primaryClouds"
+                  rules={[
+                    { required: true },
+                    {
+                      validator: (_, value) => {
+                        if (!value || value.length === 0) {
+                          return Promise.reject(
+                            "Please add at least one primary cloud!"
+                          );
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
+                >
+                  <SkillManagerCard
+                    title="Primary Clouds"
+                    skills={primaryClouds}
+                    onSkillsChange={handlePrimaryCloudsChange}
+                    fetchFunction={GetClouds}
+                    addFunction={PostClouds}
+                  />
+                </Form.Item>
 
+                {/* SECONDARY CLOUDS */}
+
+                <Form.Item name="secondaryClouds">
+                  <SkillManagerCard
+                    title="Secondary Clouds"
+                    skills={secondaryClouds}
+                    onSkillsChange={handleSecondaryCloudsChange}
+                    fetchFunction={GetClouds}
+                    addFunction={PostClouds}
+                  />
+                </Form.Item>
+              </Collapse>
+            ),
+          })}
 
           <Divider />
 
           {/* Education */}
-          {/* <Row>
-            <Col span={24}>
-              <Form.Item
-                label="Education Details"
-                name="education"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please enter Education Details!",
-                  },
-                ]}
-              >
-                <EducationCard
-                  apidata={educationList}
-                  onEducationChange={handleEducationChange}
-                />
-              </Form.Item>
-            </Col>
-          </Row> */}
 
-<div ref={sectionRefs.education}>
-          {renderSection({
-  key: "education",
-  title: "Education",
-  children: (
-    <Form.Item
-      label="Education Details"
-      name="education"
-      rules={[
-        {
-          required: true,
-          message: "Please enter Education Details!",
-        },
-      ]}
-    >
-      <EducationCard
-        apidata={educationList}
-        onEducationChange={handleEducationChange}
-      />
-    </Form.Item>
-  ),
-})}
-</div>
-<Divider />
+          <div ref={sectionRefs.education}>
+            {renderSection({
+              key: "education",
+              title: "Education",
+              children: (
+                <Form.Item
+                  label="Education Details"
+                  name="education"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please enter Education Details!",
+                    },
+                  ]}
+                >
+                  <EducationCard
+                    apidata={educationList}
+                    onEducationChange={handleEducationChange}
+                  />
+                </Form.Item>
+              ),
+            })}
+          </div>
+          <Divider />
 
           {/* Certifications */}
-          {/* <Row gutter={16}>
-            <Col span={24}>
+
+          <div ref={sectionRefs.certifications}></div>
+          {renderSection({
+            key: "certifications",
+            title: "Certifications",
+            children: (
               <Form.Item
                 label="Certifications"
                 name="certifications"
@@ -1474,214 +1432,94 @@ const stepsConfig = [
                   { required: true, message: "Please enter certifications!" },
                 ]}
               >
-               
+                <ReusableSelect
+                  placeholder="Select or add certifications"
+                  fetchFunction={GetCertifications}
+                  addFunction={PostCertifications}
+                  single={false}
+                  style={{ width: "100%" }}
+                  dropdownStyle={{ zIndex: 1050 }}
+                  popupClassName="cert-popup"
+                  tagRender={({ label, closable, onClose }) => (
+                    <div
+                      style={{
+                        background: "#E2EEFF",
+                        border: "0.5px solid #1677FF",
+                        borderRadius: 100,
+                        padding: "6px 12px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: "#111",
+                        cursor: "default",
+                        margin: "4px",
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <span style={{ whiteSpace: "nowrap" }}>{label}</span>
 
-          <ReusableSelect
-  placeholder="Select or add certifications"
-  fetchFunction={GetCertifications}
-  addFunction={PostCertifications}
-  single={false}
- 
-  style={{
-    width: "100%",
-  }}
-
-  dropdownStyle={{
-    zIndex: 1050,
-  }}
-
-  popupClassName="cert-popup"   // optional, safe
-
-  tagRender={({ label, closable, onClose }) => {
-    return (
-      <div
-        style={{
-          background: "#E2EEFF",
-          border: "0.5px solid #1677FF",
-          borderRadius: 100,
-          padding: "6px 12px",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          fontSize: 14,
-          fontWeight: 500,
-          color: "#111",
-          cursor: "default",
-          margin: "4px",            // ⭐ THIS IS THE GAP FIX
-          maxWidth: "100%",
-          boxSizing: "border-box",
-        }}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-      >
-        <span
-          style={{
-            whiteSpace: "nowrap",
-          }}
-        >
-          {label}
-        </span>
-
-        {closable && (
-          <span
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose();
-            }}
-            style={{
-              cursor: "pointer",
-              fontSize: 12,
-              color: "#666",
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </span>
-        )}
-      </div>
-    );
-  }}
-/>
-
-
-
-
-
-
+                      {closable && (
+                        <span
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onClose();
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: 12,
+                            color: "#666",
+                            lineHeight: 1,
+                          }}
+                        >
+                          ×
+                        </span>
+                      )}
+                    </div>
+                  )}
+                />
               </Form.Item>
-            </Col>
-          </Row> */}
-
-<div ref={sectionRefs.certifications}></div>
-          {renderSection({
-  key: "certifications",
-  title: "Certifications",
-  children: (
-    <Form.Item
-      label="Certifications"
-      name="certifications"
-      rules={[
-        { required: true, message: "Please enter certifications!" },
-      ]}
-    >
-      <ReusableSelect
-        placeholder="Select or add certifications"
-        fetchFunction={GetCertifications}
-        addFunction={PostCertifications}
-        single={false}
-        style={{ width: "100%" }}
-        dropdownStyle={{ zIndex: 1050 }}
-        popupClassName="cert-popup"
-        tagRender={({ label, closable, onClose }) => (
-          <div
-            style={{
-              background: "#E2EEFF",
-              border: "0.5px solid #1677FF",
-              borderRadius: 100,
-              padding: "6px 12px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 14,
-              fontWeight: 500,
-              color: "#111",
-              cursor: "default",
-              margin: "4px",
-              maxWidth: "100%",
-              boxSizing: "border-box",
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <span style={{ whiteSpace: "nowrap" }}>
-              {label}
-            </span>
-
-            {closable && (
-              <span
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onClose();
-                }}
-                style={{
-                  cursor: "pointer",
-                  fontSize: 12,
-                  color: "#666",
-                  lineHeight: 1,
-                }}
-              >
-                ×
-              </span>
-            )}
-          </div>
-        )}
-      />
-    </Form.Item>
-  ),
-})}
-
+            ),
+          })}
 
           <Divider />
 
           {/* Work Experience */}
-          {/* <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item
-                label="Work Experience"
-                name="workExperience"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please enter work experience!",
-                  },
-                ]}
-              >
-                <ExperienceCard
-                  apidata={experienceList}
-                  onExperienceChange={handleExperienceChange}
-                />
-              </Form.Item>
-            </Col>
-          </Row> */}
 
-<div ref={sectionRefs.experience}>
-          {renderSection({
-  key: "work-experience",
-  title: "Work Experience",
-  children: (
-    <Form.Item
-      label="Work Experience"
-      name="workExperience"
-      rules={[
-        {
-          required: true,
-          message: "Please enter work experience!",
-        },
-      ]}
-    >
-      <ExperienceCard
-        apidata={experienceList}
-        onExperienceChange={handleExperienceChange}
-      />
-    </Form.Item>
-  ),
-})}
-</div>
-
+          <div ref={sectionRefs.experience}>
+            {renderSection({
+              key: "work-experience",
+              title: "Work Experience",
+              children: (
+                <Form.Item
+                  label="Work Experience"
+                  name="workExperience"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please enter work experience!",
+                    },
+                  ]}
+                >
+                  <ExperienceCard
+                    apidata={experienceList}
+                    onExperienceChange={handleExperienceChange}
+                  />
+                </Form.Item>
+              ),
+            })}
+          </div>
 
           {/* Submit + Generate Resume */}
           <Form.Item style={{ marginTop: 24 }}>

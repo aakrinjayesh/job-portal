@@ -138,7 +138,7 @@ function FindJob() {
     >
       <Row gutter={[16, 16]} style={{ flex: 1, height: "100%" }}>
         {/* Filter Sidebar */}
-        {isFilterOpen && (
+        {/* {isFilterOpen && (
           <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
             <FiltersPanel
               onFiltersChange={handleFiltersChange}
@@ -146,7 +146,21 @@ function FindJob() {
               showCandidateType={false}
             />
           </Col>
-        )}
+        )} */}
+        <Col
+          span={6}
+          style={{
+            height: "100%",
+            overflowY: "auto",
+            display: isFilterOpen ? "block" : "none", // 👈 KEY LINE
+          }}
+        >
+          <FiltersPanel
+            onFiltersChange={handleFiltersChange}
+            handleClearFilters={handleClearFilters}
+            showCandidateType={false}
+          />
+        </Col>
 
         {/* Main Job List */}
         <Col span={isFilterOpen ? 18 : 24} style={{ height: "100%" }}>

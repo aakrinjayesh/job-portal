@@ -300,12 +300,6 @@ const JobList = ({
             }}
           >
             <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
-              {/* <Button
-                type="text"
-                onClick={toggleFilter}
-                style={{ fontSize: 20 }}
-                icon={isFilterOpen ? <LeftOutlined /> : <LeftOutlined />}
-              /> */}
               <Button
                 type="text"
                 onClick={toggleFilter}

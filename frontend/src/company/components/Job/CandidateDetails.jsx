@@ -1,5 +1,9 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import html2pdf from "html2pdf.js";
+import { useRef } from "react";
+import ResumeTemplate from "../Bench/ResumeTemplate";
+
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -42,25 +46,10 @@ const CandidateDetails = () => {
   const { candidate: initialCandidate, jobId } = location.state || {};
   const [candidate, setCandidate] = useState(initialCandidate);
   const [addReviewLoading, setAddReviewLoading] = useState(false);
+  const resumeRef = useRef();
 
   console.log("location ", location);
   console.log("location jobId", jobId);
-
-  // const reloadCandidate = async () => {
-  //   try {
-  //     const res = await GetCandidateDeatils({ jobId });
-
-  //     const updatedCandidate = res.data.find(
-  //       (c) => c.profile.id === candidate.profile.id
-  //     );
-
-  //     if (updatedCandidate) {
-  //       setCandidate(updatedCandidate); // 🔥 THIS updates UI
-  //     }
-  //   } catch (err) {
-  //     console.error("Failed to reload candidate", err);
-  //   }
-  // };
 
   const reloadCandidate = async () => {
     try {
@@ -185,6 +174,22 @@ const CandidateDetails = () => {
     fontWeight: 500,
   };
 
+  const handleDownloadResume = () => {
+    if (!candidate) return;
+
+    const element = resumeRef.current;
+
+    const options = {
+      margin: 0.5,
+      filename: `${candidate.name || "candidate"}_resume.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf().set(options).from(element).save();
+  };
+
   return (
     <div style={{ padding: "0px" }}>
       {contextHolder}
@@ -205,16 +210,7 @@ const CandidateDetails = () => {
       )}
 
       {/* Back Button */}
-      {/* <Button
-        type="text"
-        style={{ marginBottom: 5, height: 25 }}
-        onClick={() =>
-          navigate("/company/candidates", { state: { id: jobId } })
-        }
-        icon={<ArrowLeftOutlined />}
-      >
-        Back
-      </Button> */}
+
       <Row gutter={16}>
         {/* <Col span={16}> */}
         <Col span={16} style={{ position: "relative" }}>
@@ -235,6 +231,28 @@ const CandidateDetails = () => {
           )}
 
           <Card bordered={false}>
+            {/* ✅ TOP ACTION BAR */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginBottom: 12,
+              }}
+            >
+              <Button
+                type="primary"
+                style={{
+                  backgroundColor: "#1677FF",
+                  borderRadius: 100,
+                  height: 36,
+                  fontWeight: 600,
+                  padding: "0 18px",
+                }}
+                onClick={handleDownloadResume}
+              >
+                Generate Resume
+              </Button>
+            </div>
             <div
               style={{
                 padding: "12px 20px",
@@ -341,7 +359,7 @@ const CandidateDetails = () => {
                 style={{
                   marginTop: 12,
                   marginBottom: 20,
-                  backgroundColor: "#D1E4FF", // ✅ same blue as Chat button
+                  // backgroundColor: "#D1E4FF", // ✅ same blue as Chat button
                   color: "#101828",
                   borderRadius: 16, // ✅ pill style
                   padding: "12px 16px", // ✅ auto height based on text
@@ -392,11 +410,12 @@ const CandidateDetails = () => {
                           label="Preferred Job Type"
                           value={profile.preferredJobType?.join(", ")}
                         />
+
                         <InfoItem
                           label="Total Experience"
                           value={
-                            profile.experience
-                              ? `${profile.experience.number} ${profile.experience.type}`
+                            profile.totalExperience
+                              ? `${profile.totalExperience} years`
                               : "-"
                           }
                         />
@@ -469,53 +488,6 @@ const CandidateDetails = () => {
                     <>
                       {/* LINE between Skills & Primary Skills */}
                       <Divider style={{ marginTop: 2, marginBottom: 12 }} />
-
-                      {/* <div
-                      style={{
-                        background: "#FFFFFF", // ✅ white background
-                        border: "1px solid #EDEDED",
-                        borderRadius: 10,
-                        padding: 16,
-                        marginBottom: 16,
-                      }}
-                    >
-                      
-                      <Text strong style={{ display: "block", marginBottom: 12 }}>
-                        Primary Skills
-                      </Text>
-
-                     
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 8,
-                        }}
-                      >
-                        {profile.skillsJson?.length ? (
-                          profile.skillsJson.map((skill, index) => (
-                            <Tag
-                              key={index}
-                              style={skillChipStyle}
-                              closeIcon={
-                                <span
-                                  style={{
-                                    fontSize: 12,
-                                    color: "#4C7DFF",
-                                    fontWeight: 600,
-                                  }}
-                                ></span>
-                              }
-                              onClose={(e) => e.preventDefault()}
-                            >
-                              {skill.name}
-                            </Tag>
-                          ))
-                        ) : (
-                          <Text type="secondary">No skills available</Text>
-                        )}
-                      </div>
-                    </div> */}
 
                       {/* PRIMARY + SECONDARY SKILLS (SAME CARD) */}
                       <div
@@ -1045,22 +1017,6 @@ const CandidateDetails = () => {
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
           <Button onClick={() => setIsReviewModalOpen(false)}>Cancel</Button>
 
-          {/* <Button
-  type="primary"
-  onClick={async () => {
-    if (!ratingValue) {
-      message.error("Please select rating");
-      return;
-    }
-
-    await reloadCandidate();
-    message.success("Rating saved");
-    setIsReviewModalOpen(false);
-  }}
->
-  Add
-</Button> */}
-
           <Button
             type="primary"
             disabled={addReviewLoading}
@@ -1092,6 +1048,10 @@ const CandidateDetails = () => {
           </Button>
         </div>
       </Modal>
+
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        <ResumeTemplate ref={resumeRef} candidate={candidate.profile} />
+      </div>
     </div>
   );
 };

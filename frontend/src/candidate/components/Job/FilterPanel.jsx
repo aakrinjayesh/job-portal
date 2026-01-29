@@ -249,9 +249,22 @@ const FiltersPanel = ({
           <InputNumber
             min={0}
             max={30}
+            step={1}
+            precision={0}
             value={experience}
-            onChange={(v) => setExperience(v || 0)}
+            placeholder="e.g. 5"
             style={{ width: "100%" }}
+            controls={false}
+            // 🔒 HARD BLOCK non-numeric input
+            parser={(value) => {
+              if (!value) return 0;
+              return value.replace(/\D/g, ""); // keep digits only
+            }}
+            onChange={(v) => {
+              if (typeof v === "number") {
+                setExperience(v);
+              }
+            }}
           />
         </>
       ),

@@ -32,21 +32,15 @@ const JobDetails = () => {
 
   const [loading, setLoading] = useState(true);
 
-  // const location = useLocation();
-
   const location = useLocation();
   const job = location.state?.job; // ← GET jobId from navigation
   const from = location.state?.from;
 
   const type = location?.state?.type;
   const portal = location?.state?.portal;
-  // console.log("location objects", location);
+
   console.log("type in compant jobdetails", type);
   console.log("portal", portal);
-
-  // useEffect(() => {
-  //   fetchJobDetails();
-  // }, [id]);
 
   useEffect(() => {
     if (job) {
@@ -55,19 +49,6 @@ const JobDetails = () => {
       fetchJobDetails(); // only call API if user directly opens URL
     }
   }, []);
-
-  // const fetchJobDetails = async () => {
-  //   try {
-  //     const payload = { jobid: id };
-  //     // const response = await GetJobDetails(payload);
-  //     setJob(response?.job);
-  //   } catch (error) {
-  //     message.error("Failed to load job details");
-  //     console.error(error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const fetchJobDetails = async () => {
     try {
