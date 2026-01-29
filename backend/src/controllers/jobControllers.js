@@ -337,7 +337,7 @@ const userApplyJob = async (req, res) => {
         subject: `Application Submitted - ${job.role} at ${job.companyName}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
+            <div style="background: linear-gradient(135deg, #2196F3 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
               <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
             </div>
             

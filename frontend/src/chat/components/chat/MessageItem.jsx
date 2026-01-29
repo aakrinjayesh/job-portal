@@ -76,27 +76,27 @@ const MessageItem = ({
     return parts[parts.length - 1];
   };
 
-  const messageContainerStyle = {
-    display: "flex",
-    justifyContent: isOwnMessage ? "flex-end" : "flex-start",
-    alignItems: "flex-end",
-    gap: 12,
-    marginLeft: isOwnMessage ? "auto" : 0,
-    marginRight: isOwnMessage ? 0 : "auto",
-    marginBottom: 16,
-  };
+ const messageContainerStyle = {
+  display: "flex",
+  justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+  alignItems: "flex-end",
+  gap: 12,
+  marginLeft: isOwnMessage ? "auto" : 0,
+  marginRight: isOwnMessage ? 0 : "auto",
+  marginBottom: 16,
+};
 
-  const bubbleStyle = {
+ const bubbleStyle = {
     padding: "8px 12px",
-    borderRadius: 16,
-    background: isOwnMessage ? "#1890ff" : "#f5f5f5",
-    color: isOwnMessage ? "#fff" : "#000",
-    position: "relative",
+  borderRadius: 16,
+  background: isOwnMessage ? "#1890ff" : "white",
+  color: isOwnMessage ? "#fff" : "#000",
+  position: "relative",
     display: "inline-flex",
     width: "fit-content",
     maxWidth: "100%",
-    wordBreak: "break-word",
-  };
+  wordBreak: "break-word",
+};
 
   if (isOwnMessage) {
     bubbleStyle.borderBottomRightRadius = 4;
@@ -124,12 +124,12 @@ const MessageItem = ({
             <Avatar src={message.sender?.avatar?.url} size={32} />
           )}
 
-          <div
-            style={{
+<div
+  style={{
               display: "inline-flex",
-              maxWidth: "70%",
-            }}
-          >
+    maxWidth: "70%",
+  }}
+>
             <div style={bubbleStyle}>
               {isGroupChatMessage && !isOwnMessage && (
                 <Tag
@@ -184,8 +184,8 @@ const MessageItem = ({
                         images.length === 1
                           ? "1fr"
                           : images.length === 2
-                            ? "1fr 1fr"
-                            : "1fr 1fr 1fr",
+                          ? "1fr 1fr"
+                          : "1fr 1fr 1fr",
                     }}
                   >
                     {images.map((file) => (
@@ -357,21 +357,21 @@ const MessageItem = ({
               )}
 
               {/* TIMESTAMP */}
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 10,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  opacity: 0.7,
-                }}
-              >
-                {message.attachments?.length > 0 && (
-                  <PaperClipOutlined style={{ marginRight: 4 }} />
-                )}
-                {moment(message.updatedAt).fromNow()}
-              </div>
+           <div
+  style={{
+    marginTop: 4,
+    fontSize: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    opacity: 0.7,
+  }}
+>
+  {message.attachments?.length > 0 && (
+    <PaperClipOutlined style={{ marginRight: 4 }} />
+  )}
+  {moment(message.createdAt).format("hh:mm A")}
+</div>
             </div>
           </div>
 

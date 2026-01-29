@@ -70,7 +70,7 @@ const Chat = () => {
   const groupUserIds = location?.state?.groupUserIds;
   const groupName = location?.state?.groupName;
   console.log("group ids", groupUserIds);
-
+  
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFiles, setPreviewFiles] = useState([]);
   const [caption, setCaption] = useState("");
@@ -147,16 +147,16 @@ const Chat = () => {
       unreadMessages.filter((msg) => msg.chat !== currentChat.current?._id),
     );
 
-    requestHandler(
+  requestHandler(
       async () => await getChatMessages(currentChat.current?._id || ""),
-      setLoadingMessages,
+    setLoadingMessages,
       (res) => setMessages(res.data || []),
       (error) => {
         console.error("Failed to load messages:", error);
         alertMessage.error(error || "Failed to load messages");
       },
-    );
-  };
+  );
+};
 
   const sendChatMessage = async () => {
     if (!currentChat.current?._id || !socket) {
@@ -424,61 +424,61 @@ const Chat = () => {
           <div
             style={{
               padding: 16,
-              background: "#EEF2F5",
+            background: "white",
               borderBottom: "1px solid #E5E7EB",
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* HEADER ROW */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
+           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+  {/* HEADER ROW */}
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+    }}
+  >
                 <Text style={{ fontSize: 16, fontWeight: 600 }}>All Chats</Text>
 
-                {userType !== "candidate" && (
-                  <Button
-                    onClick={() => setOpenAddChat(true)}
-                    style={{
-                      background: "#E6F0FF",
-                      borderRadius: 999,
-                      padding: "4px 16px",
-                      height: 32,
-                      fontWeight: 500,
-                      border: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      boxShadow: "none",
-                    }}
-                  >
-                    <PlusOutlined />
-                    Add Chat
-                  </Button>
-                )}
-              </div>
+    {userType !== "candidate" && (
+    <Button
+  onClick={() => setOpenAddChat(true)}
+  style={{
+    background: "#E6F0FF",
+    borderRadius: 999,
+    padding: "4px 16px",
+    height: 32,
+    fontWeight: 500,
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    boxShadow: "none",
+  }}
+>
+  <PlusOutlined />
+  Add Chat
+</Button>
+    )}
+  </div>
 
-              {/* SEARCH */}
-              <Search
-                placeholder="Search chats"
-                allowClear
-                //prefix={<SearchOutlined />}
-                onChange={(e) =>
-                  setLocalSearchQuery(e.target.value.toLowerCase())
-                }
-                style={{
-                  background: "#f9fbfdff",
-                  borderRadius: 20,
-                }}
-                inputStyle={{
-                  background: "#F0F2F5",
-                }}
-              />
-            </div>
-          </div>
+  {/* SEARCH */}
+ <Search
+  placeholder="Search chats"
+  allowClear
+  //prefix={<SearchOutlined />}
+  onChange={(e) =>
+    setLocalSearchQuery(e.target.value.toLowerCase())
+  }
+  style={{
+    background: "rgb(214, 220, 226)",
+    borderRadius: 20,
+  }}
+  inputStyle={{
+    background: "#F0F2F5",
+  }}
+/>
+</div>
+</div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
             {loadingChats ? (
@@ -494,11 +494,11 @@ const Chat = () => {
                     unreadMessages.filter((m) => m.chat === chat._id).length
                   }
                   isActive={chat._id === currentChat.current?._id}
-                  onClick={(c) => {
-                    currentChat.current = c;
+               onClick={(c) => {
+  currentChat.current = c;
                     localStorage.setItem("currentChat", JSON.stringify(c));
                     getMessages();
-                  }}
+}}
                   onChatDelete={(id) =>
                     setChats((prev) => prev.filter((c) => c._id !== id))
                   }
@@ -509,67 +509,67 @@ const Chat = () => {
         </Sider>
 
         {/* CHAT CONTENT */}
-        <Content
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            height: "100vh",
-            minHeight: 0,
-          }}
-        >
-          {currentChat.current ? (
-            <>
-              {/* HEADER */}
-              <div
-                style={{
-                  padding: "16px 24px",
-                  background: "white",
-                  borderBottom: "1px solid #E5E7EB",
-                  flexShrink: 0,
-                }}
-              >
-                <Space>
-                  <Avatar src={chatMetadata?.avatar} size={48} />
-                  <div>
+     <Content
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+     minHeight: 0,
+  }}
+>
+  {currentChat.current ? (
+    <>
+      {/* HEADER */}
+      <div
+        style={{
+          padding: "16px 24px",
+          background: "white",
+          borderBottom: "1px solid #E5E7EB",
+          flexShrink: 0,
+        }}
+      >
+        <Space>
+          <Avatar src={chatMetadata?.avatar} size={48} />
+          <div>
                     <div style={{ fontWeight: 600 }}>{chatMetadata?.title}</div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {chatMetadata?.description}
-                    </Text>
-                  </div>
-                </Space>
-              </div>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {chatMetadata?.description}
+            </Text>
+          </div>
+        </Space>
+      </div>
 
-              {/* MESSAGES */}
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  background: "#EEF2F5",
-                  padding: 24,
-                  minHeight: 0,
-                }}
-              >
-                {loadingMessages ? (
-                  <Spin />
-                ) : (
-                  <>
-                    {isTyping && <Typing />}
+      {/* MESSAGES */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          background: "#EEF2F5",
+          padding: 24,
+           minHeight: 0, 
+        }}
+      >
+        {loadingMessages ? (
+          <Spin />
+        ) : (
+          <>
+            {isTyping && <Typing />}
 
-                    {messages.map((msg) => (
-                      <MessageItem
-                        key={msg._id}
-                        message={msg}
-                        isOwnMessage={msg.sender?._id === user?._id}
-                        isGroupChatMessage={currentChat.current?.isGroupChat}
+            {messages.map((msg) => (
+              <MessageItem
+                key={msg._id}
+                message={msg}
+                isOwnMessage={msg.sender?._id === user?._id}
+                isGroupChatMessage={currentChat.current?.isGroupChat}
                         deleteChatMessage={deleteChatMessage}
-                      />
-                    ))}
+              />
+            ))}
 
-                    {/* ✅ ONLY PLACE FOR REF */}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
-              </div>
+            {/* ✅ ONLY PLACE FOR REF */}
+            <div ref={messagesEndRef} />
+          </>
+        )}
+      </div>
 
               {/* ATTACHED FILES PREVIEW (ABOVE INPUT) */}
               {attachedFiles.length > 0 && (
@@ -684,82 +684,82 @@ const Chat = () => {
                 </div>
               )}
 
-              {/* INPUT (ALWAYS VISIBLE) */}
-              <div
-                style={{
-                  padding: 14,
-                  background: "#E9EEF3",
-                  borderTop: "1px solid #E5E7EB",
-                  flexShrink: 0,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    background: "#F5F6F8",
-                    padding: "8px 14px",
-                    borderRadius: 30,
-                  }}
-                >
-                  <Upload
-                    multiple
-                    showUploadList={false}
-                    beforeUpload={() => false}
-                    onChange={(info) => {
+      {/* INPUT (ALWAYS VISIBLE) */}
+      <div
+        style={{
+          padding: 14,
+          background: "white",
+          borderTop: "1px solid #E5E7EB",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "#F5F6F8",
+            padding: "8px 14px",
+            borderRadius: 30,
+          }}
+        >
+          <Upload
+            multiple
+            showUploadList={false}
+            beforeUpload={() => false}
+           onChange={(info) => {
                       handleFileChange(info);
-                    }}
-                  >
+          }}
+          >
                     <Badge count={attachedFiles.length} size="small">
-                      <Button
-                        type="text"
-                        icon={<PlusOutlined />}
-                        style={{ fontSize: 18, color: "#8c8c8c" }}
-                      />
+            <Button
+              type="text"
+              icon={<PlusOutlined />}
+              style={{ fontSize: 18, color: "#8c8c8c" }}
+            />
                     </Badge>
-                  </Upload>
+          </Upload>
 
-                  <Input
-                    value={message}
-                    onChange={handleOnMessageChange}
-                    onPressEnter={sendChatMessage}
-                    placeholder="Type a message..."
-                    bordered={false}
-                    style={{
-                      flex: 1,
-                      background: "transparent",
-                    }}
-                  />
+          <Input
+            value={message}
+            onChange={handleOnMessageChange}
+            onPressEnter={sendChatMessage}
+            placeholder="Type a message..."
+            bordered={false}
+            style={{
+              flex: 1,
+              background: "transparent",
+            }}
+          />
 
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<SendOutlined />}
-                    onClick={sendChatMessage}
-                    disabled={!message && attachedFiles.length === 0}
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            <Empty description="Select a chat" />
-          )}
-        </Content>
+          <Button
+            type="primary"
+            shape="circle"
+            icon={<SendOutlined />}
+            onClick={sendChatMessage}
+            disabled={!message && attachedFiles.length === 0}
+          />
+        </div>
+      </div>
+    </>
+  ) : (
+    <Empty description="Select a chat" />
+  )}
+</Content>
 
         {/* FILE PREVIEW MODAL */}
-        <Modal
-          open={previewOpen}
+<Modal
+  open={previewOpen}
           onCancel={() => {
             setPreviewOpen(false);
             setPreviewFiles([]);
             setCaption("");
           }}
-          footer={null}
+  footer={null}
           width={600}
-          centered
+  centered
           title="Send Files"
-        >
+>
           {/* FILE PREVIEW GRID */}
           <div
             style={{
@@ -771,9 +771,9 @@ const Chat = () => {
               overflowY: "auto",
             }}
           >
-            {previewFiles.map((file, idx) => (
+    {previewFiles.map((file, idx) => (
               <div
-                key={idx}
+          key={idx}
                 style={{
                   position: "relative",
                   aspectRatio: "1",
@@ -785,17 +785,17 @@ const Chat = () => {
               >
                 {file.type?.startsWith("image") ? (
                   <img
-                    src={URL.createObjectURL(file)}
+          src={URL.createObjectURL(file)}
                     alt="preview"
                     style={{
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
                     }}
-                  />
-                ) : (
-                  <div
-                    style={{
+        />
+      ) : (
+        <div
+          style={{
                       width: "100%",
                       height: "100%",
                       display: "flex",
@@ -810,10 +810,10 @@ const Chat = () => {
                     <Text
                       ellipsis
                       style={{ fontSize: 10, marginTop: 4, maxWidth: "100%" }}
-                    >
+        >
                       {file.name}
                     </Text>
-                  </div>
+        </div>
                 )}
 
                 {/* REMOVE BUTTON */}
@@ -839,23 +839,23 @@ const Chat = () => {
                   }}
                 />
               </div>
-            ))}
-          </div>
+    ))}
+  </div>
 
-          {/* CAPTION INPUT */}
+  {/* CAPTION INPUT */}
           <Input.TextArea
             placeholder="Add a caption (optional)..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
+    value={caption}
+    onChange={(e) => setCaption(e.target.value)}
             autoSize={{ minRows: 2, maxRows: 4 }}
-            style={{
+    style={{
               borderRadius: 8,
               marginBottom: 16,
-            }}
-          />
+    }}
+  />
 
-          {/* ACTION BUTTONS */}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+  {/* ACTION BUTTONS */}
+  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
             <Button
               onClick={() => {
                 setPreviewOpen(false);
@@ -865,22 +865,22 @@ const Chat = () => {
             >
               Cancel
             </Button>
-            <Button
-              type="primary"
+    <Button
+      type="primary"
               disabled={previewFiles.length === 0}
-              onClick={() => {
-                setAttachedFiles(previewFiles);
-                setMessage(caption);
-                setPreviewOpen(false);
+      onClick={() => {
+        setAttachedFiles(previewFiles);
+        setMessage(caption);
+        setPreviewOpen(false);
                 setPreviewFiles([]);
                 setCaption("");
-              }}
-            >
+      }}
+    >
               Attach {previewFiles.length} file
               {previewFiles.length > 1 ? "s" : ""}
-            </Button>
-          </div>
-        </Modal>
+    </Button>
+  </div>
+</Modal>
       </Layout>
     </>
   );

@@ -29,13 +29,15 @@ const userOtpGenerate = async (req, res) => {
     const GenerateOtp = generateOtp();
     otpStore.set(email, GenerateOtp);
     logger.info("🗂️ otpStore:", otpStore);
-    console.log("otpStore", otpStore);
-    // Send OTP to email
-    const sendmail = await sendEmail({
+
+    // ✅ Send OTP email
+    await sendEmail({
       to: email,
       subject: "Your OTP Code",
-      text: `Hi, Welcome to QuickHireSF
-      Your verification code is ${GenerateOtp}`,
+      html: getOtpEmailTemplate({
+        otp: GenerateOtp,
+        name,
+      }),
     });
     return res.status(200).json({
       status: "success",
@@ -52,6 +54,73 @@ const userOtpGenerate = async (req, res) => {
     });
   }
 };
+
+
+const getOtpEmailTemplate = ({ otp, name }) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Your OTP Code</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table width="420" cellpadding="0" cellspacing="0"
+          style="background:#ffffff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+
+          <tr>
+            <td style="background:#2196F3; color:#ffffff; padding:20px; text-align:center;">
+              <h2 style="margin:0;">QuickHireSF</h2>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:30px; color:#333;">
+              <p style="font-size:16px;">Hi <strong>${name || "there"}</strong>,</p>
+
+              <p style="font-size:14px;">
+                Welcome to <strong>QuickHireSF</strong>.  
+                Use the verification code below:
+              </p>
+
+              <div style="text-align:center; margin:30px 0;">
+                <span style="
+                  font-size:26px;
+                  letter-spacing:6px;
+                  font-weight:bold;
+                  background:#f1f5f9;
+                  padding:14px 24px;
+                  border-radius:6px;
+                  display:inline-block;">
+                  ${otp}
+                </span>
+              </div>
+
+              <p style="font-size:13px; color:#6b7280;">
+                This OTP is valid for a short time.  
+                Please do not share it with anyone.
+              </p>
+
+              <p>— <strong>QuickHireSF Team</strong></p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#f9fafb; padding:12px; text-align:center; font-size:12px; color:#9ca3af;">
+              © ${new Date().getFullYear()} QuickHireSF
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
 
 /**
  * Validate OTP
@@ -488,8 +557,8 @@ const setPassword = async (req, res) => {
       // 🔹 NORMAL FLOW → Create org if company
       if (!invite && role === "company") {
         const existingMembership = await tx.organizationMember.findFirst({
-          where: { userId: updatedUser.id },
-        });
+            where: { userId: updatedUser.id },
+          });
 
         if (!existingMembership) {
           const org = await tx.organization.create({
@@ -537,11 +606,11 @@ const setPassword = async (req, res) => {
       // HARD ROLLBACK USER
       await prisma.users.delete({ where: { email } });
 
-      return res.status(500).json({
-        status: "error",
+       return res.status(500).json({
+    status: "error",
         message: "External chat registration failed",
-      });
-    }
+  });
+}
 
     /* ─────────────────────────────
        6️⃣ SYNC CHAT USER ID
@@ -1000,7 +1069,7 @@ const getActiveDevices = async (req, res) => {
 const logoutSingleDevice = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { sessionId } = req.params;
+    const { sessionId } = req.params; 
 
     if (!sessionId) {
       return res.status(400).json({

@@ -171,7 +171,16 @@ const MyProfile = () => {
               <Form.Item
                 label="First Name"
                 name="firstName"
-                rules={[{ required: true }]}
+                rules={[{ required: true },
+                  {
+  pattern: /^[A-Z][a-z]+([ '-][A-Z][a-z]+)*$/,
+  message:
+    "First name must start with a capital letter and contain only letters",
+},
+{ min: 2, message: "First name must be at least 2 characters" },
+{ max: 30, message: "First name cannot exceed 30 characters" },
+
+                ]}
               >
                 <Input disabled={!editable} />
               </Form.Item>
@@ -181,7 +190,16 @@ const MyProfile = () => {
               <Form.Item
                 label="Last Name"
                 name="lastName"
-                rules={[{ required: true }]}
+                rules={[{ required: true },
+                  {
+  pattern: /^[A-Z][a-z]+([ '-][A-Z][a-z]+)*$/,
+  message:
+    "Last name must start with a capital letter and contain only letters",
+},
+{ min: 2, message: "Last name must be at least 2 characters" },
+{ max: 30, message: "Last name cannot exceed 30 characters" },
+
+                ]}
               >
                 <Input disabled={!editable} />
               </Form.Item>

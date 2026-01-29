@@ -144,7 +144,7 @@ const ChatItem = ({
               justifyContent: "space-between",
               height: 48,
               marginLeft: 12,
-              color: "white",
+              color:"white"
             }}
           >
             <Text
@@ -157,19 +157,19 @@ const ChatItem = ({
               {moment(chat.updatedAt).fromNow()}
             </Text>
 
-            {unreadCount > 0 && (
-              <Badge
-                count={unreadCount > 9 ? "9+" : unreadCount}
-                style={{
+           {unreadCount > 0 && (
+  <Badge
+    count={unreadCount > 9 ? "9+" : unreadCount}
+    style={{
                   backgroundColor: "#00C950",
                   fontSize: 12,
                   lineHeight: "16px",
                   height: 20,
                   minWidth: 20,
                   borderRadius: 9999,
-                }}
-              />
-            )}
+    }}
+  />
+)}
           </div>
         </div>
       </div>
