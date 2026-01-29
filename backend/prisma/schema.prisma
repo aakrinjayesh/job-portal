@@ -27,8 +27,10 @@ model Organization {
   activities      Activity[]
   userProfile     UserProfile[]
   savedJobs       SavedJob[]
-
-  invites OrganizationInvite[]
+  invites         OrganizationInvite[]
+  subscription    OrganizationSubscription?
+  credits         CreditLedger[]
+  payments        PaymentAttempt[]
 }
 
 model OrganizationMember {
@@ -694,4 +696,101 @@ model CandidateRating {
   updatedAt DateTime @updatedAt
 
   @@unique([recruiterId, candidateProfileId])
+}
+
+enum SubscriptionStatus {
+  FREE
+  CREATED
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  CREATED
+  SUCCESS
+  FAILED
+}
+
+enum CreditReason {
+  DAILY_FREE
+  MONTHLY_REFILL
+  USAGE_DEDUCTION
+  PURCHASE_TOPUP
+}
+
+model BillingPlan {
+  id             String  @id @default(uuid())
+  name           String  @unique // FREE, PRO, ENTERPRISE
+  description    String?
+  priceInPaise   Int // 0 for FREE, 99900 = ₹999
+  currency       String  @default("INR")
+  durationInDays Int? // null for FREE
+  monthlyCredits Int // credits given per billing cycle
+
+  // 🔥 Link to Razorpay Plan (created in Razorpay dashboard)
+  razorpayPlanId String? @unique
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions OrganizationSubscription[]
+}
+
+model OrganizationSubscription {
+  id String @id @default(uuid())
+
+  organizationId String @unique
+  planId         String
+
+  razorpaySubscriptionId String? @unique
+  razorpayCustomerId     String?
+
+  status SubscriptionStatus @default(FREE)
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  plan         BillingPlan  @relation(fields: [planId], references: [id])
+}
+
+model CreditLedger {
+  id             String @id @default(uuid())
+  organizationId String
+
+  change       Int // +1000, -20 etc
+  reason       CreditReason
+  balanceAfter Int
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model PaymentAttempt {
+  id             String @id @default(uuid())
+  organizationId String
+
+  razorpayOrderId        String?
+  razorpayPaymentId      String?
+  razorpaySubscriptionId String?
+
+  amountInPaise Int
+  status        PaymentStatus
+  failureReason String?
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
 }
