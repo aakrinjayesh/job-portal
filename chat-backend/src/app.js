@@ -12,10 +12,15 @@ const app = express();
 
 const httpServer = createServer(app);
 
+const allowedOrigins =
+  process.env.CORS_ORIGIN === "*"
+    ? "*"
+    : process.env.CORS_ORIGIN.split(",").map((o) => o.trim());
+
 const io = new Server(httpServer, {
   pingTimeout: 60000,
   cors: {
-    origin: process.env.CORS_ORIGIN,
+    origin: allowedOrigins,
     credentials: true,
   },
 });
@@ -25,12 +30,9 @@ app.set("io", io); // using set method to mount the `io` instance on the app to 
 // global middlewares
 app.use(
   cors({
-    origin:
-      process.env.CORS_ORIGIN === "*"
-        ? "*" // This might give CORS error for some origins due to credentials set to true
-        : process.env.CORS_ORIGIN?.split(","), // For multiple cors origin for production. Refer https://github.com/hiteshchoudhary/apihub/blob/a846abd7a0795054f48c7eb3e71f3af36478fa96/.env.sample#L12C1-L12C12
+    origin: allowedOrigins,
     credentials: true,
-  })
+  }),
 );
 
 app.use(requestIp.mw());
@@ -49,7 +51,7 @@ const limiter = rateLimit({
       options.statusCode || 500,
       `There are too many requests. You are only allowed ${
         options.max
-      } requests per ${options.windowMs / 60000} minutes`
+      } requests per ${options.windowMs / 60000} minutes`,
     );
   },
 });
@@ -62,40 +64,22 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public")); // configure static file to save images locally
 app.use(cookieParser());
 
-
-
 // api routes
 import { errorHandler } from "./middlewares/error.middlewares.js";
-
-
-
 
 // * App routes
 import userRouter from "./routes/apps/auth/user.routes.js";
 
-
-
 import chatRouter from "./routes/apps/chat-app/chat.routes.js";
 import messageRouter from "./routes/apps/chat-app/message.routes.js";
-
-
-
-
-
 
 // * App apis
 app.use("/api/v1/users", userRouter);
 
-
 app.use("/api/v1/chat-app/chats", chatRouter);
 app.use("/api/v1/chat-app/messages", messageRouter);
 
-
-
-
-
 initializeSocketIO(io);
-
 
 // common error handling middleware
 app.use(errorHandler);

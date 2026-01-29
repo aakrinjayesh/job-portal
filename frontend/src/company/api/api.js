@@ -1,19 +1,4 @@
 import axiosInstance from "../../candidate/api/axiosInstance";
- 
-// ✅ FIXED VERSION  
-// export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
-//   try {
-//     const response = await axiosInstance.post("/jobs/list", {
-//     page,
-//     limit,
-//     filters,
-//   },{signal},{headers: { 'Content-Type': 'application/json' }});
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error fetching jobs:", error);
-//     throw error;
-//   }
-// }
 
 export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
   try {
@@ -25,7 +10,7 @@ export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -34,14 +19,12 @@ export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
   }
 }
 
-
-
-
-
-
 export async function PostedJobsList(page = 1, limit = 10, signal) {
   try {
-    const response = await axiosInstance.get(`/jobs/posted?page=${page}&limit=${limit}`,{ signal });
+    const response = await axiosInstance.get(
+      `/jobs/posted?page=${page}&limit=${limit}`,
+      { signal },
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
@@ -49,18 +32,19 @@ export async function PostedJobsList(page = 1, limit = 10, signal) {
   }
 }
 
- 
 export async function GetJobDetails(payload) {
   try {
-    const data = JSON.stringify(payload)
-    const response = await axiosInstance.post("/job/details",data, {headers: { 'Content-Type': 'application/json' }});
+    const data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/job/details", data, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in LoginRoute:", error);
     throw error;
   }
 }
- 
+
 export async function DeleteJobDetails(payload) {
   try {
     const response = await axiosInstance.delete("/jobs/delete", {
@@ -73,7 +57,6 @@ export async function DeleteJobDetails(payload) {
     throw error;
   }
 }
-
 
 export async function UploadPdf(formdata) {
   try {
@@ -88,7 +71,7 @@ export async function UploadPdf(formdata) {
     throw error;
   }
 }
- 
+
 // ✅ Create Job
 export async function CreateJob(payload) {
   try {
@@ -102,9 +85,8 @@ export async function CreateJob(payload) {
   }
 }
 
-
 // ✅ Update Job
-export async function UpdateJob( payload) {
+export async function UpdateJob(payload) {
   try {
     const response = await axiosInstance.post(`/jobs/update`, payload, {
       headers: { "Content-Type": "application/json" },
@@ -116,11 +98,10 @@ export async function UpdateJob( payload) {
   }
 }
 
-
-
 export async function GetCandidateDeatils(payload, signal) {
   try {
-    const response = await axiosInstance.post(`/job/applicants`, payload, {signal,
+    const response = await axiosInstance.post(`/job/applicants`, payload, {
+      signal,
       headers: { "Content-Type": "application/json" },
     });
     return response.data;
@@ -129,13 +110,13 @@ export async function GetCandidateDeatils(payload, signal) {
     throw error;
   }
 }
-
 
 // vender routes
 
 export async function GetVendorCandidates(signal) {
   try {
-    const response = await axiosInstance.get(`/vendor/candidates`, {  signal ,
+    const response = await axiosInstance.get(`/vendor/candidates`, {
+      signal,
       headers: { "Content-Type": "application/json" },
     });
     return response.data;
@@ -144,13 +125,16 @@ export async function GetVendorCandidates(signal) {
     throw error;
   }
 }
-
 
 export async function CreateVendorCandidate(payload) {
   try {
-    const response = await axiosInstance.post(`/vendor/candidate/create`, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const response = await axiosInstance.post(
+      `/vendor/candidate/create`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
@@ -158,12 +142,15 @@ export async function CreateVendorCandidate(payload) {
   }
 }
 
-
 export async function UpdateVendorCandidate(payload) {
   try {
-    const response = await axiosInstance.post(`/vendor/candidate/update`, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const response = await axiosInstance.post(
+      `/vendor/candidate/update`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
@@ -173,9 +160,13 @@ export async function UpdateVendorCandidate(payload) {
 
 export async function DeleteVendorCandidate(payload) {
   try {
-    const response = await axiosInstance.post(`/vendor/candidate/delete`, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const response = await axiosInstance.post(
+      `/vendor/candidate/delete`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
@@ -183,22 +174,27 @@ export async function DeleteVendorCandidate(payload) {
   }
 }
 
-
 // Send verification OTP to candidate email
 export async function SendVerificationOtp(payload) {
   try {
-    const response = await axiosInstance.post("/verification/send-otp", payload);
+    const response = await axiosInstance.post(
+      "/verification/send-otp",
+      payload,
+    );
     return response.data;
   } catch (error) {
     console.error("Error sending OTP:", error);
     throw error;
   }
 }
- 
+
 // Verify candidate OTP
 export async function VerifyCandidateOtp(payload) {
   try {
-    const response = await axiosInstance.post("/verification/verify-otp", payload);
+    const response = await axiosInstance.post(
+      "/verification/verify-otp",
+      payload,
+    );
     return response.data;
   } catch (error) {
     console.error("Error verifying OTP:", error);
@@ -206,47 +202,52 @@ export async function VerifyCandidateOtp(payload) {
   }
 }
 
-
-
-export async function  UserJobsids() {
+export async function UserJobsids() {
   try {
-      const response = await axiosInstance.get(`/job/applied/ids`, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    const response = await axiosInstance.get(`/job/applied/ids`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
 
-export async function  UpdateVendorCandidateStatus( payload) {
+export async function UpdateVendorCandidateStatus(payload) {
   try {
     // const data=JSON.stringify(payload)
-      const response = await axiosInstance.post(`/vendor/candidate/update-status`, payload,{
-        headers:{
-          "Content-Type": "application/json"
+    const response = await axiosInstance.post(
+      `/vendor/candidate/update-status`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
         },
-         
-      })
-      return response.data
+      },
+    );
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
 
-
-export async function GetAllVendorCandidates(page = 1, limit = 10, filters = {}, signal) {
+export async function GetAllVendorCandidates(
+  page = 1,
+  limit = 10,
+  filters = {},
+  signal,
+) {
   try {
     const response = await axiosInstance.post(
       `/vendor/candidates/all`,
       {
         page,
         limit,
-        filters
+        filters,
       },
-      { signal }
+      { signal },
     );
     return response.data;
   } catch (error) {
@@ -257,18 +258,16 @@ export async function GetAllVendorCandidates(page = 1, limit = 10, filters = {},
 
 export async function AiCandidateFilter(payload) {
   try {
-      const response = await axiosInstance.post(`/ai-candidate-filter`, payload,{
-        headers:{
-          "Content-Type": "application/json"
-        },
-         
-      })
-      return response.data
+    const response = await axiosInstance.post(`/ai-candidate-filter`, payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
-
 
 export async function ApplyBenchCandidate(payload) {
   try {
@@ -277,7 +276,7 @@ export async function ApplyBenchCandidate(payload) {
       payload,
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -293,19 +292,15 @@ export async function ApplyBenchCandidate(payload) {
 // ✅ Create NOTE or SCHEDULE
 export async function CreateActivity(payload) {
   try {
-    const response = await axiosInstance.post(
-      "/api/activity",
-      payload,
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const response = await axiosInstance.post("/api/activity", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in CreateActivity:", error);
     throw error;
   }
 }
-
-
 
 /* ===========================
    ACTIVITY – READ
@@ -315,8 +310,9 @@ export async function CreateActivity(payload) {
 export async function GetMyActivity(signal) {
   try {
     const response = await axiosInstance.get(
-      "/api/activity/my-activity",{signal},
-      { headers: { "Content-Type": "application/json" } }
+      "/api/activity/my-activity",
+      { signal },
+      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   } catch (error) {
@@ -325,14 +321,13 @@ export async function GetMyActivity(signal) {
   }
 }
 
-
 // ✅ Candidate Activity Timeline
 export async function GetCandidateActivities(payload) {
   try {
     const response = await axiosInstance.post(
       `/api/activity/candidate`,
       payload,
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   } catch (error) {
@@ -340,7 +335,6 @@ export async function GetCandidateActivities(payload) {
     throw error;
   }
 }
-
 
 /* ===========================
    ACTIVITY – UPDATE
@@ -350,9 +344,9 @@ export async function GetCandidateActivities(payload) {
 export async function UpdateActivity(activityId, payload) {
   try {
     const response = await axiosInstance.put(
-         `/api/activity/${activityId}`,
+      `/api/activity/${activityId}`,
       payload,
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   } catch (error) {
@@ -361,7 +355,6 @@ export async function UpdateActivity(activityId, payload) {
   }
 }
 
-
 /* ===========================
    ACTIVITY – DELETE
 =========================== */
@@ -369,10 +362,9 @@ export async function UpdateActivity(activityId, payload) {
 // ✅ Delete Activity (Hard delete)
 export async function DeleteActivity(activityId) {
   try {
-    const response = await axiosInstance.delete(
-     `/api/activity/${activityId}`,
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const response = await axiosInstance.delete(`/api/activity/${activityId}`, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in DeleteActivity:", error);
@@ -403,15 +395,11 @@ export async function UpdateUserProfileDetails(payload) {
   }
 }
 
-
-
 export async function GetCountries() {
   try {
     const response = await axiosInstance.get("/countries");
     return response.data;
-   }
-    
-   catch (error) {
+  } catch (error) {
     console.error("Error fetching countries:", error);
     throw error;
   }
@@ -419,47 +407,48 @@ export async function GetCountries() {
 
 export async function SaveCandidate(payload) {
   try {
-      let data = JSON.stringify(payload)
-      const response = await axiosInstance.post('/vendor/candidate/save', data , {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/vendor/candidate/save", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
 
 export async function UnsaveCandidate(payload) {
   try {
-      let data = JSON.stringify(payload)
-      const response = await axiosInstance.post('/vendor/candidate/unsave', data , {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post(
+      "/vendor/candidate/unsave",
+      data,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
 
-
-export async function  SavedCandidatesList() {
+export async function SavedCandidatesList() {
   try {
-      const response = await axiosInstance.get(`/vendor/candidate/saved`, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    const response = await axiosInstance.get(`/vendor/candidate/saved`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
-
-
 
 // ✅ Mark candidate as Reviewed (Eye icon click)
 export async function MarkCandidateReviewed(payload) {
@@ -469,7 +458,7 @@ export async function MarkCandidateReviewed(payload) {
       payload,
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -481,13 +470,9 @@ export async function MarkCandidateReviewed(payload) {
 // ✅ Create Recruiter Todo
 export async function CreateRecruiterTodo(payload) {
   try {
-    const response = await axiosInstance.post(
-      "/api/todos",
-      payload,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    const response = await axiosInstance.post("/api/todos", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in CreateRecruiterTodo:", error);
@@ -495,14 +480,10 @@ export async function CreateRecruiterTodo(payload) {
   }
 }
 
-
 // ✅ Get My Todos (Recruiter Dashboard / My Activity)
 export async function GetMyTodos(signal) {
   try {
-    const response = await axiosInstance.get(
-      "/api/todos",
-      { signal }
-    );
+    const response = await axiosInstance.get("/api/todos", { signal });
     return response.data;
   } catch (error) {
     console.error("Error in GetMyTodos:", error);
@@ -510,17 +491,12 @@ export async function GetMyTodos(signal) {
   }
 }
 
-
 // ✅ Update Todo (edit / mark completed)
 export async function UpdateRecruiterTodo(todoId, payload) {
   try {
-    const response = await axiosInstance.put(
-      `/api/todos/${todoId}`,
-      payload,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    const response = await axiosInstance.put(`/api/todos/${todoId}`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in UpdateRecruiterTodo:", error);
@@ -528,16 +504,12 @@ export async function UpdateRecruiterTodo(todoId, payload) {
   }
 }
 
-
 // ✅ Delete Recruiter Todo
 export async function DeleteRecruiterTodo(todoId) {
   try {
-    const response = await axiosInstance.delete(
-      `/api/todos/${todoId}`,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    const response = await axiosInstance.delete(`/api/todos/${todoId}`, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in DeleteRecruiterTodo:", error);
@@ -548,13 +520,9 @@ export async function DeleteRecruiterTodo(todoId) {
 // ✅ Save / Update Candidate Rating
 export async function SaveCandidateRating(payload) {
   try {
-    const response = await axiosInstance.post(
-      "/candidate/rating",
-      payload,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    const response = await axiosInstance.post("/candidate/rating", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in SaveCandidateRating:", error);

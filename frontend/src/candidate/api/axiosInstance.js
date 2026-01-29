@@ -1,14 +1,15 @@
 import axios from "axios";
 
 /* ================= MAIN API INSTANCE ================= */
+console.log("url", import.meta.env.VITE_BACKEND_URL);
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: import.meta.env.VITE_BACKEND_URL,
   withCredentials: true,
 });
 
 /* ================= REFRESH INSTANCE (NO INTERCEPTOR) ================= */
 const refreshAxios = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: import.meta.env.VITE_BACKEND_URL,
   withCredentials: true,
 });
 
