@@ -1,11 +1,11 @@
-import { OAuth2Client } from "google-auth-library"
-import prisma from "../config/prisma.js"
-import generateToken from "../utils/generateToken.js"
-import axios from "axios"
-import { logger } from "../utils/logger.js"
+import { OAuth2Client } from "google-auth-library";
+import prisma from "../config/prisma.js";
+import generateToken from "../utils/generateToken.js";
+import axios from "axios";
+import { logger } from "../utils/logger.js";
 
-const client = new OAuth2Client()
-
+const client = new OAuth2Client();
+const external_backend_url = process.env.EXTERNAL_BACKEND_URL;
 
 const freeEmailProviders = [
   "gmail.com",
@@ -26,14 +26,11 @@ const isValidEmail = (email, type) => {
   return type === "candidate" ? isFreeEmail : !isFreeEmail;
 };
 
-
 const getEmailErrorMessage = (type) => {
   return type === "candidate"
     ? "Please enter a valid personal email"
     : "Please enter a valid Company email";
 };
-
-
 
 const googleAuth = async (req, res) => {
   const { credential, clientId, type } = req.body;
@@ -74,11 +71,12 @@ const googleAuth = async (req, res) => {
     // 3️⃣ Local user lookup
     let user = await prisma.users.findUnique({ where: { email } });
 
-    const fullName = `${given_name || ""} ${family_name || ""}`.trim() || "User";
+    const fullName =
+      `${given_name || ""} ${family_name || ""}`.trim() || "User";
 
     const externalPayload = {
       email: email,
-      username: email.split('@')[0].toLocaleLowerCase(),
+      username: email.split("@")[0].toLocaleLowerCase(),
       password: "Aakrin@123", // chat system only
     };
 
@@ -99,15 +97,15 @@ const googleAuth = async (req, res) => {
 
       try {
         const externalRegisterResp = await axios.post(
-          "http://localhost:8080/api/v1/users/register",
+          `${external_backend_url}/api/v1/users/register`,
           externalPayload,
-          { headers: { "Content-Type": "application/json" } }
+          { headers: { "Content-Type": "application/json" } },
         );
-        console.log('external api',externalRegisterResp.data)
-        externalUserId =externalRegisterResp?.data?.data?.user?._id;
+        console.log("external api", externalRegisterResp.data);
+        externalUserId = externalRegisterResp?.data?.data?.user?._id;
 
-        console.log('externaluser id googkle', externalUserId)
-        
+        console.log("externaluser id googkle", externalUserId);
+
         if (!externalUserId) {
           throw new Error("External register succeeded but _id missing");
         }
@@ -116,17 +114,17 @@ const googleAuth = async (req, res) => {
         //   "✅ External register (Google)",
         //   JSON.stringify(externalRegisterResp.data, null, 2)
         // );
-        console.log("exteranl register google",externalRegisterResp)
+        console.log("exteranl register google", externalRegisterResp);
       } catch (err) {
-        const deleteUser =await prisma.users.delete({
-          where:{
-            email:email
-          }
-        })
-        console.log('delete User',deleteUser)
+        const deleteUser = await prisma.users.delete({
+          where: {
+            email: email,
+          },
+        });
+        console.log("delete User", deleteUser);
         logger.error(
           "❌ External register failed (Google)",
-          JSON.stringify(err.message, null, 2)
+          JSON.stringify(err.message, null, 2),
         );
         return res.status(500).json({
           status: "error",
@@ -139,9 +137,9 @@ const googleAuth = async (req, res) => {
     let externalLoginData = null;
     try {
       const loginResp = await axios.post(
-        "http://localhost:8080/api/v1/users/login",
+        `${external_backend_url}/api/v1/users/login`,
         externalPayload,
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json" } },
       );
 
       externalLoginData = loginResp.data?.data;
@@ -152,12 +150,12 @@ const googleAuth = async (req, res) => {
 
       logger.info(
         "✅ External login (Google)",
-        JSON.stringify(loginResp.data, null, 2)
+        JSON.stringify(loginResp.data, null, 2),
       );
     } catch (err) {
       logger.error(
         "❌ External login failed (Google)",
-        JSON.stringify(err.message, null, 2)
+        JSON.stringify(err.message, null, 2),
       );
       return res.status(500).json({
         status: "error",
@@ -184,13 +182,13 @@ const googleAuth = async (req, res) => {
         JSON.stringify(
           { userId: user.id, chatuserid: externalUserId },
           null,
-          2
-        )
+          2,
+        ),
       );
     } catch (err) {
       logger.error(
         "❌ Failed to upsert UserProfile.chatuserid",
-        JSON.stringify(err.message, null, 2)
+        JSON.stringify(err.message, null, 2),
       );
       return res.status(500).json({
         status: "error",
@@ -223,16 +221,12 @@ const googleAuth = async (req, res) => {
       },
     });
   } catch (err) {
-    logger.error(
-      "Google auth error:",
-      JSON.stringify(err.message, null, 2)
-    );
+    logger.error("Google auth error:", JSON.stringify(err.message, null, 2));
     return res.status(500).json({
       status: "error",
       message: err.message || "Google authentication failed",
     });
   }
 };
-
 
 export { googleAuth };
