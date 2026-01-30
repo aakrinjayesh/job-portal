@@ -10,6 +10,7 @@ import {
   Divider,
   Typography,
   message,
+  Collapse,
 } from "antd";
 import { GetMyActivity } from "../api/api";
 import CandidateActivity from "../components/activity/CandidateActivity";
@@ -108,96 +109,102 @@ const MyActivity = () => {
           ) : jobs.length === 0 ? (
             <Empty description="No activity found" />
           ) : (
-            jobs.map((jobBlock) => (
-              <Card key={jobBlock.job.id} style={{ marginBottom: 32 }}>
-                {/* JOB HEADER */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 24,
-                  }}
-                >
-                  <div>
-                    <Title level={4} style={{ margin: 0, lineHeight: 1.3 }}>
-                      {jobBlock.job.role}
-                    </Title>
-                    <Text type="secondary">{jobBlock.job.companyName}</Text>
-                  </div>
+            jobs.map((jobBlock) => {
+              const jobKey = String(jobBlock.job.id);
 
-                  <Button
-                    type="primary"
-                    shape="round"
-                    style={{ background: "#D1E4FF", color: "#310000" }}
-                  >
-                    View Job Profile
-                  </Button>
-                </div>
-
-                <Divider />
-
-                {/* CANDIDATES */}
-                <List
-                  dataSource={jobBlock.candidates}
-                  renderItem={(item) => (
-                    <Card
-                      hoverable
-                      onClick={() =>
-                        handleSelectCandidate(
-                          item.candidate.id,
-                          jobBlock.job.id
-                        )
-                      }
-                      style={{
-                        marginBottom: 16,
-                        borderRadius: 16,
-                        background:
-                          activeCandidateId === item.candidate.id
-                            ? "#F4F9FF"
-                            : "#fff",
-                        border:
-                          activeCandidateId === item.candidate.id
-                            ? "1px solid #1677FF"
-                            : "1px solid #E3E3E3",
-                        cursor: "pointer",
-                      }}
-                      bodyStyle={{ padding: 24 }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div style={{ display: "flex", gap: 12 }}>
-                          <Avatar size={44}>
-                            {item.candidate.name.charAt(0).toUpperCase()}
-                          </Avatar>
-
-                          <div>
-                            <Text strong>{item.candidate.name}</Text>
-                            <br />
-                            <Text type="secondary">{item.candidate.email}</Text>
-                          </div>
+              return (
+                <Collapse
+                  key={jobKey}
+                  defaultActiveKey={[jobKey]} // ✅ OPEN BY DEFAULT
+                  expandIconPosition="end"
+                  style={{ marginBottom: 32 }}
+                  items={[
+                    {
+                      key: jobKey,
+                      label: (
+                        <div>
+                          <Title level={4} style={{ margin: 0 }}>
+                            {jobBlock.job.role}
+                          </Title>
+                          <Text type="secondary">
+                            {jobBlock.job.companyName}
+                          </Text>
                         </div>
-                      </div>
+                      ),
+                      children: (
+                        <>
+                          <Divider />
 
-                      <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-                        <Tag color="blue">
-                          Total Activities : {item.totalActivities}
-                        </Tag>
-                        <Tag color="blue">
-                          Last Activity :{" "}
-                          {new Date(item.lastActivityAt).toLocaleDateString()}
-                        </Tag>
-                      </div>
-                    </Card>
-                  )}
+                          {/* CANDIDATE LIST */}
+                          <List
+                            dataSource={jobBlock.candidates}
+                            renderItem={(item) => (
+                              <Card
+                                hoverable
+                                onClick={() =>
+                                  handleSelectCandidate(
+                                    item.candidate.id,
+                                    jobBlock.job.id
+                                  )
+                                }
+                                style={{
+                                  marginBottom: 16,
+                                  borderRadius: 16,
+                                  background:
+                                    activeCandidateId === item.candidate.id
+                                      ? "#F4F9FF"
+                                      : "#fff",
+                                  border:
+                                    activeCandidateId === item.candidate.id
+                                      ? "1px solid #1677FF"
+                                      : "1px solid #E3E3E3",
+                                  cursor: "pointer",
+                                }}
+                                bodyStyle={{ padding: 24 }}
+                              >
+                                <div style={{ display: "flex", gap: 12 }}>
+                                  <Avatar size={44}>
+                                    {item.candidate.name
+                                      .charAt(0)
+                                      .toUpperCase()}
+                                  </Avatar>
+
+                                  <div>
+                                    <Text strong>{item.candidate.name}</Text>
+                                    <br />
+                                    <Text type="secondary">
+                                      {item.candidate.email}
+                                    </Text>
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    marginTop: 16,
+                                    display: "flex",
+                                    gap: 8,
+                                  }}
+                                >
+                                  <Tag color="blue">
+                                    Total Activities :{item.totalActivities}
+                                  </Tag>
+                                  <Tag color="blue">
+                                    Last Activity :
+                                    {new Date(
+                                      item.lastActivityAt
+                                    ).toLocaleDateString()}
+                                  </Tag>
+                                </div>
+                              </Card>
+                            )}
+                          />
+                        </>
+                      ),
+                    },
+                  ]}
                 />
-              </Card>
-            ))
+              );
+            })
           )}
         </Card>
 
@@ -206,8 +213,10 @@ const MyActivity = () => {
           style={{
             width: "40%",
             borderRadius: 12,
-            // minHeight: 300,
             height: "100%",
+            overflow: "hidden", // ⬅️ important
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {!activeCandidateId && (
@@ -220,11 +229,25 @@ const MyActivity = () => {
             </div>
           )}
 
-          {!detailLoading && activeCandidateId && (
+          {/* {!detailLoading && activeCandidateId && (
             <CandidateActivity
               candidateId={activeCandidateId}
               jobId={activeJobId}
             />
+          )} */}
+          {!detailLoading && activeCandidateId && (
+            <div
+              style={{
+                flex: 1, // ⬅️ take remaining height
+                overflowY: "auto", // ✅ enable scroll
+                paddingRight: 8,
+              }}
+            >
+              <CandidateActivity
+                candidateId={activeCandidateId}
+                jobId={activeJobId}
+              />
+            </div>
           )}
         </Card>
       </div>

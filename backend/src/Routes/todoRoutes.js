@@ -29,7 +29,7 @@ router.post("/delete", authenticateToken, deleteTodo);
 router.patch("/active", authenticateToken, toggleActiveTodo);
 
 // Get checklist for candidate + job (auto-creates if missing)
-router.get("/candidate", authenticateToken, getCandidateTasks);
+router.post("/candidate", authenticateToken, getCandidateTasks);
 
 // Check / uncheck task
 router.patch("/candidate/check", authenticateToken, checkUpdate);

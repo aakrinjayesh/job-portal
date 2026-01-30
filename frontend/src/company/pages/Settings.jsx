@@ -9,7 +9,11 @@ import {
   Tag,
   Popconfirm,
   message,
+  Tabs,
 } from "antd";
+import SettingsTodoManager from "./SettingsTodoManager";
+
+import MyActivity from "./MyActivity";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import axios from "axios";
 
@@ -192,43 +196,65 @@ const Settings = () => {
 
   return (
     <div style={{ padding: "24px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "20px",
-        }}
-      >
-        <h2>Organization Settings</h2>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setIsModalVisible(true)}
-        >
-          Add Member
-        </Button>
-      </div>
+      <Tabs
+        defaultActiveKey="org"
+        items={[
+          {
+            key: "org",
+            label: "Organization Settings",
+            children: (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <h2>Organization Settings</h2>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsModalVisible(true)}
+                  >
+                    Add Member
+                  </Button>
+                </div>
 
-      <h3>Members</h3>
-      <Table
-        columns={memberColumns}
-        dataSource={members}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 5 }}
+                <h3>Members</h3>
+                <Table
+                  columns={memberColumns}
+                  dataSource={members}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{ pageSize: 5 }}
+                />
+
+                {invites.length > 0 && (
+                  <div style={{ marginTop: "20px" }}>
+                    <h3>Pending Invites</h3>
+                    <Table
+                      columns={inviteColumns}
+                      dataSource={invites}
+                      rowKey="id"
+                      pagination={false}
+                    />
+                  </div>
+                )}
+              </>
+            ),
+          },
+          {
+            key: "activity",
+            label: "My Activity",
+            children: (
+              <>
+                <SettingsTodoManager />
+              </>
+            ),
+          },
+        ]}
       />
-
-      {invites.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Pending Invites</h3>
-          <Table
-            columns={inviteColumns}
-            dataSource={invites}
-            rowKey="id"
-            pagination={false}
-          />
-        </div>
-      )}
 
       <Modal
         title="Invite New Member"

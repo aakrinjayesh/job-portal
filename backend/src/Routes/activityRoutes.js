@@ -3,8 +3,8 @@ import {
   createActivity,
   getMyActivity,
   getCandidateActivities,
-  updateActivity,
-  deleteActivity
+  // updateActivity,
+  deleteActivity,
 } from "../controllers/activityControllers.js";
 
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -19,34 +19,21 @@ const router = express.Router();
  */
 
 // CREATE Activity (NOTE / SCHEDULE)
-router.post(
-  "/",
-  authenticateToken,
-  ensureCompanyMember,
-  createActivity
-);
+router.post("/", authenticateToken, ensureCompanyMember, createActivity);
 
 // GET My Activity (Grouped by candidate)
-router.get(
-  "/my-activity",
-  authenticateToken,
-  getMyActivity
-);
+router.get("/my-activity", authenticateToken, getMyActivity);
 
 // GET Activity Timeline for a Candidate
-router.post(
-  "/candidate",
-  authenticateToken,
-  getCandidateActivities
-);
+router.post("/candidate", authenticateToken, getCandidateActivities);
 
 // UPDATE Activity (NOTE / SCHEDULE)
-router.put(
-  "/:activityId",
-  authenticateToken,
-  ensureCompanyMember,
-  updateActivity
-);
+// router.put(
+//   "/:activityId",
+//   authenticateToken,
+//   ensureCompanyMember,
+//   updateActivity
+// );
 
 // DELETE Activity (Hard delete)
 router.delete(

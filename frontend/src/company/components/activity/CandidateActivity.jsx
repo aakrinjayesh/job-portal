@@ -147,7 +147,8 @@ const CandidateActivity = ({ candidateId, jobId }) => {
           {/* ============ TODO VIEW (UNCHANGED) ============ */}
           {activeTab === "TODO" && (
             <div style={{ marginTop: 12 }}>
-              <TodoList />
+              {/* <TodoList /> */}
+              <TodoList candidateId={candidateId} jobId={jobId} />
             </div>
           )}
 
