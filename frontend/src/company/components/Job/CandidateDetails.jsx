@@ -250,7 +250,7 @@ const CandidateDetails = () => {
                 }}
                 onClick={handleDownloadResume}
               >
-                Generate Resume
+                Download Resume
               </Button>
             </div>
             <div
@@ -994,7 +994,7 @@ const CandidateDetails = () => {
             rows={4}
             placeholder="Review Description"
             value={tempReview}
-            maxLength={1000}
+            maxLength={100}
             onChange={(e) => {
               const value = e.target.value;
 

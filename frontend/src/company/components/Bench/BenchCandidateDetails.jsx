@@ -657,7 +657,7 @@ const BenchCandidateDetails = () => {
               cursor: "pointer",
             }}
           >
-            Generate Resume
+            Download Resume
           </button>
         </Row>
       </div>
@@ -753,26 +753,17 @@ const BenchCandidateDetails = () => {
 
       <Divider />
 
-      {/* ================= SKILLS ================= */}
+      {/* ===== SKILLS ===== */}
       <Collapse
         bordered={false}
         items={[
           {
             key: "skills",
-            // label: <Title level={4}>Skills</Title>,
             label: (
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: "#1f1f1f",
-                  padding: "4px 0",
-                }}
-              >
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#1f1f1f" }}>
                 Skills
               </div>
             ),
-
             children: (
               <>
                 <Text strong>Primary Skills</Text>
@@ -780,10 +771,12 @@ const BenchCandidateDetails = () => {
                   {primarySkills.map((s, i) => (
                     <Tag
                       key={i}
-                      color="blue"
                       style={{
-                        marginBottom: 10, // ✅ vertical gap between rows
-                        marginRight: 8, // horizontal gap
+                        background: "#FBEBFF",
+                        border: "1px solid #800080",
+                        borderRadius: 100,
+                        marginBottom: 10,
+                        marginRight: 8,
                       }}
                     >
                       {s.name}
@@ -799,10 +792,12 @@ const BenchCandidateDetails = () => {
                       {secondarySkills.map((s, i) => (
                         <Tag
                           key={i}
-                          color="geekblue"
                           style={{
-                            marginBottom: 10, // ✅ vertical gap between rows
-                            marginRight: 8, // horizontal gap
+                            background: "#FBEBFF",
+                            border: "1px solid #800080",
+                            borderRadius: 100,
+                            marginBottom: 10,
+                            marginRight: 8,
                           }}
                         >
                           {s.name}
@@ -819,47 +814,43 @@ const BenchCandidateDetails = () => {
 
       <Divider />
 
-      {/* ================= CLOUDS ================= */}
+      {/* ===== CLOUDS ===== */}
       <Collapse
         bordered={false}
         items={[
           {
             key: "clouds",
-            // label: <Title level={4}>Salesforce Clouds</Title>,
             label: (
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: "#1f1f1f",
-                  padding: "4px 0",
-                }}
-              >
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#1f1f1f" }}>
                 Clouds
               </div>
             ),
-
             children: (
               <>
                 {primaryClouds?.map((c, i) => (
                   <Tag
                     key={i}
-                    color="purple"
                     style={{
-                      marginBottom: 10, // ✅ vertical gap between rows
-                      marginRight: 8, // horizontal gap
+                      background: "#E7F0FE",
+                      border: "1px solid #1677FF",
+                      borderRadius: 100,
+                      marginBottom: 10,
+                      marginRight: 8,
                     }}
                   >
                     {c.name}
                   </Tag>
                 ))}
+
                 {secondaryClouds?.map((c, i) => (
                   <Tag
                     key={i}
-                    color="magenta"
                     style={{
-                      marginBottom: 10, // ✅ vertical gap between rows
-                      marginRight: 8, // horizontal gap
+                      background: "#E7F0FE",
+                      border: "1px solid #1677FF",
+                      borderRadius: 100,
+                      marginBottom: 10,
+                      marginRight: 8,
                     }}
                   >
                     {c.name}

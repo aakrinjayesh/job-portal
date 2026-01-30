@@ -468,54 +468,54 @@ export async function MarkCandidateReviewed(payload) {
 }
 
 // ✅ Create Recruiter Todo
-export async function CreateRecruiterTodo(payload) {
-  try {
-    const response = await axiosInstance.post("/api/todos", payload, {
-      headers: { "Content-Type": "application/json" },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in CreateRecruiterTodo:", error);
-    throw error;
-  }
-}
+// export async function CreateRecruiterTodo(payload) {
+//   try {
+//     const response = await axiosInstance.post("/api/todos", payload, {
+//       headers: { "Content-Type": "application/json" },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error in CreateRecruiterTodo:", error);
+//     throw error;
+//   }
+// }
 
-// ✅ Get My Todos (Recruiter Dashboard / My Activity)
-export async function GetMyTodos(signal) {
-  try {
-    const response = await axiosInstance.get("/api/todos", { signal });
-    return response.data;
-  } catch (error) {
-    console.error("Error in GetMyTodos:", error);
-    throw error;
-  }
-}
+// // ✅ Get My Todos (Recruiter Dashboard / My Activity)
+// export async function GetMyTodos(signal) {
+//   try {
+//     const response = await axiosInstance.get("/api/todos", { signal });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error in GetMyTodos:", error);
+//     throw error;
+//   }
+// }
 
-// ✅ Update Todo (edit / mark completed)
-export async function UpdateRecruiterTodo(todoId, payload) {
-  try {
-    const response = await axiosInstance.put(`/api/todos/${todoId}`, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in UpdateRecruiterTodo:", error);
-    throw error;
-  }
-}
+// // ✅ Update Todo (edit / mark completed)
+// export async function UpdateRecruiterTodo(todoId, payload) {
+//   try {
+//     const response = await axiosInstance.put(`/api/todos/${todoId}`, payload, {
+//       headers: { "Content-Type": "application/json" },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error in UpdateRecruiterTodo:", error);
+//     throw error;
+//   }
+// }
 
-// ✅ Delete Recruiter Todo
-export async function DeleteRecruiterTodo(todoId) {
-  try {
-    const response = await axiosInstance.delete(`/api/todos/${todoId}`, {
-      headers: { "Content-Type": "application/json" },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in DeleteRecruiterTodo:", error);
-    throw error;
-  }
-}
+// // ✅ Delete Recruiter Todo
+// export async function DeleteRecruiterTodo(todoId) {
+//   try {
+//     const response = await axiosInstance.delete(`/api/todos/${todoId}`, {
+//       headers: { "Content-Type": "application/json" },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error in DeleteRecruiterTodo:", error);
+//     throw error;
+//   }
+// }
 
 export async function getCandidateTasks({ candidateId, jobId }) {
   try {

@@ -1,14 +1,14 @@
-import prisma from '../config/prisma.js'
-import extractTextFromBase64 from '../utils/extractText.js'
+import prisma from "../config/prisma.js";
+import extractTextFromBase64 from "../utils/extractText.js";
 // import { extractResumeSections } from '../utils/llmTextExtractor.js'
-import { extractAIText } from '../utils/ai/extractAI.js';
+import { extractAIText } from "../utils/ai/extractAI.js";
 import fs from "fs";
 import path from "path";
-import { logger } from '../utils/logger.js';
-
-
+import { logger } from "../utils/logger.js";
+import mammoth from "mammoth";
 
 // for uploading pdf and extracting all the details from it for both vendor and candidate
+
 const UploadResume = async (req, res) => {
   try {
     logger.info("UploadResume API hit");
@@ -19,29 +19,60 @@ const UploadResume = async (req, res) => {
     }
 
     const { role } = req.body;
-    logger.info(`File received: ${req.file.originalname}, Role: ${role}`);
+    const { buffer, mimetype, originalname, size } = req.file;
 
-    const pdfBuffer = req.file.buffer;
-    const text = await extractTextFromBase64(pdfBuffer)
+    logger.info(
+      `File received: ${originalname}, Type: ${mimetype}, Role: ${role}`
+    );
 
-    logger.info("Extracted text from PDF");
+    let extractedText = "";
 
-    const structuredData = await extractAIText(text, role);
-    res.status(200).json({
+    // ✅ PDF handling
+    if (mimetype === "application/pdf") {
+      extractedText = await extractTextFromBase64(buffer);
+      logger.info("Extracted text from PDF");
+    }
+
+    // ✅ DOCX handling
+    else if (
+      mimetype ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      const result = await mammoth.extractRawText({ buffer });
+      extractedText = result.value;
+      logger.info("Extracted text from DOCX");
+    }
+
+    // ❌ Unsupported file
+    else {
+      logger.warn("Unsupported file type:", mimetype);
+      return res.status(400).json({
+        error: "Unsupported file type. Please upload PDF or DOCX only.",
+      });
+    }
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      return res.status(400).json({
+        error: "Unable to extract text from the uploaded file",
+      });
+    }
+
+    const structuredData = await extractAIText(extractedText, role);
+
+    return res.status(200).json({
       message: "File received successfully",
-      fileName: req.file.originalname,
-      mimeType: req.file.mimetype,
-      size: req.file.size,
+      fileName: originalname,
+      mimeType: mimetype,
+      size,
       extracted: structuredData,
     });
-
   } catch (err) {
-    logger.error("Error in UploadResume:", JSON.stringify(err.message,null,2));
-    res.status(500).json({ error: "Something went wrong while uploading" });
+    logger.error("Error in UploadResume:", err);
+    return res.status(500).json({
+      error: "Something went wrong while uploading",
+    });
   }
 };
-
-
 
 // add or update profile details for both vendor and candidate
 const updateProfiledetails = async (req, res) => {
@@ -50,17 +81,19 @@ const updateProfiledetails = async (req, res) => {
 
     if (!req.body) {
       logger.warn("No body found in request");
-      return res.status(400).json({ message: "No body found" })
+      return res.status(400).json({ message: "No body found" });
     }
 
-    const userFromToken = req.user
+    const userFromToken = req.user;
     logger.info(`Update for user: ${userFromToken?.email}`);
 
-    const user = await prisma.users.findUnique({ where: { email: userFromToken.email } })
+    const user = await prisma.users.findUnique({
+      where: { email: userFromToken.email },
+    });
 
     if (!user) {
       logger.warn("User not found in DB");
-      return res.status(404).json({ message: "User not found" })
+      return res.status(404).json({ message: "User not found" });
     }
 
     const {
@@ -87,7 +120,7 @@ const updateProfiledetails = async (req, res) => {
       linkedInUrl = null,
       trailheadUrl = null,
       title,
-    } = req.body
+    } = req.body;
 
     const upserted = await prisma.userProfile.upsert({
       where: { userId: user.id },
@@ -142,20 +175,20 @@ const updateProfiledetails = async (req, res) => {
         trailheadUrl,
         title,
         chatuserid: user.chatuserid,
-      }
-    })
+      },
+    });
 
     logger.info("Profile updated successfully", { userId: upserted.userId });
 
-    return res.status(200).json({ status: 'success', data: upserted.userId })
-
+    return res.status(200).json({ status: "success", data: upserted.userId });
   } catch (err) {
     console.error("Error saving user profile:", err.message);
-    return res.status(500).json({ status: 'failed', message: 'Could not save profile'+err.message })
+    return res.status(500).json({
+      status: "failed",
+      message: "Could not save profile" + err.message,
+    });
   }
-}
-
-
+};
 
 const getUserProfileDetails = async (req, res) => {
   try {
@@ -171,21 +204,27 @@ const getUserProfileDetails = async (req, res) => {
     logger.info(`Fetching profile for User ID: ${id}`);
 
     const user = await prisma.userProfile.findUnique({
-      where: { userId: id }
+      where: { userId: id },
     });
 
     if (!user) {
       logger.warn("User profile not found");
-      return res.status(200).json({ status: "failed", message: "User not found" });
+      return res
+        .status(200)
+        .json({ status: "failed", message: "User not found" });
     }
 
     logger.info("User profile fetched successfully");
 
     return res.status(200).json({ status: "success", user });
-
   } catch (error) {
-    logger.error("Error fetching profile:", JSON.stringify(error.message,null,2));
-    return res.status(200).json({ status: "error", message: "Internal server error" });
+    logger.error(
+      "Error fetching profile:",
+      JSON.stringify(error.message, null, 2)
+    );
+    return res
+      .status(200)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
 
@@ -222,16 +261,17 @@ const uploadProfilePicture = async (req, res) => {
       status: "success",
       url: fileUrl,
     });
-
   } catch (error) {
-    logger.error("Profile Picture Upload Error:", JSON.stringify(error.message,null,2));
+    logger.error(
+      "Profile Picture Upload Error:",
+      JSON.stringify(error.message, null, 2)
+    );
     return res.status(500).json({
       status: "error",
       message: "Upload failed",
     });
   }
 };
-
 
 // company controllers
 
@@ -244,15 +284,15 @@ const getCompanyProfileDetails = async (req, res) => {
     const user = await prisma.users.findUnique({
       where: { id }, // ✅ FIXED
       include: {
-        address: true
-      }
+        address: true,
+      },
     });
 
     if (!user) {
       logger.warn("User profile not found");
       return res.status(404).json({
         status: "error",
-        message: "User not found"
+        message: "User not found",
       });
     }
 
@@ -266,23 +306,24 @@ const getCompanyProfileDetails = async (req, res) => {
       phoneNumber: user.phoneNumber,
       companyName: user.companyName,
       profileUrl: user.profileUrl,
-      address: user.address
+      address: user.address,
     };
 
     return res.status(200).json({
       status: "success",
-      data
+      data,
     });
-
   } catch (error) {
-    logger.error("Error fetching profile:", JSON.stringify(error.message, null, 2));
+    logger.error(
+      "Error fetching profile:",
+      JSON.stringify(error.message, null, 2)
+    );
     return res.status(500).json({
       status: "error",
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 };
-
 
 const updateUserProfileDetails = async (req, res) => {
   try {
@@ -294,21 +335,21 @@ const updateUserProfileDetails = async (req, res) => {
     if (!payload || Object.keys(payload).length === 0) {
       return res.status(400).json({
         status: "error",
-        message: "Payload is missing"
+        message: "Payload is missing",
       });
     }
 
     // 1️⃣ Check user
     const user = await prisma.users.findUnique({
       where: { id },
-      include: { address: true }
+      include: { address: true },
     });
 
     if (!user) {
       logger.warn("User not found");
       return res.status(404).json({
         status: "error",
-        message: "User not found"
+        message: "User not found",
       });
     }
 
@@ -317,12 +358,11 @@ const updateUserProfileDetails = async (req, res) => {
       phoneNumber,
       companyName,
       profileUrl,
-      address // { doorNumber, street, city, state, country, pinCode }
+      address, // { doorNumber, street, city, state, country, pinCode }
     } = payload;
 
     // 2️⃣ Transaction
     const updatedUser = await prisma.$transaction(async (tx) => {
-
       // 🔹 Update Users table
       const userUpdate = await tx.users.update({
         where: { id },
@@ -330,8 +370,8 @@ const updateUserProfileDetails = async (req, res) => {
           ...(name !== undefined && { name }),
           ...(phoneNumber !== undefined && { phoneNumber }),
           ...(companyName !== undefined && { companyName }),
-          ...(profileUrl !== undefined && { profileUrl })
-        }
+          ...(profileUrl !== undefined && { profileUrl }),
+        },
       });
 
       // 🔹 Update or Create Address
@@ -340,13 +380,19 @@ const updateUserProfileDetails = async (req, res) => {
           await tx.address.update({
             where: { id: user.address.id },
             data: {
-              ...(address.doorNumber !== undefined && { doorNumber: address.doorNumber }),
+              ...(address.doorNumber !== undefined && {
+                doorNumber: address.doorNumber,
+              }),
               ...(address.street !== undefined && { street: address.street }),
               ...(address.city !== undefined && { city: address.city }),
               ...(address.state !== undefined && { state: address.state }),
-              ...(address.country !== undefined && { country: address.country }),
-              ...(address.pinCode !== undefined && { pinCode: address.pinCode })
-            }
+              ...(address.country !== undefined && {
+                country: address.country,
+              }),
+              ...(address.pinCode !== undefined && {
+                pinCode: address.pinCode,
+              }),
+            },
           });
         } else {
           await tx.address.create({
@@ -357,8 +403,8 @@ const updateUserProfileDetails = async (req, res) => {
               city: address.city || null,
               state: address.state || null,
               country: address.country || null,
-              pinCode: address.pinCode || null
-            }
+              pinCode: address.pinCode || null,
+            },
           });
         }
       }
@@ -369,9 +415,8 @@ const updateUserProfileDetails = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Profile updated successfully",
-      data: updatedUser
+      data: updatedUser,
     });
-
   } catch (error) {
     logger.error(
       "Error updating user profile:",
@@ -379,21 +424,19 @@ const updateUserProfileDetails = async (req, res) => {
     );
     return res.status(500).json({
       status: "error",
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 };
 
-
-
 // Get Countries + States (Address form)
- const getCountriesWithStates = async (req, res) => {
-  console.log("in get countries")
+const getCountriesWithStates = async (req, res) => {
+  console.log("in get countries");
   try {
     const countries = await prisma.country.findMany({
       include: { states: true },
     });
- console.log(JSON.stringify(countries, null, 2));
+    console.log(JSON.stringify(countries, null, 2));
     return res.json({
       status: "success",
       data: countries,
@@ -405,10 +448,6 @@ const updateUserProfileDetails = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 // // // Save or Update Address (Upsert) for User Profile
 // //  const saveOrUpdateAddress = async (req, res) => {
@@ -477,7 +516,6 @@ const updateUserProfileDetails = async (req, res) => {
 // //   }
 // };
 
-
 // Get User Address (for logged-in user)
 // const getUserAddress = async (req, res) => {
 //   try {
@@ -526,5 +564,5 @@ export {
   getUserProfileDetails,
   getCountriesWithStates,
   uploadProfilePicture,
-  getCompanyProfileDetails
-}
+  getCompanyProfileDetails,
+};

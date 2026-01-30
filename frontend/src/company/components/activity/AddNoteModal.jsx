@@ -184,7 +184,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               padding: "6px 8px",
             }}
           >
-            <Form.Item
+            {/* <Form.Item
               name="time"
               noStyle
               rules={[{ required: true, message: "Time is required" }]}
@@ -198,6 +198,81 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                 disabledDate={(current) =>
                   current && current < dayjs().startOf("day")
                 }
+              />
+            </Form.Item> */}
+
+            <Form.Item
+              name="time"
+              noStyle
+              rules={[
+                { required: true, message: "Time is required" },
+                {
+                  validator: (_, value) => {
+                    if (!value || value.length !== 2) return Promise.resolve();
+
+                    const [start, end] = value;
+                    const now = dayjs();
+                    const sixMonthsLater = dayjs().add(6, "month").endOf("day");
+
+                    if (start.isBefore(now)) {
+                      return Promise.reject(
+                        new Error("Start time cannot be in the past")
+                      );
+                    }
+
+                    if (end.isBefore(start)) {
+                      return Promise.reject(
+                        new Error("End time must be after start time")
+                      );
+                    }
+
+                    if (end.isAfter(sixMonthsLater)) {
+                      return Promise.reject(
+                        new Error("Time must be within 6 months")
+                      );
+                    }
+
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+            >
+              <DatePicker.RangePicker
+                bordered={false}
+                showTime
+                use12Hours
+                format="DD MMM YYYY, h:mm a"
+                style={{ width: "100%" }}
+                disabledDate={(current) => {
+                  if (!current) return false;
+
+                  const today = dayjs().startOf("day");
+                  const sixMonthsLater = dayjs().add(6, "month").endOf("day");
+
+                  return (
+                    current.isBefore(today) || current.isAfter(sixMonthsLater)
+                  );
+                }}
+                disabledTime={(current) => {
+                  if (!current) return {};
+
+                  // ⛔ block past time for today
+                  if (current.isSame(dayjs(), "day")) {
+                    return {
+                      disabledHours: () =>
+                        Array.from({ length: dayjs().hour() }, (_, i) => i),
+                      disabledMinutes: (hour) =>
+                        hour === dayjs().hour()
+                          ? Array.from(
+                              { length: dayjs().minute() },
+                              (_, i) => i
+                            )
+                          : [],
+                    };
+                  }
+
+                  return {};
+                }}
               />
             </Form.Item>
           </div>
@@ -219,7 +294,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               padding: 8,
             }}
           >
-            <Form.Item
+            {/* <Form.Item
               name="description"
               noStyle
               rules={[
@@ -228,6 +303,43 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                   pattern: /^[A-Za-z0-9 ,./()\[\]{}]+$/,
                   message:
                     "Only letters, numbers, spaces, and , . / ( ) [ ] { } are allowed",
+                },
+              ]}
+            >
+              <Input.TextArea
+                rows={3}
+                placeholder="Note Description"
+                bordered={false}
+                style={{ fontSize: 13 }}
+              />
+            </Form.Item> */}
+            <Form.Item
+              name="description"
+              noStyle
+              rules={[
+                { required: true, message: "Description is required" },
+                {
+                  pattern: /^[A-Za-z0-9 ,./()\[\]{}\n]+$/,
+                  message:
+                    "Only letters, numbers, spaces, and , . / ( ) [ ] { } are allowed",
+                },
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+
+                    const wordCount = value
+                      .trim()
+                      .split(/\s+/)
+                      .filter(Boolean).length;
+
+                    if (wordCount > 1000) {
+                      return Promise.reject(
+                        new Error("Maximum 1000 words allowed")
+                      );
+                    }
+
+                    return Promise.resolve();
+                  },
                 },
               ]}
             >

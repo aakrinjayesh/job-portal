@@ -1118,16 +1118,36 @@ const UpdateUserProfile = ({
                           message: "Please enter total experience!",
                         },
                         {
-                          pattern: /^(?:\d{1,2})(?:\.\d{1,2})?$/,
-                          message: "Up to 2 digits before & after decimal",
+                          validator: (_, value) => {
+                            if (value === undefined || value === null) {
+                              return Promise.resolve();
+                            }
+
+                            // ❌ no decimals
+                            if (!Number.isInteger(value)) {
+                              return Promise.reject(
+                                new Error("Only whole numbers are allowed")
+                              );
+                            }
+
+                            // ❌ more than 2 digits
+                            if (value.toString().length > 2) {
+                              return Promise.reject(
+                                new Error("Maximum 2 digits allowed")
+                              );
+                            }
+
+                            return Promise.resolve();
+                          },
                         },
                       ]}
                     >
-                      <Input
-                        type="number"
+                      <InputNumber
                         min={0}
-                        step="1"
-                        placeholder="e.g., 6 , 6.2 "
+                        step={1}
+                        precision={0} // ✅ blocks decimals
+                        style={{ width: "100%" }}
+                        placeholder="e.g., 6 or 10 years"
                       />
                     </Form.Item>
                   </Col>
@@ -1143,16 +1163,43 @@ const UpdateUserProfile = ({
                           message: "Please enter Salesforce experience!",
                         },
                         {
-                          pattern: /^(?:\d{1,2})(?:\.\d{1,2})?$/,
-                          message: "Up to 2 digits before & after decimal",
+                          validator: (_, value) => {
+                            if (value === undefined || value === null) {
+                              return Promise.resolve();
+                            }
+
+                            // ❌ no decimals
+                            if (!Number.isInteger(value)) {
+                              return Promise.reject(
+                                new Error("Only whole numbers are allowed")
+                              );
+                            }
+
+                            // ❌ more than 2 digits (>= 100)
+                            if (value.toString().length > 2) {
+                              return Promise.reject(
+                                new Error("Maximum 2 digits allowed (0–99)")
+                              );
+                            }
+
+                            // ❌ negative numbers
+                            if (value < 0) {
+                              return Promise.reject(
+                                new Error("Negative values are not allowed")
+                              );
+                            }
+
+                            return Promise.resolve();
+                          },
                         },
                       ]}
                     >
-                      <Input
-                        type="number"
+                      <InputNumber
                         min={0}
-                        step="1"
-                        placeholder="e.g., 4 years"
+                        step={1}
+                        precision={0} // ✅ blocks decimals
+                        style={{ width: "100%" }}
+                        placeholder="e.g., 4 or 12"
                       />
                     </Form.Item>
                   </Col>
