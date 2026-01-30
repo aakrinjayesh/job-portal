@@ -32,6 +32,7 @@ import MyProfile from "./company/pages/MyProfile";
 import { useEffect } from "react";
 import LandingRedirect from "./pages/LandingRedirect";
 import { useLocation } from "react-router-dom";
+import axiosInstance from "./candidate/api/axiosInstance";
 
 function App() {
   const location = useLocation();
@@ -44,7 +45,7 @@ function App() {
         const res = await axiosInstance.get("/auth/refresh-token");
         localStorage.setItem("token", res.data.token);
       } catch (err) {
-        console.log("err", err);
+        console.log("err refresh-token", err.message);
         // localStorage.clear();
       }
     };
@@ -195,7 +196,7 @@ function App() {
         />
 
         <Route
-          path="/company/job/details"
+          path="/company/job/:id"
           element={
             <CompanyLayout>
               <JobDetails />

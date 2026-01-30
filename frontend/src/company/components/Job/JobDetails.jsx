@@ -24,38 +24,28 @@ import ApplyBenchJob from "../../pages/ApplyBenchJob";
 const { Title, Text, Paragraph } = Typography;
 
 const JobDetails = () => {
-  // const { id } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  // const [job, setJob] = useState(null);
-  const [showSkills, setShowSkills] = useState(false);
-  const [showClouds, setShowClouds] = useState(false);
+  const [job, setJob] = useState(null);
 
   const [loading, setLoading] = useState(true);
-
   const location = useLocation();
-  const job = location.state?.job; // ← GET jobId from navigation
-  const from = location.state?.from;
 
   const type = location?.state?.type;
   const portal = location?.state?.portal;
+  const from = location?.state?.from;
+  const count = location?.state?.count;
 
   console.log("type in compant jobdetails", type);
   console.log("portal", portal);
 
   useEffect(() => {
-    if (job) {
-      setLoading(false); // job came from card → no API call
-    } else {
-      fetchJobDetails(); // only call API if user directly opens URL
-    }
+    fetchJobDetails();
   }, []);
 
   const fetchJobDetails = async () => {
     try {
-      const jobId = location.state?.jobId;
-      if (!jobId) return; // no api
-
-      const payload = { jobid: jobId };
+      const payload = { jobid: id };
       const response = await GetJobDetails(payload);
       setJob(response?.job);
     } catch (error) {
@@ -69,31 +59,10 @@ const JobDetails = () => {
     navigate("/company/candidates", { state: { id } });
   };
 
-  const handleBackButton = () => {
-    if (type === "save") {
-      navigate("/company/jobs/saved");
-    } else if (type === "find") {
-      navigate("/company/job/find");
-    } else {
-      navigate("/company/jobs");
-    }
-  };
-
   if (loading) return <Spin size="large" style={{ marginTop: 100 }} />;
-
-  if (!job) return <Text type="danger">Job not found</Text>;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>
-      {/* <Button
-        type="text"
-        style={{ marginBottom: 5 }}
-        onClick={handleBackButton}
-        icon={<ArrowLeftOutlined />}
-      >
-        Back
-      </Button> */}
-
       <Card
         style={{
           borderRadius: 14,
@@ -118,6 +87,18 @@ const JobDetails = () => {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {from === "myjobs" && (
+              <Button
+                style={{
+                  background: "#D1E4FF",
+                  borderRadius: 100,
+                  fontWeight: 600,
+                }}
+                onClick={handleViewCandidates}
+              >
+                View Candidates ({count || 0})
+              </Button>
+            )}
             <Tag
               color={job.status === "Closed" ? "error" : "success"}
               style={{
@@ -232,11 +213,24 @@ const JobDetails = () => {
         <Paragraph style={{ marginTop: 6, color: "#555" }}>
           {job.description}
         </Paragraph>
+        {/* ===== RESPONSIBILITIES ===== */}
+        <Divider style={{ margin: "16px 0" }} />
+
+        <Text strong>Roles & Responsibilities</Text>
+
+        <div style={{ marginTop: 8 }}>
+          {job.responsibilities ? (
+            <Paragraph style={{ marginBottom: 6, color: "#555" }}>
+              {job.responsibilities}
+            </Paragraph>
+          ) : (
+            <Text type="secondary">Not specified</Text>
+          )}
+        </div>
       </Card>
 
       {/* <ApplyBenchJob jobId={id} /> */}
-
-      <ApplyBenchJob jobId={job?.id} />
+      {from !== "myjobs" && <ApplyBenchJob jobId={job?.id} />}
     </div>
   );
 };

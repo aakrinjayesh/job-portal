@@ -465,6 +465,17 @@ const RecruiterJobList = () => {
   };
 
   const handleFileUpload = async ({ file }) => {
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      messageApi.error("Only PDF or Word (DOC, DOCX) files are allowed");
+      return;
+    }
+
     setUploadLoading(true);
     const uploadFormData = new FormData();
     uploadFormData.append("file", file);
@@ -631,6 +642,8 @@ const RecruiterJobList = () => {
     { title: "Location & Skills" },
     { title: "Salary & Other" },
   ];
+
+  const MAX_VISIBLE_TAGS = 3;
 
   return (
     <>
@@ -803,86 +816,101 @@ const RecruiterJobList = () => {
                 <Card
                   hoverable
                   onClick={() =>
-                    navigate("/company/job/details", {
-                      state: { job },
+                    navigate(`/company/job/${job.id}`, {
+                      state: { from: "myjobs", count: job.applicantCount },
                     })
                   }
                   style={{
                     borderRadius: 12,
                     background: "#fff",
-                    padding: 0,
+                    padding: 16,
                     cursor: "pointer",
                     border: "1px solid #EEEEEE",
+                    height: 320, // ✅ UNIFORM HEIGHT
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
                   }}
                 >
+                  {/* 🔹 TOP SECTION */}
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       gap: 16,
                       flexWrap: "wrap",
+                      minHeight: 90,
                     }}
                   >
-                    <div
-                      style={{ display: "flex", gap: 12, alignItems: "center" }}
-                    >
+                    <div style={{ display: "flex", gap: 12 }}>
                       <Checkbox
                         checked={selectedJobs.includes(job.id)}
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => handleSelect(job.id)}
                       />
 
-                      <div>
-                        {job.companyLogo ? (
-                          <img
-                            src={job.companyLogo}
-                            alt="logo"
-                            style={{
-                              width: 60,
-                              height: 60,
-                              borderRadius: 6,
-                              border: "1px solid #F5F5F5",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 56,
-                              height: 56,
-                              borderRadius: 12,
-                              background:
-                                "linear-gradient(135deg, #1677FF, #69B1FF)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 22,
-                              fontWeight: 700,
-                              color: "#FFFFFF",
-                              boxShadow: "0 4px 10px rgba(22, 119, 255, 0.25)",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {(job.companyName || job.role || job.title || "")
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
-                        )}
-                      </div>
+                      {job.companyLogo ? (
+                        <img
+                          src={job.companyLogo}
+                          alt="logo"
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 8,
+                            border: "1px solid #F5F5F5",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 12,
+                            background:
+                              "linear-gradient(135deg, #1677FF, #69B1FF)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: "#FFFFFF",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {(job.companyName || job.role || job.title || "")
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
+                      )}
 
-                      <div>
+                      <div style={{ maxWidth: 180 }}>
                         <div
                           style={{
                             fontSize: 16,
-                            fontWeight: 590,
+                            fontWeight: 600,
                             color: "#212121",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
                           }}
                         >
                           {job.role || job.title}
                         </div>
-                        <div style={{ fontSize: 14, color: "#666666" }}>
+
+                        <div
+                          style={{
+                            fontSize: 14,
+                            color: "#666",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
                           {job.companyName}
                         </div>
+
                         <div style={{ fontSize: 12, color: "#A3A3A3" }}>
                           Posted{" "}
                           {job?.updatedAt
@@ -892,7 +920,7 @@ const RecruiterJobList = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ display: "flex", gap: 10 }}>
                       <Button
                         style={{
                           background: "#F0F2F4",
@@ -911,7 +939,7 @@ const RecruiterJobList = () => {
                         style={{
                           background: "#D1E4FF",
                           borderRadius: 100,
-                          fontWeight: 590,
+                          fontWeight: 600,
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -925,14 +953,16 @@ const RecruiterJobList = () => {
                     </div>
                   </div>
 
+                  {/* 🔹 JOB META */}
                   <div
                     style={{
                       display: "flex",
-                      gap: 16,
-                      marginTop: 20,
+                      gap: 10,
                       flexWrap: "wrap",
                       color: "#666",
-                      fontSize: 14,
+                      fontSize: 13,
+                      maxHeight: 42,
+                      overflow: "hidden",
                     }}
                   >
                     <span>
@@ -953,105 +983,134 @@ const RecruiterJobList = () => {
                     </span>
                   </div>
 
-                  {(job.clouds?.length > 0 || job.skills?.length > 0) && (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 16,
-                        marginTop: 20,
-                        width: "100%",
-                        flexWrap: "wrap", // responsive
-                      }}
-                    >
-                      {job.clouds?.length > 0 && (
-                        <div
-                          style={{
-                            flex: 1,
-                            padding: 16,
-                            border: "1px solid #EEEEEE",
-                            borderRadius: 8,
-                            minWidth: 260,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: 14,
-                              fontWeight: 510,
-                              marginBottom: 8,
-                              color: "#444444",
-                            }}
-                          >
-                            Related Clouds
-                          </div>
-
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 8,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {job.clouds.map((cloud, i) => (
-                              <Tag
-                                key={i}
-                                style={{
-                                  background: "#E7F0FE",
-                                  borderRadius: 100,
-                                  border: "1px solid #1677FF",
-                                }}
-                              >
-                                {cloud}
-                              </Tag>
-                            ))}
-                          </div>
+                  {/* 🔹 SKILLS + CLOUDS */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      flexWrap: "wrap",
+                      marginTop: 12,
+                      flexGrow: 1,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {job.clouds?.length > 0 && (
+                      <div
+                        style={{
+                          flex: 1,
+                          padding: 12,
+                          border: "1px solid #EEEEEE",
+                          borderRadius: 8,
+                          minWidth: 220,
+                          height: 100, // ✅ fixed height
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>
+                          Related Clouds
                         </div>
-                      )}
 
-                      {job.skills?.length > 0 && (
                         <div
-                          style={{
-                            flex: 1,
-                            padding: 16,
-                            border: "1px solid #EEEEEE",
-                            borderRadius: 8,
-                            minWidth: 260,
-                          }}
+                          style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
                         >
-                          <div
-                            style={{
-                              fontSize: 14,
-                              fontWeight: 510,
-                              marginBottom: 8,
-                              color: "#444444",
-                            }}
-                          >
-                            Related Skills
-                          </div>
-
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 8,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {job.skills.map((skill, i) => (
-                              <Tag
-                                key={i}
-                                style={{
-                                  background: "#FBEBFF",
-                                  borderRadius: 100,
-                                  border: "1px solid #800080",
-                                }}
-                              >
-                                {skill}
-                              </Tag>
+                          {job.clouds
+                            .slice(0, MAX_VISIBLE_TAGS)
+                            .map((cloud, i) => (
+                              <Tooltip title={cloud}>
+                                <Tag
+                                  key={i}
+                                  style={{
+                                    background: "#E7F0FE",
+                                    borderRadius: 100,
+                                    border: "1px solid #1677FF",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-block",
+                                    maxWidth: 225,
+                                  }}
+                                >
+                                  {cloud}
+                                </Tag>
+                              </Tooltip>
                             ))}
-                          </div>
+
+                          {job.clouds.length > MAX_VISIBLE_TAGS && (
+                            <Tag
+                              style={{
+                                borderRadius: 100,
+                                background: "#F5F5F5",
+                                border: "1px dashed #999",
+                              }}
+                            >
+                              +{job.clouds.length - MAX_VISIBLE_TAGS} more
+                            </Tag>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    )}
+
+                    {job.skills?.length > 0 && (
+                      <div
+                        style={{
+                          flex: 1,
+                          padding: 12,
+                          border: "1px solid #EEEEEE",
+                          borderRadius: 8,
+                          minWidth: 220,
+                          height: 100, // ✅ fixed height
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>
+                          Related Skills
+                        </div>
+
+                        <div
+                          style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+                        >
+                          {job.skills
+                            .slice(0, MAX_VISIBLE_TAGS)
+                            .map((skill, i) => (
+                              <Tooltip title={skill}>
+                                <Tag
+                                  key={i}
+                                  style={{
+                                    background: "#FBEBFF",
+                                    borderRadius: 100,
+                                    border: "1px solid #800080",
+                                    maxWidth: 225,
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-block",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {skill}
+                                </Tag>
+                              </Tooltip>
+                            ))}
+
+                          {job.skills.length > MAX_VISIBLE_TAGS && (
+                            <Tag
+                              style={{
+                                borderRadius: 100,
+                                background: "#F5F5F5",
+                                border: "1px dashed #999",
+                              }}
+                            >
+                              +{job.skills.length - MAX_VISIBLE_TAGS} more
+                            </Tag>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </Card>
               </Col>
             ))}
@@ -1414,15 +1473,34 @@ const RecruiterJobList = () => {
                   <Form.Item
                     name="clouds"
                     label="Clouds"
-                    rules={[{ required: true }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select at least one cloud",
+                      },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+
+                          if (value.length > 12) {
+                            return Promise.reject(
+                              new Error("You can select up to 12 clouds only"),
+                            );
+                          }
+
+                          return Promise.resolve();
+                        },
+                      },
+                    ]}
                   >
                     <ReusableSelect
                       single={false}
-                      placeholder="Select Cloud"
+                      placeholder="Select up to 12 Clouds"
                       fetchFunction={GetClouds}
                       addFunction={PostClouds}
                     />
                   </Form.Item>
+
                   <Form.Item
                     name="skills"
                     label="Skills"
@@ -1636,12 +1714,37 @@ const RecruiterJobList = () => {
                       placeholder="Select date (within next 6 months)"
                     />
                   </Form.Item>
-                  <Form.Item name="ApplicationLimit" label="Limit Applications">
+                  <Form.Item
+                    name="ApplicationLimit"
+                    label="Limit Applications"
+                    validateTrigger="onChange" // ✅ show error while typing
+                    rules={[
+                      {
+                        validator: (_, value) => {
+                          if (value === undefined || value === null) {
+                            return Promise.resolve(); // optional
+                          }
+
+                          if (value > 500) {
+                            return Promise.reject(
+                              new Error(
+                                "Only up to 500 applications are allowed",
+                              ),
+                            );
+                          }
+
+                          return Promise.resolve();
+                        },
+                      },
+                    ]}
+                  >
                     <InputNumber
-                      formatter={formatter}
-                      keyboard={true}
-                      placeholder="e.g. 1000"
+                      min={1}
+                      max={500}
                       style={{ width: "100%" }}
+                      placeholder="e.g. 100"
+                      keyboard
+                      parser={(value) => value.replace(/\D/g, "")} // numbers only
                     />
                   </Form.Item>
                 </>
