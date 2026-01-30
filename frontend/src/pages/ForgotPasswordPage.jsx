@@ -59,7 +59,7 @@ const ForgotPasswordPage = () => {
       if (response.status === "success") {
         localStorage.setItem("token", response.token);
         messageApi.success("OTP verified successfully!");
-        navigate("/createpassword", { state: { email: values.email, role } });
+        navigate("/createpassword", { state: { email: values.email, role,type:"forgotpage" } });
       } else {
         messageApi.error(response.message || "Invalid OTP");
       }

@@ -158,7 +158,7 @@ const userOtpValidator = async (req, res) => {
     if (otp !== savedOtp) {
       logger.warn("❌ Invalid OTP for:", email);
 
-      await prisma.users.delete({ where: { email } });
+      // await prisma.users.delete({ where: { email } });
       otpStore.delete(email);
 
       return res.status(401).json({
