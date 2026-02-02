@@ -53,7 +53,7 @@ app.use("/verification", VerificationRoutes);
 // app.use(authenticateToken, aiUserLimiter, CVRouters);
 app.use(authenticateToken, CVRouters);
 app.use("/api/todos", todoRoutes);
-app.use("/api/v1/organization", OrganizationRoutes);
+app.use("/organization", OrganizationRoutes);
 
 const PORT = process.env.PORT;
 

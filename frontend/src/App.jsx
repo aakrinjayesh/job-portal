@@ -283,14 +283,6 @@ function App() {
             </CompanyLayout>
           }
         />
-        <Route
-          path="/company/settings"
-          element={
-            <CompanyLayout>
-              <CompanySettings />
-            </CompanyLayout>
-          }
-        />
       </Routes>
       {/* </BrowserRouter> */}
     </ConfigProvider>

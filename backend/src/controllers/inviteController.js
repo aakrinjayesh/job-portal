@@ -4,16 +4,14 @@ import crypto from "crypto";
 
 export const sendInvite = async (req, res) => {
   try {
-    const { email, role = "COMPANY_USER", permissions } = req.body;
+    const { name, email, role = "COMPANY_USER" } = req.body;
     const organizationId = req.user.organizationId;
 
     if (!organizationId) {
-      return res
-        .status(400)
-        .json({
-          status: "error",
-          message: "User is not part of an organization",
-        });
+      return res.status(400).json({
+        status: "error",
+        message: "User is not part of an organization",
+      });
     }
 
     // Check existing membership
@@ -41,9 +39,6 @@ export const sendInvite = async (req, res) => {
         .json({ status: "error", message: "Invite already sent" });
     }
 
-    // Create user immediately
-    const name = email.split("@")[0];
-
     const user = await prisma.users.create({
       data: {
         name,
@@ -63,7 +58,7 @@ export const sendInvite = async (req, res) => {
         // userId: user.id,
         organizationId,
         role: role || "COMPANY_USER",
-        permissions: permissions || "VIEW_ONLY",
+        permissions: "FULL_ACCESS",
         token,
         expiresAt,
       },

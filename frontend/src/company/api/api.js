@@ -10,7 +10,7 @@ export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -23,7 +23,7 @@ export async function PostedJobsList(page = 1, limit = 10, signal) {
   try {
     const response = await axiosInstance.get(
       `/jobs/posted?page=${page}&limit=${limit}`,
-      { signal }
+      { signal },
     );
     return response.data;
   } catch (error) {
@@ -133,7 +133,7 @@ export async function CreateVendorCandidate(payload) {
       payload,
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -149,7 +149,7 @@ export async function UpdateVendorCandidate(payload) {
       payload,
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -165,7 +165,7 @@ export async function DeleteVendorCandidate(payload) {
       payload,
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -179,7 +179,7 @@ export async function SendVerificationOtp(payload) {
   try {
     const response = await axiosInstance.post(
       "/verification/send-otp",
-      payload
+      payload,
     );
     return response.data;
   } catch (error) {
@@ -193,7 +193,7 @@ export async function VerifyCandidateOtp(payload) {
   try {
     const response = await axiosInstance.post(
       "/verification/verify-otp",
-      payload
+      payload,
     );
     return response.data;
   } catch (error) {
@@ -225,7 +225,7 @@ export async function UpdateVendorCandidateStatus(payload) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -237,7 +237,7 @@ export async function GetAllVendorCandidates(
   page = 1,
   limit = 10,
   filters = {},
-  signal
+  signal,
 ) {
   try {
     const response = await axiosInstance.post(
@@ -247,7 +247,7 @@ export async function GetAllVendorCandidates(
         limit,
         filters,
       },
-      { signal }
+      { signal },
     );
     return response.data;
   } catch (error) {
@@ -276,7 +276,7 @@ export async function ApplyBenchCandidate(payload) {
       payload,
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -312,7 +312,7 @@ export async function GetMyActivity(signal) {
     const response = await axiosInstance.get(
       "/api/activity/my-activity",
       { signal },
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   } catch (error) {
@@ -327,7 +327,7 @@ export async function GetCandidateActivities(payload) {
     const response = await axiosInstance.post(
       `/api/activity/candidate`,
       payload,
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   } catch (error) {
@@ -346,7 +346,7 @@ export async function UpdateActivity(activityId, payload) {
     const response = await axiosInstance.put(
       `/api/activity/${activityId}`,
       payload,
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   } catch (error) {
@@ -429,7 +429,7 @@ export async function UnsaveCandidate(payload) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -458,7 +458,7 @@ export async function MarkCandidateReviewed(payload) {
       payload,
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -522,7 +522,7 @@ export async function getCandidateTasks({ candidateId, jobId }) {
     const response = await axiosInstance.post(
       "/api/todos/candidate",
       { candidateId, jobId }, // ✅ SEND DIRECTLY IN BODY
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response.data;
   } catch (error) {
@@ -536,7 +536,7 @@ export async function checkUpdate({ taskId, completed }) {
     const response = await axiosInstance.patch(
       "/api/todos/candidate/check",
       { taskId, completed },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response.data;
   } catch (error) {
@@ -568,7 +568,7 @@ export async function CreateTodoTemplate({ title }) {
     const response = await axiosInstance.post(
       "/api/todos/create",
       { title },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response.data;
   } catch (error) {
@@ -583,7 +583,7 @@ export async function EditTodoTemplate({ id, title }) {
     const response = await axiosInstance.post(
       "/api/todos/edit",
       { id, title },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response.data;
   } catch (error) {
@@ -598,7 +598,7 @@ export async function DeleteTodoTemplate({ id }) {
     const response = await axiosInstance.post(
       "/api/todos/delete",
       { id },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response.data;
   } catch (error) {
@@ -613,7 +613,7 @@ export async function ToggleTodoTemplate({ id, isActive }) {
     const response = await axiosInstance.patch(
       "/api/todos/active",
       { id, isActive },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response.data;
   } catch (error) {
@@ -631,6 +631,54 @@ export async function SaveCandidateRating(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in SaveCandidateRating:", error);
+    throw error;
+  }
+}
+
+// ================= ORGANIZATION =================
+
+export async function getOrganizationMembers() {
+  try {
+    const response = await axiosInstance.get("/organization/members");
+    return response.data;
+  } catch (error) {
+    console.error("Error in getOrganizationMembers:", error);
+    throw error;
+  }
+}
+
+export async function inviteOrganizationMember(payload) {
+  try {
+    const response = await axiosInstance.post("/organization/invite", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error in inviteOrganizationMember:", error);
+    throw error;
+  }
+}
+
+export async function removeOrganizationMember(payload) {
+  try {
+    const response = await axiosInstance.post(
+      "/organization/member/remove",
+      payload,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in removeOrganizationMember:", error);
+    throw error;
+  }
+}
+
+export async function revokeOrganizationInvite(payload) {
+  try {
+    const response = await axiosInstance.post(
+      "/organization/invite/revoke",
+      payload,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in revokeOrganizationInvite:", error);
     throw error;
   }
 }

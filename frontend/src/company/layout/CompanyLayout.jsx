@@ -45,12 +45,11 @@ const CompanyLayout = ({ children }) => {
   const menuRoutes = {
     dashboard: ["/company/dashboard"],
 
-   
     // jobdetails: ["/company/job/details"],
 
     // viewcandidates: ["/company/candidates"],
 
-    // candidatedetails: ["/company/candidate"], 
+    // candidatedetails: ["/company/candidate"],
 
     myactivity: ["/company/my-activity"],
 
@@ -70,12 +69,11 @@ const CompanyLayout = ({ children }) => {
 
     profile: ["/company/profile"],
 
-    settings: ["/company/settings"],
-     jobs: [
+    jobs: [
       "/company/jobs",
       "/company/job",
       "/company/candidates",
-      "/company/candidate"
+      "/company/candidate",
     ],
   };
 
@@ -92,46 +90,45 @@ const CompanyLayout = ({ children }) => {
   };
 
   /* 🎯 Active menu */
- const selectedKey = React.useMemo(() => {
-  const path = location.pathname;
-  const source = location.state?.source;
+  const selectedKey = React.useMemo(() => {
+    const path = location.pathname;
+    const source = location.state?.source;
 
-  // ✅ 1. Find Jobs (must be FIRST)
-  if (path.startsWith("/company/job/find")) {
-    return "findjob";
-  }
-
-  // ✅ 2. Saved Jobs
-  if (path.startsWith("/company/jobs/saved")) {
-    return "savedjobs";
-  }
-
-  // ✅ 3. Job details → My Jobs / Find Jobs
-  if (path.startsWith("/company/job/")) {
-    if (source === "findjob") return "findjob";
-    return "jobs";
-  }
-
-  // ✅ 4. Candidates → My Jobs
-  if (path.startsWith("/company/candidates")) return "jobs";
-  if (path.startsWith("/company/candidate")) return "jobs";
-
-  // 🔁 fallback (longest match wins)
-  const sortedRoutes = Object.entries(menuRoutes).sort(
-    (a, b) =>
-      Math.max(...b[1].map((p) => p.length)) -
-      Math.max(...a[1].map((p) => p.length))
-  );
-
-  for (const [key, paths] of sortedRoutes) {
-    if (paths.some((p) => path.startsWith(p))) {
-      return key;
+    // ✅ 1. Find Jobs (must be FIRST)
+    if (path.startsWith("/company/job/find")) {
+      return "findjob";
     }
-  }
 
-  return "dashboard";
-}, [location.pathname, location.state]);
+    // ✅ 2. Saved Jobs
+    if (path.startsWith("/company/jobs/saved")) {
+      return "savedjobs";
+    }
 
+    // ✅ 3. Job details → My Jobs / Find Jobs
+    if (path.startsWith("/company/job/")) {
+      if (source === "findjob") return "findjob";
+      return "jobs";
+    }
+
+    // ✅ 4. Candidates → My Jobs
+    if (path.startsWith("/company/candidates")) return "jobs";
+    if (path.startsWith("/company/candidate")) return "jobs";
+
+    // 🔁 fallback (longest match wins)
+    const sortedRoutes = Object.entries(menuRoutes).sort(
+      (a, b) =>
+        Math.max(...b[1].map((p) => p.length)) -
+        Math.max(...a[1].map((p) => p.length)),
+    );
+
+    for (const [key, paths] of sortedRoutes) {
+      if (paths.some((p) => path.startsWith(p))) {
+        return key;
+      }
+    }
+
+    return "dashboard";
+  }, [location.pathname, location.state]);
 
   /* 🧠 Menu click handler */
   const onMenuClick = ({ key }) => {
@@ -162,35 +159,33 @@ const CompanyLayout = ({ children }) => {
     savedcandidates: "Saved Candidates",
     chat: "Chats",
     profile: "Profile",
-    settings: "Settings",
   };
 
- const getPageTitle = () => {
-  const path = location.pathname;
+  const getPageTitle = () => {
+    const path = location.pathname;
 
-  if (path.startsWith("/company/job/")) {
-  return "Job Details";
-}
+    if (path.startsWith("/company/job/")) {
+      return "Job Details";
+    }
 
-  if (path.startsWith("/company/candidates")) {
-    return "View Candidates";
-  }
+    if (path.startsWith("/company/candidates")) {
+      return "View Candidates";
+    }
 
-  if (path.startsWith("/company/candidate")) {
-    return "Candidate Details";
-  }
+    if (path.startsWith("/company/candidate")) {
+      return "Candidate Details";
+    }
 
-  if (path.startsWith("/company/bench/candidates")) {
-    return "Bench Resource Details";
-  }
+    if (path.startsWith("/company/bench/candidates")) {
+      return "Bench Resource Details";
+    }
 
-   if (path.startsWith("/company/jobs/saved")) {
-    return "Saved Jobs";
-  }
+    if (path.startsWith("/company/jobs/saved")) {
+      return "Saved Jobs";
+    }
 
-  return pageTitleMap[selectedKey] || "Dashboard";
-};
-
+    return pageTitleMap[selectedKey] || "Dashboard";
+  };
 
   return (
     <Layout hasSider>
@@ -206,34 +201,34 @@ const CompanyLayout = ({ children }) => {
           height: "100vh",
           position: "sticky",
           top: 0,
-          borderRight: "none", 
+          borderRight: "none",
         }}
       >
         {/* 🧑 Company Info */}
-<div
-  style={{
-    display: "flex",
-    gap: 12,
-    padding: 24,
-    alignItems: "center",
-  }}
->
-  <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
-    {user.name?.charAt(0)}
-  </Avatar>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            padding: 24,
+            alignItems: "center",
+          }}
+        >
+          <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
+            {user.name?.charAt(0)}
+          </Avatar>
 
-  {!collapsed && (
-    <div>
-      <Text style={{ color: "#fff", fontWeight: 600 }}>
-        {user.name}
-      </Text>
-      <br />
-      <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
-        {user.role}
-      </Text>
-    </div>
-  )}
-</div>
+          {!collapsed && (
+            <div>
+              <Text style={{ color: "#fff", fontWeight: 600 }}>
+                {user.name}
+              </Text>
+              <br />
+              <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
+                {user.role}
+              </Text>
+            </div>
+          )}
+        </div>
 
         {/* 📌 Main Menu */}
 
@@ -304,7 +299,6 @@ const CompanyLayout = ({ children }) => {
           style={{ background: "transparent", border: "none" }}
           items={[
             { key: "profile", icon: <UserOutlined />, label: "Profile" },
-            { key: "settings", icon: <SettingOutlined />, label: "Settings" },
             { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
           ]}
         />
@@ -326,21 +320,20 @@ const CompanyLayout = ({ children }) => {
         >
           {/* Left */}
           <Space size={16}>
-           {selectedKey !== "dashboard" && (
-  <Button
-    icon={<ArrowLeftOutlined />}
-    onClick={() => navigate(-1)}
-    style={{
-      borderRadius: 20,
-      background: "#F8F8F8",
-      border: "none",
-      fontWeight: 500,
-    }}
-  >
-    Back
-  </Button>
-)}
-
+            {selectedKey !== "dashboard" && (
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate(-1)}
+                style={{
+                  borderRadius: 20,
+                  background: "#F8F8F8",
+                  border: "none",
+                  fontWeight: 500,
+                }}
+              >
+                Back
+              </Button>
+            )}
 
             <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
 
@@ -352,7 +345,7 @@ const CompanyLayout = ({ children }) => {
               // ]}
               />
               <Title level={4} style={{ margin: 0 }}>
-               {getPageTitle()}
+                {getPageTitle()}
               </Title>
             </div>
           </Space>

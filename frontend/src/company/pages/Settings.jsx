@@ -15,7 +15,12 @@ import SettingsTodoManager from "./SettingsTodoManager";
 
 import MyActivity from "./MyActivity";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
-import axios from "axios";
+import {
+  getOrganizationMembers,
+  inviteOrganizationMember,
+  removeOrganizationMember,
+  revokeOrganizationInvite,
+} from "../api/api";
 
 const { Option } = Select;
 
@@ -31,19 +36,12 @@ const Settings = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token"); // Assuming standard token storage
-      const res = await axios.get(
-        "http://localhost:3000/api/v1/organization/members",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (res.data.status === "success") {
-        setMembers(res.data.data.members || []);
-        setInvites(res.data.data.invites || []);
+      const res = await getOrganizationMembers();
+      if (res.status === "success") {
+        setMembers(res.data.members || []);
+        setInvites(res.data.invites || []);
       }
     } catch (error) {
-      console.error(error);
       message.error("Failed to fetch organization data");
     } finally {
       setLoading(false);
@@ -58,20 +56,20 @@ const Settings = () => {
   const handleInvite = async (values) => {
     setConfirmLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:3000/api/v1/organization/invite",
-        values,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      message.success("Invite sent successfully");
-      setIsModalVisible(false);
+      const payload = {
+        name: values.name,
+        email: values.email,
+      };
+
+      const resp = await inviteOrganizationMember(payload);
+
+      if (resp.status === "success") {
+        message.success("Invite sent successfully");
+        setIsModalVisible(false);
+      }
       form.resetFields();
-      fetchData(); // Refresh list to show pending invite if needed (though structure separates them usually)
+      fetchData();
     } catch (error) {
-      console.error(error);
       message.error(error.response?.data?.message || "Failed to send invite");
     } finally {
       setConfirmLoading(false);
@@ -81,14 +79,7 @@ const Settings = () => {
   // Handle Remove Member
   const handleRemoveMember = async (memberId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:3000/api/v1/organization/member/remove",
-        { memberId },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await removeOrganizationMember({ memberId });
       message.success("Member removed");
       fetchData();
     } catch (error) {
@@ -99,14 +90,7 @@ const Settings = () => {
   // Handle Revoke Invite
   const handleRevokeInvite = async (inviteId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:3000/api/v1/organization/invite/revoke",
-        { inviteId },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await revokeOrganizationInvite({ inviteId });
       message.success("Invite revoked");
       fetchData();
     } catch (error) {
@@ -194,6 +178,23 @@ const Settings = () => {
     },
   ];
 
+  const getAdminDomain = () => {
+    try {
+      const rawUser = localStorage.getItem("user");
+      if (!rawUser) return null;
+
+      const parsed = JSON.parse(rawUser);
+      const email = parsed?.email?.trim().toLowerCase();
+      if (!email || !email.includes("@")) return null;
+
+      return email.split("@")[1];
+    } catch {
+      return null;
+    }
+  };
+
+  const adminDomain = getAdminDomain();
+
   return (
     <div style={{ padding: "24px" }}>
       <Tabs
@@ -265,27 +266,54 @@ const Settings = () => {
       >
         <Form form={form} onFinish={handleInvite} layout="vertical">
           <Form.Item
+            name="name"
+            label="Full Name"
+            rules={[{ required: true, message: "Please enter name" }]}
+          >
+            <Input placeholder="Enter member name" />
+          </Form.Item>
+
+          <Form.Item
             name="email"
             label="Email"
             rules={[
               { required: true, message: "Please enter email" },
-              { type: "email", message: "Please enter a valid email" },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+
+                  if (!adminDomain) {
+                    return Promise.reject(
+                      new Error(
+                        "Unable to verify organization domain. Please re-login.",
+                      ),
+                    );
+                  }
+
+                  const cleanedEmail = value.trim().toLowerCase();
+
+                  // 🔥 Regex for same domain OR subdomain
+                  const emailRegex = new RegExp(
+                    `^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9-]+\\.)*${adminDomain.replace(
+                      ".",
+                      "\\.",
+                    )}$`,
+                  );
+
+                  if (!emailRegex.test(cleanedEmail)) {
+                    return Promise.reject(
+                      new Error(
+                        `Only ${adminDomain} organization emails are allowed`,
+                      ),
+                    );
+                  }
+
+                  return Promise.resolve();
+                },
+              },
             ]}
           >
             <Input placeholder="Enter member email" />
-          </Form.Item>
-
-          <Form.Item
-            name="permissions"
-            label="Permissions"
-            initialValue="VIEW_ONLY"
-            rules={[{ required: true }]}
-          >
-            <Select>
-              <Option value="FULL_ACCESS">Full Access</Option>
-              <Option value="VIEW_EDIT">Edit</Option>
-              <Option value="VIEW_ONLY">View Only</Option>
-            </Select>
           </Form.Item>
         </Form>
       </Modal>
