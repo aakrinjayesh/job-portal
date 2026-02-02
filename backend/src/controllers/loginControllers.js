@@ -352,7 +352,7 @@ const setPassword = async (req, res) => {
         : "Password set & organization created successfully",
     });
   } catch (error) {
-    logger.error("Error in setPassword:", error.message);
+    console.error("Error in setPassword:", error.message);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -497,7 +497,7 @@ const login = async (req, res) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
@@ -586,10 +586,12 @@ const forgotPassword = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   logger.info("📨 resetPassword called", { body: req.body });
+
   try {
     const { email, password } = req.body;
 
     const user = await prisma.users.findUnique({ where: { email } });
+
     if (!user) {
       return res.status(404).json({
         status: "error",
@@ -597,11 +599,45 @@ const resetPassword = async (req, res) => {
       });
     }
 
+    const external_backend_url = process.env.EXTERNAL_BACKEND_URL;
+    try {
+      const payload = {
+        email,
+        newPassword: password,
+      };
+
+      const resp = await axios.post(
+        `${external_backend_url}/api/v1/users/reset-password`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 5000,
+        },
+      );
+      console.log("🌍 External password reset success", resp);
+    } catch (err) {
+      console.error(
+        "❌ External reset failed:",
+        err.response?.data || err.message,
+      );
+
+      return res.status(502).json({
+        status: "error",
+        message: "Password reset failed. Please try again.",
+      });
+    }
+
+    // 🔐 STEP 2: Only runs if external succeeded
     const hashedPassword = await bcrypt.hash(password, 10);
+
     await prisma.users.update({
       where: { email },
       data: { password: hashedPassword },
     });
+
+    console.log("✅ Local password updated after external success");
 
     return res.status(200).json({
       status: "success",
@@ -612,9 +648,10 @@ const resetPassword = async (req, res) => {
       "Reset password error:",
       JSON.stringify(error.message, null, 2),
     );
+
     return res.status(500).json({
       status: "error",
-      message: "Internal server error",
+      message: "Internal server error" + error.message,
     });
   }
 };
@@ -652,7 +689,7 @@ const checkUserExists = async (req, res) => {
 };
 
 const refreshAccessToken = async (req, res) => {
-  console.log("🔄 refreshAccessToken called");
+  console.log("refreshAccessToken called");
 
   try {
     const refreshToken = req.cookies.refreshToken;

@@ -14,7 +14,7 @@ import {
   resetForgottenPassword,
   updateUserAvatar,
   verifyEmail,
-  deleteUser
+  deleteUser,
 } from "../../../controllers/apps/auth/user.controllers.js";
 import {
   verifyJWT,
@@ -45,11 +45,11 @@ router
   .route("/forgot-password")
   .post(userForgotPasswordValidator(), validate, forgotPasswordRequest);
 router
-  .route("/reset-password/:resetToken")
+  .route("/reset-password")
   .post(
     userResetForgottenPasswordValidator(),
     validate,
-    resetForgottenPassword
+    resetForgottenPassword,
   );
 
 // Secured routes
@@ -64,7 +64,7 @@ router
     verifyJWT,
     userChangeCurrentPasswordValidator(),
     validate,
-    changeCurrentPassword
+    changeCurrentPassword,
   );
 router
   .route("/resend-email-verification")
@@ -77,8 +77,7 @@ router
     mongoIdPathVariableValidator("userId"),
     userAssignRoleValidator(),
     validate,
-    assignRole
+    assignRole,
   );
-
 
 export default router;

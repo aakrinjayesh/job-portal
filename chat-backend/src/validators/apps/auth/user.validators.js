@@ -51,7 +51,12 @@ const userForgotPasswordValidator = () => {
 };
 
 const userResetForgottenPasswordValidator = () => {
-  return [body("newPassword").notEmpty().withMessage("Password is required")];
+  return [
+    body("email").isEmail().withMessage("Valid email is required"),
+    body("newPassword")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters"),
+  ];
 };
 
 const userAssignRoleValidator = () => {
@@ -69,5 +74,5 @@ export {
   userLoginValidator,
   userRegisterValidator,
   userResetForgottenPasswordValidator,
-  userAssignRoleValidator
+  userAssignRoleValidator,
 };

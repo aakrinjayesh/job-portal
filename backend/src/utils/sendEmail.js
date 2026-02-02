@@ -4,7 +4,7 @@ import prisma from "../config/prisma.js";
 const sendEmail = async (options) => {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 587,
+    port: process.env.EMAIL_PORT,
     secure: false,
     auth: {
       user: process.env.SENDEREMAIL,
