@@ -818,3 +818,27 @@ model PaymentAttempt {
 
   @@index([organizationId])
 }
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model EmailLog {
+  id      String      @id @default(uuid())
+  to      String
+  subject String?
+  status  EmailStatus @default(PENDING)
+
+  provider  String? // gmail, sendgrid, ses
+  messageId String?
+  response  String?
+  error     String?
+
+  retries   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}

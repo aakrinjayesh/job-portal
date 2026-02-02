@@ -28,9 +28,13 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = process.env.CORS_ORIGIN.split(",");
+
+console.log("allowed Domains", allowedOrigins || null);
+
 app.use(
   cors({
-    origin: `${process.env.FRONTEND_URL}`,
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
@@ -55,5 +59,7 @@ const PORT = process.env.PORT;
 
 app.listen(PORT || "3001", () => {
   // console.log(`server Started at http://localhost:${PORT}`);
-  logger.info(`server Started at http://localhost:${PORT}`);
+  logger.info(
+    `server Started at ${process.env.BACKEND_URL || "http://localhost:"}:${PORT}`,
+  );
 });

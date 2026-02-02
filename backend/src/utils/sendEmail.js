@@ -1,30 +1,57 @@
-import nodemailer from 'nodemailer'
+import nodemailer from "nodemailer";
+import prisma from "../config/prisma.js";
 
-const sendEmail = (options) => {
-
+const sendEmail = async (options) => {
   const transporter = nodemailer.createTransport({
-    secure: true,
-    host: 'smtp.gmail.com',
-    port: 465,
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
     auth: {
       user: process.env.SENDEREMAIL,
-      pass: process.env.SENDERPASS
+      pass: process.env.SENDERPASS,
     },
-    // tls: {
-    //   rejectUnauthorized: false
-    // },
-    debug: true, // show debug output
-    logger: false // log information in console
   });
 
-  const mailOptions = {
-    from: 'vsaijayesh94@gmail.com',
-    // to: options?.to,
-    // subject: options?.subject,
-    // text: options?.text
-    ...options
-  }
-  transporter.sendMail(mailOptions)
-}
+  // 1️⃣ Create initial log
+  const log = await prisma.emailLog.create({
+    data: {
+      to: options.to,
+      subject: options.subject,
+      status: "PENDING",
+      provider: "gmail",
+    },
+  });
 
-export default sendEmail
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.SENDEREMAIL,
+      ...options,
+    });
+
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: {
+        status: "SENT",
+        messageId: info.messageId,
+        response: info.response,
+      },
+    });
+
+    console.log("✅ Email sent:", info.messageId);
+    return info;
+  } catch (error) {
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: {
+        status: "FAILED",
+        error: error.message,
+        retries: { increment: 1 },
+      },
+    });
+
+    console.error("❌ Email failed:", error.message);
+    throw error;
+  }
+};
+
+export default sendEmail;
