@@ -45,13 +45,12 @@ const CompanyLayout = ({ children }) => {
   const menuRoutes = {
     dashboard: ["/company/dashboard"],
 
-    jobs: [
-      "/company/jobs",
-      //"/company/job", // covers /company/job/details & /company/job/:id
-    ],
-    jobdetails: ["/company/job/details"],
+   
+    // jobdetails: ["/company/job/details"],
 
-    viewcandidates: ["/company/candidates"],
+    // viewcandidates: ["/company/candidates"],
+
+    // candidatedetails: ["/company/candidate"], 
 
     myactivity: ["/company/my-activity"],
 
@@ -60,6 +59,8 @@ const CompanyLayout = ({ children }) => {
     savedjobs: ["/company/jobs/saved"],
 
     bench: ["/company/bench"],
+
+    benchresourcedetails: ["/company/bench/candidates"],
 
     findbench: ["/company/bench/find"],
 
@@ -70,6 +71,12 @@ const CompanyLayout = ({ children }) => {
     profile: ["/company/profile"],
 
     settings: ["/company/settings"],
+     jobs: [
+      "/company/jobs",
+      "/company/job",
+      "/company/candidates",
+      "/company/candidate"
+    ],
   };
 
   const handleLogout = async () => {
@@ -85,24 +92,46 @@ const CompanyLayout = ({ children }) => {
   };
 
   /* 🎯 Active menu */
-  const selectedKey = React.useMemo(() => {
-    const path = location.pathname;
+ const selectedKey = React.useMemo(() => {
+  const path = location.pathname;
+  const source = location.state?.source;
 
-    // 🔑 sort routes by longest path first
-    const sortedRoutes = Object.entries(menuRoutes).sort(
-      (a, b) =>
-        Math.max(...b[1].map((p) => p.length)) -
-        Math.max(...a[1].map((p) => p.length)),
-    );
+  // ✅ 1. Find Jobs (must be FIRST)
+  if (path.startsWith("/company/job/find")) {
+    return "findjob";
+  }
 
-    for (const [key, paths] of sortedRoutes) {
-      if (paths.some((p) => path.startsWith(p))) {
-        return key;
-      }
+  // ✅ 2. Saved Jobs
+  if (path.startsWith("/company/jobs/saved")) {
+    return "savedjobs";
+  }
+
+  // ✅ 3. Job details → My Jobs / Find Jobs
+  if (path.startsWith("/company/job/")) {
+    if (source === "findjob") return "findjob";
+    return "jobs";
+  }
+
+  // ✅ 4. Candidates → My Jobs
+  if (path.startsWith("/company/candidates")) return "jobs";
+  if (path.startsWith("/company/candidate")) return "jobs";
+
+  // 🔁 fallback (longest match wins)
+  const sortedRoutes = Object.entries(menuRoutes).sort(
+    (a, b) =>
+      Math.max(...b[1].map((p) => p.length)) -
+      Math.max(...a[1].map((p) => p.length))
+  );
+
+  for (const [key, paths] of sortedRoutes) {
+    if (paths.some((p) => path.startsWith(p))) {
+      return key;
     }
+  }
 
-    return "dashboard";
-  }, [location.pathname]);
+  return "dashboard";
+}, [location.pathname, location.state]);
+
 
   /* 🧠 Menu click handler */
   const onMenuClick = ({ key }) => {
@@ -123,10 +152,12 @@ const CompanyLayout = ({ children }) => {
     jobs: "My Jobs",
     jobdetails: "Job Details",
     viewcandidates: "View Candidates",
+    candidatedetails: "Candidate Details",
     myactivity: "My Activity",
     findjob: "Find Jobs",
     savedjobs: "Saved Jobs",
     bench: "My Bench",
+    benchresourcedetails: "Bench Resource Details",
     findbench: "Find Candidate",
     savedcandidates: "Saved Candidates",
     chat: "Chats",
@@ -134,7 +165,32 @@ const CompanyLayout = ({ children }) => {
     settings: "Settings",
   };
 
-  const pageTitle = pageTitleMap[selectedKey] || "Dashboard";
+ const getPageTitle = () => {
+  const path = location.pathname;
+
+  if (path.startsWith("/company/job/")) {
+  return "Job Details";
+}
+
+  if (path.startsWith("/company/candidates")) {
+    return "View Candidates";
+  }
+
+  if (path.startsWith("/company/candidate")) {
+    return "Candidate Details";
+  }
+
+  if (path.startsWith("/company/bench/candidates")) {
+    return "Bench Resource Details";
+  }
+
+   if (path.startsWith("/company/jobs/saved")) {
+    return "Saved Jobs";
+  }
+
+  return pageTitleMap[selectedKey] || "Dashboard";
+};
+
 
   return (
     <Layout hasSider>
@@ -150,33 +206,34 @@ const CompanyLayout = ({ children }) => {
           height: "100vh",
           position: "sticky",
           top: 0,
+          borderRight: "none", 
         }}
       >
         {/* 🧑 Company Info */}
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            padding: 24,
-            alignItems: "center",
-          }}
-        >
-          <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
-            {user.name?.charAt(0)}
-          </Avatar>
+<div
+  style={{
+    display: "flex",
+    gap: 12,
+    padding: 24,
+    alignItems: "center",
+  }}
+>
+  <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
+    {user.name?.charAt(0)}
+  </Avatar>
 
-          {!collapsed && (
-            <div>
-              <Text style={{ color: "#fff", fontWeight: 600 }}>
-                {user.name}
-              </Text>
-              <br />
-              <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
-                {user.role}
-              </Text>
-            </div>
-          )}
-        </div>
+  {!collapsed && (
+    <div>
+      <Text style={{ color: "#fff", fontWeight: 600 }}>
+        {user.name}
+      </Text>
+      <br />
+      <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
+        {user.role}
+      </Text>
+    </div>
+  )}
+</div>
 
         {/* 📌 Main Menu */}
 
@@ -269,18 +326,21 @@ const CompanyLayout = ({ children }) => {
         >
           {/* Left */}
           <Space size={16}>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(-1)}
-              style={{
-                borderRadius: 20,
-                background: "#F8F8F8",
-                border: "none",
-                fontWeight: 500,
-              }}
-            >
-              Back
-            </Button>
+           {selectedKey !== "dashboard" && (
+  <Button
+    icon={<ArrowLeftOutlined />}
+    onClick={() => navigate(-1)}
+    style={{
+      borderRadius: 20,
+      background: "#F8F8F8",
+      border: "none",
+      fontWeight: 500,
+    }}
+  >
+    Back
+  </Button>
+)}
+
 
             <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
 
@@ -292,7 +352,7 @@ const CompanyLayout = ({ children }) => {
               // ]}
               />
               <Title level={4} style={{ margin: 0 }}>
-                {pageTitle}
+               {getPageTitle()}
               </Title>
             </div>
           </Space>
@@ -319,7 +379,7 @@ const CompanyLayout = ({ children }) => {
                 fontWeight: 600,
               }}
             >
-              {user.name?.slice(0, 2).toUpperCase()}
+              {user.name?.charAt(0).toUpperCase()}
             </Avatar>
 
             <div style={{ lineHeight: 1.2 }}>

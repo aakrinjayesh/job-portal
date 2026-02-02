@@ -67,25 +67,29 @@ const SearchWithTextArea = ({
       {contextHolder}
 
       {/* ✅ AI SEARCH BUTTON (NEW DESIGN) */}
-      <Button
-        onClick={() => setOpen(true)}
-        style={{
-          width: "100%",
-          height: 36,
-          padding: "8px 16px",
-          borderRadius: 20,
-          background:
-            "linear-gradient(140deg, rgba(250, 155, 0, 0.20) 0%, rgba(146, 62, 213, 0.20) 49%, rgba(0, 92, 184, 0.20) 100%), #fff",
-          border: "2px solid #FA9B00",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          boxShadow: "none",
-        }}
-        icon={<SearchOutlined style={{ fontSize: 14, color: "#222" }} />}
-      >
-        <Text style={{ color: "#222", fontSize: 12 }}>Search With AI</Text>
-      </Button>
+  <Button
+  onClick={() => setOpen(true)}
+  style={{
+    width: "100%",
+    height: 36,
+    padding: "8px 16px",
+    borderRadius: 20,
+    background:
+      "linear-gradient(135deg, #E6F0FF 0%, #FFFFFF 60%)",
+    border: "1.5px solid #1677FF",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    boxShadow: "none",
+  }}
+  icon={<SearchOutlined style={{ fontSize: 14, color: "#1677FF" }} />}
+>
+  <Text style={{ color: "#1677FF", fontSize: 12, fontWeight: 500 }}>
+    Search With AI
+  </Text>
+</Button>
+
+
 
       {/* ✅ MODAL WITH EXISTING FUNCTIONALITY */}
       <Modal

@@ -5,12 +5,12 @@ const AppHeader = () => {
     <div style={styles.header}>
       <div style={styles.logo}>QuickHire SF</div>
 
-      <div style={styles.menu}>
+      {/* <div style={styles.menu}>
         <span>Products</span>
         <span>Features</span>
         <span>Pricing</span>
         <span>Support</span>
-      </div>
+      </div> */}
 
       <Button type="primary" style={{ borderRadius: 8 }}>
         Start free trial

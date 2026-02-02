@@ -817,7 +817,7 @@ const RecruiterJobList = () => {
                   hoverable
                   onClick={() =>
                     navigate(`/company/job/${job.id}`, {
-                      state: { from: "myjobs", count: job.applicantCount },
+                      state: { source: "jobs", count: job.applicantCount },
                     })
                   }
                   style={{

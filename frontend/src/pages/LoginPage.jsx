@@ -266,7 +266,7 @@ const LoginPage = () => {
         </div>
       </div>
 
-      <AppFooter />
+      {/* <AppFooter /> */}
     </>
   );
 };

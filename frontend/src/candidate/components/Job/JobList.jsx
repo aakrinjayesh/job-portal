@@ -159,6 +159,7 @@ const JobList = ({
     if (portal === "company") {
       navigate(`/company/job/${job.id}`, {
         state: {
+          source: "findjob",
           type,
           portal,
         },

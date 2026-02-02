@@ -318,7 +318,7 @@ const Signup = () => {
                </div>
              </div>
      
-<AppFooter />
+{/* <AppFooter /> */}
     </>
   );
 };

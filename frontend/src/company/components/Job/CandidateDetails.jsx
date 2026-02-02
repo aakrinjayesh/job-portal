@@ -23,7 +23,7 @@ import {
   Modal,
   Spin,
 } from "antd";
-import { ArrowLeftOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, WhatsAppOutlined, CloudDownloadOutlined, MessageOutlined } from "@ant-design/icons";
 import CandidateActivity from "../activity/CandidateActivity";
 import { SaveCandidateRating } from "../../api/api";
 
@@ -239,19 +239,7 @@ const CandidateDetails = () => {
                 marginBottom: 12,
               }}
             >
-              <Button
-                type="primary"
-                style={{
-                  backgroundColor: "#1677FF",
-                  borderRadius: 100,
-                  height: 36,
-                  fontWeight: 600,
-                  padding: "0 18px",
-                }}
-                onClick={handleDownloadResume}
-              >
-                Download Resume
-              </Button>
+           
             </div>
             <div
               style={{
@@ -300,8 +288,15 @@ const CandidateDetails = () => {
                 <Space>
                   <Tooltip title={`Whatsapp ${candidate.name}`}>
                     <Button
-                      shape="circle"
-                      icon={<WhatsAppOutlined />}
+    shape="circle"
+    icon={<WhatsAppOutlined style={{ fontSize: 20 }} />}
+    style={{
+      backgroundColor: "#25D366",
+      color: "#FFFFFF",
+      border: "none",
+      height: 40,
+      width: 40,
+    }}
                       onClick={() => {
                         const number = candidate?.profile?.phoneNumber;
 
@@ -320,36 +315,40 @@ const CandidateDetails = () => {
                     />
                   </Tooltip>
 
-                  <Button
-                    type="default"
-                    style={{
-                      backgroundColor: "#D1E4FF",
-                      color: "#310000",
-                      height: 40,
-                      borderRadius: 100,
-                      border: "none",
+                          <Tooltip title="Download Resume">
+ <Button
+    shape="circle"
+    icon={<CloudDownloadOutlined style={{ fontSize: 20 }}  />}
+    style={{
+      backgroundColor: "#1677FF",
+      color: "#FFFFFF",
+      border: "none",
+      height: 40,
+      width: 40,
+    }}
+    onClick={handleDownloadResume}
+  />
+</Tooltip>
 
-                      // ✅ IMPORTANT FIX
-                      paddingLeft: 20,
-                      paddingRight: 20,
-                      whiteSpace: "nowrap",
+<Tooltip title={`Chat with ${candidate.name}`}>
+  <Button
+    shape="circle"
+    icon={<MessageOutlined style={{ fontSize: 20 }}  />}
+    style={{
+      backgroundColor: "#722ED1",
+      color: "#FFFFFF",
+      border: "none",
+      height: 40,
+      width: 40,
+    }}
+    onClick={() =>
+      navigate("/company/chat", {
+        state: { candidate, jobId },
+      })
+    }
+  />
+</Tooltip>
 
-                      // TEXT STYLES
-                      fontSize: 14,
-                      fontWeight: 590,
-                      lineHeight: "14px",
-                      textAlign: "center",
-                      fontFamily:
-                        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial",
-                    }}
-                    onClick={() =>
-                      navigate("/company/chat", {
-                        state: { candidate, jobId },
-                      })
-                    }
-                  >
-                    Chat with {candidate.name}
-                  </Button>
                 </Space>
               </Row>
             </div>
@@ -994,7 +993,7 @@ const CandidateDetails = () => {
             rows={4}
             placeholder="Review Description"
             value={tempReview}
-            maxLength={100}
+            maxLength={1000}
             onChange={(e) => {
               const value = e.target.value;
 

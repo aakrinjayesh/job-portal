@@ -290,7 +290,7 @@ const SettingsTodoManager = () => {
                 onClick={createTodo}
                 size="large"
                 style={{
-                  background: gradientPrimary,
+                  backgroundColor: "#1677FF",
                   border: "none",
                   boxShadow: "0 6px 18px rgba(59,130,246,.35)",
                 }}
