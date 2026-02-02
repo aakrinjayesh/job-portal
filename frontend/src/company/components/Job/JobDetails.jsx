@@ -33,7 +33,7 @@ const JobDetails = () => {
 
   const type = location?.state?.type;
   const portal = location?.state?.portal;
-  const from = location?.state?.from;
+  const source = location?.state?.source;
   const count = location?.state?.count;
 
   console.log("type in compant jobdetails", type);
@@ -87,7 +87,7 @@ const JobDetails = () => {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {from === "myjobs" && (
+            {source === "jobs" && (
               <Button
                 style={{
                   background: "#D1E4FF",
@@ -230,7 +230,7 @@ const JobDetails = () => {
       </Card>
 
       {/* <ApplyBenchJob jobId={id} /> */}
-      {from !== "myjobs" && <ApplyBenchJob jobId={job?.id} />}
+      {source !== "jobs" && <ApplyBenchJob jobId={job?.id} />}
     </div>
   );
 };
