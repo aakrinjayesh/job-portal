@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Typography, message } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
-import { SetPassword } from "../candidate/api/api";
+import { SetPassword, ResetPasswords } from "../candidate/api/api";
 import cloudImage from "../assets/Fill-1.png";
 import personImg from "../assets/login_design.png";
 import jobroleImg from "../assets/jobrole.png";
@@ -21,6 +21,7 @@ const CreatePassword = () => {
    // 🔹 Normal flow (preferred)
   const stateEmail = location?.state?.email;
   const stateRole = location?.state?.role;
+  const stateType = location?.state?.type
 
   // 🔹 Invite flow (fallback)
   const query = new URLSearchParams(location.search);
@@ -42,32 +43,44 @@ const CreatePassword = () => {
   }
 
   const onFinish = async (values) => {
-    if (values.password !== values.confirmPassword) {
-      messageApi.error("Passwords do not match!");
-      return;
-    }
+  if (values.password !== values.confirmPassword) {
+    messageApi.error("Passwords do not match!");
+    return;
+  }
 
-    setPasswordLoading(true);
-    try {
-      const res = await SetPassword({
+  setPasswordLoading(true);
+  try {
+    let res;
+
+    if (stateType === "forgotpage") {
+      // 🔹 Forget password flow
+      res = await ResetPasswords({
+        email,
+        password: values.password,
+      });
+    } else {
+      // 🔹 Existing set password flow
+      res = await SetPassword({
         email,
         password: values.password,
         role,
         ...(token && { token }),
       });
-
-      if (res.status === "success") {
-        messageApi.success("Password set successfully!");
-        navigate("/login", { state: { role } });
-      } else {
-        messageApi.error(res.message || "Failed to set password");
-      }
-    } catch (err) {
-      messageApi.error(err?.response?.data?.message || "Something went wrong");
-    } finally {
-      setPasswordLoading(false);
     }
-  };
+
+    if (res.status === "success") {
+      messageApi.success("Password set successfully!");
+      navigate("/login", { state: { role } });
+    } else {
+      messageApi.error(res.message || "Failed to set password");
+    }
+  } catch (err) {
+    messageApi.error(err?.response?.data?.message || "Something went wrong");
+  } finally {
+    setPasswordLoading(false);
+  }
+};
+
 
   return (
     <>
