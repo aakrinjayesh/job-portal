@@ -24,6 +24,10 @@ model Organization {
   members OrganizationMember[]
   invites OrganizationInvite[]
 
+  // 🔥 NEW BILLING SYSTEM
+  subscription  OrganizationSubscription?
+  aiTokenUsages AITokenUsage[]
+
   // 💼 Hiring & Jobs
   jobs            Job[]
   jobApplications JobApplication[]
@@ -38,11 +42,6 @@ model Organization {
   taskTemplates     TaskTemplate[]
   candidateTaskList CandidateTaskList[]
   candidateTasks    CandidateTask[]
-
-  // 💳 Billing & Usage
-  subscription OrganizationSubscription?
-  credits      CreditLedger[]
-  payments     PaymentAttempt[]
 }
 
 model OrganizationMember {
@@ -54,6 +53,7 @@ model OrganizationMember {
 
   user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  license      License?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,9 +102,9 @@ model Users {
   // refreshToken     String?
   isactive         Boolean?
   createdAt        DateTime         @default(now())
-  plan             Plan             @default(FREE)
-  aiUsedCount      Int              @default(0)
-  aiResetAt        DateTime?
+  // plan             Plan             @default(FREE)
+  // aiUsedCount      Int              @default(0)
+  // aiResetAt        DateTime?
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
   savedCandidates  SavedCandidate[] @relation("RecruiterSavedCandidates")
@@ -123,6 +123,7 @@ model Users {
   userSession         UserSession[]
   taskTemplate        TaskTemplate[]
   candidateTaskList   CandidateTaskList[]
+  aiTokenUsages       AITokenUsage[]
 }
 
 model UserSession {
@@ -144,11 +145,6 @@ enum Role {
   candidate
   company
   admin
-}
-
-enum Plan {
-  FREE
-  PAID
 }
 
 enum JobType {
@@ -722,103 +718,6 @@ model CandidateRating {
   @@unique([recruiterId, candidateProfileId])
 }
 
-enum SubscriptionStatus {
-  FREE
-  CREATED
-  ACTIVE
-  PAST_DUE
-  CANCELLED
-  EXPIRED
-}
-
-enum PaymentStatus {
-  CREATED
-  SUCCESS
-  FAILED
-}
-
-enum CreditReason {
-  DAILY_FREE
-  MONTHLY_REFILL
-  USAGE_DEDUCTION
-  PURCHASE_TOPUP
-}
-
-model BillingPlan {
-  id             String  @id @default(uuid())
-  name           String  @unique // FREE, PRO, ENTERPRISE
-  description    String?
-  priceInPaise   Int // 0 for FREE, 99900 = ₹999
-  currency       String  @default("INR")
-  durationInDays Int? // null for FREE
-  monthlyCredits Int // credits given per billing cycle
-
-  // 🔥 Link to Razorpay Plan (created in Razorpay dashboard)
-  razorpayPlanId String? @unique
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  subscriptions OrganizationSubscription[]
-}
-
-model OrganizationSubscription {
-  id String @id @default(uuid())
-
-  organizationId String @unique
-  planId         String
-
-  razorpaySubscriptionId String? @unique
-  razorpayCustomerId     String?
-
-  status SubscriptionStatus @default(FREE)
-
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  plan         BillingPlan  @relation(fields: [planId], references: [id])
-}
-
-model CreditLedger {
-  id             String @id @default(uuid())
-  organizationId String
-
-  change       Int // +1000, -20 etc
-  reason       CreditReason
-  balanceAfter Int
-
-  createdAt DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@index([organizationId])
-}
-
-model PaymentAttempt {
-  id             String @id @default(uuid())
-  organizationId String
-
-  razorpayOrderId        String?
-  razorpayPaymentId      String?
-  razorpaySubscriptionId String?
-
-  amountInPaise Int
-  status        PaymentStatus
-  failureReason String?
-
-  createdAt DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@index([organizationId])
-}
-
 enum EmailStatus {
   PENDING
   SENT
@@ -841,4 +740,184 @@ model EmailLog {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+}
+
+model OrganizationSubscription {
+  id             String             @id @default(uuid())
+  organizationId String             @unique
+  status         SubscriptionStatus @default(ACTIVE)
+  billingCycle   BillingCycle       @default(MONTHLY)
+  autoRenew      Boolean            @default(true)
+
+  currentPeriodStart DateTime @default(now())
+  currentPeriodEnd   DateTime
+  nextBillingDate    DateTime
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  licenses License[]
+  invoices Invoice[]
+  payments Payment[]
+}
+
+model License {
+  id             String  @id @default(uuid())
+  subscriptionId String
+  planId         String
+  assignedToId   String? @unique
+
+  validFrom  DateTime @default(now())
+  validUntil DateTime
+  isActive   Boolean  @default(true)
+
+  subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
+  plan         SubscriptionPlan         @relation(fields: [planId], references: [id])
+  assignedTo   OrganizationMember?      @relation(fields: [assignedToId], references: [id])
+
+  usageRecords UsageRecord[]
+  aiUsages     AITokenUsage[]
+}
+
+model SubscriptionPlan {
+  id           String           @id @default(uuid())
+  tier         SubscriptionTier @unique
+  name         String
+  monthlyPrice Int
+  yearlyPrice  Int
+
+  licenses License[]
+  limits   PlanLimit[]
+}
+
+model PlanLimit {
+  id      String       @id @default(uuid())
+  planId  String
+  feature LimitFeature
+  period  LimitPeriod
+
+  maxAllowed Int
+
+  plan SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, feature, period])
+  @@index([planId])
+}
+
+model UsageRecord {
+  id        String       @id @default(uuid())
+  licenseId String
+  feature   LimitFeature
+  period    LimitPeriod
+
+  currentUsage Int      @default(0)
+  periodStart  DateTime
+  periodEnd    DateTime
+  isExceeded   Boolean  @default(false)
+
+  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  @@unique([licenseId, feature, period, periodStart])
+  @@index([licenseId])
+}
+
+model AITokenUsage {
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
+  licenseId      String
+
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+  featureUsed  String?
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         Users        @relation(fields: [userId], references: [id])
+  license      License      @relation(fields: [licenseId], references: [id])
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  subscriptionId String
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(PENDING)
+
+  subtotal Int
+  tax      Int
+  total    Int
+
+  periodStart DateTime
+  periodEnd   DateTime
+  dueDate     DateTime
+  paidAt      DateTime?
+
+  subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
+  payments     Payment[]
+}
+
+model Payment {
+  id             String @id @default(uuid())
+  subscriptionId String
+  invoiceId      String
+
+  amount   Int
+  currency String        @default("INR")
+  status   PaymentStatus @default(PENDING)
+
+  gateway          String
+  gatewayPaymentId String?
+  gatewaySessionId String?
+
+  subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
+  invoice      Invoice                  @relation(fields: [invoiceId], references: [id])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionTier {
+  BASIC
+  PROFESSIONAL
+  ORGANIZATION
+  ENTERPRISE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+  VOID
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum LimitFeature {
+  AI_TOKENS_TOTAL
+  FIT_SCORE_ANALYSES
+  JOB_POST_CREATION
+  ACTIVE_JOB_POSTINGS
+  CANDIDATE_DETAILS_VIEW
+  JOB_APPLICATIONS
+  TEAM_MEMBERS
+}
+
+enum LimitPeriod {
+  DAILY
+  MONTHLY
+  YEARLY
 }
