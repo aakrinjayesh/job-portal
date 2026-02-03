@@ -734,7 +734,6 @@ const refreshAccessToken = async (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
-      plan: user.plan,
       organizationId: user.organizationMember?.organizationId || null,
       permission: user.organizationMember?.permissions || null,
     };
