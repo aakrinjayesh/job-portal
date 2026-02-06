@@ -3,10 +3,12 @@ import {
   Typography,
   Slider,
   Divider,
+  Input,
   InputNumber,
   Button,
   Tooltip,
   Collapse,
+  Form
 } from "antd";
 import {
   CaretDownOutlined,
@@ -73,6 +75,7 @@ const FiltersPanel = ({
   const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
   const [skills, setSkills] = useState([]);
   const [clouds, setClouds] = useState([]);
+  const [experienceError, setExperienceError] = useState("");
   const [candidateType, setCandidateType] = useState([]);
 
   /* 🔽 collapse states */
@@ -213,7 +216,10 @@ const FiltersPanel = ({
   /* 🔁 Emit filters */
   useEffect(() => {
     onFiltersChange?.({
-      experience: experience === 30 ? null : experience,
+      experience:
+   experience === 0 || experience === 30 || experience === ""
+  ? null
+   : experience,
       location: selectedLocations,
       jobType: selectedJobTypes,
       employmentType: selectedEmploymentTypes,
@@ -244,28 +250,51 @@ const FiltersPanel = ({
             tooltip={{
               formatter: (val) => (val === 30 ? "Any" : `${val} yrs`),
             }}
+            styles={{
+    track: { backgroundColor: "#0c8cf5" },   // 🖤 dark filled part
+    rail: { backgroundColor: "#d9d9d9" },    // light background
+    handle: {
+      borderColor: "#1f1f1f",
+      backgroundColor: "#1f1f1f",
+    },
+  }}
             onChange={setExperience}
           />
-          <InputNumber
-            min={0}
-            max={30}
-            step={1}
-            precision={0}
-            value={experience}
-            placeholder="e.g. 5"
-            style={{ width: "100%" }}
-            controls={false}
-            // 🔒 HARD BLOCK non-numeric input
-            parser={(value) => {
-              if (!value) return 0;
-              return value.replace(/\D/g, ""); // keep digits only
-            }}
-            onChange={(v) => {
-              if (typeof v === "number") {
-                setExperience(v);
-              }
-            }}
-          />
+ <Form.Item
+  validateStatus={experienceError ? "error" : ""}
+  help={experienceError}
+>
+  <Input
+    value={experience}
+    placeholder="e.g. 5"
+    inputMode="numeric"
+    maxLength={2}
+    style={{ width: "100%" }}
+
+    onChange={(e) => {
+      const value = e.target.value;
+
+      // ❌ non-numeric
+      if (!/^\d*$/.test(value)) {
+        setExperienceError("Only numbers are allowed");
+        return;
+      }
+
+      // ❌ more than 2 digits
+      if (value.length > 2) {
+        setExperienceError("Maximum 2 digits allowed");
+        return;
+      }
+
+      // ✅ valid
+      setExperienceError("");
+      setExperience(value === "" ? "" : Number(value));
+    }}
+  />
+</Form.Item>
+
+
+
         </>
       ),
     },
@@ -339,6 +368,7 @@ const FiltersPanel = ({
       label: <CollapseLabel title="Skills" isOpen={open.skills} />,
       children: (
         <AddSkillInput
+          placeholder="Select Skills"
           values={skills}
           onChange={setSkills}
           suggestions={salesforceSkillSuggestions}
@@ -350,6 +380,7 @@ const FiltersPanel = ({
       label: <CollapseLabel title="Clouds" isOpen={open.clouds} />,
       children: (
         <AddSkillInput
+          placeholder="Select Clouds"
           values={clouds}
           onChange={setClouds}
           suggestions={salesforceCloudSuggestions}
@@ -361,7 +392,7 @@ const FiltersPanel = ({
   return (
     <div
       style={{
-        width: 250, // ✅ reduced width
+        width: 220, // ✅ reduced width
         // height: "calc(100vh - 30px)", // ✅ smaller scroll area
         borderRight: "1px solid #eee",
         padding: 14,

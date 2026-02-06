@@ -195,7 +195,7 @@ const CompanyLayout = ({ children }) => {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         trigger={null} // 👈 removes collapse icon below logout
-        width={260}
+        width={240}
         style={{
           background: "#011026",
           height: "100vh",

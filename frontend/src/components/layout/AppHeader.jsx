@@ -1,9 +1,16 @@
 import { Button } from "antd";
+import logo from "../../assets/forceheadlogo.png";
 
 const AppHeader = () => {
   return (
     <div style={styles.header}>
-      <div style={styles.logo}>QuickHire SF</div>
+     <div style={styles.logoWrapper}>
+        <img
+          src={logo}
+          alt="ForceHead"
+          style={styles.logo}
+        />
+      </div>
 
       {/* <div style={styles.menu}>
         <span>Products</span>
@@ -12,9 +19,9 @@ const AppHeader = () => {
         <span>Support</span>
       </div> */}
 
-      <Button type="primary" style={{ borderRadius: 8 }}>
+      {/* <Button type="primary" style={{ borderRadius: 8 }}>
         Start free trial
-      </Button>
+      </Button> */}
     </div>
   );
 };
@@ -29,9 +36,15 @@ const styles = {
     borderBottom: "1px solid #f0f0f0",
     background: "#fff",
   },
+  logoWrapper: {
+    display: "flex",
+    alignItems: "center",
+  },
+
   logo: {
-    fontSize: 18,
-    fontWeight: 600,
+     width: 140,     // 🔹 increase width here
+    // height: "50",
+    cursor: "pointer",
   },
   menu: {
     display: "flex",

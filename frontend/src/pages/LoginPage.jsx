@@ -22,7 +22,7 @@ import AppFooter from "../components/layout/AppFooter";
 const { Title, Text } = Typography;
 
 const LoginPage = () => {
-  const [activeTab, setActiveTab] = useState("candidate");
+  const [activeTab, setActiveTab] = useState("company");
   const [messageApi, contextHolder] = message.useMessage();
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -167,36 +167,51 @@ const LoginPage = () => {
               ]}
             />
 
-            <Button
-              type="link"
-              onClick={() =>
-                navigate("/forgotpassword", { state: { role: activeTab } })
-              }
-            >
-              Forgot password?
-            </Button>
+   {/* LINKS ROW */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 12,
+  }}
+>
+  <Button
+    type="link"
+    style={{ padding: 0 }}
+    onClick={() =>
+      navigate("/forgotpassword", { state: { role: activeTab } })
+    }
+  >
+    Forgot password?
+  </Button>
 
-            {activeTab === "candidate" && (
-              <>
-                <Divider>OR</Divider>
-                <GoogleAuthButton userType="candidate" />
-              </>
-            )}
+  <Text>
+    Don’t have a registered email?{" "}
+    <Button
+      type="link"
+      style={{ padding: 0 }}
+      onClick={() =>
+        navigate("/signup", { state: { role: activeTab } })
+      }
+    >
+      Create account
+    </Button>
+  </Text>
+</div>
 
-            <Text>
-              Don’t have an account?{" "}
-              <Button
-                type="link"
-                onClick={() =>
-                  navigate("/signup", { state: { role: activeTab } })
-                }
-              >
-                Sign Up
-              </Button>
-            </Text>
+{/* GOOGLE AUTH – ONLY FOR CANDIDATE */}
+{activeTab === "candidate" && (
+  <>
+    <Divider style={{ margin: "16px 0" }}>OR</Divider>
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <GoogleAuthButton userType="candidate" />
+    </div>
+  </>
+)}
+
           </div>
         </div>
-
         {/* RIGHT */}
         {/* RIGHT HERO */}
         <div style={styles.right}>

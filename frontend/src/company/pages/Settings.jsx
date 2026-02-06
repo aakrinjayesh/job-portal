@@ -268,7 +268,14 @@ const Settings = () => {
           <Form.Item
             name="name"
             label="Full Name"
-            rules={[{ required: true, message: "Please enter name" }]}
+            rules={[{ required: true, message: "Please enter name" },
+                {
+      pattern: /^[A-Za-z]{2,}(?: [A-Za-z])+$/,
+      message:
+        "Enter first and last name using letters only ",
+    },
+ 
+  ]}
           >
             <Input placeholder="Enter member name" />
           </Form.Item>

@@ -92,35 +92,64 @@ const SearchWithTextArea = ({
 
 
       {/* ✅ MODAL WITH EXISTING FUNCTIONALITY */}
-      <Modal
-        open={open}
-        title={null}
-        onCancel={() => setOpen(false)}
-        footer={null}
-        destroyOnClose
-        closable={false}
-        bodyStyle={{
-          padding: 0,
-          background: "transparent",
-        }}
-      >
+     <Modal
+  open={open}
+  title={null}
+  onCancel={() => setOpen(false)}
+  footer={null}
+  // destroyOnClose
+  closable={false}
+  style={{
+    padding: 0,
+    background: "transparent",
+  }}
+>
         {/* Gradient Border */}
-        <div
-          style={{
-            padding: 2,
-            borderRadius: 24,
-            background: "linear-gradient(135deg, #ff8a00, #8f5cff, #4f46e5)",
-          }}
-        >
+      <div
+  style={{
+    padding: 2,
+    borderRadius: 24,
+    position: "relative", // ✅ required for close button
+    background: "linear-gradient(135deg, #E6F0FF 0%, #FFFFFF 60%)",
+    border: "1.5px solid #1677FF",
+  }}
+>
+
+
+          {/* Close Button */}
+ <Button
+  type="text"
+  onClick={() => setOpen(false)}
+  style={{
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    background: "#FFFFFF",
+    border: "1px solid #1677FF",
+    color: "#1677FF",
+    fontSize: 14,
+    padding: 0,
+    boxShadow: "0 4px 10px rgba(22,119,255,0.25)",
+    zIndex: 10,
+  }}
+>
+  ✕
+</Button>
+
+
+
           {/* Inner Box */}
-          <div
-            style={{
-              borderRadius: 22,
-              padding: 16,
-              background: "linear-gradient(135deg, #fff1e6, #ede9fe)",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-            }}
-          >
+       <div
+  style={{
+    borderRadius: 22,
+    padding: 16,
+    background: "#FFFFFF",
+    boxShadow: "0 8px 24px rgba(22, 119, 255, 0.15)",
+  }}
+>
             {/* Input Area */}
             <div
               style={{
@@ -139,27 +168,31 @@ const SearchWithTextArea = ({
                 }}
               />
 
-              <TextArea
-                rows={2}
-                ref={inputRef}
-                placeholder="Enter your prompt"
-                value={searchValue}
-                // onChange={(e) => setSearchValue(e.target.value)}
-                onChange={(e) => {
-                  const cleaned = e.target.value.replace(/[^a-zA-Z0-9 ]/g, "");
-                  setSearchValue(cleaned);
-                }}
-                style={{
-                  paddingLeft: 40,
-                  paddingRight: 88,
-                  paddingTop: 10,
-                  paddingBottom: 10,
-                  borderRadius: 16,
-                  resize: "none",
-                  fontSize: 13,
-                  lineHeight: "18px",
-                }}
-              />
+            <TextArea
+  rows={2}
+  ref={inputRef}
+  placeholder="Enter your prompt"
+  value={searchValue}
+  onChange={(e) => {
+    // Only letters, numbers, and spaces
+    const cleaned = e.target.value.replace(/[^a-zA-Z0-9 ]/g, "");
+    if (e.target.value !== cleaned) {
+      messageApi.warning("Only letters and numbers are allowed");
+    }
+    setSearchValue(cleaned);
+  }}
+  style={{
+    paddingLeft: 40,
+    paddingRight: 88,
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderRadius: 16,
+    resize: "none",
+    fontSize: 13,
+    lineHeight: "18px",
+  }}
+/>
+
 
               {/* Search Button inside box */}
               <Button

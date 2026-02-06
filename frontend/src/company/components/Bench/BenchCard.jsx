@@ -177,17 +177,20 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
             {candidate?.isVendor ? "Vendor Candidate" : "Individual Candidate"}
           </Tag>
 
-          <Button
-            type="text"
-            onClick={handleStarClick}
-            icon={
-              saved ? (
-                <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 18 }} />
-              ) : (
-                <LuBookmark style={{ fontSize: 18 }} />
-              )
-            }
-          />
+          <Tooltip title={saved ? "Saved Candidate" : "UnSave Candidate"}>
+  <Button
+    type="text"
+    onClick={handleStarClick}
+    icon={
+      saved ? (
+        <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 18 }} />
+      ) : (
+        <LuBookmark style={{ fontSize: 18 }} />
+      )
+    }
+  />
+</Tooltip>
+
         </Space>
       </Row>
 

@@ -405,6 +405,35 @@ export async function GetCountries() {
   }
 }
 
+
+export async function SaveJob(payload) {
+  try {
+      let data = JSON.stringify(payload)
+      const response = await axiosInstance.post('/jobs/save', data , {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
+export async function UnSaveJob(payload) {
+  try {
+      let data = JSON.stringify(payload)
+      const response = await axiosInstance.post('/jobs/unsave', data , {
+        headers:{
+          "Content-Type": "application/json"
+        }
+      })
+      return response.data
+  } catch (error) {
+    console.log("error duing appling job", error);
+  } 
+}
+
 export async function SaveCandidate(payload) {
   try {
     let data = JSON.stringify(payload);

@@ -147,10 +147,10 @@ const JobList = ({
         key: "dsc",
         label: "Posted Time",
       },
-      {
-        key: "asc",
-        label: "Posted Time(Oldest)",
-      },
+      // {
+      //   key: "asc",
+      //   label: "Posted Time(Oldest)",
+      // },
     ],
     onClick: ({ key }) => handleSort(key),
   };

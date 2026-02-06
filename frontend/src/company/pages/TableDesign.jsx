@@ -14,6 +14,7 @@ const TableDesign = ({
     <Spin spinning={loading}>
       <Table
         columns={columns}
+        tableLayout="fixed"
         dataSource={dataSource}
         rowKey={rowKey}
         rowSelection={rowSelection}

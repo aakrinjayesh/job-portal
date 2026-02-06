@@ -128,6 +128,12 @@ const Signup = () => {
     }
   };
 
+ const triggerNameValidation = () => {
+  form.validateFields(["fname"]);
+};
+
+
+
   return (
     <>
       {contextHolder}
@@ -143,62 +149,107 @@ const Signup = () => {
               {role === "company" ? "Company Signup" : "Candidate Signup"}
             </Title>
 
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              onValuesChange={() => {
-                const f = form.getFieldValue("fname");
-                const l = form.getFieldValue("lname");
-                const e = form.getFieldValue("email");
-                setIsFormReady(!!(f && l && e));
-              }}
-            >
-              <Form.Item
-                name="fname"
-                rules={[
-                  { required: true, message: "Enter first name" },
-                  { pattern: /^[A-Za-z\s]+$/, message: "Only letters allowed" },
-                ]}
-              >
-                <Input size="large" placeholder="First Name" />
-              </Form.Item>
+           <Form
+  form={form}
+  layout="vertical"
+  onFinish={onFinish}
+  onValuesChange={(changedValues) => {
+    const f = form.getFieldValue("fname");
+    const l = form.getFieldValue("lname");
+    const e = form.getFieldValue("email");
+    setIsFormReady(!!(f && l && e));
+  }}
+>
+  <Form.Item
+  name="fname"
+  dependencies={["lname", "email"]}
+  validateTrigger={["onBlur", "onChange"]}
+  rules={[
+    {
+      validator: (_, value) => {
+        const lname = form.getFieldValue("lname");
+        const email = form.getFieldValue("email");
 
-              <Form.Item
-                name="lname"
-                rules={[
-                  { required: true, message: "Enter last name" },
-                  { pattern: /^[A-Za-z\s]+$/, message: "Only letters allowed" },
-                ]}
-              >
-                <Input size="large" placeholder="Last Name" />
-              </Form.Item>
+        if ((lname || email) && !value) {
+          return Promise.reject("Please enter first name");
+        }
+        return Promise.resolve();
+      },
+    },
+    {
+      pattern: /^[A-Za-z\s]+$/,
+      message: "Only letters allowed",
+    },
+  ]}
+>
+  <Input size="large" placeholder="First Name" />
+</Form.Item>
 
-              <Form.Item
-                name="email"
-                rules={[
-                  { required: true, message: "Enter email" },
-                {
-  pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-  message:
-    "Spaces and invalid formats are not allowed.",
-},
- {
-                    validator: (_, value) => {
-                      if (!value) return Promise.resolve();
-                      if (role === "candidate" && !isPersonalEmail(value))
-                        return Promise.reject(
-                          "Use personal email (gmail, outlook, etc.)"
-                        );
-                      if (role === "company" && !isCompanyEmail(value))
-                        return Promise.reject("Use company email");
-                      return Promise.resolve();
-                    },
-                  },
-                ]}
-              >
-                <Input size="large" placeholder="Email" />
-              </Form.Item>
+<Form.Item
+  name="lname"
+  dependencies={["fname", "email"]}
+  validateTrigger={["onBlur", "onChange"]}
+  rules={[
+    {
+      validator: (_, value) => {
+        const fname = form.getFieldValue("fname");
+        const email = form.getFieldValue("email");
+
+        if ((fname || email) && !value) {
+          return Promise.reject("Please enter last name");
+        }
+        return Promise.resolve();
+      },
+    },
+    {
+      pattern: /^[A-Za-z\s]+$/,
+      message: "Only letters allowed",
+    },
+  ]}
+>
+  <Input
+    size="large"
+    placeholder="Last Name"
+    onChange={triggerNameValidation}
+  />
+</Form.Item>
+
+<Form.Item
+  name="email"
+  dependencies={["fname", "lname"]}
+  validateTrigger={["onBlur", "onChange"]}
+  rules={[
+    { required: true, message: "Enter email" },
+    {
+      pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      message: "Invalid email format",
+    },
+    {
+      validator: (_, value) => {
+        const fname = form.getFieldValue("fname");
+        const lname = form.getFieldValue("lname");
+
+        if (value && !fname) {
+          return Promise.reject("Please enter first name");
+        }
+        if (value && !lname) {
+          return Promise.reject("Please enter last name");
+        }
+
+        if (role === "candidate" && value && !isPersonalEmail(value)) {
+          return Promise.reject("Use personal email (gmail, outlook, etc.)");
+        }
+        if (role === "company" && value && !isCompanyEmail(value)) {
+          return Promise.reject("Use company email");
+        }
+
+        return Promise.resolve();
+      },
+    },
+  ]}
+>
+  <Input size="large" placeholder="Email" />
+</Form.Item>
 
               <Button
                 type="primary"
@@ -271,7 +322,11 @@ const Signup = () => {
                      neither should you.
                    </Title>
        
-                   <Text style={{ color: "#e6e6ff", fontSize: "14px" }}>
+                   <Text style={{ color: "#e6e6ff", fontSize: "14px" ,
+                     lineHeight: "1.2" , // 👈 tighter paragraph spacing
+                     display: "block",  
+                     marginTop: 0,  
+                   }}>
                      QuickHire SF. Our new Lightning Platform gives you the fastest,
                      most complete way to find and apply for new job opportunities.
                    </Text>

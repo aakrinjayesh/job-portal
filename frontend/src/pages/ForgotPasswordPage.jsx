@@ -32,9 +32,10 @@ const ForgotPasswordPage = () => {
   const [bgIndex, setBgIndex] = useState(0);
   const [timer, setTimer] = useState(0);
   const [isResendDisabled, setIsResendDisabled] = useState(true);
+  const [emailValue, setEmailValue] = useState("");
   const location = useLocation();
   const role = location?.state?.role;
-
+  
   const backgrounds = [bg1, bg5, bg3, bg4];
 
   useEffect(() => {
@@ -117,24 +118,36 @@ const ForgotPasswordPage = () => {
               onFinish={onFinish}
               style={{ marginTop: 20 }}
             >
-              <Form.Item
-                name="email"
-                rules={[{ required: true, message: "Please enter your email" }]}
-              >
-                <Input size="large" placeholder="Email" />
-              </Form.Item>
+           <Form.Item
+  name="email"
+  rules={[
+    { required: true, message: "Please enter your email" },
+    { type: "email", message: "Enter a valid email" },
+  ]}
+>
+  <Input
+    size="large"
+    placeholder="Email"
+    disabled={timer > 0}   // ✅ DISABLE DURING TIMER
+    onChange={(e) => setEmailValue(e.target.value)}
+  />
+</Form.Item>
 
-              <Button
-                onClick={handleGenerateOtp}
-                type="default"
-                block
-                loading={generateLoading}
-                size="large"
-                disabled={isResendDisabled && timer > 0}
-                style={{ marginBottom: 10 }}
-              >
-                {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
-              </Button>
+
+
+            <Button
+  onClick={handleGenerateOtp}
+  type="primary"
+  block
+  loading={generateLoading}
+  size="large"
+  disabled={
+    !emailValue || (isResendDisabled && timer > 0)
+  }
+  style={{ marginBottom: 10 }}
+>
+  {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
+</Button>
 
                <Form.Item
               name="otp"

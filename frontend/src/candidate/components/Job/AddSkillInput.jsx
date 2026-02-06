@@ -1,89 +1,99 @@
 import React, { useState } from "react";
-import { Input, Tag, AutoComplete } from "antd";
+import { Select } from "antd";
 
-const AddSkillInput = ({ label, values, onChange, suggestions = [] }) => {
-  const [inputValue, setInputValue] = useState("");
+const AddSkillInput = ({ label, values, onChange, suggestions,
+  placeholder = "Select options",  }) => {
   const [error, setError] = useState("");
 
   // Validation pattern
-  const pattern = /^[A-Za-z][A-Za-z0-9./\-\s]*$/; // only letters + dot + space
+  const pattern = /^[A-Za-z][A-Za-z0-9./\-\s]*$/;
 
-  const validate = (val) => {
-    if (!pattern.test(val)) {
-      setError("Only letters,numbers,dot,space,hypen,slash are allowed");
-      return false;
+  const validateValues = (list) => {
+    for (let item of list) {
+      if (!pattern.test(item)) {
+        setError(
+          "Only letters, numbers, dot, space, hyphen and slash are allowed"
+        );
+        return false;
+      }
     }
     setError("");
     return true;
   };
 
-  const addValue = () => {
-    const newValue = inputValue.trim();
-    if (!newValue) return;
-
-    if (!validate(newValue)) return;
-
-    if (!values.includes(newValue)) {
-      onChange([...values, newValue]);
-    }
-
-    setInputValue("");
+  const handleChange = (selectedValues) => {
+    if (!validateValues(selectedValues)) return;
+    onChange(selectedValues);
   };
-
-  const options = suggestions.map((s) => ({ value: s }));
 
   return (
     <div>
       <p style={{ marginBottom: 6, fontWeight: 600 }}>{label}</p>
 
-      <AutoComplete
+      <Select
+        mode="multiple"
+        allowClear
+        maxTagCount={0}                 // hide tags
+        maxTagPlaceholder={null}        // ⭐ hide "+ N" count
+        showSearch
         style={{ width: "100%" }}
-        options={options}
-        value={inputValue}
-        onChange={(val) => {
-          setInputValue(val);
-          validate(val); // live validation
-        }}
+        placeholder={placeholder}
+        value={values}
+        onChange={handleChange}
+        options={suggestions.map((s) => ({
+          label: s,
+          value: s,
+        }))}
         filterOption={(input, option) =>
-          option.value.toLowerCase().includes(input.toLowerCase())
+          option.label.toLowerCase().includes(input.toLowerCase())
         }
-        onSelect={(val) => {
-          setInputValue(val);
-          addValue();
+        status={error ? "error" : ""}
+      />
+      {values.length > 0 && (
+  <div
+    style={{
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 10,
+    }}
+  >
+    {values.map((item) => (
+      <div
+        key={item}
+        style={{
+          padding: "4px 10px",
+          background: "#f5f5f5",
+          borderRadius: 16,
+          fontSize: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
         }}
       >
-        <Input
-          placeholder={`Add ${label}`}
-          onPressEnter={addValue}
-          status={error ? "error" : ""}     // ⭐ RED BORDER
-        />
-      </AutoComplete>
-
-      {/* ⭐ AntD-style helper text */}
-      {error && (
-        <div
+        <span>{item}</span>
+        <span
           style={{
-            color: "red",
-            fontSize: 12,
-            marginTop: 3,
+            cursor: "pointer",
+            fontWeight: "bold",
           }}
+          onClick={() =>
+            onChange(values.filter((v) => v !== item))
+          }
         >
+          ×
+        </span>
+      </div>
+    ))}
+  </div>
+)}
+
+
+      {error && (
+        <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
           {error}
         </div>
       )}
-
-      <div style={{ marginTop: 10 }}>
-        {values.map((item, index) => (
-          <Tag
-            key={index}
-            closable
-            onClose={() => onChange(values.filter((v) => v !== item))}
-            style={{ marginBottom: 6 }}
-          >
-            {item}
-          </Tag>
-        ))}
-      </div>
     </div>
   );
 };
