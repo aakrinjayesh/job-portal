@@ -129,6 +129,7 @@ import {
   Badge,
   Spin,
   ConfigProvider,
+  Form
 } from "antd";
 import {
   PlusOutlined,
@@ -274,31 +275,67 @@ const SettingsTodoManager = () => {
           </div>
 
           {/* Create */}
-          <Card style={{ ...cardStyle, marginBottom: 24 }}>
-            <Space style={{ width: "100%" }} size={12}>
-              <Input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onPressEnter={createTodo}
-                placeholder="New todo template"
-                size="large"
-              />
-              <Button
-                type="primary"
-                loading={creating}
-                icon={<PlusOutlined />}
-                onClick={createTodo}
-                size="large"
-                style={{
-                  backgroundColor: "#1677FF",
-                  border: "none",
-                  boxShadow: "0 6px 18px rgba(59,130,246,.35)",
-                }}
-              >
-                Add
-              </Button>
-            </Space>
-          </Card>
+      <Card style={{ ...cardStyle, marginBottom: 24 }}>
+  <Form
+    layout="inline"
+    style={{ width: "100%" }}
+    onFinish={async (values) => {
+      setCreating(true);
+      await CreateTodoTemplate({ title: values.title.trim() });
+      message.success({
+        content: "Todo template created!",
+        icon: <ThunderboltOutlined style={{ color: "#22c55e" }} />,
+      });
+      setCreating(false);
+      loadTodos();
+    }}
+  >
+    <Form.Item
+      name="title"
+      style={{ flex: 1 }}
+      rules={[
+        {
+          required: true,
+          message: "Todo title is required",
+        },
+        {
+          pattern: /^[A-Za-z ]+$/,
+          message: "Only letters and spaces are allowed",
+        },
+        {
+          validator: (_, value) =>
+            value?.trim()
+              ? Promise.resolve()
+              : Promise.reject("Title cannot be empty"),
+        },
+      ]}
+    >
+      <Input
+        placeholder="New todo template"
+        size="large"
+        onPressEnter={(e) => e.preventDefault()}
+      />
+    </Form.Item>
+
+    <Form.Item>
+      <Button
+        type="primary"
+        htmlType="submit"
+        loading={creating}
+        icon={<PlusOutlined />}
+        size="large"
+        style={{
+          backgroundColor: "#1677FF",
+          border: "none",
+          boxShadow: "0 6px 18px rgba(59,130,246,.35)",
+        }}
+      >
+        Add
+      </Button>
+    </Form.Item>
+  </Form>
+</Card>
+
 
           {/* List */}
           <Card style={cardStyle}>

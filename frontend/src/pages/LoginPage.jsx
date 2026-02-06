@@ -119,7 +119,14 @@ const LoginPage = () => {
 
           <Form.Item
             name="password"
-            rules={[{ required: true, message: "Enter password" }]}
+            rules={[{ required: true, message: "Enter password" },
+              {
+  pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,16}$/,
+  message:
+    "Password must be 8–16 characters long and include uppercase, lowercase, number, and special character"
+}
+
+            ]}
           >
             <Input.Password size="large" placeholder="Password" />
           </Form.Item>
