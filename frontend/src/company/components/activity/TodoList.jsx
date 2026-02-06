@@ -65,6 +65,16 @@ const TodoList = ({ candidateId, jobId }) => {
     }
   };
 
+  // const sortedTasks = [...tasks].sort((a, b) => {
+  //   return Number(b.completed) - Number(a.completed);
+  // });
+  const isTaskEnabled = (index) => {
+    if (index === 0) return true; // first task always clickable
+
+    // all previous tasks must be completed
+    return tasks.slice(0, index).every((t) => t.completed);
+  };
+
   return (
     <div>
       {/* 🔵 PROGRESS */}
@@ -97,20 +107,42 @@ const TodoList = ({ candidateId, jobId }) => {
           <Spin size="large" />
         </div>
       ) : (
+        // <List
+        //   rowKey="id"
+        //   // dataSource={tasks}
+        //   dataSource={sortedTasks}
+        //   locale={{ emptyText: "No todos" }}
+        //   renderItem={(task) => (
+        //     <List.Item>
+        //       <Checkbox
+        //         checked={task.completed}
+        //         onChange={(e) => onToggle(task.id, e.target.checked)}
+        //       >
+        //         {task.title}
+        //       </Checkbox>
+        //     </List.Item>
+        //   )}
+        // />
+
         <List
           rowKey="id"
           dataSource={tasks}
           locale={{ emptyText: "No todos" }}
-          renderItem={(task) => (
-            <List.Item>
-              <Checkbox
-                checked={task.completed}
-                onChange={(e) => onToggle(task.id, e.target.checked)}
-              >
-                {task.title}
-              </Checkbox>
-            </List.Item>
-          )}
+          renderItem={(task, index) => {
+            const enabled = isTaskEnabled(index);
+
+            return (
+              <List.Item>
+                <Checkbox
+                  checked={task.completed}
+                  disabled={!enabled}
+                  onChange={(e) => onToggle(task.id, e.target.checked)}
+                >
+                  {task.title}
+                </Checkbox>
+              </List.Item>
+            );
+          }}
         />
       )}
     </div>

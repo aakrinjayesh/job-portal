@@ -15,7 +15,6 @@ import {
   Checkbox,
   Switch,
   Collapse,
-  Steps,
 } from "antd";
 
 import {
@@ -76,9 +75,8 @@ const UpdateUserProfile = ({
 
   const [isCandidate, setIsCandidate] = useState(false);
 
-  const [currentStep, setCurrentStep] = useState(0);
-
   const role = localStorage.getItem("role");
+  const isEditMode = Boolean(editRecord && editRecord.id);
 
   useEffect(() => {
     if (editRecord && Reciviedrole) {
@@ -411,38 +409,63 @@ const UpdateUserProfile = ({
       // -------------------------------
       // 1️⃣ HANDLE PROFILE PICTURE UPLOAD
       // -------------------------------
-      let profilePicUrl = null;
-      const fileObj = values?.profilePicture;
 
-      const isNewFile =
-        fileObj instanceof File ||
-        fileObj instanceof Blob ||
-        (fileObj && fileObj.uid && fileObj.originFileObj instanceof File);
+      // let profilePicUrl = editRecord?.profilePicture || null;
 
-      if (isNewFile) {
-        const realFile = fileObj.originFileObj || fileObj;
+      // const fileList = values?.profilePicture || [];
 
-        const fd = new FormData();
-        fd.append("file", realFile);
+      // if (Array.isArray(fileList) && fileList.length > 0) {
+      //   const fileItem = fileList[0];
 
-        const uploadRes = await uploadProfilePicture(fd);
-        console.log("UPLOAD RESPONSE:", uploadRes);
+      //   if (fileItem.originFileObj instanceof File) {
+      //     const fd = new FormData();
+      //     fd.append("file", fileItem.originFileObj);
 
-        const profilePicUrlFromRes =
-          uploadRes?.url ??
-          uploadRes?.data?.url ??
-          uploadRes?.data?.location ??
-          null;
+      //     const uploadRes = await uploadProfilePicture(fd);
 
-        if (!profilePicUrlFromRes) {
-          messageAPI.error("Failed to upload profile picture");
-          setSubmitLoading(false);
-          return;
+      //     profilePicUrl =
+      //       uploadRes?.url ||
+      //       uploadRes?.data?.url ||
+      //       uploadRes?.data?.location ||
+      //       null;
+
+      //     if (!profilePicUrl) {
+      //       messageAPI.error("Failed to upload profile picture");
+      //       return;
+      //     }
+      //   }
+      // }
+
+      let profilePicUrl = editRecord?.profilePicture || null;
+
+      const fileList = values?.profilePicture || [];
+
+      // ✅ CASE 1: USER DELETED IMAGE
+      if (Array.isArray(fileList) && fileList.length === 0) {
+        profilePicUrl = null;
+      }
+
+      // ✅ CASE 2: USER UPLOADED NEW IMAGE
+      else if (fileList.length > 0) {
+        const fileItem = fileList[0];
+
+        if (fileItem.originFileObj instanceof File) {
+          const fd = new FormData();
+          fd.append("file", fileItem.originFileObj);
+
+          const uploadRes = await uploadProfilePicture(fd);
+
+          profilePicUrl =
+            uploadRes?.url ||
+            uploadRes?.data?.url ||
+            uploadRes?.data?.location ||
+            null;
+
+          if (!profilePicUrl) {
+            messageAPI.error("Failed to upload profile picture");
+            return;
+          }
         }
-
-        profilePicUrl = profilePicUrlFromRes;
-      } else {
-        profilePicUrl = editRecord?.profilePicture || null;
       }
 
       // -------------------------------
@@ -520,10 +543,23 @@ const UpdateUserProfile = ({
       // -------------------------------
       const response = await profiledata(payload);
 
+      // if (response?.status === "success") {
+      //   messageAPI.success("Profile updated successfully!");
+      // } else {
+      //   messageAPI.error("Failed to update profile. Please try again.");
+      // }
       if (response?.status === "success") {
-        messageAPI.success("Profile updated successfully!");
+        messageAPI.success(
+          isEditMode
+            ? "Profile updated successfully!"
+            : "Profile created successfully!"
+        );
       } else {
-        messageAPI.error("Failed to update profile. Please try again.");
+        messageAPI.error(
+          isEditMode
+            ? "Failed to update profile. Please try again."
+            : "Failed to create profile. Please try again."
+        );
       }
     } catch (error) {
       console.error("Profile update error:", error);
@@ -557,22 +593,6 @@ const UpdateUserProfile = ({
       </Collapse.Panel>
     </Collapse>
   );
-
-  const sectionRefs = {
-    personal: React.useRef(null),
-    skills: React.useRef(null),
-    education: React.useRef(null),
-    certifications: React.useRef(null),
-    experience: React.useRef(null),
-  };
-
-  const stepsConfig = [
-    { title: "Personal Information", key: "personal" },
-    { title: "Skills", key: "skills" },
-    { title: "Education", key: "education" },
-    { title: "Certifications", key: "certifications" },
-    { title: "Work Experience", key: "experience" },
-  ];
 
   return (
     <div style={{ padding: 0, maxWidth: 1200, margin: "0 auto" }}>
@@ -610,28 +630,13 @@ const UpdateUserProfile = ({
           </span>
         }
       >
-        <Steps
-          current={currentStep}
-          style={{ marginBottom: 32 }}
-          items={stepsConfig.map((step, index) => ({
-            title: step.title,
-            onClick: () => {
-              setCurrentStep(index);
-              sectionRefs[step.key]?.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            },
-          }))}
-        />
-
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
           onFinishFailed={onFinishFailed}
         >
-          <div ref={sectionRefs.skills}>
+          <div>
             <Collapse
               defaultActiveKey={["personal-info"]}
               bordered={false}
@@ -650,9 +655,9 @@ const UpdateUserProfile = ({
                   border: "1px solid #f0f0f0",
                 }}
               >
-                <Row gutter={16}>
+                <Row gutter={16} align="middle">
                   {/* Profile Picture */}
-                  <Col span={24}>
+                  <Col span={24} sm={12} md={10}>
                     <Form.Item
                       label="Upload Profile Picture .Jpg,.Png,.Jpeg(limit 200KB)"
                       name="profilePicture"
@@ -761,7 +766,10 @@ const UpdateUserProfile = ({
                           // form.setFieldsValue({ profilePicture: info.file });
                           // form.setFieldsValue({ profilePicture: info.file.originFileObj });
                           setFileList(info.fileList);
-                          form.setFieldsValue({ profilePicture: info.file });
+                          // form.setFieldsValue({ profilePicture: info.file });
+                          form.setFieldsValue({
+                            profilePicture: info.fileList,
+                          });
                         }}
                       >
                         <div>
@@ -770,7 +778,39 @@ const UpdateUserProfile = ({
                         </div>
                       </Upload>
                     </Form.Item>
+                    {/* RIGHT: Hide Contact Details */}
+                    {/* RIGHT: Hide Contact (OPPOSITE SIDE) */}
                   </Col>
+                  {Reciviedrole && (
+                    <Col
+                      xs={24}
+                      sm={12}
+                      md={14}
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        alignItems: "center",
+                        paddingTop: 32,
+                      }}
+                    >
+                      <Form.Item
+                        name="hideContact"
+                        label="Hide Contact Details"
+                        tooltip={{
+                          title:
+                            "When turned off, your bench contact details will be visible to other users.",
+                          icon: <InfoCircleOutlined />,
+                        }}
+                      >
+                        <Switch
+                          checked={showContact}
+                          checkedChildren="ON"
+                          unCheckedChildren="OFF"
+                          onChange={(checked) => setShowContact(checked)}
+                        />
+                      </Form.Item>
+                    </Col>
+                  )}
 
                   {/* Name, Phone, Email */}
                   <Col xs={24} sm={12} md={12}>
@@ -790,26 +830,26 @@ const UpdateUserProfile = ({
                   </Col>
 
                   {/* {Reciviedrole && (
-              <Form.Item
-                name="hideContact"
-                label="Hide Contact Details "
-                tooltip={{
-                  title:
-                    "When turned off, your bench contact details will be visible to other users.",
-                  icon: <InfoCircleOutlined />,
-                }}
-              >
-                <Switch
-                  checkedChildren="ON"
-                  unCheckedChildren="OFF"
-                  onChange={(checked) => setShowContact(checked)}
-                />
-              </Form.Item>
-            )} */}
+                    <Form.Item
+                      name="hideContact"
+                      label="Hide Contact Details "
+                      tooltip={{
+                        title:
+                          "When turned off, your bench contact details will be visible to other users.",
+                        icon: <InfoCircleOutlined />,
+                      }}
+                    >
+                      <Switch
+                        checkedChildren="ON"
+                        unCheckedChildren="OFF"
+                        onChange={(checked) => setShowContact(checked)}
+                      />
+                    </Form.Item>
+                  )} */}
 
                   {/* {!showContact && ( */}
                   <Col xs={24} sm={12} md={12}>
-                    <Form.Item
+                    {/* <Form.Item
                       label="Phone Number"
                       name="phoneNumber"
                       rules={[
@@ -835,6 +875,55 @@ const UpdateUserProfile = ({
                         }
                         placeholder="Enter 10-digit phone number"
                         maxLength={10}
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                    </Form.Item> */}
+                    <Form.Item
+                      label="Phone Number"
+                      name="phoneNumber"
+                      rules={[
+                        {
+                          validator: (_, value) => {
+                            if (!value) return Promise.resolve();
+
+                            // ❌ only digits allowed
+                            if (!/^\d+$/.test(value)) {
+                              return Promise.reject(
+                                new Error("Only numbers are allowed")
+                              );
+                            }
+
+                            // ✅ Indian number: allow 10 OR 12 digits
+                            if (value.length === 10 || value.length === 12) {
+                              return Promise.resolve();
+                            }
+
+                            // ❌ anything else
+                            return Promise.reject(
+                              new Error(
+                                "Indian phone number must be 10 or 12 digits"
+                              )
+                            );
+                          },
+                        },
+                      ]}
+                    >
+                      <Input
+                        addonBefore={
+                          <Select defaultValue="+91">
+                            <Select.Option value="+91">🇮🇳 +91</Select.Option>
+                            <Select.Option value="+1">🇺🇸 +1</Select.Option>
+                            <Select.Option value="+44">🇬🇧 +44</Select.Option>
+                            <Select.Option value="+61">🇦🇺 +61</Select.Option>
+                            <Select.Option value="+971">🇦🇪 +971</Select.Option>
+                          </Select>
+                        }
+                        placeholder="Enter 10 or 12 digit Indian phone number"
+                        maxLength={12} // ✅ allow both
                         onKeyPress={(e) => {
                           if (!/[0-9]/.test(e.key)) {
                             e.preventDefault();
@@ -949,6 +1038,21 @@ const UpdateUserProfile = ({
                           required: true,
                           message: "Please select preferred location!",
                         },
+                        {
+                          validator: (_, value) => {
+                            if (!value) return Promise.resolve();
+
+                            if (value.length > 3) {
+                              return Promise.reject(
+                                new Error(
+                                  "You can select up to 3 locations only"
+                                )
+                              );
+                            }
+
+                            return Promise.resolve();
+                          },
+                        },
                       ]}
                     >
                       <ReusableSelect
@@ -1040,26 +1144,27 @@ const UpdateUserProfile = ({
                             noStyle
                             rules={[
                               { required: true, message: "Enter rate value" },
+
                               {
                                 validator: (_, value) => {
-                                  if (
-                                    value === undefined ||
-                                    value === null ||
-                                    value === ""
-                                  ) {
+                                  if (!value) return Promise.resolve();
+
+                                  // ✅ Allow letters + numbers only
+                                  if (/^[a-zA-Z0-9]+$/.test(value)) {
                                     return Promise.resolve();
                                   }
-                                  if (/^[0-9]+$/.test(String(value))) {
-                                    return Promise.resolve();
-                                  }
+
+                                  // ❌ Special characters error
                                   return Promise.reject(
-                                    "Only numbers are allowed!"
+                                    new Error(
+                                      "Special characters are not allowed"
+                                    )
                                   );
                                 },
                               },
                             ]}
                           >
-                            <InputNumber
+                            <Input
                               style={{ width: "70%" }}
                               placeholder="Enter rate per Month"
                               parser={(val) => val.replace(/[^0-9]/g, "")}
@@ -1092,7 +1197,7 @@ const UpdateUserProfile = ({
                       name="joiningPeriod"
                       rules={[
                         {
-                          required: true,
+                          // required: true,
                           message: "Please select joining period!",
                         },
                       ]}
@@ -1112,6 +1217,7 @@ const UpdateUserProfile = ({
                     <Form.Item
                       label="Total Experience"
                       name="totalExperience"
+                      validateTrigger={["onChange", "onBlur"]}
                       rules={[
                         {
                           required: true,
@@ -1119,21 +1225,38 @@ const UpdateUserProfile = ({
                         },
                         {
                           validator: (_, value) => {
-                            if (value === undefined || value === null) {
-                              return Promise.resolve();
-                            }
+                            if (!value) return Promise.resolve();
 
-                            // ❌ no decimals
-                            if (!Number.isInteger(value)) {
+                            // ❌ letters or special characters
+                            if (/[^0-9.]/.test(value)) {
                               return Promise.reject(
-                                new Error("Only whole numbers are allowed")
+                                new Error("Only numbers are allowed")
                               );
                             }
 
-                            // ❌ more than 2 digits
-                            if (value.toString().length > 2) {
+                            // ❌ more than one dot
+                            if ((value.match(/\./g) || []).length > 1) {
                               return Promise.reject(
-                                new Error("Maximum 2 digits allowed")
+                                new Error("Only one decimal point is allowed")
+                              );
+                            }
+
+                            // ❌ more than 2 decimal places
+                            if (!/^\d+(\.\d{0,2})?$/.test(value)) {
+                              return Promise.reject(
+                                new Error(
+                                  "Maximum 2 digits allowed after decimal"
+                                )
+                              );
+                            }
+
+                            // ❌ max 2 digits before decimal
+                            const [intPart] = value.split(".");
+                            if (intPart.length > 2) {
+                              return Promise.reject(
+                                new Error(
+                                  "Maximum 2 digits allowed before decimal"
+                                )
                               );
                             }
 
@@ -1142,13 +1265,7 @@ const UpdateUserProfile = ({
                         },
                       ]}
                     >
-                      <InputNumber
-                        min={0}
-                        step={1}
-                        precision={0} // ✅ blocks decimals
-                        style={{ width: "100%" }}
-                        placeholder="e.g., 6 or 10 years"
-                      />
+                      <Input placeholder="e.g., 45 or 45.4 years" />
                     </Form.Item>
                   </Col>
 
@@ -1157,35 +1274,46 @@ const UpdateUserProfile = ({
                     <Form.Item
                       label="Relevant Experience in Salesforce"
                       name="relevantSalesforceExperience"
+                      validateTrigger={["onChange", "onBlur"]}
                       rules={[
                         {
                           required: true,
-                          message: "Please enter Salesforce experience!",
+                          message: "Please enter total experience!",
                         },
                         {
                           validator: (_, value) => {
-                            if (value === undefined || value === null) {
-                              return Promise.resolve();
-                            }
+                            if (!value) return Promise.resolve();
 
-                            // ❌ no decimals
-                            if (!Number.isInteger(value)) {
+                            // ❌ letters or special characters
+                            if (/[^0-9.]/.test(value)) {
                               return Promise.reject(
-                                new Error("Only whole numbers are allowed")
+                                new Error("Only numbers are allowed")
                               );
                             }
 
-                            // ❌ more than 2 digits (>= 100)
-                            if (value.toString().length > 2) {
+                            // ❌ more than one dot
+                            if ((value.match(/\./g) || []).length > 1) {
                               return Promise.reject(
-                                new Error("Maximum 2 digits allowed (0–99)")
+                                new Error("Only one decimal point is allowed")
                               );
                             }
 
-                            // ❌ negative numbers
-                            if (value < 0) {
+                            // ❌ more than 2 decimal places
+                            if (!/^\d+(\.\d{0,2})?$/.test(value)) {
                               return Promise.reject(
-                                new Error("Negative values are not allowed")
+                                new Error(
+                                  "Maximum 2 digits allowed after decimal"
+                                )
+                              );
+                            }
+
+                            // ❌ max 2 digits before decimal
+                            const [intPart] = value.split(".");
+                            if (intPart.length > 2) {
+                              return Promise.reject(
+                                new Error(
+                                  "Maximum 2 digits allowed before decimal"
+                                )
                               );
                             }
 
@@ -1194,13 +1322,7 @@ const UpdateUserProfile = ({
                         },
                       ]}
                     >
-                      <InputNumber
-                        min={0}
-                        step={1}
-                        precision={0} // ✅ blocks decimals
-                        style={{ width: "100%" }}
-                        placeholder="e.g., 4 or 12"
-                      />
+                      <Input placeholder="e.g., 45 or 45.4 years" />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -1216,7 +1338,7 @@ const UpdateUserProfile = ({
                       },
 
                       {
-                        pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"]+$/,
+                        pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"\n\r]+$/,
                         message:
                           "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
                       },
@@ -1329,7 +1451,7 @@ const UpdateUserProfile = ({
 
           <Divider />
 
-          <div ref={sectionRefs.skills}>
+          <div>
             {renderSection({
               key: "skills",
               title: "Skills",
@@ -1341,7 +1463,7 @@ const UpdateUserProfile = ({
                 >
                   {/* PRIMARY SKILLS */}
 
-                  <Form.Item
+                  {/* <Form.Item
                     name="primarySkills"
                     rules={[
                       { required: true },
@@ -1364,11 +1486,52 @@ const UpdateUserProfile = ({
                       fetchFunction={GetSkills}
                       addFunction={PostSkills}
                     />
+                  </Form.Item> */}
+
+                  <Form.Item shouldUpdate noStyle>
+                    {() => {
+                      const error =
+                        form.getFieldError("primarySkills").length > 0;
+
+                      return (
+                        <Form.Item
+                          name="primarySkills"
+                          validateStatus={error ? "error" : ""}
+                          help={
+                            error ? "Please add at least one primary skill" : ""
+                          }
+                          rules={[
+                            {
+                              validator: (_, value) => {
+                                if (!value || value.length === 0) {
+                                  return Promise.reject(
+                                    new Error(
+                                      "Please add at least one primary skill"
+                                    )
+                                  );
+                                }
+                                return Promise.resolve();
+                              },
+                            },
+                          ]}
+                        >
+                          <SkillManagerCard
+                            title="Primary Skills"
+                            required
+                            skills={primarySkills}
+                            onSkillsChange={handlePrimarySkillsChange}
+                            fetchFunction={GetSkills}
+                            addFunction={PostSkills}
+                            hasError={error}
+                          />
+                        </Form.Item>
+                      );
+                    }}
                   </Form.Item>
 
                   {/* SECONDARY SKILLS */}
 
-                  <Form.Item name="secondarySkills">
+                  <Form.Item name="secondarySkills" style={{ marginTop: 24 }}>
                     <SkillManagerCard
                       title="Secondary Skills"
                       skills={secondarySkills}
@@ -1414,6 +1577,7 @@ const UpdateUserProfile = ({
                 >
                   <SkillManagerCard
                     title="Primary Clouds"
+                    required
                     skills={primaryClouds}
                     onSkillsChange={handlePrimaryCloudsChange}
                     fetchFunction={GetClouds}
@@ -1440,7 +1604,7 @@ const UpdateUserProfile = ({
 
           {/* Education */}
 
-          <div ref={sectionRefs.education}>
+          <div>
             {renderSection({
               key: "education",
               title: "Education",
@@ -1467,84 +1631,84 @@ const UpdateUserProfile = ({
 
           {/* Certifications */}
 
-          <div ref={sectionRefs.certifications}></div>
-          {renderSection({
-            key: "certifications",
-            title: "Certifications",
-            children: (
-              <Form.Item
-                label="Certifications"
-                name="certifications"
-                rules={[
-                  { required: true, message: "Please enter certifications!" },
-                ]}
-              >
-                <ReusableSelect
-                  placeholder="Select or add certifications"
-                  fetchFunction={GetCertifications}
-                  addFunction={PostCertifications}
-                  single={false}
-                  style={{ width: "100%" }}
-                  dropdownStyle={{ zIndex: 1050 }}
-                  popupClassName="cert-popup"
-                  tagRender={({ label, closable, onClose }) => (
-                    <div
-                      style={{
-                        background: "#E2EEFF",
-                        border: "0.5px solid #1677FF",
-                        borderRadius: 100,
-                        padding: "6px 12px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: "#111",
-                        cursor: "default",
-                        margin: "4px",
-                        maxWidth: "100%",
-                        boxSizing: "border-box",
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
-                      <span style={{ whiteSpace: "nowrap" }}>{label}</span>
+          <div>
+            {renderSection({
+              key: "certifications",
+              title: "Certifications",
+              children: (
+                <Form.Item
+                  label="Certifications"
+                  name="certifications"
+                  rules={[
+                    { required: true, message: "Please enter certifications!" },
+                  ]}
+                >
+                  <ReusableSelect
+                    placeholder="Select or add certifications"
+                    fetchFunction={GetCertifications}
+                    addFunction={PostCertifications}
+                    single={false}
+                    style={{ width: "100%" }}
+                    dropdownStyle={{ zIndex: 1050 }}
+                    popupClassName="cert-popup"
+                    tagRender={({ label, closable, onClose }) => (
+                      <div
+                        style={{
+                          background: "#E2EEFF",
+                          border: "0.5px solid #1677FF",
+                          borderRadius: 100,
+                          padding: "6px 12px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 8,
+                          fontSize: 14,
+                          fontWeight: 500,
+                          color: "#111",
+                          cursor: "default",
+                          margin: "4px",
+                          maxWidth: "100%",
+                          boxSizing: "border-box",
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <span style={{ whiteSpace: "nowrap" }}>{label}</span>
 
-                      {closable && (
-                        <span
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onClose();
-                          }}
-                          style={{
-                            cursor: "pointer",
-                            fontSize: 12,
-                            color: "#666",
-                            lineHeight: 1,
-                          }}
-                        >
-                          ×
-                        </span>
-                      )}
-                    </div>
-                  )}
-                />
-              </Form.Item>
-            ),
-          })}
-
+                        {closable && (
+                          <span
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onClose();
+                            }}
+                            style={{
+                              cursor: "pointer",
+                              fontSize: 12,
+                              color: "#666",
+                              lineHeight: 1,
+                            }}
+                          >
+                            ×
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  />
+                </Form.Item>
+              ),
+            })}
+          </div>
           <Divider />
 
           {/* Work Experience */}
 
-          <div ref={sectionRefs.experience}>
+          <div>
             {renderSection({
               key: "work-experience",
               title: "Work Experience",
@@ -1585,7 +1749,7 @@ const UpdateUserProfile = ({
                 style={{ width: "150px" }}
                 loading={submitLoading}
               >
-                Submit
+                {isEditMode ? "Update" : "Submit"}
               </Button>
               {/* <GenerateResume form={form} /> */}
             </div>

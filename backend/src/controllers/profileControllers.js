@@ -255,7 +255,8 @@ const uploadProfilePicture = async (req, res) => {
     fs.writeFileSync(savePath, req.file.buffer);
     logger.info("Profile picture saved to disk");
 
-    const fileUrl = `${process.env.BASE_URL}/uploads/${fileName}`;
+    // const fileUrl = `${process.env.BASE_URL}/uploads/${fileName}`;
+    const fileUrl = `${process.env.BACKEND_URL}/uploads/${fileName}`;
 
     return res.status(200).json({
       status: "success",

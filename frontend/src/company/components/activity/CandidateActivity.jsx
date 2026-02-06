@@ -16,14 +16,23 @@ import AddNoteModal from "./AddNoteModal";
 import AddScheduleModal from "./AddScheduleModal";
 import TodoList from "./TodoList";
 
-const CandidateActivity = ({ candidateId, jobId }) => {
+// const CandidateActivity = ({ candidateId, jobId }) => {
+const CandidateActivity = ({ candidateId, jobId, defaultTab }) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("ALL");
+  // const [activeTab, setActiveTab] = useState("ALL");
+  const [activeTab, setActiveTab] = useState(defaultTab || "NOTE");
+
   const [deletingId, setDeletingId] = useState(null);
   const [messageAPI, contextHolder] = message.useMessage();
+
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
 
   const fetchActivities = async () => {
     try {
@@ -109,33 +118,35 @@ const CandidateActivity = ({ candidateId, jobId }) => {
       {contextHolder}
 
       {/* ================= OUTER CARD ================= */}
+
       <div
         style={{
-          height: "100%",
+          height: "80vh", // ✅ fixed modal height
           display: "flex",
           flexDirection: "column",
           background: "#ffffff",
           border: "1px solid #EBEBEB",
           borderRadius: 10,
-          padding: 20,
         }}
       >
         {/* ================= HEADER ================= */}
-        <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 12 }}>
-          Activity
+        <div style={{ padding: "20px 20px 0 20px" }}>
+          <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 12 }}>
+            Activity
+          </div>
+
+          <Divider style={{ margin: "0 0 12px 0" }} />
+
+          {/* ================= TABS ================= */}
+          <Tabs activeKey={activeTab} items={items} onChange={setActiveTab} />
         </div>
-
-        <Divider style={{ margin: "0 0 12px 0" }} />
-
-        {/* ================= TABS ================= */}
-        <Tabs activeKey={activeTab} items={items} onChange={setActiveTab} />
-
         {/* ================= BODY ================= */}
+
         <div
           style={{
-            flex: 1,
-            overflowY: "auto",
-            // paddingRight: 8,
+            flex: 1, // fills space between header & footer
+            overflowY: "auto", // ✅ ONLY notes / todos scroll
+            padding: "0 20px",
           }}
         >
           {loading && (
@@ -223,8 +234,35 @@ const CandidateActivity = ({ candidateId, jobId }) => {
                       {item.category}
                     </Tag>
 
-                    <Popconfirm
+                    {/* <Popconfirm
                       title="Delete activity?"
+                      okText="Yes"
+                      cancelText="No"
+                      okButtonProps={{ loading: deletingId === item.id }}
+                      onConfirm={() => handleDelete(item.id)}
+                    >
+                      <Button type="link" danger>
+                        Delete
+                      </Button>
+                    </Popconfirm> */}
+
+                    <Popconfirm
+                      title={
+                        <div style={{ width: 280 }}>
+                          <div
+                            style={{
+                              fontSize: 16,
+                              fontWeight: 600,
+                              marginBottom: 10,
+                            }}
+                          >
+                            Delete activity?
+                          </div>
+                          <div style={{ fontSize: 14, color: "#667085" }}>
+                            Are you sure you want to delete this activity?
+                          </div>
+                        </div>
+                      }
                       okText="Yes"
                       cancelText="No"
                       okButtonProps={{ loading: deletingId === item.id }}
@@ -310,7 +348,27 @@ const CandidateActivity = ({ candidateId, jobId }) => {
         </div>
 
         {/* ================= FOOTER ================= */}
-        {renderFooterButtons()}
+        {/* {renderFooterButtons()} */}
+        {/* ================= FOOTER (FIXED) ================= */}
+        {activeTab !== "TODO" && (
+          <div
+            style={{
+              padding: "12px 20px",
+              borderTop: "1px solid #f0f0f0",
+              display: "flex",
+              justifyContent: "flex-end",
+              background: "#ffffff",
+            }}
+          >
+            <Button
+              type="primary"
+              style={{ borderRadius: 100 }}
+              onClick={() => setNoteOpen(true)}
+            >
+              Add Note
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* ================= MODALS ================= */}

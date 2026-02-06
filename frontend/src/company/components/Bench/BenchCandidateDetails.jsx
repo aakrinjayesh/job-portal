@@ -600,6 +600,7 @@ const BenchCandidateDetails = () => {
     joiningPeriod,
     totalExperience,
     relevantSalesforceExperience,
+    summary,
     skillsJson,
     primaryClouds,
     secondaryClouds,
@@ -633,7 +634,26 @@ const BenchCandidateDetails = () => {
       >
         <Row align="middle" justify="space-between">
           <Space size={15} align="center">
-            <Avatar size={70} icon={<UserOutlined />} />
+            {/* <Avatar size={70} icon={<UserOutlined />} /> */}
+            <Avatar
+              size={70}
+              src={
+                candidate?.profilePicture
+                  ? `${candidate.profilePicture}?t=${Date.now()}`
+                  : undefined
+              }
+              icon={!candidate?.profilePicture ? <UserOutlined /> : null}
+              style={{
+                backgroundColor: candidate?.profilePicture
+                  ? undefined
+                  : "#1677ff",
+                color: "#fff",
+                fontSize: 24,
+              }}
+              onError={(e) => {
+                e.currentTarget.src = "";
+              }}
+            />
 
             <Space direction="vertical" size={0}>
               <Text style={{ fontWeight: 600, fontSize: 20 }}>{name}</Text>
@@ -690,15 +710,49 @@ const BenchCandidateDetails = () => {
                 {/* ROW 1 */}
                 <div style={{ display: "flex", gap: 28 }}>
                   {/* <InfoItem label="Email" value={email} /> */}
-                  <InfoItem
+                  {/* <InfoItem
                     label={candidate.vendor?.email ? "POC Email" : "Email"}
                     value={
                       candidate.vendor?.email ? candidate.vendor.email : email
                     }
+                  /> */}
+                  <InfoItem
+                    label={candidate.vendor?.email ? "POC Email" : "Email"}
+                    value={
+                      candidate.vendor?.email || email ? (
+                        <a
+                          href={`mailto:${candidate.vendor?.email || email}`}
+                          style={{ color: "#1677ff" }}
+                        >
+                          {candidate.vendor?.email || email}
+                        </a>
+                      ) : (
+                        "-"
+                      )
+                    }
                   />
 
+                  {/* <InfoItem label="Phone" value={phoneNumber} /> */}
+                  {/* <InfoItem
+                    label="Phone Number"
+                    value={phoneNumber ? `+91 ${phoneNumber}` : "-"}
+                  />
+                  <InfoItem label="Title" value={title} /> */}
+                  <InfoItem
+                    label={
+                      candidate.vendor?.phoneNumber
+                        ? "POC Phone Number"
+                        : "Phone Number"
+                    }
+                    value={
+                      candidate.vendor?.phoneNumber || phoneNumber
+                        ? `+91 ${candidate.vendor?.phoneNumber || phoneNumber}`
+                        : "-"
+                    }
+                  />
+
+                  {/* TITLE */}
                   <InfoItem label="Title" value={title} />
-                  <InfoItem label="Phone" value={phoneNumber} />
                 </div>
 
                 {/* ROW 2 — EXPERIENCE (FIXED) */}
@@ -723,8 +777,8 @@ const BenchCandidateDetails = () => {
                 {/* ROW 3 */}
                 <div style={{ display: "flex", gap: 28 }}>
                   <InfoItem
-                    label="Preferred Job Type"
-                    value={preferredJobType?.join(", ")}
+                    label="Preferred Location"
+                    value={preferredLocation?.join(", ")}
                   />
 
                   <InfoItem
@@ -736,15 +790,55 @@ const BenchCandidateDetails = () => {
                     }
                   />
 
-                  <InfoItem label="LinkedIn" value={linkedInUrl} />
+                  {/* <InfoItem label="LinkedIn" value={linkedInUrl} /> */}
+                  <InfoItem label="Joining Period" value={joiningPeriod} />
                 </div>
 
                 {/* ROW 4 */}
                 <div style={{ display: "flex", gap: 28 }}>
                   <InfoItem label="Portfolio" value={portfolioLink} />
                   <InfoItem label="Trailhead" value={trailheadUrl} />
-                  <InfoItem label="Joining Period" value={joiningPeriod} />
+                  {/* <InfoItem label="Joining Period" value={joiningPeriod} /> */}
+                  <InfoItem label="LinkedIn" value={linkedInUrl} />
                 </div>
+              </div>
+            ),
+          },
+        ]}
+      />
+
+      <Divider />
+
+      {/* ================= SUMMARY ================= */}
+      <Collapse
+        bordered={false}
+        items={[
+          {
+            key: "summary",
+            label: (
+              <div
+                style={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "#1f1f1f",
+                  padding: "4px 0",
+                }}
+              >
+                Summary
+              </div>
+            ),
+            children: (
+              <div style={{ minHeight: 20 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#555",
+                    lineHeight: "20px",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {summary?.trim() ? summary : "No summary added"}
+                </Text>
               </div>
             ),
           },
@@ -815,7 +909,7 @@ const BenchCandidateDetails = () => {
       <Divider />
 
       {/* ===== CLOUDS ===== */}
-      <Collapse
+      {/* <Collapse
         bordered={false}
         items={[
           {
@@ -857,6 +951,103 @@ const BenchCandidateDetails = () => {
                   </Tag>
                 ))}
               </>
+            ),
+          },
+        ]}
+      /> */}
+
+      <Collapse
+        bordered={false}
+        items={[
+          {
+            key: "clouds",
+            label: (
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#1f1f1f" }}>
+                Clouds
+              </div>
+            ),
+            children: (
+              <>
+                <Text strong>Primary Clouds</Text>
+                <div style={{ marginTop: 8 }}>
+                  {primaryClouds?.length > 0 ? (
+                    primaryClouds.map((c, i) => (
+                      <Tag
+                        key={i}
+                        style={{
+                          background: "#E7F0FE",
+                          border: "1px solid #1677FF",
+                          borderRadius: 100,
+                          marginBottom: 10,
+                          marginRight: 8,
+                        }}
+                      >
+                        {c.name}
+                      </Tag>
+                    ))
+                  ) : (
+                    <Text type="secondary">-</Text>
+                  )}
+                </div>
+
+                {secondaryClouds?.length > 0 && (
+                  <>
+                    <Divider />
+                    <Text strong>Secondary Clouds</Text>
+                    <div style={{ marginTop: 8 }}>
+                      {secondaryClouds.map((c, i) => (
+                        <Tag
+                          key={i}
+                          style={{
+                            background: "#E7F0FE",
+                            border: "1px solid #1677FF",
+                            borderRadius: 100,
+                            marginBottom: 10,
+                            marginRight: 8,
+                          }}
+                        >
+                          {c.name}
+                        </Tag>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ),
+          },
+        ]}
+      />
+
+      <Divider />
+
+      {/* ================= CERTIFICATIONS ================= */}
+      <Collapse
+        bordered={false}
+        items={[
+          {
+            key: "certifications",
+            // label: <Title level={4}>Certificates</Title>,
+            label: (
+              <div
+                style={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "#1f1f1f",
+                  padding: "4px 0",
+                }}
+              >
+                Certificates
+              </div>
+            ),
+
+            children: (
+              <Space wrap>
+                {certifications?.map((cert, i) => (
+                  <Tag key={i} color="success">
+                    {cert}
+                  </Tag>
+                ))}
+              </Space>
             ),
           },
         ]}
@@ -943,10 +1134,50 @@ const BenchCandidateDetails = () => {
                   </div>
                 }
               >
-                {exp.projects?.map((proj, i) => (
+                {/* {exp.projects?.map((proj, i) => (
                   <Card key={i} size="small" style={{ marginTop: 8 }}>
                     <Text strong>{proj.projectName}</Text>
                     <p>{proj.projectDescription}</p>
+                  </Card>
+                ))} */}
+                {exp.projects?.map((proj, i) => (
+                  <Card
+                    key={i}
+                    size="small"
+                    style={{
+                      marginTop: 8,
+                      borderRadius: 8,
+                    }}
+                  >
+                    {/* Project Name */}
+                    <div style={{ marginBottom: 6 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>
+                        Project Name:&nbsp;
+                      </span>
+                      <span style={{ fontWeight: 600, fontSize: 15 }}>
+                        {proj.projectName || "-"}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <div style={{ marginBottom: 6 }}>
+                      <span style={{ fontWeight: 500, fontSize: 13 }}>
+                        Description:&nbsp;
+                      </span>
+                      <span style={{ fontSize: 13, color: "#555" }}>
+                        {proj.projectDescription || "-"}
+                      </span>
+                    </div>
+
+                    {/* Roles & Responsibilities */}
+                    <div>
+                      <span style={{ fontWeight: 500, fontSize: 13 }}>
+                        Roles & Responsibilities:&nbsp;
+                      </span>
+                      <span style={{ fontSize: 13, color: "#555" }}>
+                        {proj.rolesAndResponsibilities || "-"}
+                      </span>
+                    </div>
                   </Card>
                 ))}
               </Card>
@@ -956,39 +1187,6 @@ const BenchCandidateDetails = () => {
       />
 
       <Divider />
-
-      {/* ================= CERTIFICATIONS ================= */}
-      <Collapse
-        bordered={false}
-        items={[
-          {
-            key: "certifications",
-            // label: <Title level={4}>Certificates</Title>,
-            label: (
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: "#1f1f1f",
-                  padding: "4px 0",
-                }}
-              >
-                Certificates
-              </div>
-            ),
-
-            children: (
-              <Space wrap>
-                {certifications?.map((cert, i) => (
-                  <Tag key={i} color="success">
-                    {cert}
-                  </Tag>
-                ))}
-              </Space>
-            ),
-          },
-        ]}
-      />
 
       {/* ================= PDF TEMPLATE ================= */}
       <div style={{ display: "none" }}>

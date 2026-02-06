@@ -117,6 +117,16 @@ const RecruiterJobList = () => {
   //   };
   // }, [location.pathname]);
 
+  // ✅ ADD THIS FUNCTION HERE
+  const handleNext = async () => {
+    try {
+      await form.validateFields(); // validates required fields
+      setCurrentStep((prev) => prev + 1);
+    } catch (error) {
+      // AntD will show error automatically
+    }
+  };
+
   useEffect(() => {
     setInitialLoading(true);
     setPage(1);
@@ -164,6 +174,7 @@ const RecruiterJobList = () => {
   const showEditModal = (job) => {
     setIsEditing(true);
     setEditingJob(job);
+    setCurrentStep(0);
     if (job.jobType === "Remote") {
       setShowLocation(false);
     } else {
@@ -201,8 +212,14 @@ const RecruiterJobList = () => {
         }
       : undefined;
 
+    const locationArray =
+      typeof job.location === "string"
+        ? job.location.split(",").map((l) => l.trim())
+        : job.location;
+
     form.setFieldsValue({
       ...job,
+      location: locationArray,
       experience: experienceValue,
       ...salaryValues,
       applicationDeadline: job.applicationDeadline
@@ -279,7 +296,7 @@ const RecruiterJobList = () => {
       const response = await PostedJobsList(
         pageNumber,
         LIMIT,
-        controller.signal,
+        controller.signal
       );
 
       const newJobs = response?.jobs || [];
@@ -317,7 +334,7 @@ const RecruiterJobList = () => {
     setSelectedJobs((prev) =>
       prev.includes(jobId)
         ? prev.filter((id) => id !== jobId)
-        : [...prev, jobId],
+        : [...prev, jobId]
     );
   };
 
@@ -338,22 +355,26 @@ const RecruiterJobList = () => {
   const STEPS = [
     {
       key: "basic",
-      fields: ["upload", "role", "description", "responsibilities"],
+      fields: ["role", "description", "responsibilities"],
     },
     {
       key: "job",
-      fields: ["employmentType", "tenure", "experience", "experienceLevel"],
+      fields: [
+        "employmentType",
+        "tenure",
+        "experience",
+        "experienceLevel",
+        "jobType",
+      ],
     },
     {
       key: "location",
-      fields: ["jobType", "location", "clouds", "skills"],
+      fields: ["location", "clouds", "skills", "salary"],
     },
     {
-      key: "salary",
+      key: "company",
       fields: [
-        "salary",
         "companyName",
-        "companyLogo",
         "certifications",
         "applicationDeadline",
         "ApplicationLimit",
@@ -450,11 +471,12 @@ const RecruiterJobList = () => {
       setIsModalVisible(false);
       await fetchJobs();
       form.resetFields();
+      setCurrentStep(0);
     } catch (error) {
       console.error("Error saving job:", error);
       // messageApi.error("Failed to save job:" + error.response.data.message);
       messageApi.error(
-        error?.response?.data?.message?.message || "Failed to save job",
+        error?.response?.data?.message?.message || "Failed to save job"
       );
       messageApi.error(error?.response?.data?.message || "Failed to save job");
 
@@ -513,7 +535,7 @@ const RecruiterJobList = () => {
     } catch (error) {
       console.error(error);
       messageApi.error(
-        "Upload failed. Try again:" + error.response.data.message,
+        "Upload failed. Try again:" + error.response.data.message
       );
       setUploadLoading(false);
     } finally {
@@ -637,17 +659,23 @@ const RecruiterJobList = () => {
   };
 
   const STEP_ITEMS = [
-    { title: "Basic Info" },
-    { title: "Job Details" },
-    { title: "Location & Skills" },
-    { title: "Salary & Other" },
+    { title: "Basic Info", status: currentStep > 0 ? "finish" : "process" },
+    { title: "Job Details", status: currentStep > 1 ? "finish" : "process" },
+    {
+      title: "Location & Skills",
+      status: currentStep > 2 ? "finish" : "process",
+    },
+    {
+      title: " Other Details",
+      status: currentStep >= 3 ? "finish" : "process",
+    },
   ];
 
   const MAX_VISIBLE_TAGS = 3;
 
   return (
     <>
-      <div
+      {/* <div
         style={{
           width: "100%",
           padding: "16px 24px",
@@ -657,6 +685,19 @@ const RecruiterJobList = () => {
           justifyContent: "flex-end",
           marginBottom: 20,
         }}
+      > */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          width: "100%",
+          padding: "16px 24px",
+          background: "#FFFFFF",
+          borderBottom: "1px solid #EEEEEE",
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
       >
         <div
           style={{
@@ -665,23 +706,7 @@ const RecruiterJobList = () => {
           }}
         >
           {/* Delete Selected (Outlined / Disabled style) */}
-          {/* <div
-            style={{
-              height: 40,
-              borderRadius: 100,
-              border: "1px solid #EBEBEB",
-              padding: "0 24px",
-              display: "flex",
-              alignItems: "center",
-              color: selectedJobs.length === 0 ? "#A3A3A3" : "#000",
-              cursor: selectedJobs.length === 0 ? "not-allowed" : "pointer",
-            }}
-            onClick={() => {
-              if (selectedJobs.length > 0) showDeleteModal();
-            }}
-          >
-            Delete Selected
-          </div> */}
+
           <div
             style={{
               height: 40,
@@ -795,341 +820,359 @@ const RecruiterJobList = () => {
         </Form>
       </Modal>
 
-      <Row gutter={[16, 16]}>
-        {initialLoading ? (
-          <Col span={24}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "300px",
-              }}
-            >
-              <Spin size="large" />
-            </div>
-          </Col>
-        ) : (
-          <>
-            {jobs?.map((job) => (
-              <Col span={24} key={job.id}>
-                <Card
-                  hoverable
-                  onClick={() =>
-                    navigate(`/company/job/${job.id}`, {
-                      state: { source: "jobs", count: job.applicantCount },
-                    })
-                  }
-                  style={{
-                    borderRadius: 12,
-                    background: "#fff",
-                    padding: 16,
-                    cursor: "pointer",
-                    border: "1px solid #EEEEEE",
-                    height: 320, // ✅ UNIFORM HEIGHT
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  {/* 🔹 TOP SECTION */}
-                  <div
+      <div
+        style={{
+          height: "calc(100vh - 120px)", // 👈 important
+          overflowY: "auto",
+          padding: "24px 24px 24px",
+        }}
+      >
+        <Row gutter={[16, 16]}>
+          {initialLoading ? (
+            <Col span={24}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minHeight: "300px",
+                }}
+              >
+                <Spin size="large" />
+              </div>
+            </Col>
+          ) : (
+            <>
+              {jobs?.map((job) => (
+                <Col span={24} key={job.id}>
+                  <Card
+                    hoverable
+                    onClick={() =>
+                      navigate(`/company/job/${job.id}`, {
+                        state: { from: "myjobs", count: job.applicantCount },
+                      })
+                    }
                     style={{
+                      borderRadius: 12,
+                      background: "#fff",
+                      padding: 16,
+                      cursor: "pointer",
+                      border: "1px solid #EEEEEE",
+                      height: 320, // ✅ UNIFORM HEIGHT
                       display: "flex",
+                      flexDirection: "column",
                       justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      gap: 16,
-                      flexWrap: "wrap",
-                      minHeight: 90,
                     }}
                   >
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <Checkbox
-                        checked={selectedJobs.includes(job.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={() => handleSelect(job.id)}
-                      />
-
-                      {job.companyLogo ? (
-                        <img
-                          src={job.companyLogo}
-                          alt="logo"
-                          style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 8,
-                            border: "1px solid #F5F5F5",
-                            objectFit: "cover",
-                          }}
+                    {/* 🔹 TOP SECTION */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: 16,
+                        flexWrap: "wrap",
+                        minHeight: 90,
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <Checkbox
+                          checked={selectedJobs.includes(job.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => handleSelect(job.id)}
                         />
-                      ) : (
-                        <div
+
+                        {job.companyLogo ? (
+                          <img
+                            src={job.companyLogo}
+                            alt="logo"
+                            style={{
+                              width: 56,
+                              height: 56,
+                              borderRadius: 8,
+                              border: "1px solid #F5F5F5",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 56,
+                              height: 56,
+                              borderRadius: 12,
+                              background:
+                                "linear-gradient(135deg, #1677FF, #69B1FF)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 22,
+                              fontWeight: 700,
+                              color: "#FFFFFF",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {(job.companyName || job.role || job.title || "")
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                        )}
+
+                        <div style={{ maxWidth: 180 }}>
+                          <div
+                            style={{
+                              fontSize: 16,
+                              fontWeight: 600,
+                              color: "#212121",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {job.role || job.title}
+                          </div>
+
+                          <div
+                            style={{
+                              fontSize: 14,
+                              color: "#666",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {job.companyName}
+                          </div>
+
+                          <div style={{ fontSize: 12, color: "#A3A3A3" }}>
+                            Posted{" "}
+                            {job?.updatedAt
+                              ? dayjs(job.updatedAt).fromNow()
+                              : "Recently"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <Button
                           style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 12,
-                            background:
-                              "linear-gradient(135deg, #1677FF, #69B1FF)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 22,
-                            fontWeight: 700,
-                            color: "#FFFFFF",
-                            flexShrink: 0,
+                            background: "#F0F2F4",
+                            borderRadius: 100,
+                            color: "#666",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showEditModal(job);
                           }}
                         >
-                          {(job.companyName || job.role || job.title || "")
-                            .charAt(0)
-                            .toUpperCase()}
+                          Edit
+                        </Button>
+
+                        <Button
+                          style={{
+                            background: "#D1E4FF",
+                            borderRadius: 100,
+                            fontWeight: 600,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/company/candidates", {
+                              state: { id: job.id, jobRole: job.role },
+                            });
+                          }}
+                        >
+                          View Candidates ({job.applicantCount || 0})
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* 🔹 JOB META */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        flexWrap: "wrap",
+                        color: "#666",
+                        fontSize: 13,
+                        maxHeight: 42,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <span>
+                        <EnvironmentOutlined /> {job.jobType} ({job.location})
+                      </span>
+                      <Divider type="vertical" />
+                      <span>
+                        <DollarOutlined /> {job.salary} PA
+                      </span>
+                      <Divider type="vertical" />
+                      <span>
+                        <ClockCircleOutlined /> {job.employmentType}
+                      </span>
+                      <Divider type="vertical" />
+                      <span>
+                        <UserOutlined /> {job.experience?.number}{" "}
+                        {job.experience?.type}
+                      </span>
+                    </div>
+
+                    {/* 🔹 SKILLS + CLOUDS */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        flexWrap: "wrap",
+                        marginTop: 12,
+                        flexGrow: 1,
+                        overflow: "hidden",
+                      }}
+                    >
+                      {job.clouds?.length > 0 && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            flex: 1,
+                            padding: 12,
+                            border: "1px solid #EEEEEE",
+                            borderRadius: 8,
+                            minWidth: 220,
+                            height: 100, // ✅ fixed height
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>
+                            Related Clouds
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 6,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {job.clouds
+                              .slice(0, MAX_VISIBLE_TAGS)
+                              .map((cloud, i) => (
+                                <Tooltip title={cloud}>
+                                  <Tag
+                                    key={i}
+                                    style={{
+                                      background: "#E7F0FE",
+                                      borderRadius: 100,
+                                      border: "1px solid #1677FF",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      display: "inline-block",
+                                      maxWidth: 225,
+                                    }}
+                                  >
+                                    {cloud}
+                                  </Tag>
+                                </Tooltip>
+                              ))}
+
+                            {job.clouds.length > MAX_VISIBLE_TAGS && (
+                              <Tag
+                                style={{
+                                  borderRadius: 100,
+                                  background: "#F5F5F5",
+                                  border: "1px dashed #999",
+                                }}
+                              >
+                                +{job.clouds.length - MAX_VISIBLE_TAGS} more
+                              </Tag>
+                            )}
+                          </div>
                         </div>
                       )}
 
-                      <div style={{ maxWidth: 180 }}>
+                      {job.skills?.length > 0 && (
                         <div
+                          onClick={(e) => e.stopPropagation()}
                           style={{
-                            fontSize: 16,
-                            fontWeight: 600,
-                            color: "#212121",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
+                            flex: 1,
+                            padding: 12,
+                            border: "1px solid #EEEEEE",
+                            borderRadius: 8,
+                            minWidth: 220,
+                            height: 100, // ✅ fixed height
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
                           }}
                         >
-                          {job.role || job.title}
-                        </div>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>
+                            Related Skills
+                          </div>
 
-                        <div
-                          style={{
-                            fontSize: 14,
-                            color: "#666",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {job.companyName}
-                        </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 6,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {job.skills
+                              .slice(0, MAX_VISIBLE_TAGS)
+                              .map((skill, i) => (
+                                <Tooltip title={skill}>
+                                  <Tag
+                                    key={i}
+                                    style={{
+                                      background: "#FBEBFF",
+                                      borderRadius: 100,
+                                      border: "1px solid #800080",
+                                      maxWidth: 225,
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      display: "inline-block",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    {skill}
+                                  </Tag>
+                                </Tooltip>
+                              ))}
 
-                        <div style={{ fontSize: 12, color: "#A3A3A3" }}>
-                          Posted{" "}
-                          {job?.updatedAt
-                            ? dayjs(job.updatedAt).fromNow()
-                            : "Recently"}
+                            {job.skills.length > MAX_VISIBLE_TAGS && (
+                              <Tag
+                                style={{
+                                  borderRadius: 100,
+                                  background: "#F5F5F5",
+                                  border: "1px dashed #999",
+                                }}
+                              >
+                                +{job.skills.length - MAX_VISIBLE_TAGS} more
+                              </Tag>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <Button
-                        style={{
-                          background: "#F0F2F4",
-                          borderRadius: 100,
-                          color: "#666",
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showEditModal(job);
-                        }}
-                      >
-                        Edit
-                      </Button>
-
-                      <Button
-                        style={{
-                          background: "#D1E4FF",
-                          borderRadius: 100,
-                          fontWeight: 600,
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate("/company/candidates", {
-                            state: { id: job.id, jobRole: job.role },
-                          });
-                        }}
-                      >
-                        View Candidates ({job.applicantCount || 0})
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* 🔹 JOB META */}
+                  </Card>
+                </Col>
+              ))}
+              {loading && jobs.length > 0 && hasMore && (
+                <Col span={24}>
                   <div
                     style={{
                       display: "flex",
-                      gap: 10,
-                      flexWrap: "wrap",
-                      color: "#666",
-                      fontSize: 13,
-                      maxHeight: 42,
-                      overflow: "hidden",
+                      justifyContent: "center",
+                      padding: "24px 0",
                     }}
                   >
-                    <span>
-                      <EnvironmentOutlined /> {job.jobType} ({job.location})
-                    </span>
-                    <Divider type="vertical" />
-                    <span>
-                      <DollarOutlined /> {job.salary} PA
-                    </span>
-                    <Divider type="vertical" />
-                    <span>
-                      <ClockCircleOutlined /> {job.employmentType}
-                    </span>
-                    <Divider type="vertical" />
-                    <span>
-                      <UserOutlined /> {job.experience?.number}{" "}
-                      {job.experience?.type}
-                    </span>
+                    <Spin />
                   </div>
-
-                  {/* 🔹 SKILLS + CLOUDS */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      flexWrap: "wrap",
-                      marginTop: 12,
-                      flexGrow: 1,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {job.clouds?.length > 0 && (
-                      <div
-                        style={{
-                          flex: 1,
-                          padding: 12,
-                          border: "1px solid #EEEEEE",
-                          borderRadius: 8,
-                          minWidth: 220,
-                          height: 100, // ✅ fixed height
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>
-                          Related Clouds
-                        </div>
-
-                        <div
-                          style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
-                        >
-                          {job.clouds
-                            .slice(0, MAX_VISIBLE_TAGS)
-                            .map((cloud, i) => (
-                              <Tooltip title={cloud}>
-                                <Tag
-                                  key={i}
-                                  style={{
-                                    background: "#E7F0FE",
-                                    borderRadius: 100,
-                                    border: "1px solid #1677FF",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    display: "inline-block",
-                                    maxWidth: 225,
-                                  }}
-                                >
-                                  {cloud}
-                                </Tag>
-                              </Tooltip>
-                            ))}
-
-                          {job.clouds.length > MAX_VISIBLE_TAGS && (
-                            <Tag
-                              style={{
-                                borderRadius: 100,
-                                background: "#F5F5F5",
-                                border: "1px dashed #999",
-                              }}
-                            >
-                              +{job.clouds.length - MAX_VISIBLE_TAGS} more
-                            </Tag>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {job.skills?.length > 0 && (
-                      <div
-                        style={{
-                          flex: 1,
-                          padding: 12,
-                          border: "1px solid #EEEEEE",
-                          borderRadius: 8,
-                          minWidth: 220,
-                          height: 100, // ✅ fixed height
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>
-                          Related Skills
-                        </div>
-
-                        <div
-                          style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
-                        >
-                          {job.skills
-                            .slice(0, MAX_VISIBLE_TAGS)
-                            .map((skill, i) => (
-                              <Tooltip title={skill}>
-                                <Tag
-                                  key={i}
-                                  style={{
-                                    background: "#FBEBFF",
-                                    borderRadius: 100,
-                                    border: "1px solid #800080",
-                                    maxWidth: 225,
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    display: "inline-block",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  {skill}
-                                </Tag>
-                              </Tooltip>
-                            ))}
-
-                          {job.skills.length > MAX_VISIBLE_TAGS && (
-                            <Tag
-                              style={{
-                                borderRadius: 100,
-                                background: "#F5F5F5",
-                                border: "1px dashed #999",
-                              }}
-                            >
-                              +{job.skills.length - MAX_VISIBLE_TAGS} more
-                            </Tag>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-            ))}
-            {loading && jobs.length > 0 && hasMore && (
-              <Col span={24}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    padding: "24px 0",
-                  }}
-                >
-                  <Spin />
-                </div>
-              </Col>
-            )}
-          </>
-        )}
-      </Row>
+                </Col>
+              )}
+            </>
+          )}
+        </Row>
+      </div>
 
       <Modal
         // title={isEditing ? "Edit Job Post" : "Create Job Post"}
@@ -1212,7 +1255,13 @@ const RecruiterJobList = () => {
                     <Button
                       icon={<OpenAIOutlined />}
                       style={{ marginLeft: 10 }}
-                      onClick={() => setAiModalVisible(true)}
+                      // onClick={
+                      //   () =>
+                      //     setAiModalVisible(true)}
+                      onClick={() => {
+                        aiForm.resetFields(); // 🔥 clear old values
+                        setAiModalVisible(true);
+                      }}
                     >
                       Generate JD using AI
                     </Button>
@@ -1240,10 +1289,9 @@ const RecruiterJobList = () => {
                     rules={[
                       { required: true },
                       {
-                        pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
-
+                        pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n•+]*$/,
                         message:
-                          "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+                          'Only letters, numbers, spaces and . , / - ( ) + % " : are allowed!',
                       },
                     ]}
                   >
@@ -1259,16 +1307,6 @@ const RecruiterJobList = () => {
                     name="responsibilities"
                     label="Roles & Responsibilities"
                     rules={[
-                      // { required: true },
-                      // {
-                      //   pattern: /^[A-Za-z0-9 ]+$/,
-                      //   message: "Only letters, numbers, and spaces are allowed",
-                      // },
-                      // {
-                      //   pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
-                      //   message:
-                      //     "Only letters, numbers, spaces and . , / - ( ) are allowed!",
-                      // },
                       {
                         pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
 
@@ -1299,14 +1337,12 @@ const RecruiterJobList = () => {
                       onChange={(value) => {
                         // Show Tenure for Part Time, Contract, Freelancer
                         setShowTenure(
-                          ["Contract", "PartTime", "Freelancer"].includes(
-                            value,
-                          ),
+                          ["Contract", "PartTime", "Freelancer"].includes(value)
                         );
 
                         if (
                           !["Contract", "PartTime", "Freelancer"].includes(
-                            value,
+                            value
                           )
                         ) {
                           form.setFieldsValue({ tenure: undefined }); // clear if not needed
@@ -1453,7 +1489,7 @@ const RecruiterJobList = () => {
                           validator: (_, value) => {
                             if (value && value.length > 3) {
                               return Promise.reject(
-                                "You can select up to 3 locations only",
+                                "You can select up to 3 locations only"
                               );
                             }
                             return Promise.resolve();
@@ -1484,7 +1520,7 @@ const RecruiterJobList = () => {
 
                           if (value.length > 12) {
                             return Promise.reject(
-                              new Error("You can select up to 12 clouds only"),
+                              new Error("You can select up to 12 clouds only")
                             );
                           }
 
@@ -1525,27 +1561,80 @@ const RecruiterJobList = () => {
                   </Checkbox>
 
                   {!isSalaryRange ? (
+                    // <Form.Item
+                    //   name="salary"
+                    //   label="Salary Per Annum"
+                    //   rules={[
+                    //     { required: true },
+                    //     {
+                    //       validator: (_, value) => {
+                    //         if (value === undefined || value === null)
+                    //           return Promise.resolve();
+
+                    //         // convert to string safely
+                    //         const str = value.toString();
+
+                    //         // remove decimal point
+                    //         const digitsOnly = str.replace(".", "");
+
+                    //         if (digitsOnly.length > 10) {
+                    //           return Promise.reject(
+                    //             new Error(
+                    //               "Maximum 10 digits allowed (including decimals)"
+                    //             )
+                    //           );
+                    //         }
+
+                    //         return Promise.resolve();
+                    //       },
+                    //     },
+                    //   ]}
+                    // >
+                    //   <InputNumber
+                    //     formatter={formatter}
+                    //     style={{ width: "100%" }}
+                    //     min={0}
+                    //     precision={8}
+                    //     placeholder="e.g. 500000 PA"
+                    //   />
+                    // </Form.Item>
+
                     <Form.Item
                       name="salary"
                       label="Salary Per Annum"
                       rules={[
-                        { required: true },
+                        { required: true, message: "Salary is required" },
                         {
                           validator: (_, value) => {
-                            if (value === undefined || value === null)
+                            if (
+                              value === undefined ||
+                              value === null ||
+                              value === ""
+                            ) {
                               return Promise.resolve();
+                            }
 
-                            // convert to string safely
+                            // value may look like: "4,00,000"
                             const str = value.toString();
 
-                            // remove decimal point
-                            const digitsOnly = str.replace(".", "");
+                            // remove commas for validation only
+                            const withoutCommas = str.replace(/,/g, "");
+
+                            // ❌ letters or special characters
+                            if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
+                              return Promise.reject(
+                                new Error("Only numbers are allowed")
+                              );
+                            }
+
+                            // remove decimal point for digit count
+                            const digitsOnly = withoutCommas.replace(".", "");
 
                             if (digitsOnly.length > 10) {
                               return Promise.reject(
                                 new Error(
-                                  "Maximum 10 digits allowed (including decimals)",
-                                ),
+                                  "Maximum 10 digits allowed (including decimals)"
+                                )
                               );
                             }
 
@@ -1554,17 +1643,106 @@ const RecruiterJobList = () => {
                         },
                       ]}
                     >
-                      <InputNumber
-                        formatter={formatter}
+                      <Input
                         style={{ width: "100%" }}
-                        min={0}
-                        precision={8}
-                        placeholder="e.g. 500000 PA"
+                        placeholder="e.g. 4,00,000"
                       />
                     </Form.Item>
                   ) : (
+                    // <Form.Item label="Salary Range (Per Annum)">
+                    //   <Space.Compact style={{ width: "100%" }}>
+                    //     <Form.Item
+                    //       name={["salary", "min"]}
+                    //       noStyle
+                    //       rules={[
+                    //         { required: true, message: "Min salary required" },
+                    //         {
+                    //           validator: (_, value) => {
+                    //             if (value === undefined || value === null)
+                    //               return Promise.resolve();
+
+                    //             // convert to string safely
+                    //             const str = value.toString();
+
+                    //             // remove decimal point
+                    //             const digitsOnly = str.replace(".", "");
+
+                    //             if (digitsOnly.length > 10) {
+                    //               return Promise.reject(
+                    //                 new Error(
+                    //                   "Maximum 10 digits allowed (including decimals)"
+                    //                 )
+                    //               );
+                    //             }
+
+                    //             return Promise.resolve();
+                    //           },
+                    //         },
+                    //       ]}
+                    //     >
+                    //       <InputNumber
+                    //         formatter={formatter}
+                    //         placeholder="Min e.g. 500000 PA"
+                    //         min={0}
+                    //         precision={8}
+                    //         style={{ width: "50%" }}
+                    //       />
+                    //     </Form.Item>
+
+                    //     <Form.Item
+                    //       name={["salary", "max"]}
+                    //       noStyle
+                    //       rules={[
+                    //         { required: true, message: "Max salary required" },
+                    //         {
+                    //           validator: (_, value) => {
+                    //             if (value === undefined || value === null)
+                    //               return Promise.resolve();
+
+                    //             // convert to string safely
+                    //             const str = value.toString();
+
+                    //             // remove decimal point
+                    //             const digitsOnly = str.replace(".", "");
+
+                    //             if (digitsOnly.length > 10) {
+                    //               return Promise.reject(
+                    //                 new Error(
+                    //                   "Maximum 10 digits allowed (including decimals)"
+                    //                 )
+                    //               );
+                    //             }
+
+                    //             return Promise.resolve();
+                    //           },
+                    //         },
+                    //         ({ getFieldValue }) => ({
+                    //           validator(_, value) {
+                    //             const min = getFieldValue(["salary", "min"]);
+                    //             if (min && value && value < min) {
+                    //               return Promise.reject(
+                    //                 "Max salary must be greater than Min salary"
+                    //               );
+                    //             }
+                    //             return Promise.resolve();
+                    //           },
+                    //         }),
+                    //       ]}
+                    //     >
+                    //       <InputNumber
+                    //         formatter={formatter}
+                    //         placeholder="Max e.g. 800000 PA"
+                    //         min={0}
+                    //         precision={8}
+                    //         style={{ width: "50%" }}
+                    //       />
+                    //     </Form.Item>
+                    //   </Space.Compact>
+                    // </Form.Item>
+
                     <Form.Item label="Salary Range (Per Annum)">
                       <Space.Compact style={{ width: "100%" }}>
+                        {/* MIN SALARY */}
                         <Form.Item
                           name={["salary", "min"]}
                           noStyle
@@ -1572,20 +1750,36 @@ const RecruiterJobList = () => {
                             { required: true, message: "Min salary required" },
                             {
                               validator: (_, value) => {
-                                if (value === undefined || value === null)
+                                if (
+                                  value === undefined ||
+                                  value === null ||
+                                  value === ""
+                                )
                                   return Promise.resolve();
 
-                                // convert to string safely
                                 const str = value.toString();
 
+                                // remove commas only for validation
+                                const withoutCommas = str.replace(/,/g, "");
+
+                                // ❌ letters or special characters
+                                if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
+                                  return Promise.reject(
+                                    new Error("Only numbers are allowed")
+                                  );
+                                }
+
                                 // remove decimal point
-                                const digitsOnly = str.replace(".", "");
+                                const digitsOnly = withoutCommas.replace(
+                                  ".",
+                                  ""
+                                );
 
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)",
-                                    ),
+                                      "Maximum 10 digits allowed (including decimals)"
+                                    )
                                   );
                                 }
 
@@ -1594,15 +1788,13 @@ const RecruiterJobList = () => {
                             },
                           ]}
                         >
-                          <InputNumber
-                            formatter={formatter}
-                            placeholder="Min e.g. 500000 PA"
-                            min={0}
-                            precision={8}
+                          <Input
+                            placeholder="Min e.g. 5,00,000 PA"
                             style={{ width: "50%" }}
                           />
                         </Form.Item>
 
+                        {/* MAX SALARY */}
                         <Form.Item
                           name={["salary", "max"]}
                           noStyle
@@ -1610,20 +1802,33 @@ const RecruiterJobList = () => {
                             { required: true, message: "Max salary required" },
                             {
                               validator: (_, value) => {
-                                if (value === undefined || value === null)
+                                if (
+                                  value === undefined ||
+                                  value === null ||
+                                  value === ""
+                                )
                                   return Promise.resolve();
 
-                                // convert to string safely
                                 const str = value.toString();
+                                const withoutCommas = str.replace(/,/g, "");
 
-                                // remove decimal point
-                                const digitsOnly = str.replace(".", "");
+                                // ❌ letters or special characters
+                                if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
+                                  return Promise.reject(
+                                    new Error("Only numbers are allowed")
+                                  );
+                                }
+
+                                const digitsOnly = withoutCommas.replace(
+                                  ".",
+                                  ""
+                                );
 
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)",
-                                    ),
+                                      "Maximum 10 digits allowed (including decimals)"
+                                    )
                                   );
                                 }
 
@@ -1633,21 +1838,27 @@ const RecruiterJobList = () => {
                             ({ getFieldValue }) => ({
                               validator(_, value) {
                                 const min = getFieldValue(["salary", "min"]);
-                                if (min && value && value < min) {
-                                  return Promise.reject(
-                                    "Max salary must be greater than Min salary",
-                                  );
+                                if (min && value) {
+                                  const minVal = min
+                                    .toString()
+                                    .replace(/,/g, "");
+                                  const maxVal = value
+                                    .toString()
+                                    .replace(/,/g, "");
+
+                                  if (Number(maxVal) < Number(minVal)) {
+                                    return Promise.reject(
+                                      "Max salary must be greater than Min salary"
+                                    );
+                                  }
                                 }
                                 return Promise.resolve();
                               },
                             }),
                           ]}
                         >
-                          <InputNumber
-                            formatter={formatter}
-                            placeholder="Max e.g. 800000 PA"
-                            min={0}
-                            precision={8}
+                          <Input
+                            placeholder="Max e.g. 8,00,000 PA"
                             style={{ width: "50%" }}
                           />
                         </Form.Item>
@@ -1717,19 +1928,33 @@ const RecruiterJobList = () => {
                   <Form.Item
                     name="ApplicationLimit"
                     label="Limit Applications"
-                    validateTrigger="onChange" // ✅ show error while typing
+                    validateTrigger="onChange"
                     rules={[
                       {
                         validator: (_, value) => {
-                          if (value === undefined || value === null) {
-                            return Promise.resolve(); // optional
+                          if (
+                            value === undefined ||
+                            value === null ||
+                            value === ""
+                          ) {
+                            return Promise.resolve();
                           }
 
-                          if (value > 500) {
+                          // ❌ letters or special characters
+                          if (!/^\d+$/.test(value)) {
+                            return Promise.reject(
+                              new Error("Only numbers are allowed")
+                            );
+                          }
+
+                          const num = Number(value);
+
+                          // ❌ more than 500
+                          if (num > 500) {
                             return Promise.reject(
                               new Error(
-                                "Only up to 500 applications are allowed",
-                              ),
+                                "Only up to 500 applications are allowed"
+                              )
                             );
                           }
 
@@ -1738,14 +1963,7 @@ const RecruiterJobList = () => {
                       },
                     ]}
                   >
-                    <InputNumber
-                      min={1}
-                      max={500}
-                      style={{ width: "100%" }}
-                      placeholder="e.g. 100"
-                      keyboard
-                      parser={(value) => value.replace(/\D/g, "")} // numbers only
-                    />
+                    <Input placeholder="e.g. 100" inputMode="numeric" />
                   </Form.Item>
                 </>
               )}
@@ -1770,28 +1988,42 @@ const RecruiterJobList = () => {
           )}
 
           {/* Next button */}
+
           {/* {currentStep < STEPS.length - 1 && (
             <Button
               type="primary"
-              onClick={() => setCurrentStep((prev) => prev + 1)}
+              onClick={async () => {
+                try {
+                  await form.validateFields(STEPS[currentStep].fields);
+                  setCurrentStep((prev) => prev + 1);
+                } catch (e) {
+                  // stay on same step
+                }
+              }}
             >
               Next
             </Button>
           )} */}
 
-          <Button
-            type="primary"
-            onClick={async () => {
-              try {
-                await form.validateFields(STEPS[currentStep].fields);
-                setCurrentStep((prev) => prev + 1);
-              } catch (e) {
-                // stay on same step
-              }
-            }}
-          >
-            Next
-          </Button>
+          {currentStep < STEPS.length - 1 && (
+            <Button
+              type="primary"
+              onClick={async () => {
+                try {
+                  // 🔥 validate ONLY current step fields
+                  await form.validateFields(STEPS[currentStep].fields);
+
+                  // ✅ go to next step ONLY if valid
+                  setCurrentStep((prev) => prev + 1);
+                } catch (err) {
+                  // ❌ validation failed
+                  // AntD automatically shows error messages
+                }
+              }}
+            >
+              Next
+            </Button>
+          )}
 
           {/* Final Create / Update */}
           {currentStep === STEPS.length - 1 && (
@@ -1975,7 +2207,16 @@ const RecruiterJobList = () => {
           <div style={{ width: 602 }}>
             <Form layout="vertical" form={aiForm} onFinish={handleAiGenerateJD}>
               {/* Job Title */}
-              <Form.Item label="Job Title(role)" name="role">
+              <Form.Item
+                label="Job Title(role)"
+                name="role"
+                rules={[
+                  {
+                    required: true,
+                    message: "Job title is required",
+                  },
+                ]}
+              >
                 <ReusableSelect
                   placeholder="Select or add Role"
                   fetchFunction={GetRole}
@@ -1988,20 +2229,38 @@ const RecruiterJobList = () => {
               <Form.Item
                 label="Experience (Years)"
                 name="experience"
+                validateTrigger="onChange"
                 rules={[
                   { required: true, message: "Experience is required" },
                   {
-                    pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-                    message:
-                      "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+
+                      // ❌ letters or special characters
+                      if (/[^0-9.]/.test(value)) {
+                        return Promise.reject(
+                          new Error("Only numbers are allowed")
+                        );
+                      }
+
+                      // ❌ more than 2 digits before or after decimal
+                      if (!/^[0-9]{1,2}(\.[0-9]{1,2})?$/.test(value)) {
+                        return Promise.reject(
+                          new Error(
+                            "Maximum 2 digits allowed with up to 2 decimal places"
+                          )
+                        );
+                      }
+
+                      return Promise.resolve();
+                    },
                   },
                 ]}
               >
-                <InputNumber
-                  style={{ width: "100%", borderRadius: 8, height: 36 }}
-                  placeholder="Eg 3"
-                  min={0}
-                  stringMode
+                <Input
+                  placeholder="Eg 3, 10, 5.5"
+                  inputMode="decimal"
+                  maxLength={5} // 99.99
                 />
               </Form.Item>
 
@@ -2037,7 +2296,7 @@ const RecruiterJobList = () => {
 
                       if (wordCount > 1000) {
                         return Promise.reject(
-                          new Error("Maximum 1000 words allowed"),
+                          new Error("Maximum 1000 words allowed")
                         );
                       }
 
@@ -2050,6 +2309,8 @@ const RecruiterJobList = () => {
                   rows={4}
                   placeholder="Anything special you want to include?"
                   style={{ borderRadius: 8 }}
+                  maxLength={5000} // ✅ stops typing after 5000
+                  showCount // ✅ shows character counter
                 />
               </Form.Item>
 

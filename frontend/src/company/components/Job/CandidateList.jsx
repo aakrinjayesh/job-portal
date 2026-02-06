@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { GetCandidateDeatils } from "../../api/api";
 import { EyeOutlined } from "@ant-design/icons";
 import { Popover } from "antd";
+import CandidateActivity from "../activity/CandidateActivity";
 
 import {
   MarkCandidateReviewed,
@@ -34,6 +35,9 @@ const CandidateList = () => {
   const [candidateType, setCandidateType] = useState("ALL");
 
   const [searchText, setSearchText] = useState("");
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
+  const [activityCandidate, setActivityCandidate] = useState(null);
+  const [activityTab, setActivityTab] = useState("NOTE");
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -127,23 +131,20 @@ const CandidateList = () => {
   const DEFAULT_FLAG_COLOR = "#BFBFBF";
 
   const STATUS_FLAG_MAP = {
-    Pending: { label: "Pending", color: "#bfbfbf" },
-    Reviewed: { label: "Reviewed", color: "#1890ff" },
-    Shortlisted: { label: "Shortlisted", color: "#52c41a" },
+    // Pending: { label: "Pending", color: "#bfbfbf" },
+    // Reviewed: { label: "Reviewed", color: "#1890ff" },
+    // Shortlisted: { label: "Shortlisted", color: "#52c41a" },
     Rejected: { label: "Rejected", color: "#f5222d" },
     Bookmark: { label: "Bookmark", color: "#faad14" }, // gold
-    Clear: { label: "Clear", color: "#1677ff" },
+    // Clear: { label: "Clear", color: "#ff16ecff" },
   };
 
-  // const MANUAL_STATUS_OPTIONS = [
-  //   "Shortlisted", "Pending", "Rejected", "Clear","Bookmark",];
-
   const MANUAL_STATUS_OPTIONS = [
-    "Pending",
-    "Shortlisted",
+    // "Pending",
+    // "Shortlisted",
     "Rejected",
     "Bookmark",
-    "Clear",
+    // "Clear",
   ];
 
   // Triangle flag (same as Figma)
@@ -216,9 +217,9 @@ const CandidateList = () => {
   };
 
   const FLAG_FILTER_STATUSES = [
-    "Pending",
-    "Reviewed",
-    "Shortlisted",
+    // "Pending",
+    // "Reviewed",
+    // "Shortlisted",
     "Rejected",
     "Bookmark",
   ];
@@ -313,12 +314,49 @@ const CandidateList = () => {
       },
     },
 
+    // {
+    //   title: "Name",
+    //   dataIndex: "name",
+    //   key: "name",
+    //   fixed: "left",
+    //   // sorter: (a, b) => a.name.localeCompare(b.name),
+    // },
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
       fixed: "left",
-      // sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (text, record) => (
+        <span
+          onClick={async (e) => {
+            e.stopPropagation();
+
+            try {
+              await MarkCandidateReviewed({
+                jobApplicationId: record.applicationId,
+              });
+            } catch {}
+
+            setCandidates((prev) =>
+              prev.map((c) =>
+                c.applicationId === record.applicationId
+                  ? { ...c, status: "Reviewed" }
+                  : c
+              )
+            );
+
+            navigate(`/company/candidate/${record.profile.id}`, {
+              state: {
+                candidate: { ...record, status: "Reviewed" },
+                jobId,
+              },
+            });
+          }}
+          style={{ color: "#1677ff", cursor: "pointer" }}
+        >
+          {text}
+        </span>
+      ),
     },
 
     {
@@ -583,49 +621,57 @@ const CandidateList = () => {
       key: "actions",
       fixed: "right",
       align: "center",
-      render: (_, record) => (
-        <EyeOutlined
-          style={{
-            fontSize: 18, // 👁 icon size
-            color: "#595959", // same grey as screenshot
-            cursor: "pointer",
-          }}
-          onClick={async (e) => {
-            e.stopPropagation();
-
-            // ✅ 1. Try marking reviewed (do NOT block navigation)
-            try {
-              if (record?.id) {
-                await MarkCandidateReviewed({
-                  // jobApplicationId: record.id,
-                  // jobApplicationId: record.jobApplicationId,
-                  jobApplicationId: record.applicationId,
-                });
-              }
-            } catch (err) {
-              console.warn("Mark reviewed failed, continuing navigation");
-            }
-
-            // ✅ 2. Update UI optimistically
-            setCandidates((prev) =>
-              prev.map((c) =>
-                // c.id === record.id
-                c.applicationId === record.applicationId
-                  ? { ...c, status: "Reviewed" }
-                  : c
-              )
-            );
-
-            // ✅ 3. ALWAYS navigate
-            navigate(`/company/candidate/${record.profile.id}`, {
-              state: {
-                candidate: { ...record, status: "Reviewed" },
-                jobId,
-              },
+      render: (_, record) => {
+        const openActivityOnly = async (type) => {
+          try {
+            await MarkCandidateReviewed({
+              jobApplicationId: record.applicationId,
             });
-          }}
-        />
-      ),
+          } catch {}
+
+          setCandidates((prev) =>
+            prev.map((c) =>
+              c.applicationId === record.applicationId
+                ? { ...c, status: "Reviewed" }
+                : c
+            )
+          );
+
+          // ✅ OPEN MODAL INSTEAD
+          setActivityCandidate(record);
+          setActivityTab(type); // "NOTE" or "TODO"
+          setActivityModalOpen(true);
+        };
+
+        return (
+          <Popover
+            trigger="click"
+            placement="left"
+            content={
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div
+                  style={{ cursor: "pointer", padding: "6px 10px" }}
+                  onClick={() => openActivityOnly("NOTE")}
+                >
+                  📝 Notes
+                </div>
+
+                <div
+                  style={{ cursor: "pointer", padding: "6px 10px" }}
+                  onClick={() => openActivityOnly("TODO")}
+                >
+                  ✅ Todo
+                </div>
+              </div>
+            }
+          >
+            <EyeOutlined
+              style={{ fontSize: 18, cursor: "pointer" }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Popover>
+        );
+      },
     },
   ];
 
@@ -649,15 +695,6 @@ const CandidateList = () => {
       >
         {/* LEFT SIDE – TOGGLES */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/company/jobs")}
-            style={{ marginBottom: 8, marginRight: 10 }}
-          >
-            Back
-          </Button> */}
-
           {/* ALL */}
           <div
             onClick={() => setCandidateType("ALL")}
@@ -869,6 +906,34 @@ const CandidateList = () => {
           />
         </Modal>
       </Spin>
+
+      <Modal
+        open={activityModalOpen}
+        footer={null}
+        width={420}
+        destroyOnClose
+        closable
+        closeIcon={
+          <span
+            style={{
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#595959",
+            }}
+          >
+            ✕
+          </span>
+        }
+        onCancel={() => setActivityModalOpen(false)}
+      >
+        {activityCandidate && (
+          <CandidateActivity
+            candidateId={activityCandidate.profile.id} // ✅ PROFILE ID
+            jobId={jobId}
+            defaultTab={activityTab}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

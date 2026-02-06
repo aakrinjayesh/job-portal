@@ -118,157 +118,161 @@ const CandidateJobDetails = () => {
         Back
       </Button>
 
-     <Card
-  style={{
-    borderRadius: 14,
-    border: "1px solid #f0f0f0",
-    boxShadow: "none",
-    padding: 24
-  }}
->
-  {/* ===== HEADER ===== */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-    }}
-  >
-    <div>
-      <Title level={4} style={{ marginBottom: 0 }}>
-        {job.role}
-      </Title>
-      <Text type="secondary">{job.companyName}</Text>
-    </div>
-
-    <Tag
-      color={job.status === "Closed" ? "error" : "success"}
-      style={{
-        borderRadius: 20,
-        padding: "2px 12px",
-        fontSize: 12,
-      }}
-    >
-      {job.status}
-    </Tag>
-  </div>
-
-  <Divider style={{ margin: "16px 0" }} />
-
-  {/* ===== DETAILS GRID ===== */}
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
-      gap: 20,
-    }}
-  >
-    <div>
-      <Text strong>Employment Type</Text>
-      <div>{job.employmentType}</div>
-    </div>
-
-    <div>
-      <Text strong>Experience Required</Text>
-      <div>
-        {job.experience?.number} {job.experience?.type}
-      </div>
-    </div>
-
-    <div>
-      <Text strong>Salary</Text>
-      <div>₹ {job.salary} LPA</div>
-    </div>
-
-    <div>
-      <Text strong>Location</Text>
-      <div>{job.location}</div>
-    </div>
-
-    <div>
-      <Text strong>Job Type</Text>
-      <div>{job.jobType}</div>
-    </div>
-
-    <div>
-      <Text strong>Work Shift</Text>
-      <div>{job.workShift || "Morning Shift"}</div>
-    </div>
-  </div>
-
-  <Divider style={{ margin: "16px 0" }} />
-  {/* ===== CLOUDS ===== */}
-  <Text strong>Clouds:</Text>
-  <div
-    style={{
-      marginTop: 8,
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 8,
-    }}
-  >
-    {job.clouds?.map((cloud, i) => (
-      <Tag
-        key={i}
+      <Card
         style={{
-                              background: "#E7F0FE",
-                              borderRadius: 100,
-                              border: "1px solid #1677FF",
-                            }}
-      >
-        {cloud}
-      </Tag>
-    ))}
-  </div>
-
-   <Divider style={{ margin: "16px 0" }} />
-
-  {/* ===== SKILLS ===== */}
-  <Text strong>Skills:</Text>
-  <div
-    style={{
-      marginTop: 8,
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 8,
-    }}
-  >
-    {job.skills?.map((skill, i) => (
-      <Tag
-        key={i}
-        style={{
-          background: "#FBEBFF",
-          borderRadius: 100,
-          border: "1px solid #800080",
+          borderRadius: 14,
+          border: "1px solid #f0f0f0",
+          boxShadow: "none",
+          padding: 24,
         }}
       >
-        {skill}
-      </Tag>
-    ))}
-  </div>
+        {/* ===== HEADER ===== */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
+        >
+          <div>
+            <Title level={4} style={{ marginBottom: 0 }}>
+              {job.role}
+            </Title>
+            <Text type="secondary">{job.companyName}</Text>
+          </div>
 
-  <Divider style={{ margin: "16px 0" }} />
+          <Tag
+            color={job.status === "Closed" ? "error" : "success"}
+            style={{
+              borderRadius: 20,
+              padding: "2px 12px",
+              fontSize: 12,
+            }}
+          >
+            {job.status}
+          </Tag>
+        </div>
 
-  {/* ===== DESCRIPTION ===== */}
-  <Text strong>Description</Text>
-  <Paragraph style={{ marginTop: 6, color: "#555" }}>
-    {job.description}
-  </Paragraph>
+        <Divider style={{ margin: "16px 0" }} />
 
-  <Divider />
+        {/* ===== DETAILS GRID ===== */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 20,
+          }}
+        >
+          <div>
+            <Text strong>Employment Type</Text>
+            <div>{job.employmentType}</div>
+          </div>
 
-  {/* ===== APPLY BUTTON ===== */}
-  <Button
-    type="primary"
-    onClick={handleApply}
-    loading={ApplyLoading}
-    disabled={isApplied || type === "apply"}
-    style={{ borderRadius: 8 }}
-  >
-    {isApplied || type === "apply" ? "Applied" : "Apply Now"}
-  </Button>
-</Card>
+          <div>
+            <Text strong>Experience Required</Text>
+            <div>
+              {job.experience?.number} {job.experience?.type}
+            </div>
+          </div>
 
+          <div>
+            <Text strong>Salary</Text>
+            <div>₹ {job.salary} LPA</div>
+          </div>
+
+          <div>
+            <Text strong>Location</Text>
+            <div>{job.location}</div>
+          </div>
+
+          <div>
+            <Text strong>Job Type</Text>
+            <div>{job.jobType}</div>
+          </div>
+
+          <div>
+            <Text strong>Work Shift</Text>
+            <div>{job.workShift || "Morning Shift"}</div>
+          </div>
+        </div>
+
+        <Divider style={{ margin: "16px 0" }} />
+        {/* ===== CLOUDS ===== */}
+        <Text strong>Clouds:</Text>
+        <div
+          style={{
+            marginTop: 8,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          {job.clouds?.map((cloud, i) => (
+            <Tag
+              key={i}
+              style={{
+                background: "#E7F0FE",
+                borderRadius: 100,
+                border: "1px solid #1677FF",
+              }}
+            >
+              {cloud}
+            </Tag>
+          ))}
+        </div>
+
+        <Divider style={{ margin: "16px 0" }} />
+
+        {/* ===== SKILLS ===== */}
+        <Text strong>Skills:</Text>
+        <div
+          style={{
+            marginTop: 8,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          {job.skills?.map((skill, i) => (
+            <Tag
+              key={i}
+              style={{
+                background: "#FBEBFF",
+                borderRadius: 100,
+                border: "1px solid #800080",
+              }}
+            >
+              {skill}
+            </Tag>
+          ))}
+        </div>
+
+        <Divider style={{ margin: "16px 0" }} />
+
+        {/* ===== DESCRIPTION ===== */}
+        <Text strong>Description</Text>
+        <Paragraph style={{ marginTop: 6, color: "#555" }}>
+          {job.description}
+        </Paragraph>
+        <Divider style={{ margin: "16px 0" }} />
+        <Text strong>Roles and Responsibilities</Text>
+        <Paragraph style={{ marginTop: 6, color: "#555" }}>
+          {job.rolesAndResponsibilities}
+        </Paragraph>
+
+        <Divider />
+
+        {/* ===== APPLY BUTTON ===== */}
+        <Button
+          type="primary"
+          onClick={handleApply}
+          loading={ApplyLoading}
+          disabled={isApplied || type === "apply"}
+          style={{ borderRadius: 8 }}
+        >
+          {isApplied || type === "apply" ? "Applied" : "Apply Now"}
+        </Button>
+      </Card>
     </div>
   );
 };

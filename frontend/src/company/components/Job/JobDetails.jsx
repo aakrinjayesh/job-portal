@@ -72,20 +72,57 @@ const JobDetails = () => {
         }}
       >
         {/* ===== HEADER ===== */}
+
         <div
           style={{
             display: "flex",
+            alignItems: "center",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            width: "100%",
           }}
         >
-          <div>
-            <Title level={4} style={{ marginBottom: 0 }}>
-              {job.role}
-            </Title>
-            <Text type="secondary">{job.companyName}</Text>
+          {/* LEFT SIDE */}
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            {job.companyLogo ? (
+              <img
+                src={job.companyLogo}
+                alt="logo"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 8,
+                  objectFit: "cover",
+                  border: "1px solid #E5E7EB",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg, #1677FF, #69B1FF)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                }}
+              >
+                {(job.companyName || job.role || "").charAt(0).toUpperCase()}
+              </div>
+            )}
+
+            <div>
+              <Title level={4} style={{ marginBottom: 0 }}>
+                {job.role}
+              </Title>
+              <Text type="secondary">{job.companyName}</Text>
+            </div>
           </div>
 
+          {/* RIGHT SIDE */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {source === "jobs" && (
               <Button
@@ -99,6 +136,7 @@ const JobDetails = () => {
                 View Candidates ({count || 0})
               </Button>
             )}
+
             <Tag
               color={job.status === "Closed" ? "error" : "success"}
               style={{

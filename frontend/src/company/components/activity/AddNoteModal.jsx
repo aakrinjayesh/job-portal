@@ -1,5 +1,13 @@
 import React from "react";
-import { Modal, Form, Input, Select, message, DatePicker } from "antd";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  message,
+  DatePicker,
+  TimePicker,
+} from "antd";
 import dayjs from "dayjs";
 import { CreateActivity } from "../../api/api";
 import { useState } from "react";
@@ -123,12 +131,18 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                   pattern: /^[A-Za-z0-9 ]+$/,
                   message: "Only letters, numbers, and spaces are allowed",
                 },
+                {
+                  max: 30,
+                  message: "Subject cannot exceed 30 characters",
+                },
               ]}
             >
               <Input
                 placeholder="Spoke"
                 bordered={false}
                 style={{ fontSize: 13 }}
+                maxLength={30}
+                showCount
               />
             </Form.Item>
           </div>
@@ -184,23 +198,6 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               padding: "6px 8px",
             }}
           >
-            {/* <Form.Item
-              name="time"
-              noStyle
-              rules={[{ required: true, message: "Time is required" }]}
-            >
-              <DatePicker.RangePicker
-                bordered={false}
-                showTime
-                use12Hours
-                format="h:mm a"
-                style={{ width: "100%" }}
-                disabledDate={(current) =>
-                  current && current < dayjs().startOf("day")
-                }
-              />
-            </Form.Item> */}
-
             <Form.Item
               name="time"
               noStyle
@@ -237,7 +234,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                 },
               ]}
             >
-              <DatePicker.RangePicker
+              {/* <DatePicker.RangePicker
                 bordered={false}
                 showTime
                 use12Hours
@@ -273,6 +270,31 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
 
                   return {};
                 }}
+              /> */}
+
+              <TimePicker.RangePicker
+                bordered={false}
+                use12Hours
+                format="h:mm a"
+                style={{ width: "100%" }}
+                minuteStep={1}
+                disabledTime={(date, type) => {
+                  const now = dayjs();
+
+                  // ⛔ block past time for today (only for start time)
+                  if (type === "start") {
+                    return {
+                      disabledHours: () =>
+                        Array.from({ length: now.hour() }, (_, i) => i),
+                      disabledMinutes: (hour) =>
+                        hour === now.hour()
+                          ? Array.from({ length: now.minute() }, (_, i) => i)
+                          : [],
+                    };
+                  }
+
+                  return {};
+                }}
               />
             </Form.Item>
           </div>
@@ -294,25 +316,6 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               padding: 8,
             }}
           >
-            {/* <Form.Item
-              name="description"
-              noStyle
-              rules={[
-                { required: true, message: "Description is required" },
-                {
-                  pattern: /^[A-Za-z0-9 ,./()\[\]{}]+$/,
-                  message:
-                    "Only letters, numbers, spaces, and , . / ( ) [ ] { } are allowed",
-                },
-              ]}
-            >
-              <Input.TextArea
-                rows={3}
-                placeholder="Note Description"
-                bordered={false}
-                style={{ fontSize: 13 }}
-              />
-            </Form.Item> */}
             <Form.Item
               name="description"
               noStyle
@@ -323,6 +326,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                   message:
                     "Only letters, numbers, spaces, and , . / ( ) [ ] { } are allowed",
                 },
+
                 {
                   validator: (_, value) => {
                     if (!value) return Promise.resolve();
@@ -341,6 +345,10 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                     return Promise.resolve();
                   },
                 },
+                {
+                  max: 1000,
+                  message: "Description cannot exceed 1000 characters",
+                },
               ]}
             >
               <Input.TextArea
@@ -348,6 +356,8 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                 placeholder="Note Description"
                 bordered={false}
                 style={{ fontSize: 13 }}
+                maxLength={1000} // ⬅ character limit
+                showCount
               />
             </Form.Item>
           </div>

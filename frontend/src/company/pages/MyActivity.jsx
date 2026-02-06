@@ -136,68 +136,76 @@ const MyActivity = () => {
                           <Divider />
 
                           {/* CANDIDATE LIST */}
-                          <List
-                            dataSource={jobBlock.candidates}
-                            renderItem={(item) => (
-                              <Card
-                                hoverable
-                                onClick={() =>
-                                  handleSelectCandidate(
-                                    item.candidate.id,
-                                    jobBlock.job.id
-                                  )
-                                }
-                                style={{
-                                  marginBottom: 16,
-                                  borderRadius: 16,
-                                  background:
-                                    activeCandidateId === item.candidate.id
-                                      ? "#F4F9FF"
-                                      : "#fff",
-                                  border:
-                                    activeCandidateId === item.candidate.id
-                                      ? "1px solid #1677FF"
-                                      : "1px solid #E3E3E3",
-                                  cursor: "pointer",
-                                }}
-                                bodyStyle={{ padding: 24 }}
-                              >
-                                <div style={{ display: "flex", gap: 12 }}>
-                                  <Avatar size={44}>
-                                    {item.candidate.name
-                                      .charAt(0)
-                                      .toUpperCase()}
-                                  </Avatar>
-
-                                  <div>
-                                    <Text strong>{item.candidate.name}</Text>
-                                    <br />
-                                    <Text type="secondary">
-                                      {item.candidate.email}
-                                    </Text>
-                                  </div>
-                                </div>
-
-                                <div
+                          <div
+                            style={{
+                              maxHeight: 320, // 👈 height for 2 cards
+                              overflowY: "auto", // 👈 enable scroll
+                              paddingRight: 8, // 👈 space for scrollbar
+                            }}
+                          >
+                            <List
+                              dataSource={jobBlock.candidates}
+                              renderItem={(item) => (
+                                <Card
+                                  hoverable
+                                  onClick={() =>
+                                    handleSelectCandidate(
+                                      item.candidate.id,
+                                      jobBlock.job.id
+                                    )
+                                  }
                                   style={{
-                                    marginTop: 16,
-                                    display: "flex",
-                                    gap: 8,
+                                    marginBottom: 16,
+                                    borderRadius: 16,
+                                    background:
+                                      activeCandidateId === item.candidate.id
+                                        ? "#F4F9FF"
+                                        : "#fff",
+                                    border:
+                                      activeCandidateId === item.candidate.id
+                                        ? "1px solid #1677FF"
+                                        : "1px solid #E3E3E3",
+                                    cursor: "pointer",
                                   }}
+                                  bodyStyle={{ padding: 24 }}
                                 >
-                                  <Tag color="blue">
-                                    Total Activities :{item.totalActivities}
-                                  </Tag>
-                                  <Tag color="blue">
-                                    Last Activity :
-                                    {new Date(
-                                      item.lastActivityAt
-                                    ).toLocaleDateString()}
-                                  </Tag>
-                                </div>
-                              </Card>
-                            )}
-                          />
+                                  <div style={{ display: "flex", gap: 12 }}>
+                                    <Avatar size={44}>
+                                      {item.candidate.name
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </Avatar>
+
+                                    <div>
+                                      <Text strong>{item.candidate.name}</Text>
+                                      <br />
+                                      <Text type="secondary">
+                                        {item.candidate.email}
+                                      </Text>
+                                    </div>
+                                  </div>
+
+                                  <div
+                                    style={{
+                                      marginTop: 16,
+                                      display: "flex",
+                                      gap: 8,
+                                    }}
+                                  >
+                                    <Tag color="blue">
+                                      Total Activities :{item.totalActivities}
+                                    </Tag>
+                                    <Tag color="blue">
+                                      Last Activity :
+                                      {new Date(
+                                        item.lastActivityAt
+                                      ).toLocaleDateString()}
+                                    </Tag>
+                                  </div>
+                                </Card>
+                              )}
+                            />
+                          </div>
                         </>
                       ),
                     },

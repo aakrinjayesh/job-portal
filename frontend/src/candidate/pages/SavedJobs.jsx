@@ -47,7 +47,7 @@ function SavedJobs() {
       }
     } catch (error) {
       console.error("Error fetching saved job list:", error);
-      message.error("Error fetching saved jobs:"+error.response.data.message);
+      message.error("Error fetching saved jobs:" + error.response.data.message);
     } finally {
       setLoading(false);
     }
@@ -111,6 +111,7 @@ function SavedJobs() {
           jobids={ids}
           portal={"candidate"}
           onUnsave={handleRemoveJob}
+          hideSortAndFilter={true}
         />
       ) : (
         <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>

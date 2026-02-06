@@ -1,6 +1,14 @@
 import React, { useRef, useState, useEffect } from "react";
 import { PlusOutlined } from "@ant-design/icons";
-import { Button, Divider, Input, Select, Space, message ,Typography} from "antd";
+import {
+  Button,
+  Divider,
+  Input,
+  Select,
+  Space,
+  message,
+  Typography,
+} from "antd";
 
 const ReusableSelect = ({
   value,
@@ -12,7 +20,7 @@ const ReusableSelect = ({
   style = { width: "100%" },
   className = "",
   single = true,
-   tagRender, 
+  tagRender,
 }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +29,10 @@ const ReusableSelect = ({
   const [messageAPI, contextHolder] = message.useMessage();
   const inputRef = useRef(null);
   const { Text } = Typography;
-const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
+  const [searchValue, setSearchValue] = useState("");
+
+  const SEARCH_REGEX = /^[A-Za-z0-9 ]*$/;
 
   // Fetch items on component mount
   useEffect(() => {
@@ -50,23 +61,20 @@ const [error, setError] = useState("");
   // };
 
   const onNameChange = (event) => {
-  const val = event.target.value;
+    const val = event.target.value;
 
-  // Allow only valid characters
-  const regex = /^[A-Za-z][A-Za-z0-9 .,\/-]*$/;
+    // Allow only valid characters
+    const regex = /^[A-Za-z][A-Za-z0-9 .,\/-]*$/;
 
- if (val === "" || regex.test(val)) {
+    if (val === "" || regex.test(val)) {
       setName(val);
       // clear error as soon as input becomes valid
       if (error) setError("");
     } else {
       // do not update name if invalid char typed, but show inline error
-      setError(
-        "Special Characters Are Not Allowed!"
-      );
+      setError("Special Characters Are Not Allowed!");
     }
-};
-
+  };
 
   const addItem = async (e) => {
     e.preventDefault();
@@ -85,17 +93,17 @@ const [error, setError] = useState("");
     //   );
     //   return;
     // }
-      // ⭐ ADD THIS BLOCK HERE (VALIDATION)
-  //     const trimmed = name.trim();
+    // ⭐ ADD THIS BLOCK HERE (VALIDATION)
+    //     const trimmed = name.trim();
 
-  // const isValid = /^[A-Za-z][A-Za-z0-9 .,\-\/]*$/.test(trimmed);
+    // const isValid = /^[A-Za-z][A-Za-z0-9 .,\-\/]*$/.test(trimmed);
 
-  // if (!isValid) {
-  //   messageAPI.error(
-  //     "Invalid format. Must start with a letter and can contain letters, numbers, space, '.', ',', '/', '-'"
-  //   );
-  //   return;
-  // }
+    // if (!isValid) {
+    //   messageAPI.error(
+    //     "Invalid format. Must start with a letter and can contain letters, numbers, space, '.', ',', '/', '-'"
+    //   );
+    //   return;
+    // }
 
     if (!addFunction) {
       messageAPI.error("Add function not provided");
@@ -144,19 +152,28 @@ const [error, setError] = useState("");
       {contextHolder}
       <Select
         // mode={single === false && "multiple"}
-          mode={single === false ? "multiple" : undefined}
-  showSearch   // ⭐ ADD THIS LINE
-  optionFilterProp="label"
+        mode={single === false ? "multiple" : undefined}
+        searchValue={searchValue}
+        showSearch // ⭐ ADD THIS LINE
+        optionFilterProp="label"
         style={style}
         placement={"topLeft"}
         className={className}
         placeholder={placeholder}
         tagRender={tagRender}
         // value={value}
-        value={value || []}  
+        value={value || []}
         onChange={onSelectChange}
         disabled={disabled}
         loading={loading}
+        onSearch={(val) => {
+          if (SEARCH_REGEX.test(val)) {
+            setSearchValue(val); // ✅ allow
+          } else {
+            message.error("Special characters are not allowed in search");
+            // ❌ do NOT update searchValue → character never appears
+          }
+        }}
         filterOption={(input, option) =>
           (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
         }
@@ -185,8 +202,8 @@ const [error, setError] = useState("");
               </Button>
             </Space>
 
-             {error ? (
-              <div style={{ padding: "4px 12px 12px", width: "100%", }}>
+            {error ? (
+              <div style={{ padding: "4px 12px 12px", width: "100%" }}>
                 <Text type="danger">{error}</Text>
               </div>
             ) : null}

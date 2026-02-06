@@ -53,6 +53,9 @@ const Bench = () => {
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [otpExpired, setOtpExpired] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpTimers, setOtpTimers] = useState({});
+  const [activeOtpCandidateId, setActiveOtpCandidateId] = useState(null);
 
   // add near other useState() calls
   const [verifiedCount, setVerifiedCount] = useState(0);
@@ -86,21 +89,30 @@ const Bench = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    let interval = null;
+    if (!activeOtpCandidateId) return;
 
-    if (isCounting && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-    }
+    const current = otpTimers[activeOtpCandidateId];
+    if (!current?.isCounting) return;
 
-    if (timer === 0 && isCounting) {
-      setIsCounting(false);
-      setOtpExpired(true); // mark OTP expired
-    }
+    const interval = setInterval(() => {
+      setOtpTimers((prev) => {
+        const currentTimer = prev[activeOtpCandidateId];
+        if (!currentTimer) return prev;
+
+        const nextTimer = currentTimer.timer - 1;
+
+        return {
+          ...prev,
+          [activeOtpCandidateId]: {
+            timer: Math.max(nextTimer, 0),
+            isCounting: nextTimer > 0, // ✅ STOP when reaches 0
+          },
+        };
+      });
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [isCounting, timer]);
+  }, [activeOtpCandidateId, otpTimers[activeOtpCandidateId]?.isCounting]);
 
   useEffect(() => {
     if (isModalVisible) {
@@ -113,6 +125,12 @@ const Bench = () => {
       document.body.style.overflow = "";
     };
   }, [isModalVisible]);
+
+  useEffect(() => {
+    if (otp.length === 6) {
+      setIsCounting(false);
+    }
+  }, [otp]);
 
   // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
@@ -217,10 +235,10 @@ const Bench = () => {
         if (res?.status === "success") {
           message.success("Candidate updated successfully!");
           setAllCandidates((prev) =>
-            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand)),
+            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand))
           );
           setCandidates((prev) =>
-            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand)),
+            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand))
           );
 
           // ✅ Recalculate counts after editing
@@ -257,8 +275,10 @@ const Bench = () => {
   };
 
   // 🔹 Open Verify Modal
+
   const openVerifyModal = (record) => {
     setVerifyCandidate(record);
+    setActiveOtpCandidateId(record.id);
     setOtp("");
     setVerifyModalVisible(true);
   };
@@ -280,8 +300,16 @@ const Bench = () => {
 
         setOtp("");
         setOtpExpired(false);
-        setTimer(60);
-        setIsCounting(true);
+
+        setOtpTimers((prev) => ({
+          ...prev,
+          [verifyCandidate.id]: {
+            timer: 60,
+            isCounting: true,
+          },
+        }));
+
+        setOtpSent(true);
       } else {
         message.error(res?.message || "Failed to send OTP");
       }
@@ -311,13 +339,13 @@ const Bench = () => {
         message.success("Candidate verified successfully!");
         setAllCandidates((prev) =>
           prev.map((c) =>
-            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c,
-          ),
+            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
+          )
         );
         setCandidates((prev) =>
           prev.map((c) =>
-            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c,
-          ),
+            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
+          )
         );
         // Update counters immediately:
         setVerifiedCount((v) => v + 1);
@@ -372,7 +400,7 @@ const Bench = () => {
         selectedRowKeys.includes(c.id)
           ? //  { ...c, status: status === "active" }
             { ...c, status }
-          : c,
+          : c
       );
       setAllCandidates(updated);
       setCandidates(updated);
@@ -882,7 +910,7 @@ const Bench = () => {
           cand.skillsJson?.map((s) => s.name.toLowerCase()) || [];
 
         const hasAllSkills = skills.every((skill) =>
-          candSkills.includes(skill.toLowerCase()),
+          candSkills.includes(skill.toLowerCase())
         );
 
         if (!hasAllSkills) return false;
@@ -894,7 +922,7 @@ const Bench = () => {
           cand.primaryClouds?.map((c) => c.name.toLowerCase()) || [];
 
         const matchesSomeCloud = clouds.some((cloud) =>
-          candClouds.includes(cloud.toLowerCase()),
+          candClouds.includes(cloud.toLowerCase())
         );
 
         if (!matchesSomeCloud) return false;
@@ -906,7 +934,7 @@ const Bench = () => {
           cand.preferredLocation?.map((loc) => loc.toLowerCase()) || [];
 
         const matchesPrefLoc = preferredLocation.some((loc) =>
-          candPrefLocs.includes(loc.toLowerCase()),
+          candPrefLocs.includes(loc.toLowerCase())
         );
 
         if (!matchesPrefLoc) return false;
@@ -917,7 +945,7 @@ const Bench = () => {
         const candCurrLoc = (cand.currentLocation || "").toLowerCase();
 
         const matchesCurrLoc = currentLocation.some((loc) =>
-          candCurrLoc.includes(loc.toLowerCase()),
+          candCurrLoc.includes(loc.toLowerCase())
         );
 
         if (!matchesCurrLoc) return false;
@@ -928,7 +956,7 @@ const Bench = () => {
         const candJoin = (cand.joiningPeriod || "").toLowerCase();
 
         const matchesJoin = joiningPeriod.some((jp) =>
-          candJoin.includes(jp.toLowerCase()),
+          candJoin.includes(jp.toLowerCase())
         );
 
         if (!matchesJoin) return false;
@@ -1132,8 +1160,8 @@ const Bench = () => {
             activeTab === "all"
               ? candidates
               : activeTab === "active"
-                ? candidates.filter((c) => c.status !== "inactive")
-                : candidates.filter((c) => c.status === "inactive")
+              ? candidates.filter((c) => c.status !== "inactive")
+              : candidates.filter((c) => c.status === "inactive")
           }
           rowKey={(record) => record.id || record.name}
           pagination={{ pageSize: 5 }}
@@ -1377,123 +1405,6 @@ const Bench = () => {
 
       {/* ✅ Enhanced Verification Modal */}
 
-      {/* <Modal
-        title={
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span
-              style={{
-                background: "#1677ff",
-                color: "white",
-                borderRadius: "50%",
-                width: 30,
-                height: 30,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontWeight: "bold",
-              }}
-            >
-              🔐
-            </span>
-            <span style={{ fontSize: 18, fontWeight: 600 }}>
-              Verify Candidate
-            </span>
-          </div>
-        }
-        open={verifyModalVisible}
-        onCancel={() => setVerifyModalVisible(false)}
-        footer={null}
-        centered
-        bodyStyle={{ padding: "24px 32px" }}
-      >
-        <div
-          style={{
-            background: "#f8f9fa",
-            padding: "16px 20px",
-            borderRadius: 10,
-            marginBottom: 20,
-            border: "1px solid #e5e5e5",
-          }}
-        >
-          <p style={{ marginBottom: 0, fontSize: 15 }}>
-            <b>Email:</b>{" "}
-            <span style={{ color: "#1677ff", fontWeight: 500 }}>
-              {verifyCandidate?.email || "-"}
-            </span>
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
-        >
-          <Button
-            type="primary"
-            icon={<i className="ri-mail-send-line" />}
-            onClick={handleSendOtp}
-            loading={otpSending}
-            disabled={otpSending || isCounting}
-            style={{
-              width: "100%",
-              height: 40,
-              fontWeight: 600,
-              fontSize: 15,
-            }}
-          >
-            {otpSending
-              ? "Sending..."
-              : isCounting
-              ? `Resend OTP in ${timer}s`
-              : "Send OTP"}
-          </Button>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
-            }}
-          >
-            <Input
-              placeholder="Enter 6-digit OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-              style={{
-                flex: 1,
-                height: 40,
-                borderRadius: 6,
-                fontSize: 15,
-                textAlign: "center",
-                letterSpacing: 3,
-              }}
-            />
-
-            <Button
-              type="primary"
-              onClick={handleVerifyOtp}
-              loading={otpVerifying}
-              disabled={!otp || otpVerifying || otpExpired} // ⬅ IMPORTANT
-              style={{
-                width: 100,
-                height: 40,
-                fontWeight: 600,
-                fontSize: 15,
-              }}
-            >
-              {otpExpired
-                ? "Expired"
-                : otpVerifying
-                ? "Verifying..."
-                : "Verify"}
-            </Button>
-          </div>
-        </div>
-      </Modal> */}
-
       <Modal
         open={verifyModalVisible}
         footer={null}
@@ -1571,7 +1482,8 @@ const Bench = () => {
           <Button
             onClick={handleSendOtp}
             loading={otpSending}
-            disabled={otpSending || isCounting}
+            // disabled={otpSending || isCounting}
+            disabled={otpSending || otpTimers[verifyCandidate?.id]?.isCounting}
             style={{
               height: 40,
               borderRadius: 100,
@@ -1664,7 +1576,13 @@ const Bench = () => {
           }}
         >
           <div style={{ color: "#06C270", fontSize: 14 }}>
-            {isCounting ? `00:${timer.toString().padStart(2, "0")}` : ""}
+            {/* {isCounting ? `00:${timer.toString().padStart(2, "0")}` : ""} */}
+            {otpTimers[verifyCandidate?.id]?.isCounting &&
+            otpTimers[verifyCandidate?.id]?.timer > 0
+              ? `00:${otpTimers[verifyCandidate.id].timer
+                  .toString()
+                  .padStart(2, "0")}`
+              : ""}
           </div>
           <div style={{ color: "#666", fontSize: 14 }}>{otp.length}/6</div>
         </div>
