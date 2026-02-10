@@ -186,7 +186,7 @@ const RecruiterJobList = () => {
 
     // ✅ ADD THIS — decide tenure visibility in EDIT mode
     const shouldShowTenure = ["Contract", "PartTime", "Freelancer"].includes(
-      job.employmentType
+      job.employmentType,
     );
     setShowTenure(shouldShowTenure);
     setIsModalVisible(true);
@@ -306,7 +306,7 @@ const RecruiterJobList = () => {
       const response = await PostedJobsList(
         pageNumber,
         LIMIT,
-        controller.signal
+        controller.signal,
       );
 
       const newJobs = response?.jobs || [];
@@ -344,7 +344,7 @@ const RecruiterJobList = () => {
     setSelectedJobs((prev) =>
       prev.includes(jobId)
         ? prev.filter((id) => id !== jobId)
-        : [...prev, jobId]
+        : [...prev, jobId],
     );
   };
 
@@ -369,13 +369,6 @@ const RecruiterJobList = () => {
     },
     {
       key: "job",
-      // fields: [
-      //   "employmentType",
-      //   "tenure",
-      //   "experience",
-      //   "experienceLevel",
-      //   "jobType",
-      // ],
       fields: [
         "employmentType",
         ["tenure", "number"],
@@ -518,7 +511,7 @@ const RecruiterJobList = () => {
       console.error("Error saving job:", error);
       // messageApi.error("Failed to save job:" + error.response.data.message);
       messageApi.error(
-        error?.response?.data?.message?.message || "Failed to save job"
+        error?.response?.data?.message?.message || "Failed to save job",
       );
       messageApi.error(error?.response?.data?.message || "Failed to save job");
 
@@ -577,7 +570,7 @@ const RecruiterJobList = () => {
     } catch (error) {
       console.error(error);
       messageApi.error(
-        "Upload failed. Try again:" + error.response.data.message
+        "Upload failed. Try again:" + error.response.data.message,
       );
       setUploadLoading(false);
     } finally {
@@ -896,7 +889,7 @@ const RecruiterJobList = () => {
                     hoverable
                     onClick={() =>
                       navigate(`/company/job/${job.id}`, {
-                        state: { from: "myjobs", count: job.applicantCount },
+                        state: { source: "myjobs", count: job.applicantCount },
                       })
                     }
                     style={{
@@ -1086,7 +1079,6 @@ const RecruiterJobList = () => {
                           Edit
                         </Button>
 
-                        {/* VIEW CANDIDATES */}
                         <Button
                           style={{
                             background: "#D1E4FF",
@@ -1659,7 +1651,7 @@ const RecruiterJobList = () => {
                           validator: (_, value) => {
                             if (value && value.length > 3) {
                               return Promise.reject(
-                                "You can select up to 3 locations only"
+                                "You can select up to 3 locations only",
                               );
                             }
                             return Promise.resolve();
@@ -1690,7 +1682,7 @@ const RecruiterJobList = () => {
 
                           if (value.length > 12) {
                             return Promise.reject(
-                              new Error("You can select up to 12 clouds only")
+                              new Error("You can select up to 12 clouds only"),
                             );
                           }
 
@@ -1793,7 +1785,7 @@ const RecruiterJobList = () => {
                             // ❌ letters or special characters
                             if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
                               return Promise.reject(
-                                new Error("Only numbers are allowed")
+                                new Error("Only numbers are allowed"),
                               );
                             }
 
@@ -1803,8 +1795,8 @@ const RecruiterJobList = () => {
                             if (digitsOnly.length > 10) {
                               return Promise.reject(
                                 new Error(
-                                  "Maximum 10 digits allowed (including decimals)"
-                                )
+                                  "Maximum 10 digits allowed (including decimals)",
+                                ),
                               );
                             }
 
@@ -1935,21 +1927,21 @@ const RecruiterJobList = () => {
                                 // ❌ letters or special characters
                                 if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed")
+                                    new Error("Only numbers are allowed"),
                                   );
                                 }
 
                                 // remove decimal point
                                 const digitsOnly = withoutCommas.replace(
                                   ".",
-                                  ""
+                                  "",
                                 );
 
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)"
-                                    )
+                                      "Maximum 10 digits allowed (including decimals)",
+                                    ),
                                   );
                                 }
 
@@ -1985,20 +1977,20 @@ const RecruiterJobList = () => {
                                 // ❌ letters or special characters
                                 if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed")
+                                    new Error("Only numbers are allowed"),
                                   );
                                 }
 
                                 const digitsOnly = withoutCommas.replace(
                                   ".",
-                                  ""
+                                  "",
                                 );
 
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)"
-                                    )
+                                      "Maximum 10 digits allowed (including decimals)",
+                                    ),
                                   );
                                 }
 
@@ -2018,7 +2010,7 @@ const RecruiterJobList = () => {
 
                                   if (Number(maxVal) < Number(minVal)) {
                                     return Promise.reject(
-                                      "Max salary must be greater than Min salary"
+                                      "Max salary must be greater than Min salary",
                                     );
                                   }
                                 }
@@ -2113,7 +2105,7 @@ const RecruiterJobList = () => {
                           // ❌ letters or special characters
                           if (!/^\d+$/.test(value)) {
                             return Promise.reject(
-                              new Error("Only numbers are allowed")
+                              new Error("Only numbers are allowed"),
                             );
                           }
 
@@ -2123,8 +2115,8 @@ const RecruiterJobList = () => {
                           if (num > 500) {
                             return Promise.reject(
                               new Error(
-                                "Only up to 500 applications are allowed"
-                              )
+                                "Only up to 500 applications are allowed",
+                              ),
                             );
                           }
 
@@ -2409,7 +2401,7 @@ const RecruiterJobList = () => {
                       // ❌ letters or special characters
                       if (/[^0-9.]/.test(value)) {
                         return Promise.reject(
-                          new Error("Only numbers are allowed")
+                          new Error("Only numbers are allowed"),
                         );
                       }
 
@@ -2417,8 +2409,8 @@ const RecruiterJobList = () => {
                       if (!/^[0-9]{1,2}(\.[0-9]{1,2})?$/.test(value)) {
                         return Promise.reject(
                           new Error(
-                            "Maximum 2 digits allowed with up to 2 decimal places"
-                          )
+                            "Maximum 2 digits allowed with up to 2 decimal places",
+                          ),
                         );
                       }
 
@@ -2466,7 +2458,7 @@ const RecruiterJobList = () => {
 
                       if (wordCount > 1000) {
                         return Promise.reject(
-                          new Error("Maximum 1000 words allowed")
+                          new Error("Maximum 1000 words allowed"),
                         );
                       }
 

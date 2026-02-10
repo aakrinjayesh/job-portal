@@ -189,11 +189,6 @@ const CandidateJobDetails = () => {
             <Text strong>Job Type</Text>
             <div>{job.jobType}</div>
           </div>
-
-          <div>
-            <Text strong>Work Shift</Text>
-            <div>{job.workShift || "Morning Shift"}</div>
-          </div>
         </div>
 
         <Divider style={{ margin: "16px 0" }} />
