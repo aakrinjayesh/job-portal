@@ -34,6 +34,10 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [sortedCandidates, setSortedCandidates] = useState([]);
 
+  const stopCardClick = (e) => {
+    e.stopPropagation();
+  };
+
   useEffect(() => {
     setSaved(candidate?.isSaved || false);
   }, [candidate?.isSaved]);
@@ -178,19 +182,18 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
           </Tag>
 
           <Tooltip title={saved ? "Saved Candidate" : "UnSave Candidate"}>
-  <Button
-    type="text"
-    onClick={handleStarClick}
-    icon={
-      saved ? (
-        <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 18 }} />
-      ) : (
-        <LuBookmark style={{ fontSize: 18 }} />
-      )
-    }
-  />
-</Tooltip>
-
+            <Button
+              type="text"
+              onClick={handleStarClick}
+              icon={
+                saved ? (
+                  <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 18 }} />
+                ) : (
+                  <LuBookmark style={{ fontSize: 18 }} />
+                )
+              }
+            />
+          </Tooltip>
         </Space>
       </Row>
 
@@ -226,7 +229,7 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
         <Row gutter={16} style={{ marginTop: 24 }}>
           {clouds?.length > 0 && (
             <Col span={12}>
-              <Card size="small" bordered>
+              <Card size="small" bordered onClick={stopCardClick}>
                 <Typography.Text strong>Related Clouds</Typography.Text>
                 <div style={{ marginTop: 12 }}>
                   <TagsWithMore
@@ -244,7 +247,7 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
 
           {skills?.length > 0 && (
             <Col span={12}>
-              <Card size="small" bordered>
+              <Card size="small" bordered onClick={stopCardClick}>
                 <Typography.Text strong>Related Skills</Typography.Text>
                 <div style={{ marginTop: 12 }}>
                   <TagsWithMore

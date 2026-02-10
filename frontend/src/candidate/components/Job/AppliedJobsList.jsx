@@ -25,7 +25,7 @@ dayjs.extend(relativeTime);
 
 const { Text, Title, Paragraph } = Typography;
 
-const AppliedJobsList = ({ applications }) => {
+const AppliedJobsList = ({ applications, lastJobRef }) => {
   const navigate = useNavigate();
 
   const handleCardClick = (jobId) => {
@@ -39,7 +39,7 @@ const AppliedJobsList = ({ applications }) => {
           <Empty description="No applications found" />
         </Col>
       )}
-      {applications?.map((app) => {
+      {/* {applications?.map((app) => {
         const job = app?.job;
         return (
           <Col xs={24} key={app?.id}>
@@ -51,7 +51,29 @@ const AppliedJobsList = ({ applications }) => {
                 background: "#fff",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}
+            > */}
+
+      {applications?.map((app, index) => {
+        const job = app?.job;
+        const isLast = index === applications.length - 1;
+
+        return (
+          <Col
+            xs={24}
+            key={app?.id}
+            ref={isLast ? lastJobRef : null} // 👈 ADD REF HERE
+          >
+            <Card
+              hoverable
+              onClick={() => handleCardClick(job?.id)}
+              style={{
+                borderRadius: 12,
+                background: "#fff",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              }}
             >
+              {/* --- REST OF YOUR CARD CODE UNCHANGED --- */}
+
               {/* Header */}
               <div
                 style={{

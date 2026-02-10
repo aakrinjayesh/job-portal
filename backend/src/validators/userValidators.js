@@ -21,7 +21,8 @@ const UploadResumeValidator = z.object({
   file: z.any(),
 });
 
-const jobTypeEnum = z.enum(["FullTime", "Contract", "Freelance"]);
+// const jobTypeEnum = z.enum(["FullTime", "Contract", "Freelance"]);
+const jobTypeEnum = z.enum(["FullTime", "Contract", "Freelancer"]);
 
 const userProfileValidator = z.object({
   profilePicture: z.string().trim().or(z.null()),
@@ -104,7 +105,8 @@ const postJobValidator = z.object({
     "PartTime",
     "Internship",
     "Contract",
-    "Freelance",
+    // "Freelance",
+    "Freelancer",
   ]),
   experience: z.object({
     number: z.string(),
@@ -113,6 +115,15 @@ const postJobValidator = z.object({
   experienceLevel: z
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"])
     .optional(),
+
+  tenure: z
+    .object({
+      number: z.string().min(1),
+      type: z.enum(["month", "year"]).optional(),
+    })
+    .nullable()
+    .optional(),
+
   location: z.string().optional(),
   skills: z.array(z.string()),
   clouds: z.array(z.string()),
@@ -155,7 +166,8 @@ const editJobValidator = z.object({
     "PartTime",
     "Internship",
     "Contract",
-    "Freelance",
+    // "Freelance",
+    "Freelancer",
   ]),
   experience: z.object({
     number: z.string(),
@@ -163,6 +175,13 @@ const editJobValidator = z.object({
   }),
   experienceLevel: z
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"])
+    .optional(),
+
+  tenure: z
+    .object({
+      number: z.string().min(1, "Tenure number is required"),
+      type: z.enum(["month", "year"]).optional(),
+    })
     .optional(),
   location: z.string().optional(),
   skills: z.array(z.string()),

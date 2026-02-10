@@ -101,7 +101,7 @@ const CandidateJobDetails = () => {
         <p>Please login to apply for this job.</p>
       </Modal>
 
-      <Button
+      {/* <Button
         type="text"
         style={{ marginBottom: 5 }}
         onClick={() =>
@@ -116,7 +116,7 @@ const CandidateJobDetails = () => {
         icon={<ArrowLeftOutlined />}
       >
         Back
-      </Button>
+      </Button> */}
 
       <Card
         style={{
@@ -257,7 +257,7 @@ const CandidateJobDetails = () => {
         <Divider style={{ margin: "16px 0" }} />
         <Text strong>Roles and Responsibilities</Text>
         <Paragraph style={{ marginTop: 6, color: "#555" }}>
-          {job.rolesAndResponsibilities}
+          {job.responsibilities}
         </Paragraph>
 
         <Divider />

@@ -70,6 +70,7 @@ const createVendorCandidate = async (req, res) => {
         email: data.email,
         phoneNumber: data.phoneNumber,
         title: data.title,
+        summary: data.summary,
         portfolioLink: data.portfolioLink,
         preferredLocation: data.preferredLocation || [],
         currentLocation: data.currentLocation,
@@ -195,7 +196,9 @@ const deleteVendorCandidate = async (req, res) => {
     const existingCandidate = await prisma.userProfile.findFirst({
       where: {
         id,
-        vendorId: organizationId,
+        // vendorId: organizationId,
+        vendorId: userAuth.id, // ✅ correct
+        organizationId,
       },
     });
 
@@ -484,23 +487,23 @@ const vendorApplyCandidate = async (req, res) => {
     }
 
     // 1️⃣ Validate Job
-   const job = await prisma.job.findFirst({
+    const job = await prisma.job.findFirst({
       where: { id: jobId, isDeleted: false },
-  include: {
-    postedBy: {
-      select: {
-        id: true,
-        name: true,
-        email: true,
+      include: {
+        postedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            applications: true,
+          },
+        },
       },
-    },
-    _count: {
-      select: {
-        applications: true,
-      },
-    },
-  },
-});
+    });
 
     if (!job || job.status !== "Open") {
       return res.status(400).json({
@@ -710,7 +713,7 @@ const vendorApplyCandidate = async (req, res) => {
           name: profile.name,
         });
       } catch (error) {
-        if (error.message === "APPLICATION_LIMIT_REACHED") break;
+        if (e.message === "APPLICATION_LIMIT_REACHED") break;
         logger.error(`Failed to apply profile ${profile.id}:`, error.message);
         failedApplications.push({
           candidateProfileId: profile.id,
@@ -874,13 +877,13 @@ const vendorApplyCandidate = async (req, res) => {
       ...(failedApplications.length > 0 && { failedApplications }),
     });
   } catch (error) {
-  console.error("🔥🔥🔥 Vendor Apply FULL ERROR 🔥🔥🔥");
+    console.error("🔥🔥🔥 Vendor Apply FULL ERROR 🔥🔥🔥");
 
-  return res.status(500).json({
-    status: "failed",
-    message: error?.message || "Vendor Apply failed",
-  });
-}
+    return res.status(500).json({
+      status: "failed",
+      message: error?.message || "Vendor Apply failed",
+    });
+  }
 };
 
 const saveCandidate = async (req, res) => {

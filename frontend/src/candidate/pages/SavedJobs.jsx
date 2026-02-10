@@ -97,27 +97,81 @@ function SavedJobs() {
     setJobs((prev) => prev.filter((j) => j.id !== jobId));
   };
 
+  // return (
+  //   <div style={{ padding: "16px" }}>
+  //     {loading && page === 1 ? (
+  //       <div style={{ textAlign: "center", marginTop: 40 }}>
+  //         <Spin size="large" />
+  //       </div>
+  //     ) : jobs.length > 0 ? (
+  //       <JobList
+  //         jobs={jobs}
+  //         lastJobRef={lastJobRef}
+  //         type="save"
+  //         jobids={ids}
+  //         portal={"candidate"}
+  //         onUnsave={handleRemoveJob}
+  //         hideSortAndFilter={true}
+  //       />
+  //     ) : (
+  //       <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>
+  //         No saved jobs found.
+  //       </p>
+  //     )}
+  //   </div>
+  // );
+
   return (
-    <div style={{ padding: "16px" }}>
-      {loading && page === 1 ? (
-        <div style={{ textAlign: "center", marginTop: 40 }}>
-          <Spin size="large" />
-        </div>
-      ) : jobs.length > 0 ? (
-        <JobList
-          jobs={jobs}
-          lastJobRef={lastJobRef}
-          type="save"
-          jobids={ids}
-          portal={"candidate"}
-          onUnsave={handleRemoveJob}
-          hideSortAndFilter={true}
-        />
-      ) : (
-        <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>
-          No saved jobs found.
-        </p>
-      )}
+    <div
+      style={{
+        height: "100vh", // 🔑 lock page height
+        display: "flex",
+        flexDirection: "column",
+        padding: "16px",
+        overflow: "hidden", // 🔑 prevent page scroll
+        background: "#f5f6fa",
+      }}
+    >
+      {/* 🔹 TOP FIXED AREA (title / filters if any later) */}
+      <div style={{ marginBottom: 12 }}>
+        {/* keep empty or add heading later */}
+      </div>
+
+      {/* 🔹 SCROLLABLE JOB LIST AREA */}
+      <div
+        style={{
+          flex: 1, // 🔑 take remaining height
+          overflowY: "auto", // 🔑 vertical scroll only here
+          overflowX: "hidden",
+          minHeight: 0, // 🔑 CRITICAL for flex scroll
+        }}
+      >
+        {loading && page === 1 ? (
+          <div style={{ textAlign: "center", marginTop: 40 }}>
+            <Spin size="large" />
+          </div>
+        ) : jobs.length > 0 ? (
+          <JobList
+            jobs={jobs}
+            lastJobRef={lastJobRef}
+            type="save"
+            jobids={ids}
+            portal={"candidate"}
+            onUnsave={handleRemoveJob}
+            hideSortAndFilter={true}
+          />
+        ) : (
+          <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>
+            No saved jobs found.
+          </p>
+        )}
+
+        {loading && page > 1 && (
+          <div style={{ textAlign: "center", margin: 16 }}>
+            <Spin />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

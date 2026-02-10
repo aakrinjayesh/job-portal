@@ -56,6 +56,7 @@ import {
   UpdateJob,
   GetCandidateDeatils,
   PostedJobsList,
+  CloseJob,
 } from "../../api/api";
 import { DeleteJobDetails } from "../../api/api";
 import { Upload } from "antd";
@@ -91,6 +92,8 @@ const RecruiterJobList = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const location = useLocation();
   const [deleteForm] = Form.useForm();
+  const [closeJobId, setCloseJobId] = useState(null);
+  const jobsContainerRef = useRef(null);
 
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -180,6 +183,12 @@ const RecruiterJobList = () => {
     } else {
       setShowLocation(true);
     }
+
+    // ✅ ADD THIS — decide tenure visibility in EDIT mode
+    const shouldShowTenure = ["Contract", "PartTime", "Freelancer"].includes(
+      job.employmentType
+    );
+    setShowTenure(shouldShowTenure);
     setIsModalVisible(true);
 
     let salaryValues = {};
@@ -222,6 +231,7 @@ const RecruiterJobList = () => {
       location: locationArray,
       experience: experienceValue,
       ...salaryValues,
+      tenure: job.tenure || undefined,
       applicationDeadline: job.applicationDeadline
         ? dayjs(job.applicationDeadline)
         : null,
@@ -359,10 +369,19 @@ const RecruiterJobList = () => {
     },
     {
       key: "job",
+      // fields: [
+      //   "employmentType",
+      //   "tenure",
+      //   "experience",
+      //   "experienceLevel",
+      //   "jobType",
+      // ],
       fields: [
         "employmentType",
-        "tenure",
-        "experience",
+        ["tenure", "number"],
+        ["tenure", "type"],
+        ["experience", "number"],
+        ["experience", "type"],
         "experienceLevel",
         "jobType",
       ],
@@ -398,6 +417,27 @@ const RecruiterJobList = () => {
         const max = cleanNumber(values.salary.max);
         finalSalary = `${min}-${max}`; // string format
       }
+      let finalTenure = null;
+
+      if (
+        ["PartTime", "Contract", "Freelancer"].includes(values.employmentType)
+      ) {
+        if (values.tenure?.number) {
+          // ✅ create OR user edited tenure
+          finalTenure = {
+            number: String(values.tenure.number),
+            type: values.tenure.type || "month",
+          };
+        } else if (isEditing && editingJob?.tenure?.number) {
+          // ✅ preserve existing tenure on update
+          finalTenure = editingJob.tenure;
+        } else {
+          // ❌ block submit if missing
+          messageApi.error("Tenure is required for Part Time / Contract jobs");
+          setPostLoading(false);
+          return;
+        }
+      }
 
       let payload = {
         role: values.role,
@@ -422,12 +462,14 @@ const RecruiterJobList = () => {
 
         experienceLevel: values.experienceLevel,
         // tenure: values.tenure,
-        tenure: values.tenure
-          ? {
-              number: String(values.tenure.number),
-              type: values.tenure.type,
-            }
-          : undefined,
+        // tenure: values.tenure
+        //   ? {
+        //       number: String(values.tenure.number),
+        //       type: values.tenure.type,
+        //     }
+        //   : undefined,
+        tenure: finalTenure,
+
         // location: values.location,
         // location: values.location || "Remote",
         location: Array.isArray(values.location)
@@ -673,19 +715,22 @@ const RecruiterJobList = () => {
 
   const MAX_VISIBLE_TAGS = 3;
 
+  // ✅ Close Job handler
+  const handleCloseJob = async (jobId) => {
+    console.log("CLOSING JOB:", jobId);
+    try {
+      await CloseJob(jobId);
+      messageApi.success("Job closed successfully");
+
+      // refresh list so status updates
+      await fetchJobs(1);
+    } catch (error) {
+      messageApi.error(error?.response?.data?.message || "Failed to close job");
+    }
+  };
+
   return (
     <>
-      {/* <div
-        style={{
-          width: "100%",
-          padding: "16px 24px",
-          background: "#FFFFFF",
-          borderRadius: 10,
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: 20,
-        }}
-      > */}
       <div
         style={{
           position: "sticky",
@@ -821,10 +866,12 @@ const RecruiterJobList = () => {
       </Modal>
 
       <div
+        ref={jobsContainerRef}
         style={{
           height: "calc(100vh - 120px)", // 👈 important
           overflowY: "auto",
           padding: "24px 24px 24px",
+          position: "relative",
         }}
       >
         <Row gutter={[16, 16]}>
@@ -918,7 +965,7 @@ const RecruiterJobList = () => {
                         )}
 
                         <div style={{ maxWidth: 180 }}>
-                          <div
+                          {/* <div
                             style={{
                               fontSize: 16,
                               fontWeight: 600,
@@ -929,6 +976,31 @@ const RecruiterJobList = () => {
                             }}
                           >
                             {job.role || job.title}
+                          </div> */}
+
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: 16,
+                                fontWeight: 600,
+                                color: "#212121",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {job.role || job.title}
+                            </div>
+
+                            {job.status === "Closed" && (
+                              <Tag color="red">Closed</Tag>
+                            )}
                           </div>
 
                           <div
@@ -952,7 +1024,7 @@ const RecruiterJobList = () => {
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", gap: 10 }}>
+                      {/* <div style={{ display: "flex", gap: 10 }}>
                         <Button
                           style={{
                             background: "#F0F2F4",
@@ -967,6 +1039,54 @@ const RecruiterJobList = () => {
                           Edit
                         </Button>
 
+                        <Button
+                          style={{
+                            background: "#D1E4FF",
+                            borderRadius: 100,
+                            fontWeight: 600,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/company/candidates", {
+                              state: { id: job.id, jobRole: job.role },
+                            });
+                          }}
+                        >
+                          View Candidates ({job.applicantCount || 0})
+                        </Button>
+                      </div> */}
+                      <div style={{ display: "flex", gap: 10 }}>
+                        {/* ✅ CLOSE JOB BUTTON */}
+                        {job.status === "Open" && (
+                          <Button
+                            danger
+                            style={{ borderRadius: 100 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCloseJobId(job.id);
+                            }}
+                          >
+                            Close
+                          </Button>
+                        )}
+
+                        {/* EDIT */}
+                        <Button
+                          disabled={job.status === "Closed"} // ✅ disable when closed
+                          style={{
+                            background: "#F0F2F4",
+                            borderRadius: 100,
+                            color: "#666",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showEditModal(job);
+                          }}
+                        >
+                          Edit
+                        </Button>
+
+                        {/* VIEW CANDIDATES */}
                         <Button
                           style={{
                             background: "#D1E4FF",
@@ -1154,6 +1274,25 @@ const RecruiterJobList = () => {
                       )}
                     </div>
                   </Card>
+                  <Modal
+                    open={!!closeJobId}
+                    title="Close Job"
+                    okText="Yes, Close"
+                    okButtonProps={{ danger: true }}
+                    getContainer={() => jobsContainerRef.current} // 🔥 FIX
+                    maskClosable={false}
+                    onCancel={() => setCloseJobId(null)}
+                    onOk={async () => {
+                      try {
+                        await handleCloseJob(closeJobId);
+                        setCloseJobId(null);
+                      } catch (e) {
+                        setCloseJobId(null);
+                      }
+                    }}
+                  >
+                    Are you sure you want to close this job?
+                  </Modal>
                 </Col>
               ))}
               {loading && jobs.length > 0 && hasMore && (
@@ -1333,7 +1472,7 @@ const RecruiterJobList = () => {
                     label="Employment Type"
                     rules={[{ required: true }]}
                   >
-                    <Select
+                    {/* <Select
                       onChange={(value) => {
                         // Show Tenure for Part Time, Contract, Freelancer
                         setShowTenure(
@@ -1346,6 +1485,24 @@ const RecruiterJobList = () => {
                           )
                         ) {
                           form.setFieldsValue({ tenure: undefined }); // clear if not needed
+                        }
+                      }}
+                    > */}
+                    <Select
+                      onChange={(value) => {
+                        const shouldShowTenure = [
+                          "Contract",
+                          "PartTime",
+                          "Freelancer",
+                        ].includes(value);
+
+                        // ✅ control visibility
+                        setShowTenure(shouldShowTenure);
+
+                        // ✅ clear tenure ONLY while creating a job
+                        // ❌ DO NOT clear in edit mode
+                        if (!shouldShowTenure && !isEditing) {
+                          form.setFieldsValue({ tenure: undefined });
                         }
                       }}
                     >
@@ -1380,6 +1537,19 @@ const RecruiterJobList = () => {
                             min={0}
                             placeholder="e.g. 6"
                             style={{ width: "70%" }}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value) {
+                                form.setFieldsValue({
+                                  tenure: {
+                                    number: value,
+                                    type:
+                                      form.getFieldValue(["tenure", "type"]) ||
+                                      "month",
+                                  },
+                                });
+                              }
+                            }}
                           />
                         </Form.Item>
 

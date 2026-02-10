@@ -74,31 +74,71 @@ function AppliedJobs() {
         flexDirection: "column",
         background: "#f5f6fa",
         padding: "16px",
+        overflow: "hidden",
       }}
     >
-      <Row>
-        <Col span={24}>
+      <Row style={{ flex: 1, minHeight: 0 }}>
+        <Col span={24} style={{ height: "100%", minHeight: 0 }}>
           <Card
             style={{
               height: "100%",
               borderRadius: 12,
               background: "#fff",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
             }}
-            bodyStyle={{ padding: "16px 24px" }}
+            bodyStyle={{
+              padding: "16px 24px",
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              minHeight: 0, // 🔑 REQUIRED
+            }}
           >
-            <AppliedJobsList applications={applications} />
-            {loading && (
-              <div style={{ textAlign: "center", marginTop: 16 }}>
-                <Spin />
-              </div>
-            )}
-            {!hasMore && !loading && (
-              <p style={{ textAlign: "center", marginTop: 16, color: "#888" }}>
-                You’ve reached the end!
-              </p>
-            )}
+            {/* ✅ ONLY SCROLLABLE AREA */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                overflowX: "hidden",
+                minHeight: 0, // 🔑 REQUIRED
+              }}
+            >
+              {/* 🔹 PAGE 1 LOADER */}
+              {loading && page === 1 ? (
+                <div style={{ textAlign: "center", marginTop: 40 }}>
+                  <Spin size="large" />
+                </div>
+              ) : (
+                <>
+                  <AppliedJobsList
+                    applications={applications}
+                    lastJobRef={lastJobRef}
+                  />
+
+                  {/* 🔹 PAGINATION LOADER */}
+                  {loading && page > 1 && (
+                    <div style={{ textAlign: "center", margin: 16 }}>
+                      <Spin />
+                    </div>
+                  )}
+
+                  {/* 🔹 END MESSAGE */}
+                  {!hasMore && !loading && applications.length > 0 && (
+                    <p
+                      style={{
+                        textAlign: "center",
+                        margin: "16px 0",
+                        color: "#888",
+                      }}
+                    >
+                      You’ve reached the end!
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </Card>
         </Col>
       </Row>

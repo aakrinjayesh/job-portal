@@ -56,12 +56,13 @@ const Bench = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpTimers, setOtpTimers] = useState({});
   const [activeOtpCandidateId, setActiveOtpCandidateId] = useState(null);
+  const [otpError, setOtpError] = useState("");
 
   // add near other useState() calls
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [unverifiedCount, setUnverifiedCount] = useState(0);
 
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState("all");
   const [messageApi, contextHolder] = message.useMessage();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
@@ -89,6 +90,38 @@ const Bench = () => {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (activeTab === "all") {
+      setCandidates(allcandidates);
+    }
+  }, [activeTab, allcandidates]);
+
+  // useEffect(() => {
+  //   if (!activeOtpCandidateId) return;
+
+  //   const current = otpTimers[activeOtpCandidateId];
+  //   if (!current?.isCounting) return;
+
+  //   const interval = setInterval(() => {
+  //     setOtpTimers((prev) => {
+  //       const currentTimer = prev[activeOtpCandidateId];
+  //       if (!currentTimer) return prev;
+
+  //       const nextTimer = currentTimer.timer - 1;
+
+  //       return {
+  //         ...prev,
+  //         [activeOtpCandidateId]: {
+  //           timer: Math.max(nextTimer, 0),
+  //           isCounting: nextTimer > 0, // ✅ STOP when reaches 0
+  //         },
+  //       };
+  //     });
+  //   }, 1000);
+
+  //   return () => clearInterval(interval);
+  // }, [activeOtpCandidateId, otpTimers[activeOtpCandidateId]?.isCounting]);
+
+  useEffect(() => {
     if (!activeOtpCandidateId) return;
 
     const current = otpTimers[activeOtpCandidateId];
@@ -101,11 +134,24 @@ const Bench = () => {
 
         const nextTimer = currentTimer.timer - 1;
 
+        if (nextTimer <= 0) {
+          setOtpExpired(true);
+          setOtpError("OTP expired. Please resend OTP");
+          setOtp("");
+          return {
+            ...prev,
+            [activeOtpCandidateId]: {
+              timer: 0,
+              isCounting: false,
+            },
+          };
+        }
+
         return {
           ...prev,
           [activeOtpCandidateId]: {
-            timer: Math.max(nextTimer, 0),
-            isCounting: nextTimer > 0, // ✅ STOP when reaches 0
+            timer: nextTimer,
+            isCounting: true,
           },
         };
       });
@@ -147,6 +193,8 @@ const Bench = () => {
         const list = Array.isArray(res?.data) && res.data;
         setAllCandidates(list || []);
         setCandidates(list || []);
+
+        setActiveTab("all");
 
         if (Array.isArray(list)) {
           const verified = list.filter((c) => !!c.isVerified).length;
@@ -299,6 +347,8 @@ const Bench = () => {
         message.success(`OTP sent to ${verifyCandidate.email}`);
 
         setOtp("");
+        setOtpError(""); // ✅ clear error
+
         setOtpExpired(false);
 
         setOtpTimers((prev) => ({
@@ -342,6 +392,7 @@ const Bench = () => {
             c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
           )
         );
+
         setCandidates((prev) =>
           prev.map((c) =>
             c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
@@ -351,12 +402,22 @@ const Bench = () => {
         setVerifiedCount((v) => v + 1);
         setUnverifiedCount((u) => (u > 0 ? u - 1 : 0));
         setVerifyModalVisible(false);
-      } else {
-        message.error(res?.message || "Invalid OTP");
+      }
+      //  else {
+      //   message.error(res?.message || "Invalid OTP");
+      // }
+      else {
+        // 👇 backend error message shown in UI
+        setOtpError(res?.message || "Invalid OTP");
       }
     } catch (err) {
-      console.error(err);
-      message.error("Verification failed");
+      // catch (err) {
+      //   console.error(err);
+      //   message.error("Verification failed");
+      // }
+      const backendMsg = err?.response?.data?.message || "Invalid OTP";
+
+      setOtpError(backendMsg); // 🔥 THIS FIXES UI
     } finally {
       setOtpVerifying(false);
     }
@@ -365,6 +426,7 @@ const Bench = () => {
   // 🔹 Handle single OTP digit change (UI only)
   const handleOtpChange = (value, index) => {
     if (!/^\d?$/.test(value)) return;
+    setOtpError("");
 
     const otpArray = otp.split("");
     otpArray[index] = value;
@@ -1003,6 +1065,8 @@ const Bench = () => {
     <div style={{ width: 1, height: 40, background: "#F4F6F9" }} />
   );
 
+  const otpButtonText = otpExpired || otpError ? "Resend OTP" : "Send OTP";
+
   return (
     <div style={{ padding: 0 }}>
       {contextHolder}
@@ -1030,7 +1094,9 @@ const Bench = () => {
             padding: 10,
           }}
         >
-          <StatBlock label="Total" value={candidates.length} color="#3F41D1" />
+          {/* <StatBlock label="Total" value={candidates.length} color="#3F41D1" /> */}
+          <StatBlock label="Total" value={allcandidates.length} />
+
           <Divider />
           <StatBlock label="Verified" value={verifiedCount} color="#008000" />
           <Divider />
@@ -1479,7 +1545,7 @@ const Bench = () => {
             </div>
           </div>
 
-          <Button
+          {/* <Button
             onClick={handleSendOtp}
             loading={otpSending}
             // disabled={otpSending || isCounting}
@@ -1493,6 +1559,20 @@ const Bench = () => {
             }}
           >
             Send OTP
+          </Button> */}
+          <Button
+            onClick={handleSendOtp}
+            loading={otpSending}
+            disabled={otpSending || otpTimers[verifyCandidate?.id]?.isCounting}
+            style={{
+              height: 40,
+              borderRadius: 100,
+              background: "#D1E4FF",
+              border: "none",
+              fontWeight: 590,
+            }}
+          >
+            {otpButtonText}
           </Button>
         </div>
 
@@ -1556,9 +1636,19 @@ const Bench = () => {
                     fontSize: 16,
                     borderRadius: 6,
                     outline: "none",
+                    // border: `1px solid ${
+                    //   digit ? "#666666" : isActive ? "#3F41D1" : "#E0E0E0"
+                    // }`,
                     border: `1px solid ${
-                      digit ? "#666666" : isActive ? "#3F41D1" : "#E0E0E0"
+                      otpError
+                        ? "#FF4D4F"
+                        : digit
+                        ? "#666666"
+                        : isActive
+                        ? "#3F41D1"
+                        : "#E0E0E0"
                     }`,
+
                     color: digit ? "#212121" : "#E0E0E0",
                   }}
                 />
@@ -1566,6 +1656,18 @@ const Bench = () => {
             );
           })}
         </div>
+        {otpError && (
+          <div
+            style={{
+              color: "#FF4D4F",
+              fontSize: 14,
+              marginBottom: 16,
+              textAlign: "left",
+            }}
+          >
+            {otpError}
+          </div>
+        )}
 
         {/* TIMER + COUNT */}
         <div

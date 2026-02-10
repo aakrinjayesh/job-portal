@@ -15,6 +15,7 @@ import {
   getUserAppliedJobsId,
   userUnsaveJob,
   saveCandidateRating,
+  closeJob,
 } from "../controllers/jobControllers.js";
 import { validateInput } from "../Middleware/inputValidator.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -104,6 +105,12 @@ JobRouters.delete(
   authenticateToken,
   ensureCompanyMember,
   deleteJob
+);
+JobRouters.patch(
+  "/jobs/close/:jobId",
+  authenticateToken,
+  ensureCompanyMember,
+  closeJob
 );
 
 JobRouters.post("/job/applicants", authenticateToken, getApplicantsByJobId);

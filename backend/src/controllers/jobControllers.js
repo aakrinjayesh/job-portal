@@ -1173,6 +1173,29 @@ const postJob = async (req, res) => {
       companyLogo,
     } = req.body;
 
+    // ✅ NORMALIZE TENURE (CREATE)
+    let normalizedTenure = null;
+
+    if (["PartTime", "Contract", "Freelancer"].includes(employmentType)) {
+      const tenureNumber = tenure?.number;
+
+      if (
+        tenureNumber === undefined ||
+        tenureNumber === null ||
+        tenureNumber === ""
+      ) {
+        return res.status(400).json({
+          status: "error",
+          message: "Tenure is required for Part Time / Contract jobs",
+        });
+      }
+
+      normalizedTenure = {
+        number: String(tenureNumber),
+        type: tenure?.type || "month",
+      };
+    }
+
     const job = await prisma.job.create({
       data: {
         role,
@@ -1181,7 +1204,9 @@ const postJob = async (req, res) => {
         experience,
         experienceLevel,
         location,
-        tenure,
+        // tenure,
+        tenure: normalizedTenure,
+
         skills,
         clouds,
         salary,
@@ -1380,6 +1405,18 @@ const editJob = async (req, res) => {
       });
     }
 
+    // ✅ PRESERVE TENURE ON EDIT
+    let finalTenure = existingJob.tenure;
+
+    if (["PartTime", "Contract", "Freelancer"].includes(employmentType)) {
+      if (tenure?.number) {
+        finalTenure = {
+          number: String(tenure.number),
+          type: tenure.type || "month",
+        };
+      }
+    }
+
     // Update the job
     const updatedJob = await prisma.job.update({
       where: { id },
@@ -1390,7 +1427,9 @@ const editJob = async (req, res) => {
         employmentType,
         experience,
         experienceLevel,
-        tenure,
+        // tenure,
+        tenure: finalTenure,
+
         location,
         skills,
         salary,
@@ -1462,6 +1501,61 @@ const deleteJob = async (req, res) => {
   }
 };
 
+const closeJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { organizationId, permission } = req.user;
+
+    if (!canEdit(permission)) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not allowed to close jobs",
+      });
+    }
+
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job || job.isDeleted) {
+      return res.status(404).json({
+        status: "error",
+        message: "Job not found",
+      });
+    }
+
+    if (job.organizationId !== organizationId) {
+      return res.status(403).json({
+        status: "error",
+        message: "Not authorized to close this job",
+      });
+    }
+
+    if (job.status === "Closed") {
+      return res.status(200).json({
+        status: "success",
+        message: "Job already closed",
+      });
+    }
+
+    await prisma.job.update({
+      where: { id: jobId },
+      data: { status: "Closed" },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Job closed successfully",
+    });
+  } catch (error) {
+    logger.error("closeJob Error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to close job",
+    });
+  }
+};
+
 const getJobDetails = async (req, res) => {
   try {
     const { jobid } = req.body;
@@ -1476,8 +1570,8 @@ const getJobDetails = async (req, res) => {
           where: {
             isDeleted: false,
             ...(role === "candidate"
-              ? { userId }               // candidate → own saved job
-              : { organizationId }),     // company → org saved job
+              ? { userId } // candidate → own saved job
+              : { organizationId }), // company → org saved job
           },
           select: { id: true },
         },
@@ -1732,4 +1826,5 @@ export {
   getApplicantsByJobId,
   getUserAppliedJobsId,
   saveCandidateRating,
+  closeJob,
 };
