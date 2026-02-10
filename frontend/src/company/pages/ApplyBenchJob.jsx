@@ -25,10 +25,13 @@ const renderGreenTags = (items = [], max = 3) => {
         <Tag
           key={idx}
           style={{
-            background: "#FBEBFF",
-            borderRadius: 100,
-            border: "1px solid #800080",
-            whiteSpace: "normal",
+             background: "#FBEBFF",
+    borderRadius: 100,
+    border: "1px solid #800080",
+    whiteSpace: "nowrap",     // ✅ prevent wrap
+    maxWidth: 100,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
           }}
         >
           {item}
@@ -38,11 +41,14 @@ const renderGreenTags = (items = [], max = 3) => {
       {extra > 0 && (
         <Tag
           style={{
-            color: "#1976d2",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
+    background: "transparent",
+    borderRadius: 100,
+    color: "#1976d2",
+    whiteSpace: "nowrap",     // ✅ prevent wrap
+    cursor: "pointer",
+    maxWidth: 100,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
           }}
         >
           +{extra} more
@@ -129,70 +135,79 @@ const ApplyBenchJob = ({ jobId }) => {
 
   const rowSelection = {
     selectedRowKeys,
-    onChange: (newSelectedRowKeys) => {
+    onChange: (newSelectedRowKeys,selectedRow) => {
       console.log("ids selected", newSelectedRowKeys);
       setSelectedRowKeys(newSelectedRowKeys);
-    },
+       },
+    preserveSelectedRowKeys: true,
   };
 
   // ------------------- APPLY BUTTON FUNCTION -------------------
-  const handleApply = async () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning("Please select at least one candidate");
-      return;
-    }
+const handleApply = async () => {
+  if (selectedRowKeys.length === 0) {
+    messageApi.warning("Please select at least one candidate");
+    return;
+  }
 
-    const payload = {
-      jobId: jobId, // or get from props/location
-      candidateProfileIds: selectedRowKeys,
-    };
-
-    try {
-      setLoading(true);
-      console.log("SelectedRowKeys:", selectedRowKeys);
-      console.log("Candidates list:", candidates);
-      const res = await ApplyBenchCandidate(payload);
-      message.success("Applied successfully");
-      messageApi.success("✅ Candidates applied successfully!");
-      console.log(res);
-    } catch (err) {
-      messageApi.error("Something went wrong:" + err.response.data.message);
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    jobId,
+    candidateProfileIds: selectedRowKeys,
   };
 
+  try {
+    setLoading(true);
+
+    const res = await ApplyBenchCandidate(payload);
+
+    // ✅ SUCCESS MESSAGE
+    messageApi.success({
+      content: `✅ ${selectedRowKeys.length} candidate(s) applied successfully`,
+      duration: 3,
+    });
+
+    // ✅ CLEAR SELECTION (IMPORTANT UX)
+    setSelectedRowKeys([]);
+
+  } catch (err) {
+    messageApi.error(
+      err?.response?.data?.message || "❌ Failed to apply candidates"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   const columns = [
-    { title: "Name", dataIndex: "name", width: 200 },
+  { title: "Name", dataIndex: "name", width: 180 },
 
-    // ✅ CLOUDS COLUMN
-    {
-      title: "Clouds",
-      key: "clouds",
-      render: (_, r) => {
-        const clouds = r.primaryClouds.map((s) => s.name) || [];
-        return renderPinkTags(clouds, 3);
-      },
+  {
+    title: "Clouds",
+    key: "clouds",
+    width: 260,
+    render: (_, r) => {
+      const clouds = r.primaryClouds.map((s) => s.name) || [];
+      return renderPinkTags(clouds, 3);
     },
+  },
 
-    // ✅ SKILLS COLUMN
-    {
-      title: "Skills",
-      key: "skills",
-      render: (_, r) => {
-        const skills =
-          r.skillsJson
-            ?.filter((s) => s.level === "primary")
-            .map((s) => s.name) || [];
-
-        return renderGreenTags(skills, 3);
-      },
+  {
+    title: "Skills",
+    key: "skills",
+    width: 280,
+    render: (_, r) => {
+      const skills =
+        r.skillsJson
+          ?.filter((s) => s.level === "primary")
+          .map((s) => s.name) || [];
+      return renderGreenTags(skills, 3);
     },
+  },
 
-    { title: "Location", dataIndex: "currentLocation", width: 200 },
-    { title: "Experience", dataIndex: "totalExperience", width: 200 },
-  ];
+  { title: "Location", dataIndex: "currentLocation", width: 180 },
+  { title: "Experience", dataIndex: "totalExperience", width: 140 },
+];
+
 
   // ------------------- FETCH CANDIDATES -------------------
   useEffect(() => {
@@ -241,6 +256,8 @@ const ApplyBenchJob = ({ jobId }) => {
             AI Eligibility Check
           </Button>
 
+           {contextHolder}
+
           <Button
             onClick={handleApply}
             disabled={!selectedRowKeys.length}
@@ -269,6 +286,11 @@ const ApplyBenchJob = ({ jobId }) => {
         rowSelection={rowSelection}
         scroll={{ y: 400 }}
         emptyText="No bench candidates available"
+        pagination={{
+        pageSize: 5, // ✅ Number of candidates per page
+        showSizeChanger: true, // Optional: allow user to change page size
+        pageSizeOptions: ["5", "10", "20"], // Optional page size options
+  }}
       />
     </Spin>
   );

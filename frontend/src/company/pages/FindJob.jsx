@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Spin, Empty } from "antd";
+import { Col, Row, Card, message, Spin, Empty, Progress} from "antd";
 import FiltersPanel from "../../candidate/components/Job/FilterPanel";
 import JobList from "../../candidate/components/Job/JobList";
 import { GetJobsList } from "../../company/api/api";
@@ -14,6 +14,8 @@ function FindJob() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [currentFilters, setCurrentFilters] = useState({});
   const [totalCount, setTotalCount] = useState(0);
+  const [progress, setProgress] = useState(0);
+
 
   const observer = useRef();
   const controllerRef = useRef(null);
@@ -69,6 +71,19 @@ function FindJob() {
       // setInitialLoading(false); // ✅ Turn off initial loading
     }
   }, []);
+
+  useEffect(() => {
+  if (initialLoading || (loading && page === 1)) {
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+    }, 400);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(0);
+  }
+}, [initialLoading, loading, page]);
+
 
   // Cleanup on route change
   useEffect(() => {
@@ -175,18 +190,39 @@ function FindJob() {
             bodyStyle={{ padding: "16px 24px" }}
           >
             {/* ✅ Show spinner on initial load or filter change (page 1 loading) */}
-            {initialLoading || (loading && page === 1) ? (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  minHeight: "400px",
-                }}
-              >
-                <Spin size="large" tip="Loading jobs..." />
-              </div>
-            ) : (
+     {initialLoading || (loading && page === 1) ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "400px",
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={90}
+      strokeColor={{
+        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
+      }}
+      trailColor="#E6E8FF"
+      showInfo={false}
+    />
+    <div
+      style={{
+        marginTop: 16,
+        color: "#555",
+        fontSize: 14,
+        fontWeight: 500,
+      }}
+    >
+      Finding best jobs for you…
+    </div>
+  </div>
+) : (
               <>
                 {/* Show total count */}
                 {totalCount > 0 && (

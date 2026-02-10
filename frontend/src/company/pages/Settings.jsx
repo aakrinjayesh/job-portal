@@ -9,6 +9,7 @@ import {
   Tag,
   Popconfirm,
   message,
+  Progress,
   Tabs,
 } from "antd";
 import SettingsTodoManager from "./SettingsTodoManager";
@@ -30,27 +31,57 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const firstLoadRef = React.useRef(true);
+
   const [form] = Form.useForm();
 
   // Fetch Members & Invites
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await getOrganizationMembers();
-      if (res.status === "success") {
-        setMembers(res.data.members || []);
-        setInvites(res.data.invites || []);
-      }
-    } catch (error) {
-      message.error("Failed to fetch organization data");
-    } finally {
-      setLoading(false);
+ const fetchData = async () => {
+  if (firstLoadRef.current) {
+    setInitialLoading(true);
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await getOrganizationMembers();
+    if (res.status === "success") {
+      setMembers(res.data.members || []);
+      setInvites(res.data.invites || []);
     }
-  };
+  } catch (error) {
+    message.error("Failed to fetch organization data");
+  } finally {
+    setLoading(false);
+
+    if (firstLoadRef.current) {
+      setTimeout(() => {
+        setInitialLoading(false);
+        firstLoadRef.current = false; // 🔒 lock forever
+      }, 300);
+    }
+  }
+};
+
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+  if (initialLoading) {
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+    }, 400);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(0);
+  }
+}, [initialLoading]);
+
 
   // Handle Invite
   const handleInvite = async (values) => {
@@ -195,6 +226,26 @@ const Settings = () => {
 
   const adminDomain = getAdminDomain();
 
+ const tableProgressLoader = (
+  <div
+    style={{
+      padding: "50px 0",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      status="active"
+      size={80}
+    />
+  </div>
+);
+
+
+
   return (
     <div style={{ padding: "24px" }}>
       <Tabs
@@ -227,7 +278,11 @@ const Settings = () => {
                   columns={memberColumns}
                   dataSource={members}
                   rowKey="id"
-                  loading={loading}
+                 loading={{
+  spinning: loading,
+  indicator: tableProgressLoader,
+}}
+
                   pagination={{ pageSize: 5 }}
                 />
 

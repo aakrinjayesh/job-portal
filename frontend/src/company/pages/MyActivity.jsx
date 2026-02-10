@@ -5,7 +5,7 @@ import {
   Avatar,
   Button,
   Tag,
-  Spin,
+ Progress,
   Empty,
   Divider,
   Typography,
@@ -24,30 +24,40 @@ const MyActivity = () => {
   const [activeCandidateId, setActiveCandidateId] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
 
   const controllerRef = useRef(null);
   const location = useLocation();
   const [messageApi, contextHolder] = message.useMessage();
 
   /* ================= FETCH ================= */
-  const fetchMyActivity = async () => {
-    if (controllerRef.current) controllerRef.current.abort();
-    controllerRef.current = new AbortController();
+ const fetchMyActivity = async () => {
+  if (controllerRef.current) controllerRef.current.abort();
+  controllerRef.current = new AbortController();
 
-    try {
-      setLoading(true);
-      const res = await GetMyActivity(controllerRef.current.signal);
-      if (res.status === "success") {
-        setJobs(res.data || []);
-        setLoading(false);
-      }
-    } catch (err) {
-      setLoading(false);
-      if (err.code !== "ERR_CANCELED") {
-        messageApi.error("Failed to load activity");
-      }
+  try {
+    setLoading(true);
+    setProgress(30);
+
+    const res = await GetMyActivity(controllerRef.current.signal);
+
+    setProgress(70);
+
+    if (res.status === "success") {
+      setJobs(res.data || []);
     }
-  };
+  } catch (err) {
+    if (err.code !== "ERR_CANCELED") {
+      messageApi.error("Failed to load activity");
+    }
+  } finally {
+    setProgress(100);
+    setTimeout(() => setProgress(0), 300);
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchMyActivity();
@@ -101,12 +111,25 @@ const MyActivity = () => {
                 zIndex: 10,
               }}
             >
-              <Spin size="large" />
+             <Progress
+  type="circle"
+  percent={progress}
+  width={90}
+  strokeColor={{
+    "0%": "#4F63F6",
+    "100%": "#7C8CFF",
+  }}
+  trailColor="#E6E8FF"
+  showInfo={false}
+/>
+
             </div>
           )}
-          {jobs.length === 0 && !loading ? (
-            <Spin size="large" style={{ width: "100%" }} />
-          ) : jobs.length === 0 ? (
+        {jobs.length === 0 && loading ? (
+  <div style={{ textAlign: "center", marginTop: 80 }}>
+    <Progress percent={progress} showInfo={false} />
+  </div>
+) : jobs.length === 0 ? (
             <Empty description="No activity found" />
           ) : (
             jobs.map((jobBlock) => {
@@ -233,7 +256,12 @@ const MyActivity = () => {
 
           {detailLoading && (
             <div style={{ textAlign: "center", marginTop: 80 }}>
-              <Spin size="large" />
+             <Progress
+      type="circle"
+      percent={70}
+      width={70}
+      showInfo={false}
+    />
             </div>
           )}
 

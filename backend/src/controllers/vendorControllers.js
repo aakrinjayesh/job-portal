@@ -484,14 +484,23 @@ const vendorApplyCandidate = async (req, res) => {
     }
 
     // 1️⃣ Validate Job
-    const job = await prisma.job.findFirst({
+   const job = await prisma.job.findFirst({
       where: { id: jobId, isDeleted: false },
-      include: {
-        postedBy: { select: { id: true, name: true, email: true } },
-        organizationId: true,
-        _count: { select: { applications: true } },
+  include: {
+    postedBy: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
       },
-    });
+    },
+    _count: {
+      select: {
+        applications: true,
+      },
+    },
+  },
+});
 
     if (!job || job.status !== "Open") {
       return res.status(400).json({
@@ -701,7 +710,7 @@ const vendorApplyCandidate = async (req, res) => {
           name: profile.name,
         });
       } catch (error) {
-        if (e.message === "APPLICATION_LIMIT_REACHED") break;
+        if (error.message === "APPLICATION_LIMIT_REACHED") break;
         logger.error(`Failed to apply profile ${profile.id}:`, error.message);
         failedApplications.push({
           candidateProfileId: profile.id,
@@ -865,12 +874,13 @@ const vendorApplyCandidate = async (req, res) => {
       ...(failedApplications.length > 0 && { failedApplications }),
     });
   } catch (error) {
-    logger.error("Vendor Apply Error:", error.message);
-    return res.status(500).json({
-      status: "failed",
-      message: "Internal server error",
-    });
-  }
+  console.error("🔥🔥🔥 Vendor Apply FULL ERROR 🔥🔥🔥");
+
+  return res.status(500).json({
+    status: "failed",
+    message: error?.message || "Vendor Apply failed",
+  });
+}
 };
 
 const saveCandidate = async (req, res) => {

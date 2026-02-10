@@ -1465,30 +1465,50 @@ const deleteJob = async (req, res) => {
 const getJobDetails = async (req, res) => {
   try {
     const { jobid } = req.body;
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    const organizationId = req.user?.organizationId;
 
     const job = await prisma.job.findFirst({
-      where: { id: jobid },
+      where: { id: jobid, isDeleted: false },
+      include: {
+        savedBy: {
+          where: {
+            isDeleted: false,
+            ...(role === "candidate"
+              ? { userId }               // candidate → own saved job
+              : { organizationId }),     // company → org saved job
+          },
+          select: { id: true },
+        },
+      },
     });
 
     if (!job) {
-      logger.warn(`Job not found - ID: ${jobid}`);
-      return res
-        .status(404)
-        .json({ status: "error", message: "Job not found" });
+      return res.status(404).json({
+        status: "error",
+        message: "Job not found",
+      });
     }
 
+    // 🔑 Add isSaved flag
+    const jobWithSavedStatus = {
+      ...job,
+      isSaved: job.savedBy && job.savedBy.length > 0,
+    };
+
+    // optional: remove savedBy array from response
+    delete jobWithSavedStatus.savedBy;
+
     return res.status(200).json({
-      status: "Success",
-      job,
+      status: "success",
+      job: jobWithSavedStatus,
     });
   } catch (error) {
-    logger.error(
-      "getJobDetails Error:",
-      JSON.stringify(error.message, null, 2)
-    );
+    logger.error("getJobDetails Error:", error.message);
     return res.status(500).json({
       status: "error",
-      message: error.message || "Internal server error",
+      message: "Internal server error",
     });
   }
 };

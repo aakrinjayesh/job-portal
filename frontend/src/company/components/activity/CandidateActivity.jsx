@@ -7,7 +7,7 @@ import {
   Tabs,
   Space,
   Popconfirm,
-  Spin,
+  Progress
 } from "antd";
 import dayjs from "dayjs";
 
@@ -20,6 +20,9 @@ import TodoList from "./TodoList";
 const CandidateActivity = ({ candidateId, jobId, defaultTab }) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
+const [initialLoading, setInitialLoading] = useState(true);
+const [progress, setProgress] = useState(0);
+
   const [noteOpen, setNoteOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   // const [activeTab, setActiveTab] = useState("ALL");
@@ -34,24 +37,42 @@ const CandidateActivity = ({ candidateId, jobId, defaultTab }) => {
     }
   }, [defaultTab]);
 
+  useEffect(() => {
+  if (initialLoading || loading) {
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+    }, 400);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(0);
+  }
+}, [initialLoading, loading]);
+
+
   const fetchActivities = async () => {
-    try {
-      if (!candidateId) return;
-      setLoading(true);
-      const payload = {
-        candidateProfileId: candidateId,
-        jobId,
-      };
-      const res = await GetCandidateActivities(payload);
-      if (res.status === "success") {
-        setActivities(res.data || []);
-      }
-    } catch {
-      messageAPI.error("Failed to load activities");
-    } finally {
-      setLoading(false);
+  try {
+    if (!candidateId) return;
+    setLoading(true);
+
+    const payload = {
+      candidateProfileId: candidateId,
+      jobId,
+    };
+
+    const res = await GetCandidateActivities(payload);
+
+    if (res.status === "success") {
+      setActivities(res.data || []);
     }
-  };
+  } catch {
+    messageAPI.error("Failed to load activities");
+  } finally {
+    setLoading(false);
+    setInitialLoading(false); // 🔥 IMPORTANT
+  }
+};
+
 
   useEffect(() => {
     if (candidateId) fetchActivities();
@@ -129,6 +150,19 @@ const CandidateActivity = ({ candidateId, jobId, defaultTab }) => {
           borderRadius: 10,
         }}
       >
+        {/* 🔥 TOP LOADING BAR */}
+{(initialLoading || loading) && (
+  <Progress
+    percent={progress}
+    showInfo={false}
+    strokeWidth={3}  
+    strokeColor={{
+      "0%": "#4F63F6",
+      "100%": "#7C8CFF",
+    }}
+  />
+)}
+
         {/* ================= HEADER ================= */}
         <div style={{ padding: "20px 20px 0 20px" }}>
           <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 12 }}>
@@ -149,11 +183,7 @@ const CandidateActivity = ({ candidateId, jobId, defaultTab }) => {
             padding: "0 20px",
           }}
         >
-          {loading && (
-            <div style={{ textAlign: "center", marginTop: 40 }}>
-              <Spin />
-            </div>
-          )}
+        
 
           {/* ============ TODO VIEW (UNCHANGED) ============ */}
           {activeTab === "TODO" && (

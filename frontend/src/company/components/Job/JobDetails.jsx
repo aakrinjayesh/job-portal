@@ -6,10 +6,13 @@ import {
   Tag,
   Space,
   Button,
-  Spin,
+  Progress,
   Divider,
   message,
+  Tooltip,
+  Modal
 } from "antd";
+import { LuBookmark, LuBookmarkCheck } from "react-icons/lu";
 import axios from "axios";
 import {
   ArrowLeftOutlined,
@@ -17,7 +20,7 @@ import {
   DownOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-import { GetJobDetails } from "../../api/api";
+import { GetJobDetails,  SaveJob, UnSaveJob } from "../../api/api";
 import { useLocation } from "react-router-dom";
 import ApplyBenchJob from "../../pages/ApplyBenchJob";
 
@@ -29,6 +32,12 @@ const JobDetails = () => {
   const [job, setJob] = useState(null);
 
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+
   const location = useLocation();
 
   const type = location?.state?.type;
@@ -43,6 +52,19 @@ const JobDetails = () => {
     fetchJobDetails();
   }, []);
 
+  useEffect(() => {
+  if (initialLoading || loading) {
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+    }, 400);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(0);
+  }
+}, [initialLoading, loading]);
+
+
   const fetchJobDetails = async () => {
     try {
       const payload = { jobid: id };
@@ -52,14 +74,91 @@ const JobDetails = () => {
       message.error("Failed to load job details");
     } finally {
       setLoading(false);
+    setInitialLoading(false);
     }
   };
+
+  const handleSaveToggle = async () => {
+  if (!job) return;
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    messageApi.warning("Please login to save jobs");
+    navigate("/login");
+    return;
+  }
+
+  const willBeSaved = !job.isSaved;
+
+  // optimistic UI
+  setJob((prev) => ({
+    ...prev,
+    isSaved: willBeSaved,
+  }));
+
+  try {
+    const resp = willBeSaved
+      ? await SaveJob({ jobId: job.id })
+      : await UnSaveJob({ jobId: job.id });
+
+    if (resp?.status !== "success") throw new Error();
+
+    messageApi.success(
+      willBeSaved ? "Job saved successfully!" : "Job removed!"
+    );
+  } catch (err) {
+    // rollback
+    setJob((prev) => ({
+      ...prev,
+      isSaved: !willBeSaved,
+    }));
+    messageApi.error("Something went wrong!");
+  }
+};
+
+
 
   const handleViewCandidates = () => {
     navigate("/company/candidates", { state: { id } });
   };
 
-  if (loading) return <Spin size="large" style={{ marginTop: 100 }} />;
+  if (initialLoading || loading) {
+  return (
+    
+    <div
+      style={{
+        minHeight: "70vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+       {contextHolder}
+      <Progress
+        type="circle"
+        percent={progress}
+        width={90}
+        strokeColor={{
+          "0%": "#4F63F6",
+          "100%": "#7C8CFF",
+        }}
+        trailColor="#E6E8FF"
+        showInfo={false}
+      />
+      <div
+        style={{
+          marginTop: 16,
+          color: "#555",
+          fontSize: 14,
+          fontWeight: 500,
+        }}
+      >
+        Loading job details…
+      </div>
+    </div>
+  );
+}
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>
@@ -136,6 +235,23 @@ const JobDetails = () => {
                 View Candidates ({count || 0})
               </Button>
             )}
+
+                {/* SAVE */}
+           <div
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleSaveToggle(job.id);
+                           }}
+                           style={{ fontSize: 22, cursor: "pointer" }}
+                         >
+                           <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+                             {job?.isSaved ? (
+                               <LuBookmarkCheck size={22} color="#1677ff" />
+                             ) : (
+                               <LuBookmark size={22} color="#9CA3AF" />
+                             )}
+                           </Tooltip>
+                         </div>
 
             <Tag
               color={job.status === "Closed" ? "error" : "success"}
@@ -266,6 +382,16 @@ const JobDetails = () => {
           )}
         </div>
       </Card>
+
+        <Modal
+              open={showLoginModal}
+              title="Login Required"
+              onCancel={() => setShowLoginModal(false)}
+              okText="Go to Login"
+              onOk={() => navigate("/login")}
+            >
+              <p>Please login to use this button.</p>
+            </Modal>
 
       {/* <ApplyBenchJob jobId={id} /> */}
       {source !== "jobs" && <ApplyBenchJob jobId={job?.id} />}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import { Col, Row, Card, message, Spin, Modal, Empty } from "antd";
+import { Col, Row, Card, message, Progress, Modal, Empty } from "antd";
 import FiltersPanel from "../../candidate/components/Job/FilterPanel";
 import BenchList from "../components/Bench/BenchList";
 import BenchCandidateDetails from "../components/Bench/BenchCandidateDetails";
@@ -14,6 +14,7 @@ function FindBench() {
   const [hasMore, setHasMore] = useState(true);
   const [currentFilters, setCurrentFilters] = useState({}); // ✅ Track filters
   const [totalCount, setTotalCount] = useState(0); // ✅ Added
+  const [progress, setProgress] = useState(0);
 
   const observer = useRef();
   const controllerRef = useRef(null);
@@ -42,26 +43,27 @@ function FindBench() {
         filters,
         controllerRef.current.signal
       );
-      if (res.status === "success") {
-        const newList = res?.candidates || [];
+    if (res.status === "success") {
+  const newList = res?.candidates || [];
 
-        if (pageNum === 1) {
-          setBench(newList);
-        } else {
-          setBench((prev) => [...prev, ...newList]);
-        }
+  if (pageNum === 1) {
+    setBench(newList);
+  } else {
+    setBench((prev) => [...prev, ...newList]);
+  }
 
-        setTotalCount(res.totalCount || 0);
+  setTotalCount(res.totalCount || 0);
 
-        // Stop loading more when last page reached
-        if (pageNum >= res.totalPages) {
-          setHasMore(false);
-        } else {
-          setHasMore(true);
-        }
-        setLoading(false);
-        setInitialLoading(false);
-      }
+  if (pageNum >= res.totalPages) {
+    setHasMore(false);
+  } else {
+    setHasMore(true);
+  }
+
+  setLoading(false);
+  setInitialLoading(false);
+}
+
     } catch (error) {
       if (error.code === "ERR_CANCELED") {
         console.log("FindBench API aborted");
@@ -115,11 +117,25 @@ function FindBench() {
     }
   }, [page, currentFilters, fetchBench]);
 
+  useEffect(() => {
+  if (initialLoading || (loading && page === 1)) {
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+    }, 400);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(0);
+  }
+}, [initialLoading, loading, page]);
+
+
   // ✅ Handle filter changes - reset to page 1 and fetch from server
   const handleFiltersChange = (filters) => {
     console.log("Received filters:", filters);
     setCurrentFilters(filters);
     setPage(1);
+    setProgress(0);
     setHasMore(true);
     fetchBench(1, filters);
   };
@@ -129,6 +145,7 @@ function FindBench() {
     setCurrentFilters({});
     setPage(1);
     setHasMore(true);
+    setProgress(0);
     fetchBench(1, {});
   };
 
@@ -193,18 +210,40 @@ function FindBench() {
             bodyStyle={{ padding: "16px 24px" }}
           >
             {/* ✅ Show spinner on initial load or filter change (page 1 loading) */}
-            {initialLoading || (loading && page === 1) ? (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  minHeight: "400px",
-                }}
-              >
-                <Spin size="large" tip="Loading candidates..." />
-              </div>
-            ) : (
+           {initialLoading || (loading && page === 1) ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "400px",
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={90}
+      strokeColor={{
+        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
+      }}
+      trailColor="#E6E8FF"
+      showInfo={false}
+    />
+    <div
+      style={{
+        marginTop: 16,
+        color: "#555",
+        fontSize: 14,
+        fontWeight: 500,
+      }}
+    >
+      Finding best bench candidates for you…
+    </div>
+  </div>
+) : (
+
               <>
                 {/* Show total count */}
                 {totalCount > 0 && (
@@ -221,17 +260,16 @@ function FindBench() {
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}
-                {loading && page > 1 && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      marginTop: 16,
-                      padding: "20px",
-                    }}
-                  >
-                    <Spin size="large" />
-                  </div>
-                )}
+               {loading && (
+  <Progress
+    percent={progress}
+    size="small"
+    status="active"
+    showInfo
+    style={{ marginBottom: 16 }}
+  />
+)}
+
 
                 {!hasMore && !loading && bench.length > 0 && (
                   <p

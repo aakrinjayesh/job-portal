@@ -89,6 +89,23 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
         },
       }}
     >
+      {/* <div style={{ position: "relative" }}> */}
+       {loading && (
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      background: "rgba(255,255,255,0.7)",
+      zIndex: 10,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Progress type="circle" percent={70} status="active" />
+  </div>
+)}
+
       <div
         style={{
           marginBottom: 24,

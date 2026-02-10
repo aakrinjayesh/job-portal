@@ -35,6 +35,7 @@ const Signup = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isFormReady, setIsFormReady] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   /* ================= TIMER ================= */
   useEffect(() => {
@@ -115,6 +116,7 @@ const Signup = () => {
 
       if (res.status === "success") {
         messageApi.success("OTP sent to your email");
+         setOtpSent(true);
         setTimer(60);
       } else {
         messageApi.error(res.message || "Failed to send OTP");
@@ -251,16 +253,48 @@ const Signup = () => {
   <Input size="large" placeholder="Email" />
 </Form.Item>
 
-              <Button
-                type="primary"
-                block
-                size="large"
-                loading={generateLoading}
-                onClick={handleGenerateOtp}
-                disabled={!isFormReady || timer > 0}
-              >
-                {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
-              </Button>
+          {/* SEND OTP (only first time) */}
+{!otpSent && (
+  <Button
+    type="primary"
+    block
+    size="large"
+    loading={generateLoading}
+    onClick={handleGenerateOtp}
+    disabled={!isFormReady}
+  >
+    Send OTP
+  </Button>
+)}
+
+{/* TIMER TEXT */}
+{otpSent && timer > 0 && (
+  <Text
+    style={{
+      display: "block",
+      marginTop: 12,
+      textAlign: "center",
+      color: "#666",
+    }}
+  >
+    Resend OTP in {timer}s
+  </Text>
+)}
+
+{/* RESEND OTP (after 60 sec only) */}
+{otpSent && timer === 0 && (
+  <Button
+    type="default"
+    block
+    size="large"
+    loading={generateLoading}
+    onClick={handleGenerateOtp}
+    style={{ marginTop: 12 }}
+  >
+    Resend OTP
+  </Button>
+)}
+
 
             <Form.Item
   name="otp"

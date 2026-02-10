@@ -33,6 +33,7 @@ const ForgotPasswordPage = () => {
   const [timer, setTimer] = useState(0);
   const [isResendDisabled, setIsResendDisabled] = useState(true);
   const [emailValue, setEmailValue] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const location = useLocation();
   const role = location?.state?.role;
   
@@ -83,6 +84,7 @@ const ForgotPasswordPage = () => {
       const res = await GenerateOtp({ email, role });
       if (res.status === "success") {
         messageApi.success("OTP sent to your email");
+        setOtpSent(true); 
         setTimer(60);
         setIsResendDisabled(true);
       } else {
@@ -135,19 +137,24 @@ const ForgotPasswordPage = () => {
 
 
 
-            <Button
+         <Button
   onClick={handleGenerateOtp}
   type="primary"
   block
   loading={generateLoading}
   size="large"
   disabled={
-    !emailValue || (isResendDisabled && timer > 0)
+    !emailValue || (otpSent && isResendDisabled)
   }
   style={{ marginBottom: 10 }}
 >
-  {timer > 0 ? `Resend OTP in ${timer}s` : "Send / Resend OTP"}
+  {!otpSent
+    ? "Send OTP"
+    : timer > 0
+      ? `Resend OTP in ${timer}s`
+      : "Resend OTP"}
 </Button>
+
 
                <Form.Item
               name="otp"

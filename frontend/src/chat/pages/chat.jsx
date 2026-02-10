@@ -6,7 +6,7 @@ import {
   Avatar,
   Typography,
   Upload,
-  Spin,
+  Progress,
   Empty,
   Image,
   Modal,
@@ -92,6 +92,21 @@ const Chat = () => {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [alertMessage, contextHolder] = msg.useMessage();
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+  if (loadingChats || loadingMessages) {
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+    }, 400);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(0);
+  }
+}, [loadingChats, loadingMessages]);
+
+
 
   const updateChatLastMessage = (chatToUpdateId, message) => {
     const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId);
@@ -482,10 +497,41 @@ const Chat = () => {
 
           <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
             {loadingChats ? (
-              <Spin style={{ marginTop: 40 }} />
-            ) : filteredChats.length === 0 ? (
-              <Empty />
-            ) : (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 60,
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={70}
+      strokeColor={{
+        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
+      }}
+      trailColor="#E6E8FF"
+      showInfo={false}
+    />
+    <div
+      style={{
+        marginTop: 12,
+        fontSize: 13,
+        fontWeight: 500,
+        color: "#555",
+      }}
+    >
+      Loading your chats…
+    </div>
+  </div>
+) : filteredChats.length === 0 ? (
+  <Empty />
+) : (
+
               filteredChats.map((chat) => (
                 <ChatItem
                   key={chat._id}
@@ -549,9 +595,41 @@ const Chat = () => {
            minHeight: 0, 
         }}
       >
-        {loadingMessages ? (
-          <Spin />
-        ) : (
+      {loadingMessages ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+      marginTop: 40,
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={80}
+      strokeColor={{
+        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
+      }}
+      trailColor="#E6E8FF"
+      showInfo={false}
+    />
+    <div
+      style={{
+        marginTop: 14,
+        fontSize: 14,
+        fontWeight: 500,
+        color: "#555",
+      }}
+    >
+      Loading messages…
+    </div>
+  </div>
+) : (
+
           <>
             {isTyping && <Typing />}
 

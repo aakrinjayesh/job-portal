@@ -6,7 +6,7 @@ import {
   Button,
   message,
   Typography,
-  Spin,
+  Progress,
   Tooltip,
   Row,
   Col,
@@ -37,6 +37,11 @@ const PersonalProfile = () => {
   const [loading, setLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
 
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const firstLoadRef = React.useRef(true);
+
+
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [otp, setOtp] = useState("");
@@ -46,40 +51,66 @@ const PersonalProfile = () => {
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      setLoading(true);
-      try {
-        const res = await GetUserProfileDetails();
-        if (res?.status === "success" && res.data) {
-          const {
-            firstName,
-            lastName,
-            phoneNumber,
-            email,
-            companyName,
-            address,
-          } = res.data;
+  if (initialLoading) {
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+    }, 400);
 
-          form.setFieldsValue({
-            firstName,
-            lastName,
-            phoneNumber,
-            email,
-            company: companyName,
-            doorNumber: address?.doorNumber || "",
-            street: address?.street || "",
-            city: address?.city || "",
-            pinCode: address?.pinCode || "",
-            country: address?.country || undefined,
-            state: address?.state || undefined,
-          });
-        }
-      } catch {
-        messageApi.error("Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    };
+    return () => clearInterval(interval);
+  } else {
+    setProgress(0);
+  }
+}, [initialLoading]);
+
+
+  useEffect(() => {
+   const loadProfile = async () => {
+  if (firstLoadRef.current) {
+    setInitialLoading(true);
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await GetUserProfileDetails();
+    if (res?.status === "success" && res.data) {
+      const {
+        firstName,
+        lastName,
+        phoneNumber,
+        email,
+        companyName,
+        address,
+      } = res.data;
+
+      form.setFieldsValue({
+        firstName,
+        lastName,
+        phoneNumber,
+        email,
+        company: companyName,
+        doorNumber: address?.doorNumber || "",
+        street: address?.street || "",
+        city: address?.city || "",
+        pinCode: address?.pinCode || "",
+        country: address?.country || undefined,
+        state: address?.state || undefined,
+      });
+    }
+  } catch {
+    messageApi.error("Failed to load profile");
+  } finally {
+    setLoading(false);
+
+    if (firstLoadRef.current) {
+      setTimeout(() => {
+        setInitialLoading(false);
+        firstLoadRef.current = false; // 🔒 prevent again
+      }, 300);
+    }
+  }
+};
+
 
     loadProfile();
   }, []);
@@ -162,11 +193,40 @@ const PersonalProfile = () => {
 
       <Divider />
 
-      {loading ? (
-        <div style={{ textAlign: "center", padding: 40 }}>
-          <Spin size="large" />
-        </div>
-      ) : (
+     {initialLoading ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "400px",
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={90}
+      strokeColor={{
+        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
+      }}
+      trailColor="#E6E8FF"
+      showInfo={false}
+    />
+    <div
+      style={{
+        marginTop: 16,
+        color: "#555",
+        fontSize: 14,
+        fontWeight: 500,
+      }}
+    >
+      Loading your profile…
+    </div>
+  </div>
+) : (
+
         <Form layout="vertical" form={form}>
           {/* ===== NAME ===== */}
           <Row gutter={24}>
