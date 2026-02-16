@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { LuBookmark, LuBookmarkCheck } from "react-icons/lu";
 import {
   Card,
   Typography,
@@ -10,10 +11,16 @@ import {
   Divider,
   message,
   Modal,
+  Tooltip,
 } from "antd";
 import axios from "axios";
 import { ArrowLeftOutlined, EnvironmentOutlined } from "@ant-design/icons";
-import { ApplyJob, GetJobDetails } from "../../../candidate/api/api";
+import {
+  ApplyJob,
+  GetJobDetails,
+  SaveJob,
+  UnSaveJob,
+} from "../../../candidate/api/api";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -83,6 +90,43 @@ const CandidateJobDetails = () => {
       setApplyLoading(false);
     }
   };
+  const handleSaveToggle = async () => {
+    if (!job) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      messageAPI.warning("Please login to save jobs");
+      navigate("/login");
+      return;
+    }
+
+    const willBeSaved = !job.isSaved;
+
+    // optimistic UI
+    setJob((prev) => ({
+      ...prev,
+      isSaved: willBeSaved,
+    }));
+
+    try {
+      const resp = willBeSaved
+        ? await SaveJob({ jobId: job.id })
+        : await UnSaveJob({ jobId: job.id });
+
+      if (resp?.status !== "success") throw new Error();
+
+      messageAPI.success(
+        willBeSaved ? "Job saved successfully!" : "Job removed!"
+      );
+    } catch (err) {
+      // rollback
+      setJob((prev) => ({
+        ...prev,
+        isSaved: !willBeSaved,
+      }));
+      messageAPI.error("Something went wrong!");
+    }
+  };
 
   return (
     <div style={{ width: "100%", margin: "0 auto", padding: 24 }}>
@@ -101,23 +145,6 @@ const CandidateJobDetails = () => {
         <p>Please login to apply for this job.</p>
       </Modal>
 
-      {/* <Button
-        type="text"
-        style={{ marginBottom: 5 }}
-        onClick={() =>
-          navigate(
-            type === "save"
-              ? "/candidate/jobs/saved"
-              : type === "apply"
-              ? "/candidate/jobs/applied"
-              : "/candidate/jobs"
-          )
-        }
-        icon={<ArrowLeftOutlined />}
-      >
-        Back
-      </Button> */}
-
       <Card
         style={{
           borderRadius: 14,
@@ -126,21 +153,74 @@ const CandidateJobDetails = () => {
           padding: 24,
         }}
       >
-        {/* ===== HEADER ===== */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
+            gap: 16,
           }}
         >
-          <div>
-            <Title level={4} style={{ marginBottom: 0 }}>
-              {job.role}
-            </Title>
-            <Text type="secondary">{job.companyName}</Text>
+          {/* LEFT SIDE */}
+          <div style={{ display: "flex", gap: 16 }}>
+            {/* ✅ COMPANY LOGO */}
+            {job.companyLogo ? (
+              <img
+                src={job.companyLogo}
+                alt="logo"
+                style={{
+                  width: 70,
+                  height: 70,
+                  borderRadius: 12,
+                  objectFit: "cover",
+                  border: "1px solid #f0f0f0",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 70,
+                  height: 70,
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg, #1677FF, #69B1FF)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 26,
+                  fontWeight: 700,
+                  color: "#fff",
+                }}
+              >
+                {(job.companyName || job.role || "").charAt(0).toUpperCase()}
+              </div>
+            )}
+
+            {/* ROLE + COMPANY */}
+            <div>
+              <Title level={4} style={{ marginBottom: 0 }}>
+                {job.role}
+              </Title>
+              <Text type="secondary">{job.companyName}</Text>
+            </div>
+            {/* SAVE */}
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSaveToggle(job.id);
+              }}
+              style={{ fontSize: 22, marginLeft: 450, cursor: "pointer" }}
+            >
+              <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+                {job?.isSaved ? (
+                  <LuBookmarkCheck size={22} color="#1677ff" />
+                ) : (
+                  <LuBookmark size={22} color="#9CA3AF" />
+                )}
+              </Tooltip>
+            </div>
           </div>
 
+          {/* STATUS TAG */}
           <Tag
             color={job.status === "Closed" ? "error" : "success"}
             style={{

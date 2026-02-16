@@ -35,10 +35,21 @@ function SavedJobs() {
         //   setJobs((prev) => [...prev, ...formattedJobs]);
         // }
 
+        // if (pageNum === 1) {
+        //   setJobs(savedJobs);
+        // } else {
+        //   setJobs((prev) => [...prev, ...savedJobs]);
+        // }
+        const formattedJobs =
+          savedJobs?.map((item) => ({
+            ...item, // ✅ NOT item.job
+            savedAt: item.savedAt,
+          })) || [];
+
         if (pageNum === 1) {
-          setJobs(savedJobs);
+          setJobs(formattedJobs);
         } else {
-          setJobs((prev) => [...prev, ...savedJobs]);
+          setJobs((prev) => [...prev, ...formattedJobs]);
         }
 
         setHasMore(pagination?.page < pagination?.totalPages);

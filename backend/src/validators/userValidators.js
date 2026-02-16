@@ -182,6 +182,7 @@ const editJobValidator = z.object({
       number: z.string().min(1, "Tenure number is required"),
       type: z.enum(["month", "year"]).optional(),
     })
+    .nullable()
     .optional(),
   location: z.string().optional(),
   skills: z.array(z.string()),

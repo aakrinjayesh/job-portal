@@ -186,7 +186,7 @@ const RecruiterJobList = () => {
 
     // ✅ ADD THIS — decide tenure visibility in EDIT mode
     const shouldShowTenure = ["Contract", "PartTime", "Freelancer"].includes(
-      job.employmentType,
+      job.employmentType
     );
     setShowTenure(shouldShowTenure);
     setIsModalVisible(true);
@@ -306,7 +306,7 @@ const RecruiterJobList = () => {
       const response = await PostedJobsList(
         pageNumber,
         LIMIT,
-        controller.signal,
+        controller.signal
       );
 
       const newJobs = response?.jobs || [];
@@ -344,7 +344,7 @@ const RecruiterJobList = () => {
     setSelectedJobs((prev) =>
       prev.includes(jobId)
         ? prev.filter((id) => id !== jobId)
-        : [...prev, jobId],
+        : [...prev, jobId]
     );
   };
 
@@ -511,7 +511,7 @@ const RecruiterJobList = () => {
       console.error("Error saving job:", error);
       // messageApi.error("Failed to save job:" + error.response.data.message);
       messageApi.error(
-        error?.response?.data?.message?.message || "Failed to save job",
+        error?.response?.data?.message?.message || "Failed to save job"
       );
       messageApi.error(error?.response?.data?.message || "Failed to save job");
 
@@ -570,7 +570,7 @@ const RecruiterJobList = () => {
     } catch (error) {
       console.error(error);
       messageApi.error(
-        "Upload failed. Try again:" + error.response.data.message,
+        "Upload failed. Try again:" + error.response.data.message
       );
       setUploadLoading(false);
     } finally {
@@ -693,17 +693,23 @@ const RecruiterJobList = () => {
     return `${end ? `${v}.${end}` : `${v}`}`;
   };
 
+  // const STEP_ITEMS = [
+  //   { title: "Basic Info", status: currentStep > 0 ? "finish" : "process" },
+  //   { title: "Job Details", status: currentStep > 1 ? "finish" : "process" },
+  //   {
+  //     title: "Location & Skills",
+  //     status: currentStep > 2 ? "finish" : "process",
+  //   },
+  //   {
+  //     title: " Other Details",
+  //     status: currentStep >= 3 ? "finish" : "process",
+  //   },
+  // ];
   const STEP_ITEMS = [
-    { title: "Basic Info", status: currentStep > 0 ? "finish" : "process" },
-    { title: "Job Details", status: currentStep > 1 ? "finish" : "process" },
-    {
-      title: "Location & Skills",
-      status: currentStep > 2 ? "finish" : "process",
-    },
-    {
-      title: " Other Details",
-      status: currentStep >= 3 ? "finish" : "process",
-    },
+    { title: "Basic Info" },
+    { title: "Job Details" },
+    { title: "Location & Skills" },
+    { title: "Other Details" },
   ];
 
   const MAX_VISIBLE_TAGS = 3;
@@ -958,19 +964,6 @@ const RecruiterJobList = () => {
                         )}
 
                         <div style={{ maxWidth: 180 }}>
-                          {/* <div
-                            style={{
-                              fontSize: 16,
-                              fontWeight: 600,
-                              color: "#212121",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {job.role || job.title}
-                          </div> */}
-
                           <div
                             style={{
                               display: "flex",
@@ -978,7 +971,7 @@ const RecruiterJobList = () => {
                               alignItems: "center",
                             }}
                           >
-                            <div
+                            {/* <div
                               style={{
                                 fontSize: 16,
                                 fontWeight: 600,
@@ -986,6 +979,16 @@ const RecruiterJobList = () => {
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
+                              }}
+                            >
+                              {job.role || job.title}
+                            </div> */}
+                            <div
+                              style={{
+                                fontSize: 16,
+                                fontWeight: 600,
+                                color: "#212121",
+                                whiteSpace: "nowrap", // one line only
                               }}
                             >
                               {job.role || job.title}
@@ -1017,37 +1020,6 @@ const RecruiterJobList = () => {
                         </div>
                       </div>
 
-                      {/* <div style={{ display: "flex", gap: 10 }}>
-                        <Button
-                          style={{
-                            background: "#F0F2F4",
-                            borderRadius: 100,
-                            color: "#666",
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            showEditModal(job);
-                          }}
-                        >
-                          Edit
-                        </Button>
-
-                        <Button
-                          style={{
-                            background: "#D1E4FF",
-                            borderRadius: 100,
-                            fontWeight: 600,
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/company/candidates", {
-                              state: { id: job.id, jobRole: job.role },
-                            });
-                          }}
-                        >
-                          View Candidates ({job.applicantCount || 0})
-                        </Button>
-                      </div> */}
                       <div style={{ display: "flex", gap: 10 }}>
                         {/* ✅ CLOSE JOB BUTTON */}
                         {job.status === "Open" && (
@@ -1125,6 +1097,9 @@ const RecruiterJobList = () => {
                         <UserOutlined /> {job.experience?.number}{" "}
                         {job.experience?.type}
                       </span>
+                      <Divider type="vertical" />
+
+                      <span>{job.experienceLevel ?? "Not Specified"}</span>
                     </div>
 
                     {/* 🔹 SKILLS + CLOUDS */}
@@ -1273,6 +1248,7 @@ const RecruiterJobList = () => {
                     okButtonProps={{ danger: true }}
                     getContainer={() => jobsContainerRef.current} // 🔥 FIX
                     maskClosable={false}
+                    mask={false}
                     onCancel={() => setCloseJobId(null)}
                     onOk={async () => {
                       try {
@@ -1418,12 +1394,7 @@ const RecruiterJobList = () => {
                     name="description"
                     label="Description"
                     rules={[
-                      { required: true },
-                      {
-                        pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n•+]*$/,
-                        message:
-                          'Only letters, numbers, spaces and . , / - ( ) + % " : are allowed!',
-                      },
+                      { required: true, message: "Description is required" },
                     ]}
                   >
                     <TextArea
@@ -1439,14 +1410,11 @@ const RecruiterJobList = () => {
                     label="Roles & Responsibilities"
                     rules={[
                       {
-                        pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n•]*$/,
-
-                        message:
-                          "Only letters, numbers, spaces and . , / - ( ) are allowed!",
-                      },
+                        required: true,
+                        message: "Roles & Responsibilities are required",
+                      }, // optional
                     ]}
                   >
-                    {/* <Select mode="tags" placeholder="Add responsibilities" /> */}
                     <TextArea
                       rows={3}
                       maxLength={10000}
@@ -1501,7 +1469,7 @@ const RecruiterJobList = () => {
                       <Option value="FullTime">Full Time</Option>
                       <Option value="PartTime">Part Time</Option>
                       <Option value="Contract">Contract</Option>
-                      <Option value="Freelancer">Freelancer</Option>
+                      <Option value="Freelancer">Freelance</Option>
                       <Option value="Internship">Internship</Option>
                     </Select>
                   </Form.Item>
@@ -1651,7 +1619,7 @@ const RecruiterJobList = () => {
                           validator: (_, value) => {
                             if (value && value.length > 3) {
                               return Promise.reject(
-                                "You can select up to 3 locations only",
+                                "You can select up to 3 locations only"
                               );
                             }
                             return Promise.resolve();
@@ -1682,7 +1650,7 @@ const RecruiterJobList = () => {
 
                           if (value.length > 12) {
                             return Promise.reject(
-                              new Error("You can select up to 12 clouds only"),
+                              new Error("You can select up to 12 clouds only")
                             );
                           }
 
@@ -1702,11 +1670,29 @@ const RecruiterJobList = () => {
                   <Form.Item
                     name="skills"
                     label="Skills"
-                    rules={[{ required: true }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select at least one skill",
+                      },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+
+                          if (value.length > 50) {
+                            return Promise.reject(
+                              new Error("You can select a maximum of 50 skills")
+                            );
+                          }
+
+                          return Promise.resolve();
+                        },
+                      },
+                    ]}
                   >
                     <ReusableSelect
                       single={false}
-                      placeholder="Select skills"
+                      placeholder="Select up to 50 Clouds"
                       fetchFunction={GetSkills}
                       addFunction={PostSkills}
                     />
@@ -1723,44 +1709,6 @@ const RecruiterJobList = () => {
                   </Checkbox>
 
                   {!isSalaryRange ? (
-                    // <Form.Item
-                    //   name="salary"
-                    //   label="Salary Per Annum"
-                    //   rules={[
-                    //     { required: true },
-                    //     {
-                    //       validator: (_, value) => {
-                    //         if (value === undefined || value === null)
-                    //           return Promise.resolve();
-
-                    //         // convert to string safely
-                    //         const str = value.toString();
-
-                    //         // remove decimal point
-                    //         const digitsOnly = str.replace(".", "");
-
-                    //         if (digitsOnly.length > 10) {
-                    //           return Promise.reject(
-                    //             new Error(
-                    //               "Maximum 10 digits allowed (including decimals)"
-                    //             )
-                    //           );
-                    //         }
-
-                    //         return Promise.resolve();
-                    //       },
-                    //     },
-                    //   ]}
-                    // >
-                    //   <InputNumber
-                    //     formatter={formatter}
-                    //     style={{ width: "100%" }}
-                    //     min={0}
-                    //     precision={8}
-                    //     placeholder="e.g. 500000 PA"
-                    //   />
-                    // </Form.Item>
-
                     <Form.Item
                       name="salary"
                       label="Salary Per Annum"
@@ -1785,7 +1733,7 @@ const RecruiterJobList = () => {
                             // ❌ letters or special characters
                             if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
                               return Promise.reject(
-                                new Error("Only numbers are allowed"),
+                                new Error("Only numbers are allowed")
                               );
                             }
 
@@ -1795,8 +1743,8 @@ const RecruiterJobList = () => {
                             if (digitsOnly.length > 10) {
                               return Promise.reject(
                                 new Error(
-                                  "Maximum 10 digits allowed (including decimals)",
-                                ),
+                                  "Maximum 10 digits allowed (including decimals)"
+                                )
                               );
                             }
 
@@ -1811,97 +1759,6 @@ const RecruiterJobList = () => {
                       />
                     </Form.Item>
                   ) : (
-                    // <Form.Item label="Salary Range (Per Annum)">
-                    //   <Space.Compact style={{ width: "100%" }}>
-                    //     <Form.Item
-                    //       name={["salary", "min"]}
-                    //       noStyle
-                    //       rules={[
-                    //         { required: true, message: "Min salary required" },
-                    //         {
-                    //           validator: (_, value) => {
-                    //             if (value === undefined || value === null)
-                    //               return Promise.resolve();
-
-                    //             // convert to string safely
-                    //             const str = value.toString();
-
-                    //             // remove decimal point
-                    //             const digitsOnly = str.replace(".", "");
-
-                    //             if (digitsOnly.length > 10) {
-                    //               return Promise.reject(
-                    //                 new Error(
-                    //                   "Maximum 10 digits allowed (including decimals)"
-                    //                 )
-                    //               );
-                    //             }
-
-                    //             return Promise.resolve();
-                    //           },
-                    //         },
-                    //       ]}
-                    //     >
-                    //       <InputNumber
-                    //         formatter={formatter}
-                    //         placeholder="Min e.g. 500000 PA"
-                    //         min={0}
-                    //         precision={8}
-                    //         style={{ width: "50%" }}
-                    //       />
-                    //     </Form.Item>
-
-                    //     <Form.Item
-                    //       name={["salary", "max"]}
-                    //       noStyle
-                    //       rules={[
-                    //         { required: true, message: "Max salary required" },
-                    //         {
-                    //           validator: (_, value) => {
-                    //             if (value === undefined || value === null)
-                    //               return Promise.resolve();
-
-                    //             // convert to string safely
-                    //             const str = value.toString();
-
-                    //             // remove decimal point
-                    //             const digitsOnly = str.replace(".", "");
-
-                    //             if (digitsOnly.length > 10) {
-                    //               return Promise.reject(
-                    //                 new Error(
-                    //                   "Maximum 10 digits allowed (including decimals)"
-                    //                 )
-                    //               );
-                    //             }
-
-                    //             return Promise.resolve();
-                    //           },
-                    //         },
-                    //         ({ getFieldValue }) => ({
-                    //           validator(_, value) {
-                    //             const min = getFieldValue(["salary", "min"]);
-                    //             if (min && value && value < min) {
-                    //               return Promise.reject(
-                    //                 "Max salary must be greater than Min salary"
-                    //               );
-                    //             }
-                    //             return Promise.resolve();
-                    //           },
-                    //         }),
-                    //       ]}
-                    //     >
-                    //       <InputNumber
-                    //         formatter={formatter}
-                    //         placeholder="Max e.g. 800000 PA"
-                    //         min={0}
-                    //         precision={8}
-                    //         style={{ width: "50%" }}
-                    //       />
-                    //     </Form.Item>
-                    //   </Space.Compact>
-                    // </Form.Item>
-
                     <Form.Item label="Salary Range (Per Annum)">
                       <Space.Compact style={{ width: "100%" }}>
                         {/* MIN SALARY */}
@@ -1927,21 +1784,21 @@ const RecruiterJobList = () => {
                                 // ❌ letters or special characters
                                 if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed"),
+                                    new Error("Only numbers are allowed")
                                   );
                                 }
 
                                 // remove decimal point
                                 const digitsOnly = withoutCommas.replace(
                                   ".",
-                                  "",
+                                  ""
                                 );
 
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)",
-                                    ),
+                                      "Maximum 10 digits allowed (including decimals)"
+                                    )
                                   );
                                 }
 
@@ -1977,20 +1834,20 @@ const RecruiterJobList = () => {
                                 // ❌ letters or special characters
                                 if (!/^\d+(\.\d+)?$/.test(withoutCommas)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed"),
+                                    new Error("Only numbers are allowed")
                                   );
                                 }
 
                                 const digitsOnly = withoutCommas.replace(
                                   ".",
-                                  "",
+                                  ""
                                 );
 
                                 if (digitsOnly.length > 10) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 10 digits allowed (including decimals)",
-                                    ),
+                                      "Maximum 10 digits allowed (including decimals)"
+                                    )
                                   );
                                 }
 
@@ -2010,7 +1867,7 @@ const RecruiterJobList = () => {
 
                                   if (Number(maxVal) < Number(minVal)) {
                                     return Promise.reject(
-                                      "Max salary must be greater than Min salary",
+                                      "Max salary must be greater than Min salary"
                                     );
                                   }
                                 }
@@ -2038,9 +1895,9 @@ const RecruiterJobList = () => {
                     rules={[
                       { required: true },
                       {
-                        pattern: /^[A-Za-z0-9 ]+$/,
+                        pattern: /^[A-Za-z0-9 .,()\-&]+$/,
                         message:
-                          "Only letters, numbers, and spaces are allowed",
+                          "Only letters, numbers, spaces, and . , & - ( ) are allowed",
                       },
                     ]}
                   >
@@ -2063,17 +1920,11 @@ const RecruiterJobList = () => {
                   <Form.Item
                     name="applicationDeadline"
                     label="Application Deadline"
-                    // rules={[{ required: true }]}
                   >
-                    {/* <DatePicker
-                      style={{ width: "100%" }}
-                      disabledDate={(current) =>
-                        current && current < dayjs().startOf("day")
-                      }
-                    /> */}
-
                     <DatePicker
                       style={{ width: "100%" }}
+                      format="DD MMM YYYY" // ✅ date month year
+                      placeholder="DD MMM YYYY"
                       disabledDate={(current) => {
                         if (!current) return false;
 
@@ -2082,11 +1933,14 @@ const RecruiterJobList = () => {
                           .add(6, "month")
                           .endOf("day");
 
-                        return current < today || current > sixMonthsLater;
+                        return (
+                          current.isBefore(today) ||
+                          current.isAfter(sixMonthsLater)
+                        );
                       }}
-                      placeholder="Select date (within next 6 months)"
                     />
                   </Form.Item>
+
                   <Form.Item
                     name="ApplicationLimit"
                     label="Limit Applications"
@@ -2105,7 +1959,7 @@ const RecruiterJobList = () => {
                           // ❌ letters or special characters
                           if (!/^\d+$/.test(value)) {
                             return Promise.reject(
-                              new Error("Only numbers are allowed"),
+                              new Error("Only numbers are allowed")
                             );
                           }
 
@@ -2115,8 +1969,8 @@ const RecruiterJobList = () => {
                           if (num > 500) {
                             return Promise.reject(
                               new Error(
-                                "Only up to 500 applications are allowed",
-                              ),
+                                "Only up to 500 applications are allowed"
+                              )
                             );
                           }
 
@@ -2401,7 +2255,7 @@ const RecruiterJobList = () => {
                       // ❌ letters or special characters
                       if (/[^0-9.]/.test(value)) {
                         return Promise.reject(
-                          new Error("Only numbers are allowed"),
+                          new Error("Only numbers are allowed")
                         );
                       }
 
@@ -2409,8 +2263,8 @@ const RecruiterJobList = () => {
                       if (!/^[0-9]{1,2}(\.[0-9]{1,2})?$/.test(value)) {
                         return Promise.reject(
                           new Error(
-                            "Maximum 2 digits allowed with up to 2 decimal places",
-                          ),
+                            "Maximum 2 digits allowed with up to 2 decimal places"
+                          )
                         );
                       }
 
@@ -2458,7 +2312,7 @@ const RecruiterJobList = () => {
 
                       if (wordCount > 1000) {
                         return Promise.reject(
-                          new Error("Maximum 1000 words allowed"),
+                          new Error("Maximum 1000 words allowed")
                         );
                       }
 

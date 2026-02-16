@@ -439,6 +439,7 @@ const userAllApplyedJobs = async (req, res) => {
               employmentType: true,
               experience: true,
               skills: true,
+              clouds: true,
               description: true,
               status: true,
               createdAt: true,

@@ -177,6 +177,14 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
 
         {/* RIGHT SIDE */}
         <Space>
+          {candidate?.vendorId && (
+            <Tag
+              color={candidate?.isVerified ? "green" : "red"}
+              style={{ fontWeight: 500 }}
+            >
+              {candidate?.isVerified ? "Verified" : "Not Verified"}
+            </Tag>
+          )}
           <Tag color={candidate?.isVendor ? "blue" : "green"}>
             {candidate?.isVendor ? "Vendor Candidate" : "Individual Candidate"}
           </Tag>

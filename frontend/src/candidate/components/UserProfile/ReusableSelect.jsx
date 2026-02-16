@@ -121,6 +121,7 @@ const ReusableSelect = ({
 
       setItems([...items, newItem]);
       setName("");
+      setSearchValue("");
 
       setTimeout(() => {
         inputRef.current?.focus();
@@ -143,9 +144,9 @@ const ReusableSelect = ({
     }
   };
 
-  const onSelectChange = (value) => {
-    onChange(value);
-  };
+  // const onSelectChange = (value) => {
+  //   onChange(value);
+  // };
 
   return (
     <>
@@ -163,7 +164,11 @@ const ReusableSelect = ({
         tagRender={tagRender}
         // value={value}
         value={value || []}
-        onChange={onSelectChange}
+        // onChange={onSelectChange}
+        onChange={(val) => {
+          onChange(val);
+          setSearchValue(""); // 🔥 THIS clears "hyd" after selecting Hyderabad
+        }}
         disabled={disabled}
         loading={loading}
         onSearch={(val) => {

@@ -6,7 +6,7 @@ import {
   Select,
   message,
   DatePicker,
-  TimePicker,
+  // TimePicker,
 } from "antd";
 import dayjs from "dayjs";
 import { CreateActivity } from "../../api/api";
@@ -35,10 +35,13 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
           subject: values.subject,
           noteType: values.noteType,
           description: values.description,
-          interactedAt: new Date().toISOString(),
-          // interactedAt: values.time.toISOString(),
-          startTime: values.time[0].toISOString(),
-          endTime: values.time[1].toISOString(),
+          // interactedAt: new Date().toISOString(),
+
+          // startTime: values.time[0].toISOString(),
+          // endTime: values.time[1].toISOString(),
+          interactedAt: values.time.toISOString(),
+          startTime: values.time.toISOString(),
+          endTime: null,
         },
       });
 
@@ -90,21 +93,21 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
       }}
     >
       {/* <div style={{ position: "relative" }}> */}
-       {loading && (
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      background: "rgba(255,255,255,0.7)",
-      zIndex: 10,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    <Progress type="circle" percent={70} status="active" />
-  </div>
-)}
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(255,255,255,0.7)",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Progress type="circle" percent={70} status="active" />
+        </div>
+      )}
 
       <div
         style={{
@@ -124,7 +127,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
         requiredMark={false} // ✅ prevents duplicate red star
       >
         {/* ===== Subject ===== */}
-        <Form.Item
+        {/* <Form.Item
           label={
             <span style={{ fontSize: 13, fontWeight: 590, color: "#2E2E2E" }}>
               <span style={{ color: "#B60554" }}>*</span> Subject
@@ -163,7 +166,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               />
             </Form.Item>
           </div>
-        </Form.Item>
+        </Form.Item> */}
 
         {/* ===== Type ===== */}
         <Form.Item
@@ -200,6 +203,37 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
         </Form.Item>
 
         {/* ===== Time ===== */}
+        {/* <Form.Item
+          label={
+            <span style={{ fontSize: 13, fontWeight: 590 }}>
+              <span style={{ color: "#B60554" }}>*</span> Time
+            </span>
+          }
+          required
+        >
+          <div
+            style={{
+              border: "1px solid #5C5C5C",
+              borderRadius: 8,
+              padding: "6px 8px",
+            }}
+          >
+            <Form.Item
+              name="time"
+              noStyle
+              rules={[{ required: true, message: "Time is required" }]}
+            >
+              
+              <DatePicker
+                bordered={false}
+                showTime
+                use12Hours
+                format="DD MMM YYYY, h:mm a"
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+          </div>
+        </Form.Item> */}
         <Form.Item
           label={
             <span style={{ fontSize: 13, fontWeight: 590 }}>
@@ -222,27 +256,11 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                 { required: true, message: "Time is required" },
                 {
                   validator: (_, value) => {
-                    if (!value || value.length !== 2) return Promise.resolve();
+                    if (!value) return Promise.resolve();
 
-                    const [start, end] = value;
-                    const now = dayjs();
-                    const sixMonthsLater = dayjs().add(6, "month").endOf("day");
-
-                    if (start.isBefore(now)) {
+                    if (value.isBefore(dayjs())) {
                       return Promise.reject(
-                        new Error("Start time cannot be in the past")
-                      );
-                    }
-
-                    if (end.isBefore(start)) {
-                      return Promise.reject(
-                        new Error("End time must be after start time")
-                      );
-                    }
-
-                    if (end.isAfter(sixMonthsLater)) {
-                      return Promise.reject(
-                        new Error("Time must be within 6 months")
+                        new Error("Date & time cannot be in the past")
                       );
                     }
 
@@ -251,66 +269,14 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                 },
               ]}
             >
-              {/* <DatePicker.RangePicker
+              <DatePicker
                 bordered={false}
                 showTime
                 use12Hours
                 format="DD MMM YYYY, h:mm a"
                 style={{ width: "100%" }}
                 disabledDate={(current) => {
-                  if (!current) return false;
-
-                  const today = dayjs().startOf("day");
-                  const sixMonthsLater = dayjs().add(6, "month").endOf("day");
-
-                  return (
-                    current.isBefore(today) || current.isAfter(sixMonthsLater)
-                  );
-                }}
-                disabledTime={(current) => {
-                  if (!current) return {};
-
-                  // ⛔ block past time for today
-                  if (current.isSame(dayjs(), "day")) {
-                    return {
-                      disabledHours: () =>
-                        Array.from({ length: dayjs().hour() }, (_, i) => i),
-                      disabledMinutes: (hour) =>
-                        hour === dayjs().hour()
-                          ? Array.from(
-                              { length: dayjs().minute() },
-                              (_, i) => i
-                            )
-                          : [],
-                    };
-                  }
-
-                  return {};
-                }}
-              /> */}
-
-              <TimePicker.RangePicker
-                bordered={false}
-                use12Hours
-                format="h:mm a"
-                style={{ width: "100%" }}
-                minuteStep={1}
-                disabledTime={(date, type) => {
-                  const now = dayjs();
-
-                  // ⛔ block past time for today (only for start time)
-                  if (type === "start") {
-                    return {
-                      disabledHours: () =>
-                        Array.from({ length: now.hour() }, (_, i) => i),
-                      disabledMinutes: (hour) =>
-                        hour === now.hour()
-                          ? Array.from({ length: now.minute() }, (_, i) => i)
-                          : [],
-                    };
-                  }
-
-                  return {};
+                  return current && current < dayjs().startOf("day");
                 }}
               />
             </Form.Item>

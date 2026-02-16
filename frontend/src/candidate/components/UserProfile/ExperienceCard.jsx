@@ -46,7 +46,6 @@ const ExperienceCard = ({
 
   const [isCurrent, setIsCurrent] = useState(false);
 
-
   useEffect(() => {
     if (apidata && Array.isArray(apidata)) {
       setExperiences(apidata);
@@ -108,18 +107,18 @@ const ExperienceCard = ({
       } = values;
 
       let start = dateRange[0];
-let end = dateRange[1];
+      let end = dateRange[1];
 
-if (start?.format) start = start.format("MM-YYYY");
-if (end?.format) end = end.format("MM-YYYY");
+      if (start?.format) start = start.format("MM-YYYY");
+      if (end?.format) end = end.format("MM-YYYY");
 
       const newExperience = {
         // startDate: dateRange[0].format("YYYY-MM"),
         // endDate: dateRange[1].format("YYYY-MM"),
         // startDate: dateRange[0].format("MM-YYYY"),
         // endDate: dateRange[1].format("MM-YYYY"),
-         startDate: start,
-  endDate: end,
+        startDate: start,
+        endDate: end,
         payrollCompanyName: payrollCompanyName || "",
         role: role || "",
 
@@ -326,76 +325,77 @@ if (end?.format) end = end.format("MM-YYYY");
                 />
               </Form.Item>
             </Col> */}
-     <Col span={12}>
-  <Form.Item
-    name="dateRange"
-    label="Date Range"
-    rules={[
-      { required: true, message: "Please select date range" },
-      {
-        validator: (_, value) => {
-          if (!isCurrent && (!value || value.length !== 2)) {
-            return Promise.reject("Please select start and end month");
-          }
-          if (isCurrent && (!value || value.length < 1)) {
-            return Promise.reject("Please select start month");
-          }
-          return Promise.resolve();
-        },
-      },
-    ]}
-  >
-    <>
-      {/* Checkbox */}
-      <div style={{ marginBottom: 8 }}>
-        <Checkbox
-          checked={isCurrent}
-          onChange={(e) => setIsCurrent(e.target.checked)}
-        >
-          I am currently working here
-        </Checkbox>
-      </div>
+            <Col span={12}>
+              <Form.Item
+                name="dateRange"
+                label="Date Range"
+                rules={[
+                  { required: true, message: "Please select date range" },
+                  {
+                    validator: (_, value) => {
+                      if (!isCurrent && (!value || value.length !== 2)) {
+                        return Promise.reject(
+                          "Please select start and end month"
+                        );
+                      }
+                      if (isCurrent && (!value || value.length < 1)) {
+                        return Promise.reject("Please select start month");
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <>
+                  {/* Checkbox */}
+                  <div style={{ marginBottom: 8 }}>
+                    <Checkbox
+                      checked={isCurrent}
+                      onChange={(e) => setIsCurrent(e.target.checked)}
+                    >
+                      I am currently working here
+                    </Checkbox>
+                  </div>
 
-      {/* When ongoing → only start month picker */}
-      {isCurrent ? (
-        <DatePicker
-          picker="month"
-          format="MMM YYYY"
-          style={{ width: "100%" }}
-          onChange={(date) => {
-            // store start + "Present"
-            const start = date?.format("YYYY-MM") || null;
-            form.setFieldsValue({
-              dateRange: start ? [start, "Present"] : [],
-            });
-          }}
-        />
-      ) : (
-        // Normal range picker
-        <RangePicker
-          picker="month"
-          format="MMM YYYY"
-          style={{ width: "100%" }}
-          onChange={(dates) => {
-            if (!dates) {
-              form.setFieldsValue({ dateRange: [] });
-              return;
-            }
-            form.setFieldsValue({
-              dateRange: [
-                dates[0].format("YYYY-MM"),
-                dates[1].format("YYYY-MM"),
-              ],
-            });
-          }}
-        />
-      )}
-    </>
-  </Form.Item>
-</Col>
+                  {/* When ongoing → only start month picker */}
+                  {isCurrent ? (
+                    <DatePicker
+                      picker="month"
+                      format="MMM YYYY"
+                      style={{ width: "100%" }}
+                      onChange={(date) => {
+                        // store start + "Present"
+                        const start = date?.format("YYYY-MM") || null;
+                        form.setFieldsValue({
+                          dateRange: start ? [start, "Present"] : [],
+                        });
+                      }}
+                    />
+                  ) : (
+                    // Normal range picker
+                    <RangePicker
+                      picker="month"
+                      format="MMM YYYY"
+                      style={{ width: "100%" }}
+                      onChange={(dates) => {
+                        if (!dates) {
+                          form.setFieldsValue({ dateRange: [] });
+                          return;
+                        }
+                        form.setFieldsValue({
+                          dateRange: [
+                            dates[0].format("YYYY-MM"),
+                            dates[1].format("YYYY-MM"),
+                          ],
+                        });
+                      }}
+                    />
+                  )}
+                </>
+              </Form.Item>
+            </Col>
 
-
-            <Col span={5}>
+            <Col span={12}>
               <Form.Item
                 name="payrollCompanyName"
                 label="Payroll Company"
@@ -408,44 +408,6 @@ if (end?.format) end = end.format("MM-YYYY");
                 ]}
               >
                 <Input placeholder="e.g. TCS" />
-              </Form.Item>
-            </Col>
-
-            <Col span={7}>
-              <Form.Item
-                name="role"
-                label="Role"
-                rules={[
-                  { required: true, message: "Enter role" },
-                  {
-                    pattern: /^[A-Za-z0-9 ]+$/,
-                    message: "Only letters, numbers, are allowed!",
-                  },
-                ]}
-              >
-                {/* <Select
-                  // mode="tags"
-                  // maxTagCount={1}
-                  placeholder="Select or type a role"
-                  showSearch
-                  allowClear
-                  // onChange={(values) => {
-                  //   // Allow only one role
-                  //   if (Array.isArray(values) && values.length > 1) {
-                  //     values.splice(0, values.length - 1); // Keep latest only
-                  //   }
-                  // }}
-                  options={RoleOptions.map((item) => ({
-                    label: item,
-                    value: item,
-                  }))}
-                /> */}
-                <ReusableSelect
-                  placeholder="Select Role"
-                  fetchFunction={GetRole}
-                  addFunction={PostRole}
-                  single={true}
-                />
               </Form.Item>
             </Col>
           </Row>
@@ -485,6 +447,27 @@ if (end?.format) end = end.format("MM-YYYY");
                           <Input placeholder="Project name" />
                         </Form.Item>
                       </Col>
+
+                      <Col span={12}>
+                        <Form.Item
+                          name="role"
+                          label="Role"
+                          rules={[
+                            { required: true, message: "Enter role" },
+                            {
+                              pattern: /^[A-Za-z0-9 ]+$/,
+                              message: "Only letters, numbers, are allowed!",
+                            },
+                          ]}
+                        >
+                          <ReusableSelect
+                            placeholder="Select Role"
+                            fetchFunction={GetRole}
+                            addFunction={PostRole}
+                            single={true}
+                          />
+                        </Form.Item>
+                      </Col>
                     </Row>
                     <Row gutter={12}>
                       <Col span={12}>
@@ -493,17 +476,6 @@ if (end?.format) end = end.format("MM-YYYY");
                           name={[name, "cloudUsed"]}
                           label="Cloud Used"
                         >
-                          {/* <Select
-                            showSearch
-                            placeholder="e.g. AWS"
-                            mode="multiple"
-                            allowClear
-                            options={[
-                              { value: "AWS" },
-                              { value: "Azure" },
-                              { value: "GCP" },
-                            ]}
-                          /> */}
                           <ReusableSelect
                             placeholder="Select or add Clouds"
                             fetchFunction={GetClouds}
@@ -520,7 +492,7 @@ if (end?.format) end = end.format("MM-YYYY");
                           label="Skills Used"
                           rules={[
                             {
-                              required: true,
+                              // required: true,
                               message: "Add at least one skill",
                             },
                           ]}
@@ -550,12 +522,12 @@ if (end?.format) end = end.format("MM-YYYY");
                             //   // required: true,
                             //   message: "Add project description",
                             // },
-                             {
-                pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+                            {
+                              pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
 
-                message:
-                  "Only letters, numbers, spaces and . , / - ( ) are allowed!",
-              },
+                              message:
+                                "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+                            },
                           ]}
                         >
                           <TextArea
@@ -576,12 +548,12 @@ if (end?.format) end = end.format("MM-YYYY");
                               // required: true,
                               message: "Add roles & responsibilities",
                             },
-                             {
-                pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
+                            {
+                              pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
 
-                message:
-                  "Only letters, numbers, spaces and . , / - ( ) are allowed!",
-              },
+                              message:
+                                "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+                            },
                           ]}
                         >
                           <TextArea

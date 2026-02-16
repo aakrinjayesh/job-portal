@@ -24,6 +24,14 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
     education,
   } = candidate;
 
+  const isVendor = !!candidate.vendorId;
+
+  const displayEmail = isVendor ? candidate.vendor?.email || email : email;
+
+  const displayPhone = isVendor
+    ? candidate.vendor?.phoneNumber || phoneNumber
+    : phoneNumber;
+
   const primarySkills = skillsJson?.filter((s) => s.level === "primary") || [];
   const secondarySkills =
     skillsJson?.filter((s) => s.level === "secondary") || [];
@@ -581,9 +589,9 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
       `}</style>
       {/* <div ref={ref}> */}
       {/* 2️⃣ PRINT HEADER (JSX, NOT CSS) */}
-      <div className="print-header">
+      {/* <div className="print-header">
         <div className="print-header-inner">{name}</div>
-      </div>
+      </div> */}
 
       {/* 3️⃣ PRINT FOOTER (JSX, NOT CSS) */}
       {/* <div className="print-footer">
@@ -605,13 +613,18 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
         <div className="header">
           <h1>{name}</h1>
           <div className="title">{title}</div>
+
           <div className="contact-info">
-            {email && <span className="contact-item">✉ {email}</span>}
-            {phoneNumber && (
-              <span className="contact-item">📱 {phoneNumber}</span>
+            {displayEmail && (
+              <span className="contact-item">✉ {displayEmail}</span>
             )}
+
+            {displayPhone && (
+              <span className="contact-item">📱 {displayPhone}</span>
+            )}
+
             {currentLocation && (
-              <span className="contact-item"> {currentLocation}</span>
+              <span className="contact-item">📍 {currentLocation}</span>
             )}
           </div>
         </div>
@@ -631,7 +644,9 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
                 </div>
               </div>
               <div className="detail-item">
-                <div className="detail-label">Salesforce Experience</div>
+                <div className="detail-label">
+                  Relevant Salesforce Experience
+                </div>
                 <div className="detail-value">
                   {candidate.relevantSalesforceExperience
                     ? `${candidate.relevantSalesforceExperience} years`

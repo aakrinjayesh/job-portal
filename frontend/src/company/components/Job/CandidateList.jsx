@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Spin, message, Button, Table, Tag, Modal, Input } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GetCandidateDeatils } from "../../api/api";
+import { GetCandidateList } from "../../api/api";
 import { EyeOutlined } from "@ant-design/icons";
 import { Popover } from "antd";
 import CandidateActivity from "../activity/CandidateActivity";
@@ -10,6 +10,7 @@ import CandidateActivity from "../activity/CandidateActivity";
 import {
   MarkCandidateReviewed,
   UpdateVendorCandidateStatus,
+  MarkCandidateBookmark,
 } from "../../api/api";
 
 const CandidateList = () => {
@@ -44,13 +45,23 @@ const CandidateList = () => {
       try {
         setLoading(true);
         const payload = { jobId };
-        const response = await GetCandidateDeatils(payload);
+        const response = await GetCandidateList(payload);
 
         if (response?.data && response.data.length > 0) {
           const map = {};
+          // response.data.forEach((c) => {
+          //   map[c.applicationId] = c.status || "Pending";
+          // });
           response.data.forEach((c) => {
-            map[c.applicationId] = c.status || "Pending";
+            if (c.status === "Rejected") {
+              map[c.applicationId] = "Rejected";
+            } else if (c.status === "BookMark") {
+              map[c.applicationId] = "BookMark";
+            } else {
+              map[c.applicationId] = "Not Updated";
+            }
           });
+
           setStatusMap(map);
           setCandidates(response.data);
           setTotal(response.total || response.data.length);
@@ -79,17 +90,60 @@ const CandidateList = () => {
 
       return true;
     })
+    // .filter((c) => {
+    //   if (!searchText.trim()) return true;
+
+    //   const name = c?.name?.toLowerCase() || "";
+    //   const title = c?.profile?.title?.toLowerCase() || "";
+
+    //   return (
+    //     name.includes(searchText.toLowerCase()) ||
+    //     title.includes(searchText.toLowerCase())
+    //   );
+    // })
+
     .filter((c) => {
       if (!searchText.trim()) return true;
 
+      const q = searchText.toLowerCase();
+
       const name = c?.name?.toLowerCase() || "";
       const title = c?.profile?.title?.toLowerCase() || "";
+      const email = c?.email?.toLowerCase() || "";
+      const phone = c?.profile?.phoneNumber?.toLowerCase() || "";
+      const location = c?.profile?.currentLocation?.toLowerCase() || "";
+      // const fitScore = c?.matchScore?.toString() || "";
+      const fitScore =
+        c?.matchScore !== undefined && c?.matchScore !== null
+          ? `${c.matchScore}%`
+          : "";
+
+      const keyMatchSkills =
+        c?.aiAnalysis?.key_match_skills?.join(" ").toLowerCase() || "";
+
+      const keyGapSkills =
+        c?.aiAnalysis?.key_gap_skills?.join(" ").toLowerCase() || "";
+
+      const keyMatchClouds =
+        c?.aiAnalysis?.key_match_clouds?.join(" ").toLowerCase() || "";
+
+      const keyGapClouds =
+        c?.aiAnalysis?.key_gap_clouds?.join(" ").toLowerCase() || "";
 
       return (
-        name.includes(searchText.toLowerCase()) ||
-        title.includes(searchText.toLowerCase())
+        name.includes(q) ||
+        title.includes(q) ||
+        email.includes(q) ||
+        phone.includes(q) ||
+        location.includes(q) ||
+        fitScore.includes(q) ||
+        keyMatchSkills.includes(q) ||
+        keyGapSkills.includes(q) ||
+        keyMatchClouds.includes(q) ||
+        keyGapClouds.includes(q)
       );
     })
+
     .sort((a, b) => {
       if (!searchText.trim()) return 0;
 
@@ -135,7 +189,7 @@ const CandidateList = () => {
     // Reviewed: { label: "Reviewed", color: "#1890ff" },
     // Shortlisted: { label: "Shortlisted", color: "#52c41a" },
     Rejected: { label: "Rejected", color: "#f5222d" },
-    Bookmark: { label: "Bookmark", color: "#faad14" }, // gold
+    BookMark: { label: "BookMark", color: "#faad14" }, // gold
     // Clear: { label: "Clear", color: "#ff16ecff" },
   };
 
@@ -143,7 +197,7 @@ const CandidateList = () => {
     // "Pending",
     // "Shortlisted",
     "Rejected",
-    "Bookmark",
+    "BookMark",
     // "Clear",
   ];
 
@@ -162,7 +216,8 @@ const CandidateList = () => {
 
   const FlagDropdown = ({ record }) => {
     // const currentStatus = record.status || "Pending";
-    const currentStatus = statusMap[record.applicationId] || "Pending";
+    // const currentStatus = statusMap[record.applicationId] || "Pending";
+    const currentStatus = statusMap[record.applicationId] || "Not Updated";
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -182,25 +237,43 @@ const CandidateList = () => {
                 backgroundColor: isActive ? "#f5f5f5" : "transparent",
                 fontWeight: isActive ? 600 : 400,
               }}
+              // onClick={async () => {
+              //   const finalStatus = status === "Clear" ? "Pending" : status;
+
+              //   await UpdateVendorCandidateStatus({
+              //     jobApplicationId: record.applicationId,
+              //     status: finalStatus,
+              //   });
+
+              //   setStatusMap((prev) => ({
+              //     ...prev,
+              //     [record.applicationId]: finalStatus,
+              //   }));
+              // }}
               onClick={async () => {
                 const finalStatus = status === "Clear" ? "Pending" : status;
 
-                await UpdateVendorCandidateStatus({
-                  jobApplicationId: record.applicationId,
-                  status: finalStatus,
-                });
+                try {
+                  // if (finalStatus === "Bookmark") {
+                  if (finalStatus === "BookMark") {
+                    await MarkCandidateBookmark({
+                      jobApplicationId: record.applicationId,
+                    });
+                  } else if (finalStatus === "Rejected") {
+                    await UpdateVendorCandidateStatus({
+                      jobApplicationId: record.applicationId,
+                      status: "Rejected",
+                    });
+                  }
 
-                // setCandidates((prev) =>
-                //   prev.map((c) =>
-                //     c.id === record.applicationId
-                //       ? { ...c, status: finalStatus }
-                //       : c
-                //   )
-                // );
-                setStatusMap((prev) => ({
-                  ...prev,
-                  [record.applicationId]: finalStatus,
-                }));
+                  // ✅ Update UI
+                  setStatusMap((prev) => ({
+                    ...prev,
+                    [record.applicationId]: finalStatus,
+                  }));
+                } catch (err) {
+                  messageAPI.error("Failed to update status");
+                }
               }}
             >
               {/* ✅ KEEP ORIGINAL FLAG COLOR ALWAYS */}
@@ -221,7 +294,7 @@ const CandidateList = () => {
     // "Reviewed",
     // "Shortlisted",
     "Rejected",
-    "Bookmark",
+    "BookMark",
   ];
 
   // TABLE COLUMNS
@@ -288,13 +361,17 @@ const CandidateList = () => {
 
       // ✅ KEEP THIS (filter logic)
       onFilter: (value, record) => {
-        const currentStatus = statusMap[record.applicationId] || "Pending";
+        // const currentStatus = statusMap[record.applicationId] || "Pending";
+        const currentStatus = statusMap[record.applicationId] || "Not Updated";
+
         return currentStatus === value;
       },
 
       // ✅ KEEP THIS (row flag UI)
       render: (_, record) => {
-        const currentStatus = statusMap[record.applicationId] || "Pending";
+        // const currentStatus = statusMap[record.applicationId] || "Pending";
+        const currentStatus = statusMap[record.applicationId] || "Not Updated";
+
         const flagMeta = STATUS_FLAG_MAP[currentStatus];
 
         return (
@@ -439,7 +516,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  textDecoration: "underline",
+                  // textDecoration: "underline",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -484,7 +561,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  textDecoration: "underline",
+                  // textDecoration: "underline",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -529,7 +606,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  textDecoration: "underline",
+                  // textDecoration: "underline",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -576,7 +653,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  textDecoration: "underline",
+                  // textDecoration: "underline",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -592,17 +669,55 @@ const CandidateList = () => {
       },
     },
 
+    // {
+    //   title: "Email",
+    //   dataIndex: "email",
+    //   key: "email",
+    //   sorter: (a, b) => a.email.localeCompare(b.email),
+    // },
     {
       title: "Email",
-      dataIndex: "email",
       key: "email",
-      sorter: (a, b) => a.email.localeCompare(b.email),
+      render: (_, record) => {
+        const displayEmail =
+          record?.isVendor && record?.vendor?.email
+            ? record.vendor.email
+            : record.email;
+
+        return displayEmail || "N/A";
+      },
+      sorter: (a, b) => {
+        const emailA =
+          a?.isVendor && a?.vendor?.email ? a.vendor.email : a.email || "";
+        const emailB =
+          b?.isVendor && b?.vendor?.email ? b.vendor.email : b.email || "";
+
+        return emailA.localeCompare(emailB);
+      },
     },
+
+    {
+      title: "Phone Number",
+      dataIndex: ["profile", "phoneNumber"],
+      key: "phone",
+      render: (phone) => phone || "N/A",
+    },
+
+    // {
+    //   title: "Status",
+    //   dataIndex: "status",
+    //   key: "status",
+    // },
     {
       title: "Status",
-      dataIndex: "status",
       key: "status",
+      render: (_, record) => {
+        const currentStatus = statusMap[record.applicationId] || "Not Updated";
+
+        return currentStatus;
+      },
     },
+
     {
       title: "Applied On",
       dataIndex: "appliedAt",
@@ -623,19 +738,19 @@ const CandidateList = () => {
       align: "center",
       render: (_, record) => {
         const openActivityOnly = async (type) => {
-          try {
-            await MarkCandidateReviewed({
-              jobApplicationId: record.applicationId,
-            });
-          } catch {}
+          // try {
+          //   await MarkCandidateReviewed({
+          //     jobApplicationId: record.applicationId,
+          //   });
+          // } catch {}
 
-          setCandidates((prev) =>
-            prev.map((c) =>
-              c.applicationId === record.applicationId
-                ? { ...c, status: "Reviewed" }
-                : c
-            )
-          );
+          // setCandidates((prev) =>
+          //   prev.map((c) =>
+          //     c.applicationId === record.applicationId
+          //       ? { ...c, status: "Reviewed" }
+          //       : c
+          //   )
+          // );
 
           // ✅ OPEN MODAL INSTEAD
           setActivityCandidate(record);
@@ -789,11 +904,30 @@ const CandidateList = () => {
         {/* RIGHT SIDE – SEARCH + CREATE GROUP */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {/* SEARCH */}
-          <Input
+          {/* <Input
             placeholder="Search by name or title"
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
+            style={{
+              width: 200,
+              height: 36,
+              borderRadius: 20,
+              fontSize: 13,
+            }}
+          /> */}
+          <Input
+            placeholder="Search by name or title"
+            allowClear
+            value={searchText}
+            onChange={(e) => {
+              const value = e.target.value;
+
+              // Allow only letters, numbers and space
+              const filteredValue = value.replace(/[^a-zA-Z0-9 ]/g, "");
+
+              setSearchText(filteredValue);
+            }}
             style={{
               width: 200,
               height: 36,

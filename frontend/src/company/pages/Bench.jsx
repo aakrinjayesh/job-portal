@@ -487,6 +487,16 @@ const Bench = () => {
     }
   };
 
+  const formatName = (name) => {
+    if (!name) return "";
+
+    return name
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
   // 🔹 Table Columns (UPDATED)
   const columns = [
     {
@@ -505,6 +515,36 @@ const Bench = () => {
       ),
     },
 
+    // {
+    //   title: "Name",
+    //   dataIndex: "name",
+    //   key: "name",
+    //   width: 150,
+    //   fixed: "left",
+    //   sorter: (a, b) => a.name.localeCompare(b.name),
+    //   render: (text) => (
+    //     <div
+    //       style={{
+    //         display: "flex",
+    //         alignItems: "center",
+    //         padding: "16px 0",
+    //       }}
+    //     >
+    //       <div
+    //         style={{
+    //           color: "#666666",
+    //           fontSize: 14,
+    //           fontWeight: 400,
+    //           textTransform: "capitalize",
+    //           lineHeight: "20px",
+    //         }}
+    //       >
+    //         {text}
+    //       </div>
+    //     </div>
+    //   ),
+    // },
+
     {
       title: "Name",
       dataIndex: "name",
@@ -512,7 +552,7 @@ const Bench = () => {
       width: 150,
       fixed: "left",
       sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (text) => (
+      render: (text, record) => (
         <div
           style={{
             display: "flex",
@@ -520,17 +560,23 @@ const Bench = () => {
             padding: "16px 0",
           }}
         >
-          <div
+          <span
             style={{
-              color: "#666666",
+              color: "#1677FF",
               fontSize: 14,
-              fontWeight: 400,
-              textTransform: "capitalize",
+              fontWeight: 500,
+              cursor: "pointer",
               lineHeight: "20px",
             }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate("/company/bench/candidates", {
+                state: { candidate: record, from: "mybench" },
+              });
+            }}
           >
-            {text}
-          </div>
+            {formatName(text)}
+          </span>
         </div>
       ),
     },
@@ -707,6 +753,61 @@ const Bench = () => {
     },
 
     {
+      title: "Certificates",
+      key: "certifications",
+      width: 300,
+      render: (_, record) => {
+        const certs = record?.certifications || [];
+
+        if (!certs.length) return "-";
+
+        const visibleCerts = certs.slice(0, 2); // show first 2
+        const remainingCount = certs.length - visibleCerts.length;
+
+        return (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              alignItems: "center",
+            }}
+          >
+            {visibleCerts.map((cert, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: "6px 12px",
+                  background: "#E6F7FF",
+                  borderRadius: 100,
+                  border: "1px solid #91D5FF",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cert}
+              </div>
+            ))}
+
+            {remainingCount > 0 && (
+              <div
+                style={{
+                  color: "#0055F3",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                +{remainingCount} more
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+
+    {
       title: "Preferred Locations",
       key: "preferredLocation",
       render: (_, record) =>
@@ -714,9 +815,33 @@ const Bench = () => {
           ? record.preferredLocation.join(", ")
           : "-",
     },
+    {
+      title: "Total Exp (Years)",
+      dataIndex: "totalExperience",
+      key: "totalExperience",
+      width: 160,
+      sorter: (a, b) =>
+        parseFloat(a.totalExperience || 0) - parseFloat(b.totalExperience || 0),
+      render: (value) => (
+        <span style={{ fontWeight: 500 }}>{value ? `${value} yrs` : "-"}</span>
+      ),
+    },
 
     {
-      title: "Rate Card",
+      title: "Relevant Exp (Years)",
+      dataIndex: "relevantSalesforceExperience",
+      key: "relevantSalesforceExperience",
+      width: 160,
+      sorter: (a, b) =>
+        parseFloat(a.relevantSalesforceExperience || 0) -
+        parseFloat(b.relevantSalesforceExperience || 0),
+      render: (value) => (
+        <span style={{ fontWeight: 500 }}>{value ? `${value} yrs` : "-"}</span>
+      ),
+    },
+
+    {
+      title: "Rate Card / Month",
       key: "rateCard",
       filters: [
         { text: "INR", value: "INR" },
@@ -743,6 +868,27 @@ const Bench = () => {
       title: "Joining Period",
       dataIndex: "joiningPeriod",
       key: "joiningPeriod",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      filters: [
+        { text: "Active", value: "active" },
+        { text: "Inactive", value: "inactive" },
+      ],
+      onFilter: (value, record) => record.status === value,
+      sorter: (a, b) => (a.status || "").localeCompare(b.status || ""),
+      render: (status) => {
+        const isActive = status !== "inactive";
+
+        return isActive ? (
+          <span style={{ color: "#52c41a", fontWeight: 600 }}>Active</span>
+        ) : (
+          <span style={{ color: "#ff4d4f", fontWeight: 600 }}>Inactive</span>
+        );
+      },
     },
 
     {
@@ -1180,46 +1326,6 @@ const Bench = () => {
       </div>
 
       <Spin spinning={loading}>
-        {/* 🔍 SEARCH INPUT */}
-
-        {/* <Table
-          columns={columns}
-          dataSource={
-            activeTab === "all"
-              ? candidates
-              : activeTab === "active"
-              ? candidates.filter((c) => c.status !== "inactive")
-              : candidates.filter((c) => c.status === "inactive")
-          }
-          rowKey={(record) => record.id || record.name}
-          bordered
-          pagination={false}
-          // scroll={{ x: 1000 }}
-          scroll={{ x: "max-content" }}
-          style={{ cursor: "pointer" }}
-          // onRow={(record) => ({
-          //   onClick: () => {
-          //     console.log("selected candidate", record);
-          //     setSelectedCandidate(record);
-          //     setDetailsModalVisible(true);
-          //   },
-          // })}
-          onRow={(record) => ({
-            onClick: () => {
-              navigate("/company/bench/candidates", {
-                state: { candidate: record, from: "mybench" },
-              });
-            },
-          })}
-        /> */}
-
-        {/* <div
-          style={{
-            // height: "calc(100vh - 420px)", // 👈 fixed height
-            height: "calc(100vh - 300px)",
-            overflowY: "auto", // 👈 enables scroll
-          }}
-        > */}
         <Table
           columns={columns}
           dataSource={
@@ -1233,57 +1339,13 @@ const Bench = () => {
           pagination={{ pageSize: 5 }}
           scroll={{ x: "max-content" }}
           style={{ cursor: "pointer" }}
-          /* 🔹 ROW UI ONLY */
           rowClassName={(_, index) =>
             index % 2 === 0 ? "bench-row-light" : "bench-row-dark"
           }
-          /* 🔹 HEADER + ROW HEIGHT */
-          // components={{
-          //   header: {
-          //     cell: (props) => (
-          //       <th
-          //         {...props}
-          //         // style={{
-          //         //   background: "#F0F2F4",
-          //         //   color: "#666666",
-          //         //   fontWeight: 400,
-          //         //   height: 54,
-          //         //   borderBottom: "1px solid #E0E0E0",
-          //         // }}
-
-          //         style={{
-          //           height: 56, // ✅ FIXED HEIGHT
-          //           maxHeight: 56, // ✅ IMPORTANT
-          //           overflow: "hidden", // ✅ IMPORTANT
-          //           whiteSpace: "nowrap", // ✅ NO WRAP
-          //           textOverflow: "ellipsis", // ✅ ...
-          //           borderBottom: "1px solid #E0E0E0",
-          //           color: "#666666",
-          //           fontSize: 14,
-          //           verticalAlign: "middle", // ✅ CENTER CONTENT
-          //         }}
-          //       />
-          //     ),
-          //   },
-          //   body: {
-          //     cell: (props) => (
-          //       <td
-          //         {...props}
-          //         style={{
-          //           height: 54,
-          //           borderBottom: "1px solid #E0E0E0",
-          //           color: "#666666",
-          //           fontSize: 14,
-          //         }}
-          //       />
-          //     ),
-          //   },
-          // }}
-          /* 🔹 ROW HOVER (SUBTLE – NO BLUE) */
           onRow={(record) => ({
             onClick: () => {
-              navigate("/company/bench/candidates", {
-                state: { candidate: record, from: "mybench" },
+              navigate(`/company/candidate/${record.id}`, {
+                state: { source: "bench" },
               });
             },
             style: {
@@ -1291,27 +1353,7 @@ const Bench = () => {
             },
           })}
         />
-        {/* </div> */}
 
-        {/* <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-          <Button
-            type="primary"
-            disabled={selectedRowKeys.length === 0}
-            onClick={() => updateStatus("active")}
-          >
-            Activate Selected
-          </Button>
-
-          <Button
-            danger
-            disabled={selectedRowKeys.length === 0}
-            onClick={() => updateStatus("inactive")}
-          >
-            Deactivate Selected
-          </Button>
-        </div> */}
-
-        {/* ===== BOTTOM CTAs (FIGMA EXACT) ===== */}
         <div
           style={{
             width: "100%",

@@ -11,6 +11,7 @@ const SkillManagerCard = ({
   addFunction,
   hasError = false,
   required = false,
+  totalExperience = 0,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   // const [currentSkill, setCurrentSkill] = useState("");
@@ -18,6 +19,7 @@ const SkillManagerCard = ({
 
   const [experience, setExperience] = useState();
   const [editingIndex, setEditingIndex] = useState(null);
+  const [experienceError, setExperienceError] = useState("");
 
   const openModal = () => {
     // setCurrentSkill("");
@@ -579,27 +581,7 @@ const SkillManagerCard = ({
               Experience
             </label>
 
-            {/* <InputNumber
-              value={experience}
-              min={0}
-              step={1}
-              addonAfter="yrs"
-              style={{ width: "100%" }}
-              parser={(value) => value.replace(/[^\d.]/g, "")}
-              formatter={(value) => value}
-              onChange={(value) => {
-                if (value === null) {
-                  setExperience(null);
-                  return;
-                }
-                const regex = /^\d{1,2}(\.\d{0,2})?$/;
-                if (regex.test(value.toString())) {
-                  setExperience(value);
-                }
-              }}
-            /> */}
-
-            <Input
+            {/* <Input
               value={experience}
               suffix="yrs"
               style={{ width: "100%" }}
@@ -629,7 +611,47 @@ const SkillManagerCard = ({
 
                 setExperience(value);
               }}
+            /> */}
+
+            <Input
+              value={experience}
+              suffix="yrs"
+              status={experienceError ? "error" : ""}
+              style={{ width: "100%" }}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                // allow only numbers & dot
+                if (!/^[0-9.]*$/.test(value)) return;
+
+                // only one dot
+                if ((value.match(/\./g) || []).length > 1) return;
+
+                // max 2 digits before & after decimal
+                const regex = /^\d{0,2}(\.\d{0,2})?$/;
+                if (!regex.test(value)) return;
+
+                setExperience(value);
+
+                // 🔥 REAL-TIME VALIDATION
+                const totalExp = parseFloat(totalExperience || 0);
+                const skillExp = parseFloat(value || 0);
+
+                if (skillExp > totalExp) {
+                  setExperienceError(
+                    `Experience cannot be greater than Total Experience (${totalExp} yrs)`
+                  );
+                } else {
+                  setExperienceError("");
+                }
+              }}
             />
+
+            {experienceError && (
+              <div style={{ color: "#ff4d4f", marginTop: 4, fontSize: 12 }}>
+                {experienceError}
+              </div>
+            )}
           </div>
         </div>
 

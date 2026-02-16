@@ -632,9 +632,9 @@ const BenchCandidateDetails = () => {
           borderBottom: "1px solid #EDEDED",
         }}
       >
-        <Row align="middle" justify="space-between">
+        {/* <Row align="middle" justify="space-between">
           <Space size={15} align="center">
-            {/* <Avatar size={70} icon={<UserOutlined />} /> */}
+            
             <Avatar
               size={70}
               src={
@@ -660,6 +660,7 @@ const BenchCandidateDetails = () => {
               <Text type="secondary" style={{ fontSize: 20 }}>
                 {title}
               </Text>
+              
             </Space>
           </Space>
 
@@ -679,6 +680,75 @@ const BenchCandidateDetails = () => {
           >
             Download Resume
           </button>
+        </Row> */}
+        <Row align="middle" justify="space-between">
+          {/* LEFT SIDE */}
+          <Space size={15} align="center">
+            <Avatar
+              size={70}
+              src={
+                candidate?.profilePicture
+                  ? `${candidate.profilePicture}?t=${Date.now()}`
+                  : undefined
+              }
+              icon={!candidate?.profilePicture ? <UserOutlined /> : null}
+              style={{
+                backgroundColor: candidate?.profilePicture
+                  ? undefined
+                  : "#1677ff",
+                color: "#fff",
+                fontSize: 24,
+              }}
+              onError={(e) => {
+                e.currentTarget.src = "";
+              }}
+            />
+
+            <Space direction="vertical" size={0}>
+              <Text style={{ fontWeight: 600, fontSize: 20 }}>{name}</Text>
+              <Text type="secondary" style={{ fontSize: 16 }}>
+                {title}
+              </Text>
+            </Space>
+          </Space>
+
+          {/* RIGHT SIDE */}
+          <Space size={12} align="center">
+            {/* ✅ Verification Tag */}
+            {candidate?.vendorId && (
+              <Tag
+                color={candidate?.isVerified ? "green" : "red"}
+                style={{ fontWeight: 500 }}
+              >
+                {candidate?.isVerified ? "Verified" : "Not Verified"}
+              </Tag>
+            )}
+
+            {/* ✅ Candidate Type */}
+            <Tag color={candidate?.vendorId ? "blue" : "green"}>
+              {candidate?.vendorId
+                ? "Vendor Candidate"
+                : "Individual Candidate"}
+            </Tag>
+
+            {/* ✅ Download Button */}
+            <button
+              onClick={() => {
+                if (!resumeRef.current) return;
+                html2pdf().from(resumeRef.current).save(`${name}_Resume.pdf`);
+              }}
+              style={{
+                padding: "8px 16px",
+                background: "#1677ff",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+            >
+              Download Resume
+            </button>
+          </Space>
         </Row>
       </div>
 
@@ -777,7 +847,7 @@ const BenchCandidateDetails = () => {
                 {/* ROW 3 */}
                 <div style={{ display: "flex", gap: 28 }}>
                   <InfoItem
-                    label="Preferred Location"
+                    label="Preferred Job Location"
                     value={preferredLocation?.join(", ")}
                   />
 
