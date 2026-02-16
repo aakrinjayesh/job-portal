@@ -18,6 +18,7 @@ const CandidateList = () => {
   const navigate = useNavigate();
   const jobId = location?.state?.id;
   const jobRole = location?.state?.jobRole;
+  const highlight = location.state.highlight;
 
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
@@ -418,14 +419,15 @@ const CandidateList = () => {
               prev.map((c) =>
                 c.applicationId === record.applicationId
                   ? { ...c, status: "Reviewed" }
-                  : c
-              )
+                  : c,
+              ),
             );
 
             navigate(`/company/candidate/${record.profile.id}`, {
               state: {
                 candidate: { ...record, status: "Reviewed" },
                 jobId,
+                highlight: highlight || "findbench",
               },
             });
           }}

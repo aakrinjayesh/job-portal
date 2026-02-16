@@ -127,59 +127,46 @@ const JobList = ({
     }
   };
 
- const handleSort = (key) => {
-  setSortOrder(key);
+  const handleSort = (key) => {
+    setSortOrder(key);
 
-  let sorted = [...jobs];
+    let sorted = [...jobs];
 
-  switch (key) {
-    case "posted_desc": // Newest first
-      sorted.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-      break;
+    switch (key) {
+      case "posted_desc": // Newest first
+        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
 
-    case "posted_asc": // Oldest first
-      sorted.sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      );
-      break;
+      case "posted_asc": // Oldest first
+        sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
 
-    case "experience_desc": // High to Low
-      sorted.sort(
-        (a, b) =>
-          (b.experience?.number || 0) -
-          (a.experience?.number || 0)
-      );
-      break;
+      case "experience_desc": // High to Low
+        sorted.sort(
+          (a, b) => (b.experience?.number || 0) - (a.experience?.number || 0),
+        );
+        break;
 
-    case "experience_asc": // Low to High
-      sorted.sort(
-        (a, b) =>
-          (a.experience?.number || 0) -
-          (b.experience?.number || 0)
-      );
-      break;
+      case "experience_asc": // Low to High
+        sorted.sort(
+          (a, b) => (a.experience?.number || 0) - (b.experience?.number || 0),
+        );
+        break;
 
-    case "salary_desc": // High to Low
-      sorted.sort(
-        (a, b) => (b.salary || 0) - (a.salary || 0)
-      );
-      break;
+      case "salary_desc": // High to Low
+        sorted.sort((a, b) => (b.salary || 0) - (a.salary || 0));
+        break;
 
-    case "salary_asc": // Low to High
-      sorted.sort(
-        (a, b) => (a.salary || 0) - (b.salary || 0)
-      );
-      break;
+      case "salary_asc": // Low to High
+        sorted.sort((a, b) => (a.salary || 0) - (b.salary || 0));
+        break;
 
-    default:
-      break;
-  }
+      default:
+        break;
+    }
 
-  setSortedJobs(sorted);
-};
-
+    setSortedJobs(sorted);
+  };
 
   const sortMenu = {
     items: [
@@ -192,21 +179,21 @@ const JobList = ({
       //   label: "Posted Time(Oldest)",
       // },
       {
-      key: "experience_desc",
-      label: "Experience (High to Low)",
-    },
-    {
-      key: "experience_asc",
-      label: "Experience (Low to High)",
-    },
-    {
-      key: "salary_desc",
-      label: "Budget (High to Low)",
-    },
-    {
-      key: "salary_asc",
-      label: "Budget (Low to High)",
-    },
+        key: "experience_desc",
+        label: "Experience (High to Low)",
+      },
+      {
+        key: "experience_asc",
+        label: "Experience (Low to High)",
+      },
+      {
+        key: "salary_desc",
+        label: "Budget (High to Low)",
+      },
+      {
+        key: "salary_asc",
+        label: "Budget (Low to High)",
+      },
     ],
     onClick: ({ key }) => handleSort(key),
   };
@@ -218,6 +205,7 @@ const JobList = ({
           source: "findjob",
           type,
           portal,
+          highlight: "findjob",
         },
       });
     } else {
@@ -227,6 +215,7 @@ const JobList = ({
           jobids,
           type,
           portal,
+          highlight: "findjob",
         },
       });
     }
@@ -380,11 +369,10 @@ const JobList = ({
                 style={{ cursor: "pointer", fontSize: 14, color: "#6B7280" }}
               >
                 Sort by{" "}
-               <span style={{ color: "#1677FF", fontWeight: 500 }}>
-  {sortMenu.items.find((item) => item.key === sortOrder)?.label || "Posted Time"}
-</span>
-
-                {" "}
+                <span style={{ color: "#1677FF", fontWeight: 500 }}>
+                  {sortMenu.items.find((item) => item.key === sortOrder)
+                    ?.label || "Posted Time"}
+                </span>{" "}
                 <DownOutlined />
               </span>
             </Dropdown>
@@ -458,21 +446,20 @@ const JobList = ({
                   )}
 
                   <div style={{ maxWidth: 350 }}>
-                   <div
-  style={{
-    fontSize: 16,
-    fontWeight: 600,
-    color: "#212121",
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-    lineHeight: "20px",
-  }}
->
-  {job.role || job.title}
-</div>
-
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: "#212121",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        lineHeight: "20px",
+                      }}
+                    >
+                      {job.role || job.title}
+                    </div>
 
                     <div
                       style={{
@@ -536,10 +523,10 @@ const JobList = ({
                   <ClockCircleOutlined /> {job.jobType}
                 </span>
                 <Divider type="vertical" />
-                 <span>
+                <span>
                   <EnvironmentOutlined /> {job.location}
                 </span>
-                 {/* <Divider type="vertical" />
+                {/* <Divider type="vertical" />
                 <span>
                   <ClockCircleOutlined /> {job.employmentType}
                 </span> */}

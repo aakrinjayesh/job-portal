@@ -495,7 +495,7 @@
 
 // export default BenchCandidateDetails;
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRef } from "react";
 import html2pdf from "html2pdf.js";
 
@@ -510,6 +510,7 @@ import {
   Avatar,
   Tooltip,
   Collapse,
+  Empty,
 } from "antd";
 import {
   MailOutlined,
@@ -519,12 +520,12 @@ import {
   LinkedinOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import ResumeTemplate from "./ResumeTemplate";
+import { getCandidateDetails } from "../../api/api";
 
 const { Title, Text } = Typography;
-const from = location.state?.from;
 
 /* =======================
    INFO ITEM (FROM CandidateDetails UI)
@@ -574,16 +575,21 @@ const InfoItem = ({ label, value }) => (
 );
 
 const BenchCandidateDetails = () => {
-  const location = useLocation();
-  const candidate = location.state?.candidate;
   const resumeRef = useRef(null);
+  const [candidate, setCandidate] = useState();
+  const { id } = useParams();
+  console.log("candidate id in bench candidate details", id);
+  useEffect(() => {
+    const resp = getCandidateDetails(id);
+    if (resp.status === "success") {
+      setCandidate(resp.candidate);
+    } else {
+      setCandidate([]);
+    }
+  }, []);
 
   if (!candidate) {
-    return (
-      <Card style={{ textAlign: "center", marginTop: 50 }}>
-        No candidate selected.
-      </Card>
-    );
+    return <Empty description="Candidate Details not Found" />;
   }
 
   const {

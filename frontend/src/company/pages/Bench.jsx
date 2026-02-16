@@ -283,10 +283,10 @@ const Bench = () => {
         if (res?.status === "success") {
           message.success("Candidate updated successfully!");
           setAllCandidates((prev) =>
-            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand))
+            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand)),
           );
           setCandidates((prev) =>
-            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand))
+            prev.map((cand) => (cand.id === editRecord.id ? res.data : cand)),
           );
 
           // ✅ Recalculate counts after editing
@@ -389,14 +389,14 @@ const Bench = () => {
         message.success("Candidate verified successfully!");
         setAllCandidates((prev) =>
           prev.map((c) =>
-            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
-          )
+            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c,
+          ),
         );
 
         setCandidates((prev) =>
           prev.map((c) =>
-            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c
-          )
+            c.id === verifyCandidate.id ? { ...c, isVerified: true } : c,
+          ),
         );
         // Update counters immediately:
         setVerifiedCount((v) => v + 1);
@@ -462,7 +462,7 @@ const Bench = () => {
         selectedRowKeys.includes(c.id)
           ? //  { ...c, status: status === "active" }
             { ...c, status }
-          : c
+          : c,
       );
       setAllCandidates(updated);
       setCandidates(updated);
@@ -570,8 +570,8 @@ const Bench = () => {
             }}
             onClick={(e) => {
               e.stopPropagation();
-              navigate("/company/bench/candidates", {
-                state: { candidate: record, from: "mybench" },
+              navigate(`/company/candidate/${record.id}`, {
+                state: { source: "bench", highlight: "bench" },
               });
             }}
           >
@@ -1118,7 +1118,7 @@ const Bench = () => {
           cand.skillsJson?.map((s) => s.name.toLowerCase()) || [];
 
         const hasAllSkills = skills.every((skill) =>
-          candSkills.includes(skill.toLowerCase())
+          candSkills.includes(skill.toLowerCase()),
         );
 
         if (!hasAllSkills) return false;
@@ -1130,7 +1130,7 @@ const Bench = () => {
           cand.primaryClouds?.map((c) => c.name.toLowerCase()) || [];
 
         const matchesSomeCloud = clouds.some((cloud) =>
-          candClouds.includes(cloud.toLowerCase())
+          candClouds.includes(cloud.toLowerCase()),
         );
 
         if (!matchesSomeCloud) return false;
@@ -1142,7 +1142,7 @@ const Bench = () => {
           cand.preferredLocation?.map((loc) => loc.toLowerCase()) || [];
 
         const matchesPrefLoc = preferredLocation.some((loc) =>
-          candPrefLocs.includes(loc.toLowerCase())
+          candPrefLocs.includes(loc.toLowerCase()),
         );
 
         if (!matchesPrefLoc) return false;
@@ -1153,7 +1153,7 @@ const Bench = () => {
         const candCurrLoc = (cand.currentLocation || "").toLowerCase();
 
         const matchesCurrLoc = currentLocation.some((loc) =>
-          candCurrLoc.includes(loc.toLowerCase())
+          candCurrLoc.includes(loc.toLowerCase()),
         );
 
         if (!matchesCurrLoc) return false;
@@ -1164,7 +1164,7 @@ const Bench = () => {
         const candJoin = (cand.joiningPeriod || "").toLowerCase();
 
         const matchesJoin = joiningPeriod.some((jp) =>
-          candJoin.includes(jp.toLowerCase())
+          candJoin.includes(jp.toLowerCase()),
         );
 
         if (!matchesJoin) return false;
@@ -1332,8 +1332,8 @@ const Bench = () => {
             activeTab === "all"
               ? candidates
               : activeTab === "active"
-              ? candidates.filter((c) => c.status !== "inactive")
-              : candidates.filter((c) => c.status === "inactive")
+                ? candidates.filter((c) => c.status !== "inactive")
+                : candidates.filter((c) => c.status === "inactive")
           }
           rowKey={(record) => record.id || record.name}
           pagination={{ pageSize: 5 }}
@@ -1345,7 +1345,7 @@ const Bench = () => {
           onRow={(record) => ({
             onClick: () => {
               navigate(`/company/candidate/${record.id}`, {
-                state: { source: "bench" },
+                state: { source: "bench", highlight: "bench" },
               });
             },
             style: {
@@ -1685,10 +1685,10 @@ const Bench = () => {
                       otpError
                         ? "#FF4D4F"
                         : digit
-                        ? "#666666"
-                        : isActive
-                        ? "#3F41D1"
-                        : "#E0E0E0"
+                          ? "#666666"
+                          : isActive
+                            ? "#3F41D1"
+                            : "#E0E0E0"
                     }`,
 
                     color: digit ? "#212121" : "#E0E0E0",

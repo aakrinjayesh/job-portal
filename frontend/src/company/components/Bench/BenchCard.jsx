@@ -63,8 +63,8 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
     typeof candidate?.rateCardPerHour === "number"
       ? `₹ ${candidate.rateCardPerHour}`
       : candidate?.rateCardPerHour?.value
-      ? `₹ ${candidate.rateCardPerHour.value}`
-      : null;
+        ? `₹ ${candidate.rateCardPerHour.value}`
+        : null;
 
   const clouds = candidate?.primaryClouds?.map((c) => c.name || c) || [];
   const skills = candidate?.skillsJson?.map((s) => s.name || s) || [];
@@ -155,8 +155,8 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
       }}
       bodyStyle={{ padding: 20 }}
       onClick={() =>
-        navigate("/company/bench/candidates", {
-          state: { candidate, from: "find" },
+        navigate(`/company/candidate/${candidate.id}`, {
+          state: { source: "bench", highlight: "findbench" },
         })
       }
     >
