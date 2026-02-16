@@ -134,20 +134,28 @@ const AddChatModal = ({ open, onClose, onSuccess }) => {
         {/* SELECT USERS */}
         <div>
           <Text>Select Group Participants</Text>
-          <Select
-            placeholder={
-              isGroupChat
-                ? "Select Group Participants"
-                : "Select User"
-            }
-            value={isGroupChat ? undefined : selectedUserId}
-            onChange={handleSelectChange}
-            style={{ width: "100%", marginTop: 6 }}
-            options={users.map((u) => ({
-              label: u.username,
-              value: u._id,
-            }))}
-          />
+        <Select
+  mode={isGroupChat ? "multiple" : undefined}
+  placeholder={
+    isGroupChat
+      ? "Select Group Participants"
+      : "Select User"
+  }
+  value={isGroupChat ? groupParticipants : selectedUserId}
+  onChange={(value) => {
+    if (isGroupChat) {
+      setGroupParticipants(value);
+    } else {
+      setSelectedUserId(value);
+    }
+  }}
+  style={{ width: "100%", marginTop: 6 }}
+  options={users.map((u) => ({
+    label: u.username,
+    value: u._id,
+  }))}
+/>
+
         </div>
 
         {/* SELECTED USERS */}

@@ -69,7 +69,7 @@ const FiltersPanel = ({
   handleClearFilters,
   toggleFilter,
 }) => {
-  const [experience, setExperience] = useState(30);
+  const [experience, setExperience] = useState(0);
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [selectedJobTypes, setSelectedJobTypes] = useState([]);
   const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
@@ -212,6 +212,29 @@ const FiltersPanel = ({
       setCandidateType((prev) => prev.filter((t) => t !== type));
     }
   };
+
+  const resetFilters = () => {
+  setExperience(0);
+  setSelectedLocations([]);
+  setSelectedJobTypes([]);
+  setSelectedEmploymentTypes([]);
+  setSkills([]);
+  setClouds([]);
+  setCandidateType([]);
+  setExperienceError("");
+
+  // 🔁 notify parent immediately
+  onFiltersChange?.({
+    experience: null,
+    location: [],
+    jobType: [],
+    employmentType: [],
+    skills: [],
+    clouds: [],
+    candidateType: [],
+  });
+};
+
 
   /* 🔁 Emit filters */
   useEffect(() => {
@@ -432,12 +455,16 @@ const FiltersPanel = ({
       >
         <Text strong>All Filters</Text>
         <Text
-          type="link"
-          onClick={handleClearFilters}
-          style={{ cursor: "pointer", fontSize: 13 }}
-        >
-          Clear All
-        </Text>
+  type="link"
+  onClick={() => {
+    resetFilters();
+    handleClearFilters?.();
+  }}
+  style={{ cursor: "pointer", fontSize: 13 }}
+>
+  Clear All
+</Text>
+
       </div>
 
       <Divider style={{ margin: "12px 0" }} />

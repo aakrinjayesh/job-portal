@@ -59,7 +59,7 @@ const CompanyLayout = ({ children }) => {
 
     bench: ["/company/bench"],
 
-    benchresourcedetails: ["/company/bench/candidates"],
+    // benchresourcedetails: ["/company/bench/candidates"],
 
     findbench: ["/company/bench/find"],
 
@@ -103,6 +103,12 @@ const CompanyLayout = ({ children }) => {
     if (path.startsWith("/company/jobs/saved")) {
       return "savedjobs";
     }
+
+    // ✅ Bench resource details should highlight My Bench
+if (path.startsWith("/company/bench/candidates")) {
+  return "bench";
+}
+
 
     // ✅ 3. Job details → My Jobs / Find Jobs
     if (path.startsWith("/company/job/")) {

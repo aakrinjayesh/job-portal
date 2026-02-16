@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Spin, Empty } from "antd";
+import { Col, Row, Card, message, Progress, Empty } from "antd";
 import FiltersPanel from "../components/Job/FilterPanel";
 import JobList from "../components/Job/JobList";
 import { GetJobsList } from "../../company/api/api";
@@ -13,63 +13,70 @@ function Jobs() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [currentFilters, setCurrentFilters] = useState({});
   const [totalCount, setTotalCount] = useState(0);
+  const [progress, setProgress] = useState(0);
+
 
   // ⭐ filter open / close
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const observer = useRef();
   const [ids, setIds] = useState();
 
   const controllerRef = useRef(null);
 
+  const toggleFilter = () => {
+  setIsFilterOpen(prev => !prev);
+};
+
+
   // ✅ Server-side filtering: pass filters to API
   const fetchJobs = useCallback(async (pageNum = 1, filters = {}) => {
-    // 🔥 Cancel previous API if exists
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
+  if (controllerRef.current) {
+    controllerRef.current.abort();
+  }
 
-    // 🔥 Create new controller
-    const controller = new AbortController();
-    controllerRef.current = controller;
+  const controller = new AbortController();
+  controllerRef.current = controller;
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
+  let timer;
+  if (pageNum === 1) {
+    setProgress(0);
+    timer = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 10 : prev));
+    }, 200);
+  }
 
-      // ✅ Pass filters to API for server-side filtering
-      const response = await GetJobsList(
-        pageNum,
-        10,
-        filters,
-        controller.signal
-      );
+  try {
+    const response = await GetJobsList(
+      pageNum,
+      10,
+      filters,
+      controller.signal
+    );
 
-      const newJobs = response?.jobs || [];
+    const newJobs = response?.jobs || [];
 
-      if (pageNum === 1) {
-        setJobs(newJobs);
-      } else {
-        setJobs((prev) => [...prev, ...newJobs]);
-      }
-
+    if (pageNum === 1) {
+      setJobs(newJobs);
       setTotalCount(response.totalCount || 0);
-
-      if (pageNum >= response.totalPages) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
-    } catch (error) {
-      if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
-        message.error(
-          "Failed to fetch jobs: " + error?.response?.data?.message
-        );
-      }
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
+      setInitialLoading(false); // ✅ HERE ONLY
+    } else {
+      setJobs((prev) => [...prev, ...newJobs]);
     }
-  }, []);
+
+    setHasMore(pageNum < response.totalPages);
+    setProgress(100);
+  } catch (error) {
+    if (error.name !== "CanceledError") {
+      message.error("Failed to fetch jobs");
+    }
+  } finally {
+    clearInterval(timer);
+    setLoading(false);
+  }
+}, []);
+
 
   useEffect(() => {
     return () => {
@@ -180,18 +187,34 @@ function Jobs() {
             bodyStyle={{ padding: "16px 24px" }}
           >
             {/* ✅ Show spinner on initial load or filter change (page 1 loading) */}
-            {initialLoading || (loading && page === 1) ? (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  minHeight: "400px",
-                }}
-              >
-                <Spin size="large" tip="Loading jobs..." />
-              </div>
-            ) : (
+           {initialLoading || (loading && page === 1) ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "400px",
+      gap: 16,
+    }}
+  >
+   <Progress
+  type="circle"
+  percent={progress}
+  width={90}
+  strokeColor={{
+    "0%": "#4F63F6",
+    "100%": "#7C8CFF",
+  }}
+  trailColor="#E6E8FF"
+  status={progress === 100 ? "success" : "active"}
+  showInfo={false}
+/>
+
+    <span style={{ color: "#666" }}>Loading jobs...</span>
+  </div>
+) : (
+
               <>
                 {/* Show total count */}
                 {totalCount > 0 && (
@@ -206,7 +229,7 @@ function Jobs() {
                   jobids={ids}
                   portal="candidate"
                   isFilterOpen={isFilterOpen}
-                  toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+                  toggleFilter={toggleFilter}
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}
@@ -234,12 +257,13 @@ function Jobs() {
                   </p>
                 )}
 
-                {!loading && totalCount === 0 && (
-                  <Empty
-                    style={{ marginTop: 70 }}
-                    description="No jobs found matching your filters"
-                  />
-                )}
+              {!initialLoading && !loading && totalCount === 0 && (
+  <Empty
+    style={{ marginTop: 70 }}
+    description="No jobs found matching your filters"
+  />
+)}
+
               </>
             )}
           </Card>

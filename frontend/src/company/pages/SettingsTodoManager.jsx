@@ -169,6 +169,7 @@ const SettingsTodoManager = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [savingId, setSavingId] = useState(null);
+  const [form] = Form.useForm();
 
   const loadTodos = async () => {
     setLoading(true);
@@ -276,21 +277,27 @@ const SettingsTodoManager = () => {
 
           {/* Create */}
       <Card style={{ ...cardStyle, marginBottom: 24 }}>
-  <Form
-    layout="inline"
-    style={{ width: "100%" }}
-    onFinish={async (values) => {
-      setCreating(true);
-      await CreateTodoTemplate({ title: values.title.trim() });
-      message.success({
-        content: "Todo template created!",
-        icon: <ThunderboltOutlined style={{ color: "#22c55e" }} />,
-      });
-      setCreating(false);
-      loadTodos();
-    }}
-  >
-    <Form.Item
+ <Form
+  form={form}
+  layout="inline"
+  style={{ width: "100%" }}
+  onFinish={async (values) => {
+    setCreating(true);
+
+    await CreateTodoTemplate({ title: values.title.trim() });
+
+    message.success({
+      content: "Todo template created!",
+      icon: <ThunderboltOutlined style={{ color: "#22c55e" }} />,
+    });
+
+    form.resetFields();   // 👈 THIS IS THE FIX
+
+    setCreating(false);
+    loadTodos();
+  }}
+>
+ <Form.Item
       name="title"
       style={{ flex: 1 }}
       rules={[

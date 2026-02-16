@@ -3,9 +3,9 @@ import { Form, Input, Button, Typography, message } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SetPassword, ResetPasswords } from "../candidate/api/api";
 import cloudImage from "../assets/Fill-1.png";
-import personImg from "../assets/login_design.png";
+import personImg from "../assets/companyperson.png";
 import jobroleImg from "../assets/jobrole.png";
-import groupImg from "../assets/Group.png";
+import andrewImg from "../assets/person_candidate_design.png";
 import AppHeader from "../components/layout/AppHeader";
 import AppFooter from "../components/layout/AppFooter";
 
@@ -88,145 +88,205 @@ const CreatePassword = () => {
       <AppHeader />
 
       {/* ================= BODY ================= */}
-      <div style={styles.container}>
-        {/* LEFT */}
-        <div style={styles.left}>
-          <div style={styles.card}>
-            <Title level={3}>Create Password</Title>
-            <Text type="secondary">
-              Secure your account to continue
-            </Text>
+     <Row style={{ minHeight: "100vh" }}>
+  {/* LEFT – CREATE PASSWORD */}
+  <Col
+    xs={24}
+    md={12}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+      background: "#fff",
+    }}
+  >
+    <div style={styles.loginCard}>
+      <Title level={3}>Create Password</Title>
+      <Text type="secondary">
+        Secure your account to continue
+      </Text>
 
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              style={{ marginTop: 24 }}
-            >
-              <Form.Item
-                name="password"
-                rules={[
-                  { required: true, message: "Enter password" },
-                  {
-                    pattern:
-                      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/,
-                    message:
-                      "8–16 chars, uppercase, lowercase, number & symbol",
-                  },
-                ]}
-              >
-                <Input.Password size="large" placeholder="New Password" />
-              </Form.Item>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        style={{ marginTop: 24 }}
+      >
+        <Form.Item
+          name="password"
+          rules={[
+            { required: true, message: "Enter password" },
+            {
+              pattern:
+                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/,
+              message:
+                "8–16 chars, uppercase, lowercase, number & symbol",
+            },
+          ]}
+        >
+          <Input.Password size="large" placeholder="New Password" />
+        </Form.Item>
 
-              <Form.Item
-                name="confirmPassword"
-                dependencies={["password"]}
-                rules={[
-                  { required: true, message: "Confirm password" },
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      if (!value || getFieldValue("password") === value) {
-                        return Promise.resolve();
-                      }
-                      return Promise.reject(
-                        new Error("Passwords do not match")
-                      );
-                    },
-                  }),
-                ]}
-              >
-                <Input.Password
-                  size="large"
-                  placeholder="Confirm Password"
-                />
-              </Form.Item>
+        <Form.Item
+          name="confirmPassword"
+          dependencies={["password"]}
+          rules={[
+            { required: true, message: "Confirm password" },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue("password") === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(
+                  new Error("Passwords do not match")
+                );
+              },
+            }),
+          ]}
+        >
+          <Input.Password
+            size="large"
+            placeholder="Confirm Password"
+          />
+        </Form.Item>
 
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={passwordLoading}
-                block
-                size="large"
-              >
-                Set Password
-              </Button>
-            </Form>
+        <Button
+          type="primary"
+          htmlType="submit"
+          loading={passwordLoading}
+          block
+          size="large"
+        >
+          Set Password
+        </Button>
 
-            <Text style={{ display: "block", marginTop: 16 }}>
-              Already have an account?{" "}
-              <Button type="link" onClick={() => navigate("/login")}>
-                Login
-              </Button>
-            </Text>
-          </div>
-        </div>
+        <Text style={{ display: "block", marginTop: 16 }}>
+          Already have an account?{" "}
+          <Button type="link" onClick={() => navigate("/login")}>
+            Login
+          </Button>
+        </Text>
+      </Form>
+    </div>
+  </Col>
 
-        {/* RIGHT */}
-          <div style={styles.right}>
-                         <img src={cloudImage} alt="cloud" style={styles.cloud} />
-                         <img src={personImg} alt="person" style={styles.person} />
-          {/* HERO TEXT */}
-          <div style={styles.heroText}>
-            <Title
-              level={2}
-              style={{
-                color: "#fff",
-                fontWeight: 700,
-                lineHeight: 1.25,
-              }}
-            >
-              Dream jobs <span style={{ opacity: 0.7 }}>don’t wait —</span>
-              <br />
-              neither should you.
-            </Title>
+  {/* RIGHT HERO (SAME AS FORGOT PAGE) */}
+  <Col
+    xs={0}
+    md={12}
+    style={{
+      background: role === "candidate" ? "#094db9" : "#4F63F6",
+      position: "relative",
+      overflow: "hidden",
+      padding: 48,
+    }}
+  >
+    {role === "candidate" ? <CandidateHero /> : <CompanyHero />}
+  </Col>
+</Row>
 
-            <Text style={{ color: "#e6e6ff", fontSize: 14 }}>
-              Create your password and unlock the fastest way to apply
-              for top job opportunities.
-            </Text>
-          </div>
-
-          {/* FLOATING CARDS */}
-          <div style={styles.salaryBadge}>₹8 – ₹14 LPA</div>
-
-          <div style={styles.searchCard}>
-            🔍 <span>Find the role that fits your goals.</span>
-          </div>
-
-          <div style={styles.jobCard}>
-            <img
-              src={jobroleImg}
-              alt="job"
-              style={{ width: 18, height: 18 }}
-            />
-            <strong>Salesforce Developer</strong>
-            <div style={{ fontSize: 13, opacity: 0.8 }}>
-              New Delhi
-            </div>
-            <div style={{ fontWeight: 600 }}>
-              ₹12,00,000 PA
-            </div>
-          </div>
-
-          <div style={styles.jobType}>
-            <img
-              src={groupImg}
-              alt="group"
-              style={{ width: 18, height: 18 }}
-            />
-            Fulltime Job
-          </div>
-
-          <div style={styles.nameTag}>Andrew</div>
-
-          {/* PERSON */}
-          <img src={personImg} alt="person" style={styles.person} />
-        </div>
-      </div>
-      <AppFooter />
+      {/* <AppFooter /> */}
     </>
   );
 };
+
+
+const CompanyHero = () => (
+  <>
+    <img src={cloudImage} alt="cloud" style={styles.cloud} />
+    <img src={personImg} alt="person" style={styles.person} />
+
+    <div style={styles.heroText}>
+      <Title level={2}
+        style={{
+          color: "#fff",
+          fontSize: 22,
+          fontWeight: 700,
+          marginBottom: 12,
+        }}>
+        Connect with the right partners —
+        <br />
+        faster and smarter.
+      </Title>
+
+      <Text style={{
+        color: "#D7DBFF",
+        fontSize: 15,
+        lineHeight: 1.6,
+        display: "block",
+        // maxWidth: 360,
+      }}>
+        An intelligent vendor platform to manage jobs, candidates,
+        and bench resources for Salesforce roles and projects.
+      </Text>
+    </div>
+
+    <div style={styles.vendorBadge}>
+      🧠 <strong>AI-Powered Job Management</strong>
+    </div>
+
+    <div style={styles.searchCard}>
+      💬 <strong>Searchcard Find the role that fits your goals.</strong>
+    </div>
+
+    <div style={styles.vendorCard}>
+      <strong>🌍 World’s First B2B Vendor Platform built exclusively for Salesforce Ecosystem.</strong>
+    </div>
+
+    <div style={styles.vendorType}>
+      🤝 <strong>Bench Utilization & Job Sharing</strong>
+    </div>
+  </>
+);
+
+const CandidateHero = () => (
+  <>
+    <img src={cloudImage} alt="cloud" style={styles.cloud} />
+    <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
+
+    <div style={styles.heroText}>
+      <Title level={2}
+        style={{
+          color: "#fff",
+          fontSize: 22,
+          fontWeight: 700,
+          marginBottom: 12,
+        }}>
+        Find the right Salesforce job —
+        <br />
+        built for your career.
+      </Title>
+
+      <Text
+        style={{
+          color: "#D7DBFF",
+          fontSize: 15,
+          lineHeight: 1.6,
+          display: "block",
+          maxWidth: 360,
+        }}>
+        A smarter way to find Salesforce opportunities, apply confidently, and chat with recruiters in real time.
+      </Text>
+    </div>
+
+    <div style={styles.vendorBadge}>
+      🎯 <strong>₹6 – ₹50LPA</strong>
+    </div>
+
+    <div style={styles.searchCard}>
+      📩 <strong>Direct Recruiter Messages</strong>
+    </div>
+
+    <div style={styles.jobCard}>
+      <strong>🚀 Career Growth & Bench Visibility</strong>
+    </div>
+
+    <div style={styles.jobType}>
+      💼 <strong>Verified Salesforce Roles</strong>
+    </div>
+  </>
+);
 
 const styles = {
   header: {
@@ -251,40 +311,29 @@ const styles = {
   right: {
     width: "50%",
     background: "#4F63F6",
-    padding: "80px 80px",
+    padding: "80px",
+    // color: "white",
     position: "relative",
     overflow: "hidden",
   },
 
-   card: {
-    maxWidth: 420,
-    margin: "0 auto",
-    padding: "32px",
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
-    background: "#fff",
-  },
-
   cloud: {
     position: "absolute",
-    left: 100,
     bottom: 40,
+    left: "50%",
+    transform: "translateX(-50%)",
     width: 420,
-    height: "auto",
+    opacity: 0.55,
     zIndex: 1,
-    opacity: 0.9,
   },
 
   heroText: {
-    color: "#A9B2FF",
-    fontFamily: "SF Pro",
-    fontSize: 40,
-    fontStyle: "normal",
-    fontWeight: 400,
-    //lineHeight: "48px",
-    letterSpacing: "-0.48px",
+    position: "relative",
+    zIndex: 5,
+    // maxWidth: 420,
+    marginTop: -40,   // ⬆ moves text upward
   },
+
 
   badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
   badge: {
@@ -294,52 +343,90 @@ const styles = {
     fontWeight: 500,
   },
 
-  salaryBadge: {
+  vendorBadge: {
     position: "absolute",
-    top: "263px",
-    left: "62px",
+    top: 350,
+    left: "5%",
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
-    fontWeight: 600,
-    zIndex: 3,
+    fontFamily: 'SF Pro',
+    fontWeight: '590',
+    fontSize: 14,
+    zIndex: 4,
+    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
   searchCard: {
     position: "absolute",
-    bottom: "200px",
-    right: 450,
+    top: 450,
+    left: "5%",
     background: "#fff",
+    fontFamily: 'SF Pro',
+    fontWeight: '590',
     padding: "10px 14px",
     borderRadius: 14,
     fontSize: 14,
-    zIndex: 3,
+    zIndex: 4,
+    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
-  jobCard: {
+  vendorCard: {
     position: "absolute",
-    top: 280,
-    right: "24px",
+    top: 350,
+    left: "60%",
+    fontSize: 14,
+    fontFamily: 'SF Pro',
+    fontWeight: '590',
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
     width: 220,
-    zIndex: 3,
+    zIndex: 4,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.14)",
+  },
+
+  vendorType: {
+    position: "absolute",
+    top: 450,
+    left: "68%",
+    background: "#fff",
+    padding: "6px 14px",
+    borderRadius: 20,
+    fontSize: 14,
+    fontFamily: 'SF Pro',
+    fontWeight: '590',
+    zIndex: 4,
+    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+  },
+
+  jobCard: {
+    position: "absolute",
+    top: 350,
+    left: "60%",
+    fontSize: 14,
+    fontFamily: 'SF Pro',
+    fontWeight: '590',
+    background: "#fff",
+    padding: "14px 16px",
+    borderRadius: 16,
+    width: 220,
+    zIndex: 4,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.14)",
   },
 
   jobType: {
     position: "absolute",
-    top: "376px",
-    right: "170px",
+    top: 450,
+    left: "68%",
     background: "#fff",
     padding: "6px 14px",
     borderRadius: 20,
-    fontSize: 13,
-    fontWeight: 500,
-    zIndex: 3,
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
+    fontSize: 14,
+    fontFamily: 'SF Pro',
+    fontWeight: '590',
+    zIndex: 4,
+    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
   nameTag: {
@@ -353,17 +440,26 @@ const styles = {
     fontWeight: 600,
     zIndex: 3,
   },
-
   person: {
     position: "absolute",
-    right: 60,
-    bottom: 0,
-    height: 380,
+    marginTop: 110,
+    left: "48%",
+    transform: "translateX(-50%)",
+    height: 420,
+    zIndex: 2,
+  },
+
+   candidateperson: {
+    position: "absolute",
+    marginTop: 110,
+    left: "58%",
+    transform: "translateX(-50%)",
+    height: 420,
     zIndex: 2,
   },
 
   loginCard: {
-    maxWidth: 420,
+    width: 400,
     margin: "0 auto",
     padding: "32px",
     border: "1px solid #e5e7eb",

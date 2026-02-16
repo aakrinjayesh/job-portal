@@ -9,11 +9,19 @@ function SavedCandidates() {
 const [initialLoading, setInitialLoading] = useState(true);
 const [progress, setProgress] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [readyToShow, setReadyToShow] = useState(false);
+
   const [page, setPage] = useState(1);
   const observer = useRef(null);
 
-  const fetchSavedCandidates = useCallback(async (pageNum = 1) => {
+ const fetchSavedCandidates = useCallback(async (pageNum = 1) => {
   setLoading(true);
+  setReadyToShow(false);
+
+  if (pageNum === 1) {
+    setProgress(10); // start progress only on first page
+  }
+
   try {
     const resp = await SavedCandidatesList(pageNum, 10);
 
@@ -43,27 +51,34 @@ const [progress, setProgress] = useState(0);
   } catch (err) {
     message.error("Failed to load saved candidates");
   } finally {
+    if (pageNum === 1) {
+      setProgress(100); // ✅ ONLY HERE
+      setTimeout(() => {
+        setInitialLoading(false);
+        setReadyToShow(true); // 🔑 unlock rendering
+        setProgress(0);
+      }, 250);
+    }
     setLoading(false);
-    setInitialLoading(false);
   }
 }, []);
+
 
 
   useEffect(() => {
     fetchSavedCandidates(1);
   }, [fetchSavedCandidates]);
 
-  useEffect(() => {
-  if (initialLoading || (loading && page === 1)) {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
-    }, 400);
+ useEffect(() => {
+  if (!loading) return;
 
-    return () => clearInterval(interval);
-  } else {
-    setProgress(0);
-  }
-}, [initialLoading, loading, page]);
+  const interval = setInterval(() => {
+    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+  }, 300);
+
+  return () => clearInterval(interval);
+}, [loading]);
+
 
 
   const lastCandidateRef = useCallback(
@@ -93,7 +108,7 @@ const [progress, setProgress] = useState(0);
 
   return (
     <div style={{ padding: 16 }}>
-    {initialLoading || (loading && page === 1) ? (
+   {!readyToShow ? (
   <div
     style={{
       display: "flex",
@@ -139,7 +154,6 @@ const [progress, setProgress] = useState(0);
       />
     ))}
 
-    {/* Infinite scroll spinner */}
     {loading && page > 1 && (
       <div style={{ textAlign: "center", padding: 20 }}>
         <Spin size="large" />
@@ -151,6 +165,7 @@ const [progress, setProgress] = useState(0);
     No saved candidates found.
   </p>
 )}
+
 
     </div>
   );

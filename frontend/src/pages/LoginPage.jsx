@@ -5,7 +5,7 @@ import GoogleAuthButton from "../components/Login/GoogleAuthButton";
 import { login as LoginApi } from "../candidate/api/api";
 import { useAuth } from "../chat/context/AuthContext";
 
-import personImg from "../assets/person_design.png";
+import personImg from "../assets/companyperson.png";
 import salaryImg from "../assets/salary.png";
 import jobroleImg from "../assets/jobrole.png";
 import groupImg from "../assets/Group.png";
@@ -272,7 +272,7 @@ const CompanyHero = () => (
           fontWeight: 700,
           marginBottom: 12,
         }}>
-        Connect with the right partners —
+        Connect with the right salesforce partners —
         <br />
         faster and smarter.
       </Title>
@@ -310,7 +310,7 @@ const CompanyHero = () => (
 const CandidateHero = () => (
   <>
     <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={andrewImg} alt="candidate" style={styles.person} />
+    <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
 
     <div style={styles.heroText}>
       <Title level={2}
@@ -510,6 +510,15 @@ const styles = {
     zIndex: 3,
   },
   person: {
+    position: "absolute",
+    marginTop: 110,
+    left: "48%",
+    transform: "translateX(-50%)",
+    height: 420,
+    zIndex: 2,
+  },
+
+  candidateperson: {
     position: "absolute",
     marginTop: 110,
     left: "58%",

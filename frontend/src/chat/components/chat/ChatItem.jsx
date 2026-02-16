@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Avatar, Badge, Typography, Dropdown, Popconfirm } from "antd";
+import { Avatar, Badge, Typography, Dropdown, Popconfirm, Space } from "antd";
 import {
   MoreOutlined,
   DeleteOutlined,
   InfoCircleOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import { useAuth } from "../../context/AuthContext";
@@ -22,6 +23,7 @@ const ChatItem = ({
 }) => {
   const { user } = useAuth();
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const chatMetadata = getChatObjectMetadata(chat, user);
 
@@ -46,78 +48,60 @@ const ChatItem = ({
       <div
         style={{
           width: "100%",
-          padding: 16,
-          background: isActive ? "lightblue" : "#FFFFFF",
-          color: isActive ? "white" : "#0A0A0A",
-          borderBottom: "1px solid #F3F4F6",
+          padding: "12px 16px",
+          background: isActive ? "#F0F2F5" : isHovered ? "#F5F5F5" : "#FFFFFF",
+          borderBottom: "1px solid #F0F0F0",
           display: "flex",
           alignItems: "center",
           gap: 12,
           cursor: "pointer",
           transition: "background 0.2s ease",
+          position: "relative",
         }}
         onClick={() => onClick(chat)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Dropdown Menu */}
-        <Dropdown
-          trigger={["click"]}
-          menu={{
-            items: chat.isGroupChat
-              ? [
-                  {
-                    key: "info",
-                    label: "Group Info",
-                    icon: <InfoCircleOutlined />,
-                  },
-                ]
-              : [
-                  {
-                    key: "delete",
-                    label: (
-                      <Popconfirm title="Delete chat?" onConfirm={deleteChat}>
-                        Delete Chat
-                      </Popconfirm>
-                    ),
-                    icon: <DeleteOutlined />,
-                    danger: true,
-                  },
-                ],
-            onClick: ({ key }) => {
-              if (key === "info") setOpenGroupInfo(true);
-            },
-          }}
-        >
-          <MoreOutlined
-            onClick={(e) => e.stopPropagation()}
-            style={{ color: "#9CA3AF" }}
-          />
-        </Dropdown>
-
         {/* Avatar */}
         <Avatar
-          size={48}
-          src={chatMetadata.avatar || "https://placehold.co/48x48"}
-          style={{ borderRadius: 9999 }}
-        />
+          size={52}
+          src={chatMetadata.avatar}
+          style={{
+            flexShrink: 0,
+            background: "#25D366",
+            color: "white",
+            fontSize: 20,
+            fontWeight: 600,
+          }}
+        >
+          {chatMetadata.title?.[0]?.toUpperCase()}
+        </Avatar>
 
-        {/* Name + Last Message */}
+        {/* Content Area */}
         <div
           style={{
             flex: 1,
+            minWidth: 0,
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            overflow: "hidden",
+            flexDirection: "column",
+            gap: 4,
           }}
         >
-          <div style={{ overflow: "hidden" }}>
+          {/* Name and Time Row */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 8,
+            }}
+          >
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: unreadCount ? 600 : 500,
-                color: "#0A0A0A",
-                display: "block",
-                lineHeight: "24px",
+                fontWeight: unreadCount > 0 ? 600 : 500,
+                color: "#111827",
+                lineHeight: "20px",
               }}
               ellipsis
             >
@@ -126,51 +110,140 @@ const ChatItem = ({
 
             <Text
               style={{
-                fontSize: 14,
-                color: "#6A7282",
-              }}
-              ellipsis
-            >
-              {chatMetadata.lastMessage}
-            </Text>
-          </div>
-
-          {/* Time + Unread Badge */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              height: 48,
-              marginLeft: 12,
-              color:"white"
-            }}
-          >
-            <Text
-              style={{
                 fontSize: 12,
-                color: "#6A7282",
+                color: unreadCount > 0 ? "#25D366" : "#667781",
+                flexShrink: 0,
                 lineHeight: "16px",
               }}
             >
-              {moment(chat.updatedAt).fromNow()}
+              {moment(chat.updatedAt).format("h:mm A")}
             </Text>
+          </div>
 
-           {unreadCount > 0 && (
-  <Badge
-    count={unreadCount > 9 ? "9+" : unreadCount}
-    style={{
-                  backgroundColor: "#00C950",
-                  fontSize: 12,
-                  lineHeight: "16px",
+          {/* Last Message and Badge Row */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              {chat.lastMessage?.sender?._id === user?._id && (
+                <CheckOutlined
+                  style={{
+                    fontSize: 14,
+                    color: "#53BDEB",
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: unreadCount > 0 ? "#111827" : "#667781",
+                  fontWeight: unreadCount > 0 ? 500 : 400,
+                }}
+                ellipsis
+              >
+                {chatMetadata.lastMessage || "No messages yet"}
+              </Text>
+            </div>
+
+            {/* Unread Badge */}
+            {unreadCount > 0 && (
+              <Badge
+                count={unreadCount > 99 ? "99+" : unreadCount}
+                style={{
+                  backgroundColor: "#25D366",
+                  fontSize: 11,
                   height: 20,
                   minWidth: 20,
-                  borderRadius: 9999,
-    }}
-  />
-)}
+                  lineHeight: "20px",
+                  borderRadius: 10,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}
+              />
+            )}
           </div>
+        </div>
+
+        {/* Dropdown Menu */}
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            opacity: isHovered || isActive ? 1 : 0,
+            transition: "opacity 0.2s",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Dropdown
+            trigger={["click"]}
+            menu={{
+              items: chat.isGroupChat
+                ? [
+                    {
+                      key: "info",
+                      label: "Group Info",
+                      icon: <InfoCircleOutlined />,
+                    },
+                  ]
+                : [
+                    {
+                      key: "delete",
+                      label: (
+                        <Popconfirm
+                          title="Delete chat?"
+                          description="This will permanently delete this conversation"
+                          onConfirm={deleteChat}
+                          okText="Delete"
+                          cancelText="Cancel"
+                          okButtonProps={{ danger: true }}
+                        >
+                          Delete Chat
+                        </Popconfirm>
+                      ),
+                      icon: <DeleteOutlined />,
+                      danger: true,
+                    },
+                  ],
+              onClick: ({ key }) => {
+                if (key === "info") setOpenGroupInfo(true);
+              },
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                background: "rgba(0,0,0,0.05)",
+                cursor: "pointer",
+              }}
+            >
+              <MoreOutlined
+                style={{
+                  color: "#667781",
+                  fontSize: 18,
+                }}
+              />
+            </div>
+          </Dropdown>
         </div>
       </div>
     </>

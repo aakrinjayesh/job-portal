@@ -22,67 +22,65 @@ function FindJob() {
   const location = useLocation();
 
   // ⭐ filter open / close
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const fetchJobs = useCallback(async (pageNum = 1, filters = {}) => {
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
+  if (controllerRef.current) controllerRef.current.abort();
+  controllerRef.current = new AbortController();
 
-    controllerRef.current = new AbortController();
-
+  if (pageNum === 1) {
+    setInitialLoading(true);
     setLoading(true);
-    try {
-      const response = await GetJobsList(
-        pageNum,
-        10,
-        filters,
-        controllerRef.current.signal
-      );
-
-      const newJobs = response?.jobs || [];
-
-      if (pageNum === 1) {
-        setJobs(newJobs);
-      } else {
-        setJobs((prev) => [...prev, ...newJobs]);
-      }
-
-      setTotalCount(response.totalCount || 0);
-
-      // Check if we have more pages using totalPages
-      if (pageNum >= response.totalPages) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
-      setLoading(false);
-      setInitialLoading(false);
-    } catch (error) {
-      if (error.code === "ERR_CANCELED") {
-        console.log("FindJobs API aborted");
-        return;
-      }
-      console.error("Error fetching jobs:", error);
-      setLoading(false);
-      setInitialLoading(false);
-    } finally {
-      // setLoading(false);
-      // setInitialLoading(false); // ✅ Turn off initial loading
-    }
-  }, []);
-
-  useEffect(() => {
-  if (initialLoading || (loading && page === 1)) {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
-    }, 400);
-
-    return () => clearInterval(interval);
+    setProgress(10);
   } else {
-    setProgress(0);
+    setLoading(true);
   }
+
+  try {
+    const response = await GetJobsList(
+      pageNum,
+      10,
+      filters,
+      controllerRef.current.signal
+    );
+
+    const newJobs = response?.jobs || [];
+
+    setJobs((prev) =>
+      pageNum === 1 ? newJobs : [...prev, ...newJobs]
+    );
+
+    setTotalCount(response.totalCount || 0);
+    setHasMore(pageNum < response.totalPages);
+  } catch (error) {
+    if (error.code !== "ERR_CANCELED") {
+      message.error("Error fetching jobs");
+    }
+  } finally {
+    if (pageNum === 1) {
+      setProgress(100); // ✅ reach 100 ONLY when API is done
+      setTimeout(() => {
+        setInitialLoading(false);
+        setLoading(false);
+        setProgress(0);
+      }, 300);
+    } else {
+      setLoading(false);
+    }
+  }
+}, []);
+
+
+ useEffect(() => {
+  if (!(initialLoading || (loading && page === 1))) return;
+
+  const interval = setInterval(() => {
+    setProgress((prev) => (prev < 85 ? prev + 5 : prev));
+  }, 300);
+
+  return () => clearInterval(interval);
 }, [initialLoading, loading, page]);
+
 
 
   // Cleanup on route change
@@ -209,6 +207,7 @@ function FindJob() {
         "100%": "#7C8CFF",
       }}
       trailColor="#E6E8FF"
+      status={progress === 100 ? "success" : "active"}
       showInfo={false}
     />
     <div

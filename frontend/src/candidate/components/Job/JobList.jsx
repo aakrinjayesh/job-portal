@@ -127,19 +127,59 @@ const JobList = ({
     }
   };
 
-  const handleSort = (value) => {
-    setSortOrder(value);
+ const handleSort = (key) => {
+  setSortOrder(key);
 
-    let sorted = [...jobs];
+  let sorted = [...jobs];
 
-    sorted.sort((a, b) => {
-      return value === "asc"
-        ? new Date(a.createdAt) - new Date(b.createdAt)
-        : new Date(b.createdAt) - new Date(a.createdAt);
-    });
+  switch (key) {
+    case "posted_desc": // Newest first
+      sorted.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      break;
 
-    setSortedJobs(sorted);
-  };
+    case "posted_asc": // Oldest first
+      sorted.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+      break;
+
+    case "experience_desc": // High to Low
+      sorted.sort(
+        (a, b) =>
+          (b.experience?.number || 0) -
+          (a.experience?.number || 0)
+      );
+      break;
+
+    case "experience_asc": // Low to High
+      sorted.sort(
+        (a, b) =>
+          (a.experience?.number || 0) -
+          (b.experience?.number || 0)
+      );
+      break;
+
+    case "salary_desc": // High to Low
+      sorted.sort(
+        (a, b) => (b.salary || 0) - (a.salary || 0)
+      );
+      break;
+
+    case "salary_asc": // Low to High
+      sorted.sort(
+        (a, b) => (a.salary || 0) - (b.salary || 0)
+      );
+      break;
+
+    default:
+      break;
+  }
+
+  setSortedJobs(sorted);
+};
+
 
   const sortMenu = {
     items: [
@@ -151,6 +191,22 @@ const JobList = ({
       //   key: "asc",
       //   label: "Posted Time(Oldest)",
       // },
+      {
+      key: "experience_desc",
+      label: "Experience (High to Low)",
+    },
+    {
+      key: "experience_asc",
+      label: "Experience (Low to High)",
+    },
+    {
+      key: "salary_desc",
+      label: "Budget (High to Low)",
+    },
+    {
+      key: "salary_asc",
+      label: "Budget (Low to High)",
+    },
     ],
     onClick: ({ key }) => handleSort(key),
   };
@@ -324,9 +380,11 @@ const JobList = ({
                 style={{ cursor: "pointer", fontSize: 14, color: "#6B7280" }}
               >
                 Sort by{" "}
-                <span style={{ color: "#1677FF", fontWeight: 500 }}>
-                  Posted Time
-                </span>{" "}
+               <span style={{ color: "#1677FF", fontWeight: 500 }}>
+  {sortMenu.items.find((item) => item.key === sortOrder)?.label || "Posted Time"}
+</span>
+
+                {" "}
                 <DownOutlined />
               </span>
             </Dropdown>
@@ -399,19 +457,22 @@ const JobList = ({
                     </div>
                   )}
 
-                  <div style={{ maxWidth: 180 }}>
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#212121",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {job.role || job.title}
-                    </div>
+                  <div style={{ maxWidth: 350 }}>
+                   <div
+  style={{
+    fontSize: 16,
+    fontWeight: 600,
+    color: "#212121",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+    lineHeight: "20px",
+  }}
+>
+  {job.role || job.title}
+</div>
+
 
                     <div
                       style={{
@@ -465,19 +526,23 @@ const JobList = ({
                 }}
               >
                 <span>
-                  <EnvironmentOutlined /> {job.location}
+                  <UserOutlined /> {job.experience?.number}{" "}
+                  {job.experience?.type}
                 </span>
                 <Divider type="vertical" />
                 <span>₹ {job.salary} LPA</span>
                 <Divider type="vertical" />
                 <span>
-                  <ClockCircleOutlined /> {job.employmentType}
+                  <ClockCircleOutlined /> {job.jobType}
                 </span>
                 <Divider type="vertical" />
-                <span>
-                  <UserOutlined /> {job.experience?.number}{" "}
-                  {job.experience?.type}
+                 <span>
+                  <EnvironmentOutlined /> {job.location}
                 </span>
+                 {/* <Divider type="vertical" />
+                <span>
+                  <ClockCircleOutlined /> {job.employmentType}
+                </span> */}
               </div>
 
               {/* SKILLS + CLOUDS */}

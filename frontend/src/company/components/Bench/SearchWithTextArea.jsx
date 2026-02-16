@@ -173,14 +173,7 @@ const SearchWithTextArea = ({
   ref={inputRef}
   placeholder="Enter your prompt"
   value={searchValue}
-  onChange={(e) => {
-    // Only letters, numbers, and spaces
-    const cleaned = e.target.value.replace(/[^a-zA-Z0-9 ]/g, "");
-    if (e.target.value !== cleaned) {
-      messageApi.warning("Only letters and numbers are allowed");
-    }
-    setSearchValue(cleaned);
-  }}
+  onChange={(e) => setSearchValue(e.target.value)}
   style={{
     paddingLeft: 40,
     paddingRight: 88,

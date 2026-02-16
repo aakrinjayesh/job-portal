@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Spin } from "antd";
+import { Col, Row, Card, message, Progress } from "antd";
 import AppliedJobsList from "../../candidate/components/Job/AppliedJobsList";
 import { AppliedJobsList as GetAppliedJobs } from "../../candidate/api/api"; // your API call function
 
@@ -8,36 +8,63 @@ function AppliedJobs() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [readyToShow, setReadyToShow] = useState(false);
+
   const observer = useRef();
+
+  useEffect(() => {
+  if (!loading) return;
+
+  const interval = setInterval(() => {
+    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+  }, 300);
+
+  return () => clearInterval(interval);
+}, [loading]);
+
+
 
   // Fetch applied jobs
   const fetchJobs = useCallback(async (pageNum = 1) => {
-    setLoading(true);
-    try {
-      console.log("📡 Fetching applied jobs page:", pageNum);
-      const response = await GetAppliedJobs(pageNum, 10);
-      console.log("✅ API Response:", response);
+  if (pageNum === 1) {
+    setReadyToShow(false);
+    setProgress(10);
+  }
 
-      const newApplications = response?.data?.applications || [];
-      const pagination = response?.data?.pagination;
+  setLoading(true);
 
-      if (pageNum === 1) {
-        setApplications(newApplications);
-      } else {
-        setApplications((prev) => [...prev, ...newApplications]);
-      }
+  try {
+    const response = await GetAppliedJobs(pageNum, 10);
 
-      // Check pagination
-      if (!pagination || pageNum >= pagination.totalPages) {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("❌ Error fetching applied jobs:", error);
-      message.error("Failed to fetch applied jobs");
-    } finally {
-      setLoading(false);
+    const newApplications = response?.data?.applications || [];
+    const pagination = response?.data?.pagination;
+
+    if (pageNum === 1) {
+      setApplications(newApplications);
+    } else {
+      setApplications((prev) => [...prev, ...newApplications]);
     }
-  }, []);
+
+    if (!pagination || pageNum >= pagination.totalPages) {
+      setHasMore(false);
+    }
+  } catch (error) {
+    message.error("Failed to fetch applied jobs");
+  } finally {
+    if (pageNum === 1) {
+      setProgress(100);               // ✅ force completion
+      setTimeout(() => {
+        setInitialLoading(false);
+        setReadyToShow(true);         // 🔓 unlock UI
+        setProgress(0);
+      }, 250);
+    }
+    setLoading(false);
+  }
+}, []);
+
 
   // Initial load
   useEffect(() => {
@@ -45,21 +72,21 @@ function AppliedJobs() {
   }, [fetchJobs]);
 
   // Infinite scroll observer
-  const lastJobRef = useCallback(
-    (node) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
+ const lastJobRef = useCallback(
+  (node) => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
           setPage((prevPage) => prevPage + 1);
-        }
-      });
+      }
+    });
 
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore]
-  );
+    if (node) observer.current.observe(node);
+  },
+  [loading, hasMore]
+);
 
   // Load next page
   useEffect(() => {
@@ -79,67 +106,63 @@ function AppliedJobs() {
     >
       <Row style={{ flex: 1, minHeight: 0 }}>
         <Col span={24} style={{ height: "100%", minHeight: 0 }}>
-          <Card
-            style={{
-              height: "100%",
-              borderRadius: 12,
-              background: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        <Card
+  style={{
+    height: "100%",
+    borderRadius: 12,
+    background: "#fff",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               display: "flex",
               flexDirection: "column",
-            }}
-            bodyStyle={{
-              padding: "16px 24px",
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              minHeight: 0, // 🔑 REQUIRED
-            }}
-          >
-            {/* ✅ ONLY SCROLLABLE AREA */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                overflowX: "hidden",
-                minHeight: 0, // 🔑 REQUIRED
-              }}
-            >
-              {/* 🔹 PAGE 1 LOADER */}
-              {loading && page === 1 ? (
-                <div style={{ textAlign: "center", marginTop: 40 }}>
-                  <Spin size="large" />
-                </div>
-              ) : (
-                <>
-                  <AppliedJobsList
-                    applications={applications}
-                    lastJobRef={lastJobRef}
-                  />
+  }}
+  bodyStyle={{ padding: "16px 24px" }}
+>
+  {!readyToShow ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "400px",
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={90}
+      strokeColor={{
+        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
+      }}
+      trailColor="#E6E8FF"
+      showInfo={false}
+    />
+    <div style={{ marginTop: 16, color: "#555", fontWeight: 500 }}>
+      Loading applied jobs…
+    </div>
+  </div>
+) : (
+  <>
+    <AppliedJobsList
+      applications={applications}
+      lastJobRef={lastJobRef}
+    />
 
-                  {/* 🔹 PAGINATION LOADER */}
-                  {loading && page > 1 && (
-                    <div style={{ textAlign: "center", margin: 16 }}>
-                      <Spin />
-                    </div>
-                  )}
+    {loading && page > 1 && (
+      <div style={{ textAlign: "center", marginTop: 16 }}>
+        <Spin />
+      </div>
+    )}
 
-                  {/* 🔹 END MESSAGE */}
-                  {!hasMore && !loading && applications.length > 0 && (
-                    <p
-                      style={{
-                        textAlign: "center",
-                        margin: "16px 0",
-                        color: "#888",
-                      }}
-                    >
-                      You’ve reached the end!
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-          </Card>
+    {!hasMore && !loading && applications.length > 0 && (
+      <p style={{ textAlign: "center", margin: "16px 0", color: "#888" }}>
+        You’ve reached the end!
+      </p>
+    )}
+  </>
+)}
+</Card>
         </Col>
       </Row>
     </div>

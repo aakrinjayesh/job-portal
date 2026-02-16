@@ -25,6 +25,8 @@ const MyActivity = () => {
   const [activeJobId, setActiveJobId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(true);
+
 
 
   const controllerRef = useRef(null);
@@ -32,31 +34,40 @@ const MyActivity = () => {
   const [messageApi, contextHolder] = message.useMessage();
 
   /* ================= FETCH ================= */
- const fetchMyActivity = async () => {
+const fetchMyActivity = async () => {
   if (controllerRef.current) controllerRef.current.abort();
   controllerRef.current = new AbortController();
 
   try {
+    setInitialLoading(true);
     setLoading(true);
-    setProgress(30);
+    setProgress(10);
+
+    const interval = setInterval(() => {
+      setProgress((p) => (p < 90 ? p + 10 : p));
+    }, 200);
 
     const res = await GetMyActivity(controllerRef.current.signal);
-
-    setProgress(70);
 
     if (res.status === "success") {
       setJobs(res.data || []);
     }
+
+    clearInterval(interval);
+    setProgress(100);
   } catch (err) {
     if (err.code !== "ERR_CANCELED") {
       messageApi.error("Failed to load activity");
     }
   } finally {
-    setProgress(100);
-    setTimeout(() => setProgress(0), 300);
-    setLoading(false);
+    setTimeout(() => {
+      setLoading(false);
+      setInitialLoading(false);
+      setProgress(0);
+    }, 300);
   }
 };
+
 
 
   useEffect(() => {
@@ -111,7 +122,7 @@ const MyActivity = () => {
                 zIndex: 10,
               }}
             >
-             <Progress
+             {/* <Progress
   type="circle"
   percent={progress}
   width={90}
@@ -121,16 +132,67 @@ const MyActivity = () => {
   }}
   trailColor="#E6E8FF"
   showInfo={false}
-/>
+/> */}
 
             </div>
           )}
-        {jobs.length === 0 && loading ? (
-  <div style={{ textAlign: "center", marginTop: 80 }}>
-    <Progress percent={progress} showInfo={false} />
+       {initialLoading ? (
+  <div
+    style={{
+      height: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={90}
+      strokeColor={{
+        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
+      }}
+      trailColor="#E6E8FF"
+      showInfo={false}
+    />
   </div>
 ) : jobs.length === 0 ? (
-            <Empty description="No activity found" />
+           <div
+  style={{
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    padding: 40,
+  }}
+>
+  <div
+    style={{
+      width: 120,
+      height: 120,
+      borderRadius: "50%",
+      background: "#F0F5FF",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 44,
+      marginBottom: 24,
+    }}
+  >
+    🤷‍♂️
+  </div>
+
+  <Title level={4}>Oops! No activity yet</Title>
+
+  <Text type="secondary" style={{ maxWidth: 340, marginBottom: 24 }}>
+    No candidate interactions found.
+    Post a job or invite candidates to start seeing activity here.
+  </Text>
+</div>
+
           ) : (
             jobs.map((jobBlock) => {
               const jobKey = String(jobBlock.job.id);

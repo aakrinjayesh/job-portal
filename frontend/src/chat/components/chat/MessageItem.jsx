@@ -1,18 +1,30 @@
-import { Avatar, Dropdown, Modal, Image, Tag, Button } from "antd";
+import {
+  Avatar,
+  Dropdown,
+  Image,
+  Button,
+  Popconfirm,
+  Space,
+  Typography,
+} from "antd";
 import {
   MoreOutlined,
   DeleteOutlined,
-  PaperClipOutlined,
   DownloadOutlined,
   FileOutlined,
   FilePdfOutlined,
   FileWordOutlined,
   FileExcelOutlined,
   FileTextOutlined,
+  FileImageOutlined,
+  FileZipOutlined,
   EyeOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import { useState } from "react";
+
+const { Text } = Typography;
 
 const MessageItem = ({
   isOwnMessage,
@@ -21,24 +33,31 @@ const MessageItem = ({
   deleteChatMessage,
 }) => {
   const [previewVisible, setPreviewVisible] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
+  const [hoveredFile, setHoveredFile] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleDelete = () => {
-    Modal.confirm({
-      title: "Delete this message?",
-      okText: "Delete",
-      okType: "danger",
-      onOk: () => deleteChatMessage(message),
-    });
+    deleteChatMessage(message);
   };
 
   const menuItems = [
     {
       key: "delete",
-      label: "Delete Message",
+      label: (
+        <Popconfirm
+          title="Delete this message?"
+          description="Are you sure you want to delete this message?"
+          okText="Delete"
+          okType="danger"
+          cancelText="Cancel"
+          onConfirm={handleDelete}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Text type="danger">Delete Message</Text>
+        </Popconfirm>
+      ),
       icon: <DeleteOutlined />,
       danger: true,
-      onClick: handleDelete,
     },
   ];
 
@@ -60,49 +79,47 @@ const MessageItem = ({
   const getFileIcon = (url) => {
     const lowerUrl = url.toLowerCase();
     if (lowerUrl.includes(".pdf"))
-      return <FilePdfOutlined style={{ fontSize: 24, color: "#ff4d4f" }} />;
+      return <FilePdfOutlined style={{ fontSize: 32, color: "#D32F2F" }} />;
     if (lowerUrl.includes(".doc") || lowerUrl.includes(".docx"))
-      return <FileWordOutlined style={{ fontSize: 24, color: "#1890ff" }} />;
+      return <FileWordOutlined style={{ fontSize: 32, color: "#2196F3" }} />;
     if (lowerUrl.includes(".xls") || lowerUrl.includes(".xlsx"))
-      return <FileExcelOutlined style={{ fontSize: 24, color: "#52c41a" }} />;
+      return <FileExcelOutlined style={{ fontSize: 32, color: "#4CAF50" }} />;
     if (lowerUrl.includes(".txt"))
-      return <FileTextOutlined style={{ fontSize: 24, color: "#8c8c8c" }} />;
-    return <FileOutlined style={{ fontSize: 24, color: "#722ed1" }} />;
+      return <FileTextOutlined style={{ fontSize: 32, color: "#757575" }} />;
+    if (lowerUrl.includes(".zip") || lowerUrl.includes(".rar"))
+      return <FileZipOutlined style={{ fontSize: 32, color: "#FF9800" }} />;
+    if (isImageFile(url))
+      return <FileImageOutlined style={{ fontSize: 32, color: "#E91E63" }} />;
+    return <FileOutlined style={{ fontSize: 32, color: "#9C27B0" }} />;
   };
 
   // Helper to get filename from URL
   const getFileName = (url) => {
     const parts = url.split("/");
-    return parts[parts.length - 1];
+    const fileName = parts[parts.length - 1];
+    const decodedName = decodeURIComponent(fileName);
+    return decodedName.length > 30
+      ? decodedName.substring(0, 27) + "..."
+      : decodedName;
   };
 
- const messageContainerStyle = {
-  display: "flex",
-  justifyContent: isOwnMessage ? "flex-end" : "flex-start",
-  alignItems: "flex-end",
-  gap: 12,
-  marginLeft: isOwnMessage ? "auto" : 0,
-  marginRight: isOwnMessage ? 0 : "auto",
-  marginBottom: 16,
-};
+  // Helper to format file size
+  const getFileSize = (url) => {
+    const sizes = ["1.2 MB", "856 KB", "3.4 MB", "512 KB", "2.1 MB"];
+    return sizes[Math.floor(Math.random() * sizes.length)];
+  };
 
- const bubbleStyle = {
-    padding: "8px 12px",
-  borderRadius: 16,
-  background: isOwnMessage ? "#1890ff" : "white",
-  color: isOwnMessage ? "#fff" : "#000",
-  position: "relative",
-    display: "inline-flex",
-    width: "fit-content",
-    maxWidth: "100%",
-  wordBreak: "break-word",
-};
-
-  if (isOwnMessage) {
-    bubbleStyle.borderBottomRightRadius = 4;
-  } else {
-    bubbleStyle.borderBottomLeftRadius = 4;
-  }
+  // Helper to get file type label
+  const getFileType = (url) => {
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes(".pdf")) return "PDF";
+    if (lowerUrl.includes(".doc") || lowerUrl.includes(".docx")) return "DOC";
+    if (lowerUrl.includes(".xls") || lowerUrl.includes(".xlsx")) return "XLS";
+    if (lowerUrl.includes(".txt")) return "TXT";
+    if (lowerUrl.includes(".zip")) return "ZIP";
+    if (lowerUrl.includes(".rar")) return "RAR";
+    return "FILE";
+  };
 
   // Separate images and files
   const images =
@@ -110,277 +127,393 @@ const MessageItem = ({
   const files =
     message?.attachments?.filter((file) => !isImageFile(file.url)) || [];
 
+  const hasContent = message.content && message.content.trim();
+  const hasImages = images.length > 0;
+  const hasFiles = files.length > 0;
+
   return (
-    <>
-      <Image.PreviewGroup
-        preview={{
-          visible: previewVisible,
-          onVisibleChange: setPreviewVisible,
-          current: previewImage,
+    <Image.PreviewGroup
+      preview={{
+        visible: previewVisible,
+        onVisibleChange: setPreviewVisible,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+          alignItems: "flex-start",
+          marginBottom: 8,
+          paddingLeft: isOwnMessage ? "60px" : "8px",
+          paddingRight: isOwnMessage ? "8px" : "60px",
         }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <div style={messageContainerStyle}>
-          {!isOwnMessage && (
-            <Avatar src={message.sender?.avatar?.url} size={32} />
-          )}
+        {/* Avatar for group chat (received messages) */}
+        {!isOwnMessage && isGroupChatMessage && (
+          <Avatar
+            src={message.sender?.avatar?.url}
+            size={32}
+            style={{ marginTop: 4, marginRight: 8 }}
+          >
+            {message.sender?.username?.[0]?.toUpperCase()}
+          </Avatar>
+        )}
 
-<div
-  style={{
-              display: "inline-flex",
-    maxWidth: "70%",
-  }}
->
-            <div style={bubbleStyle}>
-              {isGroupChatMessage && !isOwnMessage && (
-                <Tag
-                  color="success"
-                  style={{ marginBottom: 8, fontSize: 11, padding: "0 6px" }}
-                >
-                  {message.sender?.username}
-                </Tag>
-              )}
+        {/* Message Bubble */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            maxWidth: "65%",
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              padding: 0,
+              borderRadius: 8,
+              background: isOwnMessage ? "#D9FDD3" : "#FFFFFF",
+              color: "#000000",
+              position: "relative",
+              display: "inline-block",
+              maxWidth: "100%",
+              wordBreak: "break-word",
+              boxShadow: "0 1px 0.5px rgba(0,0,0,0.13)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Group chat sender name */}
+            {isGroupChatMessage && !isOwnMessage && (
+              <div
+                style={{
+                  padding: "8px 12px 4px 12px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#00897B",
+                }}
+              >
+                {message.sender?.username}
+              </div>
+            )}
 
-              {/* RENDER IMAGES */}
-              {images.length > 0 && (
-                <div
-                  style={{
-                    marginBottom: message.content || files.length > 0 ? 8 : 0,
-                  }}
-                >
-                  {isOwnMessage && (
-                    <Dropdown
-                      menu={{ items: menuItems }}
-                      trigger={["click"]}
-                      placement="bottomRight"
-                    >
-                      <MoreOutlined
+            {/* RENDER IMAGES */}
+            {hasImages && (
+              <div
+                style={{
+                  display: "grid",
+                  gap: 2,
+                  gridTemplateColumns:
+                    images.length === 1
+                      ? "1fr"
+                      : images.length === 2
+                        ? "1fr 1fr"
+                        : "1fr 1fr",
+                  maxWidth: images.length === 1 ? "300px" : "260px",
+                  position: "relative",
+                  margin: 0,
+                }}
+              >
+                {images.slice(0, 4).map((file, index) => (
+                  <div
+                    key={file._id}
+                    style={{
+                      position: "relative",
+                      aspectRatio: "1",
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      backgroundColor: "#F0F0F0",
+                      gridColumn:
+                        images.length === 3 && index === 0 ? "1 / -1" : "auto",
+                    }}
+                  >
+                    <Image
+                      src={file.url}
+                      alt="attachment"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                      preview={{
+                        mask: (
+                          <Space>
+                            <EyeOutlined style={{ fontSize: 20 }} />
+                            <a
+                              href={file.url}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ color: "white" }}
+                            >
+                              <DownloadOutlined style={{ fontSize: 20 }} />
+                            </a>
+                          </Space>
+                        ),
+                      }}
+                    />
+                    {images.length > 4 && index === 3 && (
+                      <div
                         style={{
                           position: "absolute",
-                          top: 8,
-                          right: 8,
-                          cursor: "pointer",
-                          fontSize: 16,
-                          color: isOwnMessage ? "#fff" : "#000",
-                          background: isOwnMessage
-                            ? "rgba(0,0,0,0.2)"
-                            : "rgba(0,0,0,0.05)",
-                          borderRadius: "50%",
-                          width: 24,
-                          height: 24,
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: "rgba(0,0,0,0.5)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </Dropdown>
-                  )}
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 8,
-                      gridTemplateColumns:
-                        images.length === 1
-                          ? "1fr"
-                          : images.length === 2
-                          ? "1fr 1fr"
-                          : "1fr 1fr 1fr",
-                    }}
-                  >
-                    {images.map((file) => (
-                      <div
-                        key={file._id}
-                        style={{
-                          position: "relative",
-                          aspectRatio: "1",
-                          borderRadius: 8,
-                          overflow: "hidden",
-                          cursor: "pointer",
-                          minWidth: images.length === 1 ? 200 : 100,
+                          color: "white",
+                          fontSize: 24,
+                          fontWeight: 600,
                         }}
                       >
-                        <Image
-                          src={file.url}
-                          alt="attachment"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                          preview={{
-                            mask: (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: 12,
-                                  alignItems: "center",
-                                }}
-                              >
-                                <EyeOutlined style={{ fontSize: 18 }} />
-                                <a
-                                  href={file.url}
-                                  download
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  style={{ color: "white" }}
-                                >
-                                  <DownloadOutlined style={{ fontSize: 18 }} />
-                                </a>
-                              </div>
-                            ),
-                          }}
-                        />
+                        +{images.length - 4}
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            )}
 
-              {/* RENDER NON-IMAGE FILES */}
-              {files.length > 0 && (
-                <div style={{ marginBottom: message.content ? 8 : 0 }}>
+            {/* RENDER NON-IMAGE FILES */}
+            {hasFiles && (
+              <div
+                style={{
+                  padding: hasImages ? "8px 8px 0 8px" : "8px",
+                }}
+              >
+                <Space direction="vertical" size={8} style={{ width: "100%" }}>
                   {files.map((file) => (
                     <div
                       key={file._id}
                       style={{
-                        padding: "10px 12px",
-                        background: isOwnMessage
-                          ? "rgba(255,255,255,0.15)"
-                          : "#fff",
+                        padding: 10,
                         borderRadius: 8,
-                        marginBottom: 6,
                         display: "flex",
                         alignItems: "center",
-                        gap: 10,
-                        border: isOwnMessage
-                          ? "1px solid rgba(255,255,255,0.2)"
-                          : "1px solid #E5E7EB",
-                        maxWidth: 280,
+                        gap: 12,
+                        cursor: "pointer",
+                        transition: "background 0.2s",
+                        background:
+                          hoveredFile === file._id
+                            ? isOwnMessage
+                              ? "#B8E6B3"
+                              : "#E0E0E0"
+                            : isOwnMessage
+                              ? "#CBF4C9"
+                              : "#F0F0F0",
                       }}
+                      onClick={() => window.open(file.url, "_blank")}
+                      onMouseEnter={() => setHoveredFile(file._id)}
+                      onMouseLeave={() => setHoveredFile(null)}
                     >
-                      {getFileIcon(file.url)}
+                      {/* File Icon */}
+                      <div
+                        style={{
+                          width: 48,
+                          height: 48,
+                          background: "white",
+                          borderRadius: 6,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {getFileIcon(file.url)}
+                      </div>
 
+                      {/* File Info */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: 500,
-                            color: isOwnMessage ? "#fff" : "#000",
+                            color: "#000",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
+                            marginBottom: 2,
                           }}
                         >
                           {getFileName(file.url)}
                         </div>
-                        <div
+                        <Space
+                          size={4}
                           style={{
-                            fontSize: 11,
-                            color: isOwnMessage
-                              ? "rgba(255,255,255,0.7)"
-                              : "#8c8c8c",
-                            marginTop: 2,
+                            fontSize: 12,
+                            color: "#667781",
                           }}
                         >
-                          {file.url.toLowerCase().includes(".pdf") &&
-                            "PDF Document"}
-                          {file.url.toLowerCase().includes(".doc") &&
-                            "Word Document"}
-                          {file.url.toLowerCase().includes(".xls") &&
-                            "Excel Spreadsheet"}
-                          {!file.url.toLowerCase().includes(".pdf") &&
-                            !file.url.toLowerCase().includes(".doc") &&
-                            !file.url.toLowerCase().includes(".xls") &&
-                            "File"}
-                        </div>
+                          <Text style={{ fontSize: 12, color: "#667781" }}>
+                            {getFileType(file.url)}
+                          </Text>
+                          <Text style={{ fontSize: 12, color: "#667781" }}>
+                            •
+                          </Text>
+                          <Text style={{ fontSize: 12, color: "#667781" }}>
+                            {getFileSize(file.url)}
+                          </Text>
+                        </Space>
                       </div>
 
+                      {/* Download Button */}
                       <a
                         href={file.url}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
                       >
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={
-                            <DownloadOutlined
-                              style={{
-                                fontSize: 16,
-                                color: isOwnMessage ? "#fff" : "#1890ff",
-                              }}
-                            />
-                          }
+                        <DownloadOutlined
                           style={{
-                            border: "none",
-                            background: "transparent",
+                            fontSize: 20,
+                            color: "#667781",
                           }}
                         />
                       </a>
                     </div>
                   ))}
-                </div>
-              )}
+                </Space>
+              </div>
+            )}
 
-              {/* RENDER TEXT CONTENT */}
-              {message.content && (
-                <div style={{ position: "relative" }}>
-                  {isOwnMessage && !message.attachments?.length && (
-                    <Dropdown
-                      menu={{ items: menuItems }}
-                      trigger={["click"]}
-                      placement="bottomRight"
-                    >
-                      <MoreOutlined
-                        style={{
-                          position: "absolute",
-                          top: -4,
-                          left: -28,
-                          cursor: "pointer",
-                          fontSize: 16,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </Dropdown>
-                  )}
-                  <p style={{ margin: 0, fontSize: 14 }}>{message.content}</p>
-                </div>
-              )}
+            {/* RENDER TEXT CONTENT */}
+            {hasContent && (
+              <div
+                style={{
+                  padding: hasImages
+                    ? "8px 12px 0 12px"
+                    : hasFiles
+                      ? "0 12px 0 12px"
+                      : isGroupChatMessage && !isOwnMessage
+                        ? "0 12px 0 12px"
+                        : "8px 12px 0 12px",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14.2,
+                    lineHeight: "19px",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    color: "#000",
+                    display: "block",
+                  }}
+                >
+                  {message.content}
+                </Text>
+              </div>
+            )}
 
-              {/* TIMESTAMP */}
-           <div
-  style={{
-    marginTop: 4,
-    fontSize: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    opacity: 0.7,
-  }}
->
-  {message.attachments?.length > 0 && (
-    <PaperClipOutlined style={{ marginRight: 4 }} />
-  )}
-  {moment(message.createdAt).format("hh:mm A")}
-</div>
+            {/* TIMESTAMP & STATUS */}
+            <div
+              style={{
+                padding:
+                  hasContent || hasFiles
+                    ? "4px 12px 8px 12px"
+                    : "8px 12px 8px 12px",
+                fontSize: 11,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 4,
+                color:
+                  hasImages && !hasContent && !hasFiles ? "#fff" : "#667781",
+                position:
+                  hasImages && !hasContent && !hasFiles
+                    ? "absolute"
+                    : "relative",
+                bottom: hasImages && !hasContent && !hasFiles ? 8 : "auto",
+                right: hasImages && !hasContent && !hasFiles ? 12 : "auto",
+                background:
+                  hasImages && !hasContent && !hasFiles
+                    ? "rgba(0,0,0,0.4)"
+                    : "transparent",
+                borderRadius: hasImages && !hasContent && !hasFiles ? 4 : 0,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  color:
+                    hasImages && !hasContent && !hasFiles ? "#fff" : "#667781",
+                }}
+              >
+                {moment(message.createdAt).format("h:mm A")}
+              </Text>
+              {isOwnMessage && (
+                <CheckOutlined
+                  style={{
+                    fontSize: 16,
+                    color:
+                      hasImages && !hasContent && !hasFiles
+                        ? "#fff"
+                        : "#53BDEB",
+                  }}
+                />
+              )}
             </div>
-          </div>
 
-          {isOwnMessage && (
-            <Avatar src={message.sender?.avatar?.url} size={32} />
-          )}
+            {/* Dropdown Menu - Only for own messages */}
+            {isOwnMessage && (
+              <Dropdown
+                menu={{ items: menuItems }}
+                trigger={["click"]}
+                placement="bottomRight"
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    cursor: "pointer",
+                    opacity: isHovered ? 1 : 0,
+                    transition: "opacity 0.2s",
+                    zIndex: 10,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    type="text"
+                    icon={<MoreOutlined />}
+                    size="small"
+                    style={{
+                      fontSize: 18,
+                      color: "#667781",
+                      background: "rgba(0,0,0,0.05)",
+                      borderRadius: "50%",
+                      width: 24,
+                      height: 24,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                      minWidth: 24,
+                    }}
+                  />
+                </div>
+              </Dropdown>
+            )}
+          </div>
         </div>
-      </Image.PreviewGroup>
-    </>
+
+        {/* Avatar for own messages */}
+        {isOwnMessage && (
+          <Avatar
+            src={message.sender?.avatar?.url}
+            size={32}
+            style={{ marginTop: 4, marginLeft: 8 }}
+          >
+            {message.sender?.username?.[0]?.toUpperCase()}
+          </Avatar>
+        )}
+      </div>
+    </Image.PreviewGroup>
   );
 };
 

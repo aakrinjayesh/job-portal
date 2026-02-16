@@ -187,17 +187,19 @@ if (route && route.length) {
         />
 
         {/* ⚙️ Bottom Menu */}
-        <Menu
-          mode="inline"
-          theme="dark"
-          onClick={onMenuClick}
-          style={{ background: "transparent", border: "none" }}
-          items={[
-            { key: "settings", icon: <SettingOutlined />, label: "Settings" },
-            { key: "profile", icon: <UserOutlined />, label: "Profile" },
-            { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
-          ]}
-        />
+       <Menu
+  mode="inline"
+  theme="dark"
+  selectedKeys={[selectedKey]}
+  onClick={onMenuClick}
+  style={{ background: "transparent", border: "none" }}
+  items={[
+    { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+    { key: "profile", icon: <UserOutlined />, label: "Profile" },
+    { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
+  ]}
+/>
+
       </Sider>
 
       {/* 📄 Main Layout */}

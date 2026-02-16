@@ -155,27 +155,30 @@ const handleApply = async () => {
   };
 
   try {
-    setLoading(true);
+    // ✅ Show loading message immediately
+    const hide = messageApi.loading({
+      content: "Applying selected candidates...",
+      duration: 0, // keep until manually closed
+    });
 
     const res = await ApplyBenchCandidate(payload);
 
-    // ✅ SUCCESS MESSAGE
+    hide(); // remove loading message
+
     messageApi.success({
-      content: `✅ ${selectedRowKeys.length} candidate(s) applied successfully`,
+      content: `${selectedRowKeys.length} candidate(s) applied successfully`,
       duration: 3,
     });
 
-    // ✅ CLEAR SELECTION (IMPORTANT UX)
     setSelectedRowKeys([]);
 
   } catch (err) {
     messageApi.error(
       err?.response?.data?.message || "❌ Failed to apply candidates"
     );
-  } finally {
-    setLoading(false);
   }
 };
+
 
 
   const columns = [

@@ -129,7 +129,6 @@ const JobDetails = () => {
           alignItems: "center",
         }}
       >
-        {contextHolder}
         <Progress
           type="circle"
           percent={progress}
@@ -156,6 +155,8 @@ const JobDetails = () => {
   }
 
   return (
+     <>
+    {contextHolder}
     <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>
       <Card
         style={{
@@ -284,6 +285,13 @@ const JobDetails = () => {
           </div>
 
           <div>
+            <Text strong>Experience Level</Text>
+            <div>
+              <div>{job.experienceLevel}</div>
+            </div>
+          </div>
+
+          <div>
             <Text strong>Salary</Text>
             <div>₹ {job.salary} LPA</div>
           </div>
@@ -350,6 +358,38 @@ const JobDetails = () => {
           ))}
         </div>
 
+        {/* ===== CERTIFICATES ===== */}
+<Divider style={{ margin: "16px 0" }} />
+
+<Text strong>Certificates:</Text>
+
+<div
+  style={{
+    marginTop: 8,
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+  }}
+>
+  {job.certifications && job.certifications.length > 0 ? (
+    job.certifications.map((cert, i) => (
+      <Tag
+        key={i}
+        style={{
+          background: "#E6FFFB",
+          borderRadius: 100,
+          border: "1px solid #13C2C2",
+        }}
+      >
+        {cert}
+      </Tag>
+    ))
+  ) : (
+    <Text type="secondary">Not specified</Text>
+  )}
+</div>
+
+
         {/* ===== DESCRIPTION ===== */}
         <Divider style={{ margin: "16px 0" }} />
 
@@ -386,6 +426,7 @@ const JobDetails = () => {
       {/* <ApplyBenchJob jobId={id} /> */}
       {source !== "myjobs" && <ApplyBenchJob jobId={job?.id} />}
     </div>
+    </>
   );
 };
 

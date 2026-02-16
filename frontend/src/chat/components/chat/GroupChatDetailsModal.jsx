@@ -36,7 +36,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
   const { user } = useAuth();
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [renamingGroup, setRenamingGroup] = useState(false);
-  const [participantToBeAdded, setParticipantToBeAdded] = useState("");
+ const [participantsToBeAdded, setParticipantsToBeAdded] = useState([]);
   const [newGroupName, setNewGroupName] = useState("");
   const [groupDetails, setGroupDetails] = useState(null);
   const [users, setUsers] = useState([]);
@@ -99,23 +99,26 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
     );
   };
 
-  const addParticipant = async () => {
-    if (!participantToBeAdded)
-      return messageApi.error("Please select a participant");
-    requestHandler(
-      async () => await addParticipantToGroup(chatId, participantToBeAdded),
-      null,
-      (res) => {
-        setGroupDetails({
-          ...groupDetails,
-          participants: res.data.participants,
-        });
-        setAddingParticipant(false);
-        setParticipantToBeAdded("");
-        messageApi.success("Participant added");
-      }
-    );
-  };
+ const addParticipant = async () => {
+  if (participantsToBeAdded.length === 0)
+    return messageApi.error("Please select participants");
+
+  await requestHandler(
+    async () =>
+      await addParticipantToGroup(chatId, participantsToBeAdded),
+    null,
+    (res) => {
+      setGroupDetails({
+        ...groupDetails,
+        participants: res.data.participants,
+      });
+      setAddingParticipant(false);
+      setParticipantsToBeAdded([]);
+      messageApi.success("Participants added");
+    }
+  );
+};
+
 
   const fetchGroupInformation = async () => {
     requestHandler(
@@ -263,16 +266,27 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
               </Button>
             ) : (
               <Space.Compact>
-                <Select
-                  placeholder="Select user"
-                  value={participantToBeAdded}
-                  onChange={setParticipantToBeAdded}
-                  options={users.map((u) => ({
-                    label: u.username,
-                    value: u._id,
-                  }))}
-                  style={{ minWidth: 200 }}
-                />
+               <Select
+  mode="multiple"
+  placeholder="Select users"
+  value={participantsToBeAdded}
+  onChange={setParticipantsToBeAdded}
+  options={users
+    .filter(
+      (u) =>
+        !groupDetails?.participants.some(
+          (p) => p._id === u._id
+        )
+    )
+    .map((u) => ({
+      label: u.username,
+      value: u._id,
+    }))}
+  style={{ minWidth: 250 }}
+  showSearch
+  optionFilterProp="label"
+/>
+
                 <Button type="primary" onClick={addParticipant}>
                   Add
                 </Button>
