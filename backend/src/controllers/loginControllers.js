@@ -32,7 +32,7 @@ const userOtpGenerate = async (req, res) => {
     // Generate and store OTP
     const GenerateOtp = generateOtp();
     otpStore.set(email, GenerateOtp);
-    logger.info("🗂️ otpStore:", otpStore);
+    console.log("🗂️ otpStore:", otpStore);
 
     // ✅ Send OTP email
     await sendEmail({
@@ -188,6 +188,210 @@ const userOtpValidator = async (req, res) => {
   }
 };
 
+// const setPassword = async (req, res) => {
+//   const { email, password, role, token } = req.body;
+
+//   if (!email || !password || !role) {
+//     return res.status(400).json({
+//       status: "error",
+//       message: "Email, password, and role are required",
+//     });
+//   }
+
+//   try {
+//     let invite = null;
+
+//     /* ─────────────────────────────
+//        1️⃣ VALIDATE INVITE (IF EXISTS)
+//     ───────────────────────────── */
+//     if (token) {
+//       invite = await prisma.organizationInvite.findUnique({
+//         where: { token },
+//       });
+
+//       if (!invite)
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invalid or already used invite",
+//         });
+
+//       if (invite.expiresAt < new Date())
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite has expired",
+//         });
+
+//       if (invite.email !== email)
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite data mismatch",
+//         });
+//     }
+
+//     /* ─────────────────────────────
+//        2️⃣ FIND USER
+//     ───────────────────────────── */
+//     const user = await prisma.users.findUnique({ where: { email } });
+
+//     if (!user)
+//       return res.status(404).json({
+//         status: "error",
+//         message: "User not found. Please complete OTP verification first.",
+//       });
+
+//     if (user.role !== role)
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Invalid role for this user",
+//       });
+
+//     /* ─────────────────────────────
+//        3️⃣ HASH PASSWORD
+//     ───────────────────────────── */
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     /* ─────────────────────────────
+//        4️⃣ TRANSACTION (USER + ORG)
+//     ───────────────────────────── */
+//     const result = await prisma.$transaction(async (tx) => {
+//       // Update password
+//       const updatedUser = await tx.users.update({
+//         where: { email },
+//         data: { password: hashedPassword },
+//       });
+
+//       // 🔹 INVITE FLOW → Join existing org
+//       if (invite) {
+//         await tx.organizationMember.create({
+//           data: {
+//             userId: updatedUser.id,
+//             organizationId: invite.organizationId,
+//             role: invite.role, // TRUST INVITE ROLE
+//             permissions: invite.permissions,
+//           },
+//         });
+
+//         await tx.organizationInvite.delete({
+//           where: { id: invite.id },
+//         });
+//       }
+
+//       // 🔹 NORMAL FLOW → Create org and lincence if company
+//       if (!invite && role === "company") {
+//         const existingMembership = await tx.organizationMember.findFirst({
+//           where: { userId: updatedUser.id },
+//         });
+
+//         if (!existingMembership) {
+//           // 1️⃣ Create organization
+//           const org = await tx.organization.create({
+//             data: {
+//               name:
+//                 updatedUser.companyName || `${updatedUser.name}'s Organization`,
+//             },
+//           });
+
+//           // 2️⃣ Create subscription (FREE / BASIC equivalent)
+//           const subscription = await tx.organizationSubscription.create({
+//             data: {
+//               organizationId: org.id,
+//               status: "ACTIVE",
+//               billingCycle: "MONTHLY",
+//               autoRenew: false,
+//               currentPeriodStart: new Date(),
+//               currentPeriodEnd: new Date(
+//                 new Date().setMonth(new Date().getMonth() + 1),
+//               ),
+//               nextBillingDate: new Date(
+//                 new Date().setMonth(new Date().getMonth() + 1),
+//               ),
+//             },
+//           });
+
+//           // 3️⃣ Create org member (ADMIN)
+//           const member = await tx.organizationMember.create({
+//             data: {
+//               userId: updatedUser.id,
+//               organizationId: org.id,
+//               role: "COMPANY_ADMIN",
+//             },
+//           });
+
+//           // 4️⃣ Create license and assign to admin
+//           await tx.license.create({
+//             data: {
+//               subscriptionId: subscription.id,
+//               planId: "9767d926-261d-4d48-a9b8-c805876ee341",
+//               assignedToId: member.id,
+//               validUntil: new Date(
+//                 new Date().setMonth(new Date().getMonth() + 1),
+//               ),
+//               isActive: true,
+//             },
+//           });
+//         }
+//       }
+
+//       return updatedUser;
+//     });
+
+//     /* ─────────────────────────────
+//        5️⃣ EXTERNAL CHAT REGISTRATION
+//     ───────────────────────────── */
+//     let externalUserId;
+
+//     try {
+//       const payload = {
+//         email,
+//         username: email.split("@")[0].toLowerCase(),
+//         password,
+//       };
+
+//       const registerResponse = await axios.post(
+//         `${external_backend_url}/api/v1/users/register`,
+//         payload,
+//         { headers: { "Content-Type": "application/json" } },
+//       );
+
+//       externalUserId = registerResponse?.data?.data?.user?._id;
+
+//       if (!externalUserId) throw new Error("Chat user id missing");
+//     } catch (err) {
+//       // HARD ROLLBACK USER
+//       await prisma.users.delete({ where: { email } });
+
+//       return res.status(500).json({
+//         status: "error",
+//         message: "External chat registration failed",
+//       });
+//     }
+
+//     /* ─────────────────────────────
+//        6️⃣ SYNC CHAT USER ID
+//     ───────────────────────────── */
+//     await prisma.users.update({
+//       where: { id: result.id },
+//       data: { chatuserid: externalUserId },
+//     });
+
+//     /* ─────────────────────────────
+//        7️⃣ SUCCESS
+//     ───────────────────────────── */
+//     return res.status(200).json({
+//       status: "success",
+//       message: invite
+//         ? "Password set & organization joined successfully"
+//         : "Password set & organization created successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in setPassword:", error.message);
+//     return res.status(500).json({
+//       status: "error",
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
 const setPassword = async (req, res) => {
   const { email, password, role, token } = req.body;
 
@@ -260,9 +464,41 @@ const setPassword = async (req, res) => {
         data: { password: hashedPassword },
       });
 
-      // 🔹 INVITE FLOW → Join existing org
+      // 🔹 INVITE FLOW → Join existing org + ASSIGN LICENSE
       if (invite) {
-        await tx.organizationMember.create({
+        // Get active subscription
+        const subscription = await tx.organizationSubscription.findFirst({
+          where: {
+            organizationId: invite.organizationId,
+            status: "ACTIVE",
+          },
+        });
+
+        if (!subscription) {
+          throw new Error("No active subscription found for organization");
+        }
+
+        // Find an available license seat
+        const freeLicense = await tx.license.findFirst({
+          where: {
+            subscriptionId: subscription.id,
+            isActive: true,
+            assignedToId: null,
+            validUntil: { gte: new Date() },
+          },
+          orderBy: {
+            validUntil: "asc",
+          },
+        });
+
+        if (!freeLicense) {
+          throw new Error(
+            "No available license seat. Please contact your admin.",
+          );
+        }
+
+        // Create organization member
+        const newMember = await tx.organizationMember.create({
           data: {
             userId: updatedUser.id,
             organizationId: invite.organizationId,
@@ -271,18 +507,28 @@ const setPassword = async (req, res) => {
           },
         });
 
+        // 🔥 ASSIGN LICENSE TO NEW MEMBER
+        await tx.license.update({
+          where: { id: freeLicense.id },
+          data: {
+            assignedToId: newMember.id,
+          },
+        });
+
+        // Delete the invite
         await tx.organizationInvite.delete({
           where: { id: invite.id },
         });
       }
 
-      // 🔹 NORMAL FLOW → Create org if company
+      // 🔹 NORMAL FLOW → Create org and license if company
       if (!invite && role === "company") {
         const existingMembership = await tx.organizationMember.findFirst({
           where: { userId: updatedUser.id },
         });
 
         if (!existingMembership) {
+          // 1️⃣ Create organization
           const org = await tx.organization.create({
             data: {
               name:
@@ -290,11 +536,42 @@ const setPassword = async (req, res) => {
             },
           });
 
-          await tx.organizationMember.create({
+          // 2️⃣ Create subscription (FREE / BASIC equivalent)
+          const subscription = await tx.organizationSubscription.create({
+            data: {
+              organizationId: org.id,
+              status: "ACTIVE",
+              billingCycle: "MONTHLY",
+              autoRenew: false,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(
+                new Date().setMonth(new Date().getMonth() + 1),
+              ),
+              nextBillingDate: new Date(
+                new Date().setMonth(new Date().getMonth() + 1),
+              ),
+            },
+          });
+
+          // 3️⃣ Create org member (ADMIN)
+          const member = await tx.organizationMember.create({
             data: {
               userId: updatedUser.id,
               organizationId: org.id,
               role: "COMPANY_ADMIN",
+            },
+          });
+
+          // 4️⃣ Create license and assign to admin
+          await tx.license.create({
+            data: {
+              subscriptionId: subscription.id,
+              planId: "9767d926-261d-4d48-a9b8-c805876ee341",
+              assignedToId: member.id,
+              validUntil: new Date(
+                new Date().setMonth(new Date().getMonth() + 1),
+              ),
+              isActive: true,
             },
           });
         }
@@ -325,6 +602,8 @@ const setPassword = async (req, res) => {
 
       if (!externalUserId) throw new Error("Chat user id missing");
     } catch (err) {
+      console.error("External chat registration failed:", err.message);
+
       // HARD ROLLBACK USER
       await prisma.users.delete({ where: { email } });
 
@@ -348,18 +627,17 @@ const setPassword = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: invite
-        ? "Password set & organization joined successfully"
+        ? "Password set, organization joined & license assigned successfully"
         : "Password set & organization created successfully",
     });
   } catch (error) {
     console.error("Error in setPassword:", error.message);
     return res.status(500).json({
       status: "error",
-      message: "Internal server error",
+      message: error.message || "Internal server error",
     });
   }
 };
-
 /**
  * Local + External login flow
  */
@@ -598,7 +876,7 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const external_backend_url = process.env.EXTERNAL_BACKEND_URL;
+    // const external_backend_url = process.env.EXTERNAL_BACKEND_URL;
     try {
       const payload = {
         email,

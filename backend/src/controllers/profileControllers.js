@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { logger } from "../utils/logger.js";
 import mammoth from "mammoth";
+import { uploadToCloudinary } from "../utils/Storage.js";
 
 // for uploading pdf and extracting all the details from it for both vendor and candidate
 
@@ -22,7 +23,7 @@ const UploadResume = async (req, res) => {
     const { buffer, mimetype, originalname, size } = req.file;
 
     logger.info(
-      `File received: ${originalname}, Type: ${mimetype}, Role: ${role}`
+      `File received: ${originalname}, Type: ${mimetype}, Role: ${role}`,
     );
 
     let extractedText = "";
@@ -120,6 +121,7 @@ const updateProfiledetails = async (req, res) => {
       linkedInUrl = null,
       trailheadUrl = null,
       title,
+      summary = null,
     } = req.body;
 
     const upserted = await prisma.userProfile.upsert({
@@ -148,6 +150,7 @@ const updateProfiledetails = async (req, res) => {
         education,
         currentLocation,
         title,
+        summary,
       },
       create: {
         userId: user.id,
@@ -174,6 +177,7 @@ const updateProfiledetails = async (req, res) => {
         linkedInUrl,
         trailheadUrl,
         title,
+        summary,
         chatuserid: user.chatuserid,
       },
     });
@@ -220,7 +224,7 @@ const getUserProfileDetails = async (req, res) => {
   } catch (error) {
     logger.error(
       "Error fetching profile:",
-      JSON.stringify(error.message, null, 2)
+      JSON.stringify(error.message, null, 2),
     );
     return res
       .status(200)
@@ -228,45 +232,33 @@ const getUserProfileDetails = async (req, res) => {
   }
 };
 
-// NEW: Upload Profile Picture
 const uploadProfilePicture = async (req, res) => {
   try {
-    logger.info("uploadProfilePicture API hit");
+    console.log("uploadProfilePicture API hit");
 
     if (!req.file) {
-      logger.warn("No file uploaded for profile picture");
       return res.status(400).json({
         status: "error",
         message: "No file uploaded",
       });
     }
 
-    const fileExt = req.file.originalname.split(".").pop();
-    const fileName = `${Date.now()}.${fileExt}`;
+    // 🔥 Upload directly from buffer
+    const uploadedFile = await uploadToCloudinary(req.file.buffer);
 
-    const uploadDir = path.join(process.cwd(), "uploads");
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-      logger.info("Uploads directory created");
+    if (!uploadedFile) {
+      return res.status(500).json({
+        status: "error",
+        message: "Cloudinary upload failed",
+      });
     }
 
-    const savePath = path.join(uploadDir, fileName);
-    fs.writeFileSync(savePath, req.file.buffer);
-    logger.info("Profile picture saved to disk");
-
-    // const fileUrl = `${process.env.BASE_URL}/uploads/${fileName}`;
-    const fileUrl = `${process.env.BACKEND_URL}/uploads/${fileName}`;
-
     return res.status(200).json({
-      status: "success",
-      url: fileUrl,
+      url: uploadedFile.secure_url, // always use secure_url
     });
   } catch (error) {
-    logger.error(
-      "Profile Picture Upload Error:",
-      JSON.stringify(error.message, null, 2)
-    );
+    console.error("Profile Picture Upload Error:", error.message);
+
     return res.status(500).json({
       status: "error",
       message: "Upload failed",
@@ -317,7 +309,7 @@ const getCompanyProfileDetails = async (req, res) => {
   } catch (error) {
     logger.error(
       "Error fetching profile:",
-      JSON.stringify(error.message, null, 2)
+      JSON.stringify(error.message, null, 2),
     );
     return res.status(500).json({
       status: "error",
@@ -421,7 +413,7 @@ const updateUserProfileDetails = async (req, res) => {
   } catch (error) {
     logger.error(
       "Error updating user profile:",
-      JSON.stringify(error.message, null, 2)
+      JSON.stringify(error.message, null, 2),
     );
     return res.status(500).json({
       status: "error",

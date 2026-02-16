@@ -38,50 +38,48 @@ const Settings = () => {
   const [form] = Form.useForm();
 
   // Fetch Members & Invites
- const fetchData = async () => {
-  if (firstLoadRef.current) {
-    setInitialLoading(true);
-  }
-
-  setLoading(true);
-
-  try {
-    const res = await getOrganizationMembers();
-    if (res.status === "success") {
-      setMembers(res.data.members || []);
-      setInvites(res.data.invites || []);
-    }
-  } catch (error) {
-    message.error("Failed to fetch organization data");
-  } finally {
-    setLoading(false);
-
+  const fetchData = async () => {
     if (firstLoadRef.current) {
-      setTimeout(() => {
-        setInitialLoading(false);
-        firstLoadRef.current = false; // 🔒 lock forever
-      }, 300);
+      setInitialLoading(true);
     }
-  }
-};
 
+    setLoading(true);
+
+    try {
+      const res = await getOrganizationMembers();
+      if (res.status === "success") {
+        setMembers(res.data.members || []);
+        setInvites(res.data.invites || []);
+      }
+    } catch (error) {
+      message.error("Failed to fetch organization data");
+    } finally {
+      setLoading(false);
+
+      if (firstLoadRef.current) {
+        setTimeout(() => {
+          setInitialLoading(false);
+          firstLoadRef.current = false; // 🔒 lock forever
+        }, 300);
+      }
+    }
+  };
 
   useEffect(() => {
     fetchData();
   }, []);
 
   useEffect(() => {
-  if (initialLoading) {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
-    }, 400);
+    if (initialLoading) {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+      }, 400);
 
-    return () => clearInterval(interval);
-  } else {
-    setProgress(0);
-  }
-}, [initialLoading]);
-
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [initialLoading]);
 
   // Handle Invite
   const handleInvite = async (values) => {
@@ -226,25 +224,18 @@ const Settings = () => {
 
   const adminDomain = getAdminDomain();
 
- const tableProgressLoader = (
-  <div
-    style={{
-      padding: "50px 0",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-    }}
-  >
-    <Progress
-      type="circle"
-      percent={progress}
-      status="active"
-      size={80}
-    />
-  </div>
-);
-
-
+  const tableProgressLoader = (
+    <div
+      style={{
+        padding: "50px 0",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Progress type="circle" percent={progress} status="active" size={80} />
+    </div>
+  );
 
   return (
     <div style={{ padding: "24px" }}>
@@ -278,11 +269,10 @@ const Settings = () => {
                   columns={memberColumns}
                   dataSource={members}
                   rowKey="id"
-                 loading={{
-  spinning: loading,
-  indicator: tableProgressLoader,
-}}
-
+                  loading={{
+                    spinning: loading,
+                    indicator: tableProgressLoader,
+                  }}
                   pagination={{ pageSize: 5 }}
                 />
 
@@ -323,14 +313,13 @@ const Settings = () => {
           <Form.Item
             name="name"
             label="Full Name"
-            rules={[{ required: true, message: "Please enter name" },
-                {
-      pattern: /^[A-Za-z]{2,}(?: [A-Za-z])+$/,
-      message:
-        "Enter first and last name using letters only ",
-    },
- 
-  ]}
+            rules={[
+              { required: true, message: "Please enter name" },
+              {
+                pattern: /^[A-Za-z]+(?:[ .][A-Za-z]+)*$/,
+                message: "Name can contain letters, spaces and dots only",
+              },
+            ]}
           >
             <Input placeholder="Enter member name" />
           </Form.Item>

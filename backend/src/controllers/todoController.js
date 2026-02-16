@@ -156,12 +156,22 @@ export const toggleActiveTodo = async (req, res) => {
 // };
 
 export const getCandidateTasks = async (req, res) => {
+  console.log("get Candidate called");
+
   try {
     const recruiterId = req.user.id;
     const organizationId = req.user.organizationId;
     const { candidateId, jobId } = req.body;
 
-    const list = await prisma.candidateTaskList.upsert({
+    if (!candidateId || !jobId) {
+      return res.status(400).json({
+        status: "error",
+        message: "candidateId and jobId are required",
+      });
+    }
+
+    // 🔍 1️⃣ First check if task list already exists
+    let list = await prisma.candidateTaskList.findUnique({
       where: {
         recruiterId_candidateId_jobId_organizationId: {
           recruiterId,
@@ -170,23 +180,39 @@ export const getCandidateTasks = async (req, res) => {
           organizationId,
         },
       },
-      update: {},
-      create: {
+      include: {
+        tasks: { orderBy: { order: "asc" } },
+      },
+    });
+
+    // ✅ 2️⃣ If exists → return directly
+    if (list) {
+      console.log("Task list already exists");
+      return res.json({
+        status: "success",
+        data: list.tasks,
+      });
+    }
+
+    // 🆕 3️⃣ If not exists → fetch templates
+    const templates = await prisma.taskTemplate.findMany({
+      where: {
+        recruiterId,
+        organizationId,
+        isActive: true,
+      },
+      orderBy: { order: "asc" },
+    });
+
+    // 🆕 4️⃣ Create new candidate task list
+    list = await prisma.candidateTaskList.create({
+      data: {
         recruiterId,
         candidateId,
         jobId,
         organizationId,
         tasks: {
-          create: (
-            await prisma.taskTemplate.findMany({
-              where: {
-                recruiterId,
-                organizationId,
-                isActive: true,
-              },
-              orderBy: { order: "asc" },
-            })
-          ).map((t) => ({
+          create: templates.map((t) => ({
             title: t.title,
             order: t.order,
             createdFromId: t.id,
@@ -199,10 +225,19 @@ export const getCandidateTasks = async (req, res) => {
       },
     });
 
-    res.json({ status: "success", data: list.tasks });
+    console.log("New task list created");
+
+    return res.json({
+      status: "success",
+      data: list.tasks,
+    });
   } catch (err) {
     console.error("getCandidateTasks error:", err);
-    res.status(500).json({ status: "error", message: err.message });
+
+    return res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
   }
 };
 

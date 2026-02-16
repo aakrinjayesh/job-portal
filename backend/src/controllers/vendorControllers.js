@@ -149,7 +149,7 @@ const updateVendorCandidate = async (req, res) => {
 
     // ⭐ Ignore undefined fields (very important)
     const safeData = Object.fromEntries(
-      Object.entries(data).filter(([_, v]) => v !== undefined)
+      Object.entries(data).filter(([_, v]) => v !== undefined),
     );
 
     const updatedCandidate = await prisma.userProfile.update({
@@ -398,7 +398,7 @@ const getAllCandidates = async (req, res) => {
     });
 
     const savedCandidateIds = savedCandidates.map(
-      (item) => item.candidateProfileId
+      (item) => item.candidateProfileId,
     );
 
     if (userAuth.role !== "company") {
@@ -462,6 +462,117 @@ const getAllCandidates = async (req, res) => {
   }
 };
 
+const getCandidateDetails = async (req, res) => {
+  try {
+    const userAuth = req.user;
+
+    // 1️⃣ Role check
+    if (userAuth.role !== "company") {
+      return res.status(403).json({
+        status: "failed",
+        message: "Access denied",
+      });
+    }
+
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Candidate ID is required",
+      });
+    }
+
+    // 2️⃣ Fetch candidate
+    const candidate = await prisma.userProfile.findUnique({
+      where: { id },
+      include: {
+        vendor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phoneNumber: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        CandidateRating: {
+          select: {
+            rating: true,
+            comment: true,
+          },
+        },
+      },
+    });
+
+    if (!candidate) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Candidate not found",
+      });
+    }
+
+    // 3️⃣ Prepare rating data
+    const ratingReviews = candidate.CandidateRating || [];
+
+    const avgRating =
+      ratingReviews.length > 0
+        ? ratingReviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
+          ratingReviews.length
+        : 0;
+
+    // 4️⃣ Check saved status
+    const savedCandidate = await prisma.savedCandidate.findFirst({
+      where: {
+        organizationId: userAuth.organizationId,
+        candidateProfileId: id,
+      },
+      select: { id: true },
+    });
+
+    const isSaved = !!savedCandidate;
+    const isVendor = !!candidate.vendorId;
+
+    // 5️⃣ Mask contact details if vendor candidate
+    let profile = { ...candidate };
+
+    if (isVendor && candidate.vendor) {
+      profile.email = candidate.vendor.email;
+      profile.phoneNumber = candidate.vendor.phoneNumber;
+    }
+
+    // Remove raw rating relation from profile (since we send structured)
+    delete profile.CandidateRating;
+
+    return res.status(200).json({
+      status: "success",
+      candidate: {
+        name: profile.name,
+        email: profile.email,
+        profile: {
+          ...profile,
+          isVendor,
+          isSaved,
+        },
+        avgRating: Number(avgRating.toFixed(1)),
+        ratingReviews,
+      },
+    });
+  } catch (error) {
+    console.error("getCandidateDetails Error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: error.message || "Internal server error",
+    });
+  }
+};
+
 const vendorApplyCandidate = async (req, res) => {
   try {
     const vendorId = req.user.id;
@@ -512,12 +623,12 @@ const vendorApplyCandidate = async (req, res) => {
       });
     }
 
-    if (job.organizationId !== organizationId && job.postedBy.id !== vendorId) {
-      return res.status(400).json({
-        status: "error",
-        message: "Unauthorized",
-      });
-    }
+    // if (job.organizationId !== organizationId && job.postedBy.id !== vendorId) {
+    //   return res.status(400).json({
+    //     status: "error",
+    //     message: "Unauthorized",
+    //   });
+    // }
 
     const currentCount = job._count.applications;
     const limit = job.ApplicationLimit;
@@ -564,7 +675,7 @@ const vendorApplyCandidate = async (req, res) => {
     });
 
     const alreadyAppliedIds = new Set(
-      existingApps.map((a) => a.candidateProfileId)
+      existingApps.map((a) => a.candidateProfileId),
     );
     let newProfiles = profiles.filter((p) => !alreadyAppliedIds.has(p.id));
 
@@ -626,7 +737,7 @@ const vendorApplyCandidate = async (req, res) => {
           } catch (aiError) {
             logger.error(
               `AI Analysis failed for profile ${profile.id}:`,
-              aiError.message
+              aiError.message,
             );
             // Continue without AI analysis
           }
@@ -673,7 +784,7 @@ const vendorApplyCandidate = async (req, res) => {
           const resumeHTML = generateResumeHTML(
             { name: profile.name, email: profile.email },
             profile,
-            job
+            job,
           );
 
           const browser = await puppeteer.launch({
@@ -699,7 +810,7 @@ const vendorApplyCandidate = async (req, res) => {
         } catch (pdfErr) {
           logger.error(
             `PDF generation failed for profile ${profile.id}:`,
-            pdfErr.message
+            pdfErr.message,
           );
           // Continue without PDF
         }
@@ -771,7 +882,7 @@ const vendorApplyCandidate = async (req, res) => {
                       aiProcess ? ` – Fit Score: ${c.matchScore ?? "N/A"}%` : ""
                     }
                   </p>
-                `
+                `,
                   )
                   .join("")}
               </div>
@@ -829,7 +940,7 @@ const vendorApplyCandidate = async (req, res) => {
                   }</p>
                   <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
                     "en-US",
-                    { year: "numeric", month: "long", day: "numeric" }
+                    { year: "numeric", month: "long", day: "numeric" },
                   )}</p>
                   <p><strong>Total Candidates:</strong> ${
                     appliedCandidates.length
@@ -840,9 +951,9 @@ const vendorApplyCandidate = async (req, res) => {
                     .map(
                       (c) => `
                     <p style="margin: 5px 0;">• ${c.candidateName} ${
-                        aiProcess ? `(Match Score: ${c.matchScore}%)` : ""
-                      }</p>
-                  `
+                      aiProcess ? `(Match Score: ${c.matchScore}%)` : ""
+                    }</p>
+                  `,
                     )
                     .join("")}
                 </div>
@@ -1063,6 +1174,49 @@ const getSavedCandidates = async (req, res) => {
   }
 };
 
+const markCandidateBookmark = async (req, res) => {
+  try {
+    const userAuth = req.user;
+    const { jobApplicationId } = req.body;
+
+    if (userAuth.role !== "company") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    if (!jobApplicationId) {
+      return res.status(400).json({ message: "jobApplicationId is required" });
+    }
+
+    const application = await prisma.jobApplication.findUnique({
+      where: { id: jobApplicationId },
+      include: {
+        job: { select: { postedById: true } },
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    if (application.job.postedById !== userAuth.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    await prisma.jobApplication.update({
+      where: { id: jobApplicationId },
+      data: { status: "BookMark" },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Candidate marked as Bookmark",
+    });
+  } catch (error) {
+    console.error("markCandidateBookmark error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export {
   getVendorCandidates,
   createVendorCandidate,
@@ -1075,4 +1229,6 @@ export {
   unsaveCandidate,
   getSavedCandidates,
   markCandidateReviewed,
+  getCandidateDetails,
+  markCandidateBookmark,
 };

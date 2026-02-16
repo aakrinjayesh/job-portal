@@ -11,6 +11,10 @@ import {
   getStaticFilePath,
   removeLocalFile,
 } from "../../../utils/helpers.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../../../utils/Storage.js";
 
 /**
  * @description Utility function which returns the pipeline stages to structure the chat message schema with common lookups
@@ -74,7 +78,7 @@ const getAllMessages = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, messages || [], "Messages fetched successfully")
+      new ApiResponse(200, messages || [], "Messages fetched successfully"),
     );
 });
 
@@ -95,12 +99,20 @@ const sendMessage = asyncHandler(async (req, res) => {
   const messageFiles = [];
 
   if (req.files && req.files.attachments?.length > 0) {
-    req.files.attachments?.map((attachment) => {
-      messageFiles.push({
-        url: getStaticFilePath(req, attachment.filename),
-        localPath: getLocalPath(attachment.filename),
-      });
-    });
+    for (const file of req.files.attachments) {
+      const localPath = getLocalPath(file.filename);
+
+      const uploadedFile = await uploadToCloudinary(localPath);
+
+      if (uploadedFile) {
+        messageFiles.push({
+          url: uploadedFile.secure_url, // 🔥 save this
+          public_id: uploadedFile.public_id, // optional (for delete later)
+          resource_type: uploadedFile.resource_type,
+          original_name: file.originalname,
+        });
+      }
+    }
   }
 
   // Create a new message instance with appropriate metadata
@@ -119,7 +131,7 @@ const sendMessage = asyncHandler(async (req, res) => {
         lastMessage: message._id,
       },
     },
-    { new: true }
+    { new: true },
   );
 
   // structure the message
@@ -150,7 +162,7 @@ const sendMessage = asyncHandler(async (req, res) => {
       req,
       participantObjectId.toString(),
       ChatEventEnum.MESSAGE_RECEIVED_EVENT,
-      receivedMessage
+      receivedMessage,
     );
   });
 
@@ -160,11 +172,9 @@ const sendMessage = asyncHandler(async (req, res) => {
 });
 
 const deleteMessage = asyncHandler(async (req, res) => {
-  //controller to delete chat messages and attachments
-
   const { chatId, messageId } = req.params;
 
-  //Find the chat based on chatId and checking if user is a participant of the chat
+  // Find chat and ensure user is participant
   const chat = await Chat.findOne({
     _id: new mongoose.Types.ObjectId(chatId),
     participants: req.user?._id,
@@ -174,56 +184,63 @@ const deleteMessage = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Chat does not exist");
   }
 
-  //Find the message based on message id
-  const message = await ChatMessage.findOne({
-    _id: new mongoose.Types.ObjectId(messageId),
-  });
+  // Find message
+  const message = await ChatMessage.findById(messageId);
 
   if (!message) {
     throw new ApiError(404, "Message does not exist");
   }
 
-  // Check if user is the sender of the message
+  // Check if user is sender
   if (message.sender.toString() !== req.user._id.toString()) {
-    throw new ApiError(
-      403,
-      "You are not the authorised to delete the message, you are not the sender"
-    );
+    throw new ApiError(403, "You are not authorised to delete this message");
   }
-  if (message.attachments.length > 0) {
-    //If the message is attachment  remove the attachments from the server
-    message.attachments.map((asset) => {
-      removeLocalFile(asset.localPath);
-    });
+
+  // ==============================
+  // 🔥 Delete Cloudinary Attachments
+  // ==============================
+  if (message.attachments?.length > 0) {
+    for (const asset of message.attachments) {
+      if (asset.public_id) {
+        await deleteFromCloudinary(
+          asset.public_id,
+          asset.resource_type || "image",
+        );
+      }
+    }
   }
-  //deleting the message from DB
+
+  // Delete message from DB
   await ChatMessage.deleteOne({
     _id: new mongoose.Types.ObjectId(messageId),
   });
 
-  //Updating the last message of the chat to the previous message after deletion if the message deleted was last message
-  if (chat.lastMessage.toString() === message._id.toString()) {
+  // ==============================
+  // Update last message if needed
+  // ==============================
+  if (chat.lastMessage?.toString() === message._id.toString()) {
     const lastMessage = await ChatMessage.findOne(
       { chat: chatId },
       {},
-      { sort: { createdAt: -1 } }
+      { sort: { createdAt: -1 } },
     );
 
     await Chat.findByIdAndUpdate(chatId, {
-      lastMessage: lastMessage ? lastMessage?._id : null,
+      lastMessage: lastMessage ? lastMessage._id : null,
     });
   }
-  // logic to emit socket event about the message deleted  to the other participants
+
+  // ==============================
+  // Emit socket event
+  // ==============================
   chat.participants.forEach((participantObjectId) => {
-    // here the chat is the raw instance of the chat in which participants is the array of object ids of users
-    // avoid emitting event to the user who is deleting the message
     if (participantObjectId.toString() === req.user._id.toString()) return;
-    // emit the delete message event to the other participants frontend with delete messageId as the payload
+
     emitSocketEvent(
       req,
       participantObjectId.toString(),
       ChatEventEnum.MESSAGE_DELETE_EVENT,
-      message
+      { messageId },
     );
   });
 

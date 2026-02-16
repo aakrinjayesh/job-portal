@@ -30,55 +30,42 @@ import {
   MessageOutlined,
 } from "@ant-design/icons";
 import CandidateActivity from "../activity/CandidateActivity";
-import { SaveCandidateRating } from "../../api/api";
-import { GetCandidateDeatils } from "../../api/api";
+import { getCandidateDetails, SaveCandidateRating } from "../../api/api";
 
 const { Title, Paragraph, Text } = Typography;
 
 const CandidateDetails = () => {
-  const location = useLocation();
+  console.log("candidates details page");
   // const { candidate, jobId } = location.state || {};
   const navigate = useNavigate();
   const { id } = useParams(); // userId in URL
   const [messageApi, contextHolder] = message.useMessage();
-
+  const location = useLocation();
   // 🔹 Review state (per candidate)
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [reviewsByCandidate, setReviewsByCandidate] = useState({});
+  // const [reviewsByCandidate, setReviewsByCandidate] = useState({});
   const [tempReview, setTempReview] = useState("");
 
   const [ratingValue, setRatingValue] = useState(0);
 
-  const { candidate: initialCandidate, jobId } = location.state || {};
-  const [candidate, setCandidate] = useState(initialCandidate);
+  const { jobId, source } = location.state || {};
+  const [candidate, setCandidate] = useState(null);
   const [addReviewLoading, setAddReviewLoading] = useState(false);
   const resumeRef = useRef();
 
   const activityOnly = location?.state?.activityOnly;
   const defaultTab = location?.state?.defaultTab;
-  const [loadingCandidate, setLoadingCandidate] = useState(false);
-
-  console.log("location ", location);
-  console.log("location jobId", jobId);
+  const [loadingCandidate, setLoadingCandidate] = useState(true);
+  console.log("sourcw", source);
+  console.log("location", location);
 
   useEffect(() => {
-    if (candidate) return;
-    if (!id || !jobId) {
-      console.error("Missing id or jobId", { id, jobId });
-      return;
-    }
-
     const fetchCandidate = async () => {
       try {
-        setLoadingCandidate(true);
+        const res = await getCandidateDetails(id);
 
-        const res = await GetCandidateDeatils({
-          jobId,
-          profileId: id,
-        });
-
-        if (res?.data) {
-          setCandidate(res.data);
+        if (res.status === "success") {
+          setCandidate(res.candidate);
         }
       } catch (err) {
         message.error("Failed to load candidate details");
@@ -87,57 +74,54 @@ const CandidateDetails = () => {
       }
     };
 
-    fetchCandidate();
-  }, [id, jobId, candidate]);
+    if (id) fetchCandidate();
+  }, [id]);
 
   const reloadCandidate = async () => {
     try {
+      setAddReviewLoading(true);
+
       const res = await SaveCandidateRating({
         candidateProfileId: candidate.profile.id,
         rating: ratingValue,
         comment: tempReview,
       });
 
-      // 🔥 MANUALLY update UI instead of refetching
-      setCandidate((prev) => ({
-        ...prev,
-        avgRating: ratingValue,
-        ratingReviews: [
-          ...(prev.ratingReviews || []),
-          {
-            rating: ratingValue,
-            comment: tempReview,
-          },
-        ],
-      }));
+      if (res.status === "success") {
+        messageApi.success(res.message || "Review Submitted!");
+        setIsReviewModalOpen(false); // close modal
+        setTempReview("");
+        setRatingValue(0);
+      } else {
+        messageApi.error("Failed To Submit The Review");
+      }
     } catch (err) {
       console.error(err);
+      messageApi.error("Something went wrong");
+    } finally {
+      setAddReviewLoading(false);
     }
   };
 
-  useEffect(() => {
-    const savedReviews = localStorage.getItem("candidateReviews");
-    if (savedReviews) {
-      setReviewsByCandidate(JSON.parse(savedReviews));
-    }
-  }, []);
-
-  // if (!candidate) {
-  //   return <p style={{ padding: "20px" }}>No candidate details found.</p>;
-  // }
-  if (!candidate && !loadingCandidate) {
+  if (loadingCandidate) {
     return (
       <div style={{ padding: 40, textAlign: "center" }}>
-        No candidate details found.
+        <Spin size="large" />
       </div>
     );
   }
 
+  if (!candidate) {
+    return <p style={{ padding: "20px" }}>No candidate details found.</p>;
+  }
+
   const profile = candidate.profile || {};
+  console.log("full profle", candidate.profile || "null");
+  console.log("profile", profile);
   const summary = profile.summary;
 
   console.log("CandidateDetails candidate:", candidate);
-  console.log("candidate.userId:", candidate.userId);
+  // console.log("candidate.userId:", candidate.userId);
 
   const skillChipStyle = {
     background: "#E2EEFF",
@@ -235,32 +219,10 @@ const CandidateDetails = () => {
 
     html2pdf().set(options).from(element).save();
   };
-  if (!candidate) {
-    return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
 
   return (
     <div style={{ padding: "0px" }}>
       {contextHolder}
-      {addReviewLoading && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(255,255,255,0.85)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-        >
-          <Spin size="large" />
-        </div>
-      )}
 
       {/* Back Button */}
 
@@ -268,46 +230,12 @@ const CandidateDetails = () => {
         {/* <Col span={16}> */}
         {/* <Col span={16} style={{ position: "relative" }}> */}
         {!activityOnly && (
-          <Col span={16} style={{ position: "relative" }}>
-            {addReviewLoading && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "rgba(255,255,255,0.85)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 10,
-                }}
-              >
-                <Spin size="large" />
-              </div>
-            )}
-
+          <Col
+            span={source === "bench" ? 24 : 16}
+            style={{ position: "relative" }}
+          >
             <Card bordered={false}>
               {/* ✅ TOP ACTION BAR */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginBottom: 12,
-                }}
-              >
-                <Button
-                  type="primary"
-                  style={{
-                    backgroundColor: "#1677FF",
-                    borderRadius: 100,
-                    height: 36,
-                    fontWeight: 600,
-                    padding: "0 18px",
-                  }}
-                  onClick={handleDownloadResume}
-                >
-                  Download Resume
-                </Button>
-              </div>
               <div
                 style={{
                   padding: "12px 20px",
@@ -321,9 +249,11 @@ const CandidateDetails = () => {
 
                     <Space direction="vertical" size={0}>
                       <Text style={{ fontWeight: 600 }}>{candidate.name}</Text>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Applied {candidate.updatedAt}
-                      </Text>
+                      {source !== "bench" && (
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Applied {candidate.updatedAt}
+                        </Text>
+                      )}
 
                       <Space size={8} align="center">
                         {/* <Rate allowHalf defaultValue={2.5} /> */}
@@ -332,23 +262,21 @@ const CandidateDetails = () => {
                           disabled
                           value={Math.round(candidate.avgRating || 0)}
                         />
-
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: "#1677FF",
-                            cursor: "pointer",
-                            fontWeight: 500,
-                          }}
-                          onClick={() => {
-                            setTempReview(
-                              reviewsByCandidate[candidate.applicationId] || ""
-                            );
-                            setIsReviewModalOpen(true);
-                          }}
-                        >
-                          Add Review
-                        </Text>
+                        {source !== "bench" && (
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: "#1677FF",
+                              cursor: "pointer",
+                              fontWeight: 500,
+                            }}
+                            onClick={() => {
+                              setIsReviewModalOpen(true);
+                            }}
+                          >
+                            Add Review
+                          </Text>
+                        )}
                       </Space>
                     </Space>
                   </Space>
@@ -374,7 +302,7 @@ const CandidateDetails = () => {
 
                           const message = `Hi ${candidate.name},`;
                           const url = `https://wa.me/${number}?text=${encodeURIComponent(
-                            message
+                            message,
                           )}`;
 
                           window.open(url, "_blank");
@@ -582,7 +510,7 @@ const CandidateDetails = () => {
                             }}
                           >
                             {profile.skillsJson?.filter(
-                              (s) => s.level === "primary"
+                              (s) => s.level === "primary",
                             )?.length ? (
                               profile.skillsJson
                                 .filter((s) => s.level === "primary")
@@ -598,12 +526,12 @@ const CandidateDetails = () => {
 
                           {/* GAP */}
                           {profile.skillsJson?.some(
-                            (s) => s.level === "secondary"
+                            (s) => s.level === "secondary",
                           ) && <Divider style={{ margin: "16px 0 12px" }} />}
 
                           {/* SECONDARY SKILLS */}
                           {profile.skillsJson?.some(
-                            (s) => s.level === "secondary"
+                            (s) => s.level === "secondary",
                           ) && (
                             <>
                               <Text
@@ -1008,43 +936,38 @@ const CandidateDetails = () => {
             </Card>
           </Col>
         )}
-
-        <Col span={8}>
-          <Card
-            bordered={false}
-            bodyStyle={{
-              padding: 0,
-              height: "100%",
-            }}
-            style={{
-              position: "sticky",
-              top: 20,
-              height: "calc(100vh - 30px)",
-              overflow: "hidden",
-              borderRadius: 10,
-            }}
-          >
-            <div
-              style={{
+        {source !== "bench" && (
+          <Col span={8}>
+            <Card
+              bordered={false}
+              bodyStyle={{
+                padding: 0,
                 height: "100%",
-                overflowY: "auto",
-                padding: 24,
+              }}
+              style={{
+                position: "sticky",
+                top: 20,
+                height: "calc(100vh - 30px)",
+                overflow: "hidden",
+                borderRadius: 10,
               }}
             >
-              {/* <CandidateActivity candidateId={profile.id} jobId={jobId} /> */}
-              {/* <CandidateActivity
-                candidateId={profile.id}
-                jobId={jobId}
-                defaultTab={defaultTab}
-              /> */}
-              <CandidateActivity
-                candidateId={profile?.id || id} // 🔥 fallback
-                jobId={jobId}
-                defaultTab={defaultTab}
-              />
-            </div>
-          </Card>
-        </Col>
+              <div
+                style={{
+                  height: "100%",
+                  overflowY: "auto",
+                  padding: 24,
+                }}
+              >
+                <CandidateActivity
+                  candidateId={profile?.id || id} // 🔥 fallback
+                  jobId={jobId && jobId}
+                  defaultTab={defaultTab}
+                />
+              </div>
+            </Card>
+          </Col>
+        )}
       </Row>
 
       <Modal
@@ -1085,7 +1008,7 @@ const CandidateDetails = () => {
 
               if (!regex.test(value)) {
                 message.error(
-                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed'
+                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed',
                 );
                 return;
               }
@@ -1102,30 +1025,8 @@ const CandidateDetails = () => {
 
           <Button
             type="primary"
-            disabled={addReviewLoading}
-            onClick={async () => {
-              if (!ratingValue) {
-                message.error("Please select rating");
-                return;
-              }
-
-              // 1️⃣ Close modal
-              setIsReviewModalOpen(false);
-
-              // 2️⃣ Show RIGHT SIDE loader
-              setAddReviewLoading(true);
-
-              try {
-                await reloadCandidate();
-                message.success("Rating saved");
-              } catch (err) {
-                message.error("Failed to save rating");
-              } finally {
-                setAddReviewLoading(false);
-                setTempReview("");
-                setRatingValue(0);
-              }
-            }}
+            loading={addReviewLoading}
+            onClick={reloadCandidate}
           >
             Add
           </Button>

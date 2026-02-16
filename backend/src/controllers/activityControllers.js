@@ -97,18 +97,15 @@ export const createActivity = async (req, res) => {
   }
 };
 
-//CANDIDATE ACTIVITY TIMELINE
-
 export const getMyActivity = async (req, res) => {
   try {
     const { organizationId } = req.user;
-    // const { jobId } = req.body;
 
+    // ===============================
+    // 1️⃣ Fetch Activities
+    // ===============================
     const activities = await prisma.activity.findMany({
-      where: {
-        organizationId,
-        // ...(jobId && { jobId })
-      },
+      where: { organizationId },
       include: {
         job: {
           select: {
@@ -120,7 +117,12 @@ export const getMyActivity = async (req, res) => {
           },
         },
         candidate: {
-          select: { id: true, name: true, email: true, profilePicture: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+          },
         },
         recruiter: {
           select: { id: true, name: true, email: true },
@@ -130,9 +132,48 @@ export const getMyActivity = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
+    // ===============================
+    // 2️⃣ Fetch Completed Tasks
+    // ===============================
+    const completedTasks = await prisma.candidateTask.findMany({
+      where: {
+        organizationId,
+        completed: true,
+      },
+      include: {
+        taskList: {
+          include: {
+            job: {
+              select: {
+                id: true,
+                role: true,
+                companyName: true,
+                status: true,
+                location: true,
+              },
+            },
+            candidate: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                profilePicture: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
     const jobMap = {};
 
+    // ===============================
+    // 3️⃣ PROCESS ACTIVITIES
+    // ===============================
     for (const activity of activities) {
+      if (!activity.job || !activity.candidate) continue;
+
       const jobKey = activity.job.id;
       const candidateKey = activity.candidate.id;
 
@@ -150,20 +191,27 @@ export const getMyActivity = async (req, res) => {
           totalActivities: 0,
           lastActivityAt: activity.createdAt,
           nextSchedule: null,
+          completedTasksCount: 0,
+          lastCompletedTaskAt: null,
         };
       }
 
       const candidateEntry = jobMap[jobKey].candidates[candidateKey];
+
+      // count activities
       candidateEntry.totalActivities += 1;
 
+      // update last activity
       if (activity.createdAt > candidateEntry.lastActivityAt) {
         candidateEntry.lastActivityAt = activity.createdAt;
       }
 
-      // recruiters (B = only recruiters who worked)
-      candidateEntry.recruiters[activity.recruiter.id] = activity.recruiter;
+      // unique recruiters
+      if (activity.recruiter) {
+        candidateEntry.recruiters[activity.recruiter.id] = activity.recruiter;
+      }
 
-      // next schedule
+      // find nearest upcoming schedule
       if (
         activity.schedule &&
         new Date(activity.schedule.startTime) > new Date()
@@ -178,6 +226,61 @@ export const getMyActivity = async (req, res) => {
       }
     }
 
+    // ===============================
+    // 4️⃣ PROCESS COMPLETED TASKS
+    // ===============================
+    for (const task of completedTasks) {
+      if (!task.taskList?.job || !task.taskList?.candidate) continue;
+
+      const job = task.taskList.job;
+      const candidate = task.taskList.candidate;
+
+      const jobKey = job.id;
+      const candidateKey = candidate.id;
+
+      // create job if not exists
+      if (!jobMap[jobKey]) {
+        jobMap[jobKey] = {
+          job,
+          candidates: {},
+        };
+      }
+
+      // create candidate if not exists
+      if (!jobMap[jobKey].candidates[candidateKey]) {
+        jobMap[jobKey].candidates[candidateKey] = {
+          candidate,
+          recruiters: {},
+          totalActivities: 0,
+          lastActivityAt: task.updatedAt,
+          nextSchedule: null,
+          completedTasksCount: 0,
+          lastCompletedTaskAt: null,
+        };
+      }
+
+      const candidateEntry = jobMap[jobKey].candidates[candidateKey];
+
+      candidateEntry.completedTasksCount += 1;
+
+      const taskCompletionDate = task.updatedAt;
+
+      if (
+        !candidateEntry.lastCompletedTaskAt ||
+        taskCompletionDate > candidateEntry.lastCompletedTaskAt
+      ) {
+        candidateEntry.lastCompletedTaskAt = taskCompletionDate;
+      }
+
+      // update overall last activity
+      if (taskCompletionDate > candidateEntry.lastActivityAt) {
+        candidateEntry.lastActivityAt = taskCompletionDate;
+      }
+    }
+
+    // ===============================
+    // 5️⃣ FINAL RESPONSE FORMAT
+    // ===============================
     const response = Object.values(jobMap).map((job) => ({
       ...job,
       candidates: Object.values(job.candidates).map((c) => ({
@@ -186,12 +289,16 @@ export const getMyActivity = async (req, res) => {
       })),
     }));
 
-    return res.status(200).json({ status: "success", data: response });
+    return res.status(200).json({
+      status: "success",
+      data: response,
+    });
   } catch (error) {
     console.error("My Activity Error:", error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "Internal server error" });
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
   }
 };
 

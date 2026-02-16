@@ -247,7 +247,7 @@ enum EmploymentType {
   PartTime
   Internship
   Contract
-  Freelance
+  Freelancer
 }
 
 enum ExperienceLevel {
@@ -761,14 +761,13 @@ model OrganizationSubscription {
 }
 
 model License {
-  id             String  @id @default(uuid())
+  id             String   @id @default(uuid())
   subscriptionId String
   planId         String
-  assignedToId   String? @unique
-
-  validFrom  DateTime @default(now())
-  validUntil DateTime
-  isActive   Boolean  @default(true)
+  assignedToId   String?  @unique
+  validFrom      DateTime @default(now())
+  validUntil     DateTime
+  isActive       Boolean  @default(true)
 
   subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
   plan         SubscriptionPlan         @relation(fields: [planId], references: [id])
@@ -790,10 +789,11 @@ model SubscriptionPlan {
 }
 
 model PlanLimit {
-  id      String       @id @default(uuid())
-  planId  String
-  feature LimitFeature
-  period  LimitPeriod
+  id       String       @id @default(uuid())
+  planId   String
+  planName String
+  feature  LimitFeature
+  period   LimitPeriod
 
   maxAllowed Int
 
@@ -839,19 +839,20 @@ model AITokenUsage {
 }
 
 model Invoice {
-  id             String        @id @default(uuid())
+  id             String           @id @default(uuid())
   subscriptionId String
-  invoiceNumber  String        @unique
-  status         InvoiceStatus @default(PENDING)
-
-  subtotal Int
-  tax      Int
-  total    Int
-
-  periodStart DateTime
-  periodEnd   DateTime
-  dueDate     DateTime
-  paidAt      DateTime?
+  invoiceNumber  String           @unique
+  status         InvoiceStatus    @default(PENDING)
+  billingCycle   BillingCycle
+  planTier       SubscriptionTier
+  subtotal       Int
+  tax            Int
+  total          Int
+  quantity       Int
+  periodStart    DateTime
+  periodEnd      DateTime
+  dueDate        DateTime
+  paidAt         DateTime?
 
   subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
   payments     Payment[]

@@ -19,7 +19,7 @@ const router = express.Router();
  */
 
 // CREATE Activity (NOTE / SCHEDULE)
-router.post("/", authenticateToken, ensureCompanyMember, createActivity);
+router.post("/create", authenticateToken, ensureCompanyMember, createActivity);
 
 // GET My Activity (Grouped by candidate)
 router.get("/my-activity", authenticateToken, getMyActivity);
@@ -40,7 +40,7 @@ router.delete(
   "/:activityId",
   authenticateToken,
   ensureCompanyMember,
-  deleteActivity
+  deleteActivity,
 );
 
 export default router;

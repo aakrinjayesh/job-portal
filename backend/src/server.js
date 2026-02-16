@@ -22,7 +22,9 @@ import { authenticateToken } from "./Middleware/authMiddleware.js";
 import todoRoutes from "./Routes/todoRoutes.js";
 import OrganizationRoutes from "./Routes/organizationRoutes.js";
 import cookieParser from "cookie-parser";
-// import billingRoutes from "./Routes/billingRoutes.js";
+import BillingRoute from "./Routes/billingRoutes.js";
+import { featureLimitMiddleware } from "./Middleware/featureLimitMiddleware.js";
+import UsageRoute from "./Routes/usageRoutes.js";
 
 dotenv.config();
 
@@ -41,19 +43,20 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(apiLimiter);
-
+app.use(authLimiter, LoginRouters);
+app.use(BillingRoute);
+app.use(authenticateToken, featureLimitMiddleware); // there are few api with no authentication look
 app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-app.use(authLimiter, LoginRouters);
 app.use(userRouter);
 app.use(JobRouters);
 app.use(CommonRouters);
 app.use("/vendor", VendorRoutes);
 app.use("/verification", VerificationRoutes);
-// app.use(authenticateToken, aiUserLimiter, CVRouters);
 app.use(authenticateToken, CVRouters);
 app.use("/api/todos", todoRoutes);
 app.use("/organization", OrganizationRoutes);
+app.use(UsageRoute);
 
 const PORT = process.env.PORT;
 

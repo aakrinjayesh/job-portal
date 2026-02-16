@@ -5,58 +5,66 @@ import {
   createVendorCandidate,
   updateVendorCandidate,
   deleteVendorCandidate,
-   updateCandidateStatus ,
-   getAllCandidates,
+  updateCandidateStatus,
+  getAllCandidates,
   vendorApplyCandidate,
   saveCandidate,
   unsaveCandidate,
   getSavedCandidates,
-  markCandidateReviewed
+  markCandidateReviewed,
+  getCandidateDetails,
+  markCandidateBookmark,
 } from "../controllers/vendorControllers.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
- 
-const VendorRoutes = express.Router();
- 
 
+const VendorRoutes = express.Router();
 
 // ✅ Routes
 VendorRoutes.get("/candidates", authenticateToken, getVendorCandidates);
-VendorRoutes.post("/candidate/create", authenticateToken, createVendorCandidate);
-VendorRoutes.post("/candidate/save",authenticateToken,saveCandidate);
-VendorRoutes.post("/candidate/unsave",authenticateToken,unsaveCandidate);
-VendorRoutes.get("/candidate/saved",authenticateToken,getSavedCandidates);
- 
+VendorRoutes.post(
+  "/candidate/create",
+  authenticateToken,
+  createVendorCandidate,
+);
+VendorRoutes.post("/candidate/save", authenticateToken, saveCandidate);
+VendorRoutes.post("/candidate/unsave", authenticateToken, unsaveCandidate);
+VendorRoutes.get("/candidate/saved", authenticateToken, getSavedCandidates);
+
 // ✅ Add update route
 VendorRoutes.post(
   "/candidate/update",
   authenticateToken,
-  updateVendorCandidate
+  updateVendorCandidate,
 );
 
 VendorRoutes.post(
   "/candidate/mark-reviewed",
   authenticateToken,
-  markCandidateReviewed
+  markCandidateReviewed,
 );
 
+VendorRoutes.post(
+  "/candidate/mark-bookmark",
+  authenticateToken,
+  markCandidateBookmark,
+);
 
- 
-VendorRoutes.post("/candidate/delete", authenticateToken, deleteVendorCandidate);
-
+VendorRoutes.post(
+  "/candidate/delete",
+  authenticateToken,
+  deleteVendorCandidate,
+);
 
 VendorRoutes.post(
   "/candidate/update-status",
   authenticateToken,
-  updateCandidateStatus
+  updateCandidateStatus,
 );
 
-VendorRoutes.post(
-  "/candidates/all",
-  authenticateToken,
-  getAllCandidates
-);
+VendorRoutes.post("/candidates/all", authenticateToken, getAllCandidates);
 
-VendorRoutes.post("/apply-candidate",authenticateToken,vendorApplyCandidate);
+VendorRoutes.get("/candidates/:id", authenticateToken, getCandidateDetails);
 
+VendorRoutes.post("/apply-candidate", authenticateToken, vendorApplyCandidate);
 
 export default VendorRoutes;

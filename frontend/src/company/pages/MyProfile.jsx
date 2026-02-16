@@ -1,8 +1,9 @@
 import React from "react";
 import { Tabs, Card } from "antd";
 import PersonalProfile from "./PersonalProfile"; // 👈 your first component code
-import Settings from "./Settings";               // 👈 org settings + activity
+import Settings from "./Settings"; // 👈 org settings + activity
 import SettingsTodoManager from "./SettingsTodoManager";
+import UsageDashboard from "../components/Profile/UsageDashboard";
 
 const MyProfile = () => {
   return (
@@ -48,6 +49,15 @@ const MyProfile = () => {
               children: (
                 <div style={{ padding: 24 }}>
                   <SettingsTodoManager />
+                </div>
+              ),
+            },
+            {
+              key: "usage",
+              label: "Usage Dashboard",
+              children: (
+                <div style={{ padding: 24 }}>
+                  <UsageDashboard />
                 </div>
               ),
             },

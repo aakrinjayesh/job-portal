@@ -33,6 +33,7 @@ import { useEffect } from "react";
 import LandingRedirect from "./pages/LandingRedirect";
 import { useLocation } from "react-router-dom";
 import axiosInstance from "./candidate/api/axiosInstance";
+import PricingPage from "./pages/PricingPage";
 
 function App() {
   const location = useLocation();
@@ -58,8 +59,9 @@ function App() {
       theme={{
         components: {
           Layout: {
-            triggerBg: "#fff",
-            triggerColor: "black",
+            // triggerBg: "#1677FF",
+            triggerBg: "#011026",
+            triggerColor: "white",
           },
         },
       }}
@@ -249,7 +251,7 @@ function App() {
         />
 
         <Route
-          path="/company/bench/find"
+          path="/company/candidate/find"
           element={
             <CompanyLayout>
               <FindBench />
@@ -257,14 +259,15 @@ function App() {
           }
         />
 
-        <Route
-          path="/company/bench/candidates"
+        {/* <Route
+          // path="/company/bench/candidates"
+          path="/company/candidate/:id"
           element={
             <CompanyLayout>
               <BenchCandidateDetails />
             </CompanyLayout>
           }
-        />
+        /> */}
 
         <Route
           path="/company/bench/saved"
@@ -283,7 +286,17 @@ function App() {
             </CompanyLayout>
           }
         />
+
+        <Route
+          path="/company/pricing"
+          element={
+            <CompanyLayout>
+              <PricingPage />
+            </CompanyLayout>
+          }
+        />
       </Routes>
+
       {/* </BrowserRouter> */}
     </ConfigProvider>
   );

@@ -91,7 +91,7 @@ export async function UpdateJob(payload) {
   }
 }
 
-export async function GetCandidateDeatils(payload, signal) {
+export async function GetCandidateList(payload, signal) {
   try {
     const response = await axiosInstance.post(`/job/applicants`, payload, {
       signal,
@@ -276,7 +276,7 @@ export async function ApplyBenchCandidate(payload) {
 // ✅ Create NOTE or SCHEDULE
 export async function CreateActivity(payload) {
   try {
-    const response = await axiosInstance.post("/api/activity", payload, {
+    const response = await axiosInstance.post("/api/activity/create", payload, {
       headers: { "Content-Type": "application/json" },
     });
     return response.data;
@@ -668,14 +668,44 @@ export async function getAIUsage() {
   return res.data;
 }
 
+export async function getLicenseInfo() {
+  const res = await axiosInstance.get("/licenses");
+  return res.data;
+}
+
 export async function CloseJob(jobId) {
   console.log("API HIT → CloseJob:", jobId);
-
   try {
     const response = await axiosInstance.patch(`/jobs/close/${jobId}`);
     return response.data;
   } catch (error) {
     console.error("Error in CloseJob:", error.response?.data || error);
-    throw error;
+  }
+}
+
+export async function getCandidateDetails(params) {
+  try {
+    const response = await axiosInstance.get(`/vendor/candidates/${params}`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error in get candidate details:",
+      error.response?.data || error,
+    );
+  }
+}
+
+export async function MarkCandidateBookmark(payload) {
+  try {
+    const response = await axiosInstance.post(
+      `/vendor/candidate/mark-bookmark`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in MarkCandidateBookmark:", error);
   }
 }

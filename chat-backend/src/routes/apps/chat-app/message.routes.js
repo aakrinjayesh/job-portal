@@ -18,11 +18,11 @@ router
   .route("/:chatId")
   .get(mongoIdPathVariableValidator("chatId"), validate, getAllMessages)
   .post(
-    upload.fields([{ name: "attachments", maxCount: 5 }]),
+    upload.fields([{ name: "attachments", maxCount: 3 }]),
     mongoIdPathVariableValidator("chatId"),
     sendMessageValidator(),
     validate,
-    sendMessage
+    sendMessage,
   );
 
 //Delete message route based on Message id
@@ -33,7 +33,7 @@ router
     mongoIdPathVariableValidator("chatId"),
     mongoIdPathVariableValidator("messageId"),
     validate,
-    deleteMessage
+    deleteMessage,
   );
 
 export default router;

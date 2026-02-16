@@ -1,59 +1,69 @@
-import express from 'express'
-import { validateInput } from '../Middleware/inputValidator.js'
-import { 
-UploadResumeValidator,
-} from '../validators/userValidators.js'
+import express from "express";
+import { validateInput } from "../Middleware/inputValidator.js";
+import { UploadResumeValidator } from "../validators/userValidators.js";
 
-import { 
-  UploadResume, updateProfiledetails,  getUserProfileDetails,uploadProfilePicture,getCountriesWithStates,updateUserProfileDetails,
+import {
+  UploadResume,
+  updateProfiledetails,
+  getUserProfileDetails,
+  uploadProfilePicture,
+  getCountriesWithStates,
+  updateUserProfileDetails,
   getCompanyProfileDetails,
-} from '../controllers/profileControllers.js'
+} from "../controllers/profileControllers.js";
 
+import multer from "multer";
+import { authenticateToken } from "../Middleware/authMiddleware.js";
 
+const userRouter = express.Router();
 
-import multer from 'multer';
-import { authenticateToken } from '../Middleware/authMiddleware.js';
-
-
-const userRouter = express.Router()
-
-const upload = multer({ storage: multer.memoryStorage() });
-
-
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 200 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedTypes.includes(file.mimetype)) {
+      cb(new Error("Only JPG, JPEG, PNG allowed"));
+    } else {
+      cb(null, true);
+    }
+  },
+});
 
 //candidates routes
 
 // user to upload pdf in profile page
-userRouter.post('/upload', upload.single('file'), authenticateToken,UploadResume)
+userRouter.post(
+  "/upload",
+  authenticateToken,
+  upload.single("file"),
+  UploadResume,
+);
 
+// user profile details
+userRouter.post(
+  "/profile",
+  // validateInput(userProfileValidator),
+  authenticateToken,
+  updateProfiledetails,
+);
 
-// user profile details 
-userRouter.post('/profile',
-  // validateInput(userProfileValidator), 
-  authenticateToken,updateProfiledetails);
-
-userRouter.post('/profile/details', 
-  authenticateToken,getUserProfileDetails);
-
+userRouter.post("/profile/details", authenticateToken, getUserProfileDetails);
 
 // Profile Picture  save Route
 userRouter.post(
   "/profile/upload-picture",
   authenticateToken,
   upload.single("file"),
-  uploadProfilePicture
+  uploadProfilePicture,
 );
 
+// company routes purely
 
-// company routes purely 
-
-userRouter.get('/profile/details', authenticateToken, getCompanyProfileDetails);
+userRouter.get("/profile/details", authenticateToken, getCompanyProfileDetails);
 
 userRouter.post("/profile/update", authenticateToken, updateUserProfileDetails);
 
 userRouter.get("/countries", authenticateToken, getCountriesWithStates);
 
-
-
-
-export default userRouter
+export default userRouter;
