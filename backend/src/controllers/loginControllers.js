@@ -933,9 +933,41 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// const checkUserExists = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+
+//     if (!email) {
+//       return res.status(400).json({
+//         status: "failed",
+//         message: "Email is required",
+//       });
+//     }
+
+//     const user = await prisma.users.findFirst({ where: { email } });
+
+//     if (user) {
+//       return res.status(200).json({
+//         status: "success",
+//         message: "User already registered. Please login.",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       status: "error",
+//       message: "User not registered. You can generate OTP.",
+//     });
+//   } catch (err) {
+//     return res.status(500).json({
+//       status: "error",
+//       message: err.message || "Something went wrong",
+//     });
+//   }
+// };
+
 const checkUserExists = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, role } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -944,13 +976,62 @@ const checkUserExists = async (req, res) => {
       });
     }
 
-    const user = await prisma.users.findFirst({ where: { email } });
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if exact user exists
+    const user = await prisma.users.findFirst({
+      where: { email: normalizedEmail },
+    });
 
     if (user) {
       return res.status(200).json({
         status: "success",
         message: "User already registered. Please login.",
+        existingEmail: user.email,
+        data: {
+          email: user.email,
+          role: user.role,
+        },
       });
+    }
+
+    // If role is company, check if domain already exists
+    if (role === "company") {
+      const emailParts = normalizedEmail.split("@");
+
+      if (emailParts.length !== 2) {
+        return res.status(400).json({
+          status: "failed",
+          message: "Invalid email format",
+        });
+      }
+
+      const domain = emailParts[1];
+
+      // Check if any company user with same domain exists
+      const domainUser = await prisma.users.findFirst({
+        where: {
+          role: "company",
+          email: {
+            endsWith: `@${domain}`,
+            mode: "insensitive",
+          },
+        },
+      });
+
+      if (domainUser) {
+        return res.status(200).json({
+          status: "success",
+          message: `A company with this domain (@${domain}) is already registered.`,
+          existingEmail: domainUser.email,
+          data: {
+            email: domainUser.email,
+            domain: domain,
+            role: domainUser.role,
+          },
+        });
+      }
     }
 
     return res.status(200).json({

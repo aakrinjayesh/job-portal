@@ -7,14 +7,10 @@ import {
   message,
   Divider,
   Row,
-  Col
+  Col,
 } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  GenerateOtp,
-  ValidateOtp,
-  CheckUserExist,
-} from "../candidate/api/api";
+import { GenerateOtp, ValidateOtp, CheckUserExist } from "../candidate/api/api";
 import jobroleImg from "../assets/jobrole.png";
 import groupImg from "../assets/Group.png";
 import andrewImg from "../assets/andrew.png";
@@ -82,15 +78,54 @@ const Signup = () => {
         messageApi.error(response.message || "Invalid OTP");
       }
     } catch (err) {
-      messageApi.error(
-        "Something went wrong: " + err?.response?.data?.message
-      );
+      messageApi.error("Something went wrong: " + err?.response?.data?.message);
     } finally {
       setSubmitLoading(false);
     }
   };
 
   /* ================= SEND / RESEND OTP ================= */
+  // const handleGenerateOtp = async () => {
+  //   const email = form.getFieldValue("email");
+  //   const fname = form.getFieldValue("fname");
+  //   const lname = form.getFieldValue("lname");
+
+  //   if (!fname || !lname || !email) {
+  //     messageApi.warning("Please fill all required fields");
+  //     return;
+  //   }
+
+  //   try {
+  //     setGenerateLoading(true);
+
+  //     const check = await CheckUserExist({ email });
+  //     if (check.status === "success") {
+  //       messageApi.warning("User already registered. Please login.");
+  //       return;
+  //     }
+
+  //     const res = await GenerateOtp({
+  //       email,
+  //       role,
+  //       name: `${fname} ${lname}`,
+  //     });
+
+  //     if (res.status === "success") {
+  //       messageApi.success("OTP sent to your email");
+  //        setOtpSent(true);
+  //       setTimer(60);
+  //     } else {
+  //       messageApi.error(res.message || "Failed to send OTP");
+  //     }
+  //   } catch (e) {
+  //     messageApi.error(
+  //       "Failed to send OTP: " + (e.response?.data?.message || e.message)
+  //     );
+  //   } finally {
+  //     setGenerateLoading(false);
+  //   }
+  // };
+
   const handleGenerateOtp = async () => {
     const email = form.getFieldValue("email");
     const fname = form.getFieldValue("fname");
@@ -104,9 +139,18 @@ const Signup = () => {
     try {
       setGenerateLoading(true);
 
-      const check = await CheckUserExist({ email });
+      const check = await CheckUserExist({ email, role });
+
       if (check.status === "success") {
-        messageApi.warning("User already registered. Please login.");
+        // Show message with existing email
+        if (check.existingEmail) {
+          messageApi.warning(
+            `${check.message} Existing email: ${check.existingEmail}`,
+            5,
+          );
+        } else {
+          messageApi.warning(check.message);
+        }
         return;
       }
 
@@ -118,25 +162,23 @@ const Signup = () => {
 
       if (res.status === "success") {
         messageApi.success("OTP sent to your email");
-         setOtpSent(true);
+        setOtpSent(true);
         setTimer(60);
       } else {
         messageApi.error(res.message || "Failed to send OTP");
       }
     } catch (e) {
       messageApi.error(
-        "Failed to send OTP: " + (e.response?.data?.message || e.message)
+        "Failed to send OTP: " + (e.response?.data?.message || e.message),
       );
     } finally {
       setGenerateLoading(false);
     }
   };
 
- const triggerNameValidation = () => {
-  form.validateFields(["fname"]);
-};
-
-
+  const triggerNameValidation = () => {
+    form.validateFields(["fname"]);
+  };
 
   return (
     <>
@@ -145,185 +187,189 @@ const Signup = () => {
       <AppHeader />
 
       {/* ================= BODY ================= */}
-     <Row style={{ minHeight: "100vh" }}>
-  {/* LEFT SIDE – SIGNUP FORM */}
-  <Col
-    xs={24}
-    md={12}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 24,
-      background: "#fff",
-    }}
-  >
+      <Row style={{ minHeight: "100vh" }}>
+        {/* LEFT SIDE – SIGNUP FORM */}
+        <Col
+          xs={24}
+          md={12}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            background: "#fff",
+          }}
+        >
           <div style={styles.loginCard}>
             <Title level={3} style={{ marginBottom: 8 }}>
               {role === "company" ? "Company Signup" : "Candidate Signup"}
             </Title>
 
-           <Form
-  form={form}
-  layout="vertical"
-  onFinish={onFinish}
-  onValuesChange={(changedValues) => {
-    const f = form.getFieldValue("fname");
-    const l = form.getFieldValue("lname");
-    const e = form.getFieldValue("email");
-    setIsFormReady(!!(f && l && e));
-  }}
->
-  <Form.Item
-  name="fname"
-  dependencies={["lname", "email"]}
-  validateTrigger={["onBlur", "onChange"]}
-  rules={[
-    {
-      validator: (_, value) => {
-        const lname = form.getFieldValue("lname");
-        const email = form.getFieldValue("email");
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              onValuesChange={(changedValues) => {
+                const f = form.getFieldValue("fname");
+                const l = form.getFieldValue("lname");
+                const e = form.getFieldValue("email");
+                setIsFormReady(!!(f && l && e));
+              }}
+            >
+              <Form.Item
+                name="fname"
+                dependencies={["lname", "email"]}
+                validateTrigger={["onBlur", "onChange"]}
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      const lname = form.getFieldValue("lname");
+                      const email = form.getFieldValue("email");
 
-        if ((lname || email) && !value) {
-          return Promise.reject("Please enter first name");
-        }
-        return Promise.resolve();
-      },
-    },
-    {
-      pattern: /^[A-Za-z\s]+$/,
-      message: "Only letters allowed",
-    },
-  ]}
->
-  <Input size="large" placeholder="First Name" />
-</Form.Item>
+                      if ((lname || email) && !value) {
+                        return Promise.reject("Please enter first name");
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                  {
+                    pattern: /^[A-Za-z\s]+$/,
+                    message: "Only letters allowed",
+                  },
+                ]}
+              >
+                <Input size="large" placeholder="First Name" />
+              </Form.Item>
 
-<Form.Item
-  name="lname"
-  dependencies={["fname", "email"]}
-  validateTrigger={["onBlur", "onChange"]}
-  rules={[
-    {
-      validator: (_, value) => {
-        const fname = form.getFieldValue("fname");
-        const email = form.getFieldValue("email");
+              <Form.Item
+                name="lname"
+                dependencies={["fname", "email"]}
+                validateTrigger={["onBlur", "onChange"]}
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      const fname = form.getFieldValue("fname");
+                      const email = form.getFieldValue("email");
 
-        if ((fname || email) && !value) {
-          return Promise.reject("Please enter last name");
-        }
-        return Promise.resolve();
-      },
-    },
-    {
-      pattern: /^[A-Za-z\s]+$/,
-      message: "Only letters allowed",
-    },
-  ]}
->
-  <Input
-    size="large"
-    placeholder="Last Name"
-    onChange={triggerNameValidation}
-  />
-</Form.Item>
+                      if ((fname || email) && !value) {
+                        return Promise.reject("Please enter last name");
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                  {
+                    pattern: /^[A-Za-z\s]+$/,
+                    message: "Only letters allowed",
+                  },
+                ]}
+              >
+                <Input
+                  size="large"
+                  placeholder="Last Name"
+                  onChange={triggerNameValidation}
+                />
+              </Form.Item>
 
-<Form.Item
-  name="email"
-  dependencies={["fname", "lname"]}
-  validateTrigger={["onBlur", "onChange"]}
-  rules={[
-    { required: true, message: "Enter email" },
-    {
-      pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-      message: "Invalid email format",
-    },
-    {
-      validator: (_, value) => {
-        const fname = form.getFieldValue("fname");
-        const lname = form.getFieldValue("lname");
+              <Form.Item
+                name="email"
+                dependencies={["fname", "lname"]}
+                validateTrigger={["onBlur", "onChange"]}
+                rules={[
+                  { required: true, message: "Enter email" },
+                  {
+                    pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: "Invalid email format",
+                  },
+                  {
+                    validator: (_, value) => {
+                      const fname = form.getFieldValue("fname");
+                      const lname = form.getFieldValue("lname");
 
-        if (value && !fname) {
-          return Promise.reject("Please enter first name");
-        }
-        if (value && !lname) {
-          return Promise.reject("Please enter last name");
-        }
+                      if (value && !fname) {
+                        return Promise.reject("Please enter first name");
+                      }
+                      if (value && !lname) {
+                        return Promise.reject("Please enter last name");
+                      }
 
-        if (role === "candidate" && value && !isPersonalEmail(value)) {
-          return Promise.reject("Use personal email (gmail, outlook, etc.)");
-        }
-        if (role === "company" && value && !isCompanyEmail(value)) {
-          return Promise.reject("Use company email");
-        }
+                      if (
+                        role === "candidate" &&
+                        value &&
+                        !isPersonalEmail(value)
+                      ) {
+                        return Promise.reject(
+                          "Use personal email (gmail, outlook, etc.)",
+                        );
+                      }
+                      if (
+                        role === "company" &&
+                        value &&
+                        !isCompanyEmail(value)
+                      ) {
+                        return Promise.reject("Use company email");
+                      }
 
-        return Promise.resolve();
-      },
-    },
-  ]}
->
-  <Input size="large" placeholder="Email" />
-</Form.Item>
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input size="large" placeholder="Email" />
+              </Form.Item>
 
-          {/* SEND OTP (only first time) */}
-{!otpSent && (
-  <Button
-    type="primary"
-    block
-    size="large"
-    loading={generateLoading}
-    onClick={handleGenerateOtp}
-    disabled={!isFormReady}
-  >
-    Send OTP
-  </Button>
-)}
+              {/* SEND OTP (only first time) */}
+              {!otpSent && (
+                <Button
+                  type="primary"
+                  block
+                  size="large"
+                  loading={generateLoading}
+                  onClick={handleGenerateOtp}
+                  disabled={!isFormReady}
+                >
+                  Send OTP
+                </Button>
+              )}
 
-{/* TIMER TEXT */}
-{otpSent && timer > 0 && (
-  <Text
-    style={{
-      display: "block",
-      marginTop: 12,
-      textAlign: "center",
-      color: "#666",
-    }}
-  >
-    Resend OTP in {timer}s
-  </Text>
-)}
+              {/* TIMER TEXT */}
+              {otpSent && timer > 0 && (
+                <Text
+                  style={{
+                    display: "block",
+                    marginTop: 12,
+                    textAlign: "center",
+                    color: "#666",
+                  }}
+                >
+                  Resend OTP in {timer}s
+                </Text>
+              )}
 
-{/* RESEND OTP (after 60 sec only) */}
-{otpSent && timer === 0 && (
-  <Button
-    type="default"
-    block
-    size="large"
-    loading={generateLoading}
-    onClick={handleGenerateOtp}
-    style={{ marginTop: 12 }}
-  >
-    Resend OTP
-  </Button>
-)}
+              {/* RESEND OTP (after 60 sec only) */}
+              {otpSent && timer === 0 && (
+                <Button
+                  type="default"
+                  block
+                  size="large"
+                  loading={generateLoading}
+                  onClick={handleGenerateOtp}
+                  style={{ marginTop: 12 }}
+                >
+                  Resend OTP
+                </Button>
+              )}
 
-
-            <Form.Item
-  name="otp"
-  rules={[{ required: true, message: "Enter OTP" }]}
-  style={{
-    marginTop: 16,
-    display: "flex",
-    justifyContent: "center",
-  }}
->
-  <Input.OTP
-    length={4}
-    size="large"
-    style={{ gap: 12 }}
-  />
-</Form.Item>
-
+              <Form.Item
+                name="otp"
+                rules={[{ required: true, message: "Enter OTP" }]}
+                style={{
+                  marginTop: 16,
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <Input.OTP length={4} size="large" style={{ gap: 12 }} />
+              </Form.Item>
 
               <Button
                 type="primary"
@@ -345,30 +391,29 @@ const Signup = () => {
               </Button>
             </Text>
           </div>
-          </Col>
+        </Col>
         {/* </div> */}
 
-         {/* RIGHT HERO */}
-           <Col
-    xs={0}
-    md={12}
-    style={{
-      background: role === "candidate" ? "#094db9" : "#4F63F6",
-      position: "relative",
-      overflow: "hidden",
-      padding: 48,
-    }}
-  >
-    {role === "candidate" ? <CandidateHero /> : <CompanyHero />}
-  </Col>
-</Row>
-             {/* </div> */}
-     
-{/* <AppFooter /> */}
+        {/* RIGHT HERO */}
+        <Col
+          xs={0}
+          md={12}
+          style={{
+            background: role === "candidate" ? "#094db9" : "#4F63F6",
+            position: "relative",
+            overflow: "hidden",
+            padding: 48,
+          }}
+        >
+          {role === "candidate" ? <CandidateHero /> : <CompanyHero />}
+        </Col>
+      </Row>
+      {/* </div> */}
+
+      {/* <AppFooter /> */}
     </>
   );
 };
-
 
 const CompanyHero = () => (
   <>
@@ -376,27 +421,31 @@ const CompanyHero = () => (
     <img src={personImg} alt="person" style={styles.person} />
 
     <div style={styles.heroText}>
-      <Title level={2}
+      <Title
+        level={2}
         style={{
           color: "#fff",
           fontSize: 22,
           fontWeight: 700,
           marginBottom: 12,
-        }}>
+        }}
+      >
         Connect with the right partners —
         <br />
         faster and smarter.
       </Title>
 
-      <Text style={{
-        color: "#D7DBFF",
-        fontSize: 15,
-        lineHeight: 1.6,
-        display: "block",
-        // maxWidth: 360,
-      }}>
-        An intelligent vendor platform to manage jobs, candidates,
-        and bench resources for Salesforce roles and projects.
+      <Text
+        style={{
+          color: "#D7DBFF",
+          fontSize: 15,
+          lineHeight: 1.6,
+          display: "block",
+          // maxWidth: 360,
+        }}
+      >
+        An intelligent vendor platform to manage jobs, candidates, and bench
+        resources for Salesforce roles and projects.
       </Text>
     </div>
 
@@ -409,7 +458,10 @@ const CompanyHero = () => (
     </div>
 
     <div style={styles.vendorCard}>
-      <strong>🌍 World’s First B2B Vendor Platform built exclusively for Salesforce Ecosystem.</strong>
+      <strong>
+        🌍 World’s First B2B Vendor Platform built exclusively for Salesforce
+        Ecosystem.
+      </strong>
     </div>
 
     <div style={styles.vendorType}>
@@ -424,13 +476,15 @@ const CandidateHero = () => (
     <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
 
     <div style={styles.heroText}>
-      <Title level={2}
+      <Title
+        level={2}
         style={{
           color: "#fff",
           fontSize: 22,
           fontWeight: 700,
           marginBottom: 12,
-        }}>
+        }}
+      >
         Find the right Salesforce job —
         <br />
         built for your career.
@@ -443,8 +497,10 @@ const CandidateHero = () => (
           lineHeight: 1.6,
           display: "block",
           maxWidth: 360,
-        }}>
-        A smarter way to find Salesforce opportunities, apply confidently, and chat with recruiters in real time.
+        }}
+      >
+        A smarter way to find Salesforce opportunities, apply confidently, and
+        chat with recruiters in real time.
       </Text>
     </div>
 
@@ -511,9 +567,8 @@ const styles = {
     position: "relative",
     zIndex: 5,
     // maxWidth: 420,
-    marginTop: -40,   // ⬆ moves text upward
+    marginTop: -40, // ⬆ moves text upward
   },
-
 
   badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
   badge: {
@@ -530,8 +585,8 @@ const styles = {
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     fontSize: 14,
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
@@ -542,8 +597,8 @@ const styles = {
     top: 450,
     left: "5%",
     background: "#fff",
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     padding: "10px 14px",
     borderRadius: 14,
     fontSize: 14,
@@ -556,8 +611,8 @@ const styles = {
     top: 350,
     left: "60%",
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
@@ -574,8 +629,8 @@ const styles = {
     padding: "6px 14px",
     borderRadius: 20,
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
@@ -585,8 +640,8 @@ const styles = {
     top: 350,
     left: "60%",
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
@@ -603,8 +658,8 @@ const styles = {
     padding: "6px 14px",
     borderRadius: 20,
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
@@ -629,7 +684,7 @@ const styles = {
     zIndex: 2,
   },
 
-   candidateperson: {
+  candidateperson: {
     position: "absolute",
     marginTop: 110,
     left: "58%",

@@ -4,6 +4,7 @@ import PersonalProfile from "./PersonalProfile"; // 👈 your first component co
 import Settings from "./Settings"; // 👈 org settings + activity
 import SettingsTodoManager from "./SettingsTodoManager";
 import UsageDashboard from "../components/Profile/UsageDashboard";
+import OrganizationSettings from "./OrganizationSettings";
 
 const MyProfile = () => {
   return (
@@ -39,7 +40,8 @@ const MyProfile = () => {
               label: "Organization Settings",
               children: (
                 <div style={{ padding: 24 }}>
-                  <Settings />
+                  {/* <Settings /> */}
+                  <OrganizationSettings />
                 </div>
               ),
             },
