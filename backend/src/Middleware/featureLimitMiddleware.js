@@ -11,7 +11,7 @@ const FEATURE_MAP = [
   {
     match: (path, method) =>
       method === "GET" && /^\/vendor\/candidates\/[^/]+$/.test(path),
-    feature: "CANDIDATE_DETAILS_VIEW",
+    feature: "CANDIDATE_PROFILE_VIEWS",
     usesAI: false,
   },
   {
