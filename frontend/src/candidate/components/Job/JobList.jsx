@@ -153,13 +153,22 @@ const JobList = ({
         );
         break;
 
-      case "salary_desc": // High to Low
-        sorted.sort((a, b) => (b.salary || 0) - (a.salary || 0));
-        break;
+      case "salary_desc":
+  sorted.sort((a, b) => {
+    const salaryA = parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
+    const salaryB = parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
+    return salaryB - salaryA;
+  });
+  break;
 
-      case "salary_asc": // Low to High
-        sorted.sort((a, b) => (a.salary || 0) - (b.salary || 0));
-        break;
+case "salary_asc":
+  sorted.sort((a, b) => {
+    const salaryA = parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
+    const salaryB = parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
+    return salaryA - salaryB;
+  });
+  break;
+
 
       default:
         break;
