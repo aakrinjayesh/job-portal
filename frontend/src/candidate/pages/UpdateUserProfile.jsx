@@ -44,6 +44,9 @@ import ReusableSelect from "../components/UserProfile/ReusableSelect";
 import SkillManagerCard from "../components/UserProfile/SkillManagerCard";
 import EducationCard from "../components/UserProfile/EducationCard";
 import ExperienceCard from "../components/UserProfile/ExperienceCard";
+import { useRef } from "react";
+import html2pdf from "html2pdf.js";
+import ResumeTemplate from "../../company/components/Bench/ResumeTemplate";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -79,6 +82,32 @@ const UpdateUserProfile = ({
   const role = localStorage.getItem("role");
   const isEditMode = Boolean(editRecord && editRecord.id);
 
+  const componentRef = useRef();
+
+  const handleDownloadResume = () => {
+    if (!componentRef.current) return;
+
+    const candidateName = form.getFieldValue("name") || "Resume";
+
+    html2pdf()
+      .set({
+        margin: 10,
+        filename: `${candidateName}_Resume.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+        },
+      })
+      .from(componentRef.current)
+      .save();
+  };
+
   useEffect(() => {
     if (editRecord && Reciviedrole) {
       setIsCandidate(!!editRecord.userId);
@@ -97,10 +126,10 @@ const UpdateUserProfile = ({
 
       // Extract clouds safely
       const primClouds = (editRecord?.primaryClouds || []).map((c) =>
-        typeof c === "string" ? { name: c, experience: 0 } : c,
+        typeof c === "string" ? { name: c, experience: 0 } : c
       );
       const secClouds = (editRecord?.secondaryClouds || []).map((c) =>
-        typeof c === "string" ? { name: c, experience: 0 } : c,
+        typeof c === "string" ? { name: c, experience: 0 } : c
       );
 
       // Update local states (for SkillManagerCard, etc.)
@@ -146,7 +175,7 @@ const UpdateUserProfile = ({
         isContactDetails: editRecord?.isContactDetails || true,
       });
 
-      // ✅ FIX: PROPERLY RENDER EXISTING IMAGE
+      // SHOW EXISTING IMAGE IN UPLOAD PREVIEW
       if (editRecord?.profilePicture) {
         setFileList([
           {
@@ -173,8 +202,11 @@ const UpdateUserProfile = ({
       setExperienceList([]);
       setFileList([]);
       setShowContact(true);
+      // if (setEditRecord) {
+      //   setEditRecord(null);
+      // }
     };
-  }, [editRecord]);
+  }, [editRecord, Reciviedrole]);
 
   const getInitialData = async () => {
     try {
@@ -198,10 +230,10 @@ const UpdateUserProfile = ({
 
         // Convert clouds to object format if they're strings
         const primClouds = (user.primaryClouds || []).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
         );
         const secClouds = (user.secondaryClouds || []).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
         );
 
         setPrimaryClouds(primClouds);
@@ -262,9 +294,14 @@ const UpdateUserProfile = ({
     }
   };
 
+  // useEffect(() => {
+  //   getInitialData();
+  // }, []);
   useEffect(() => {
-    getInitialData();
-  }, []);
+    if (!Reciviedrole && !editRecord) {
+      getInitialData();
+    }
+  }, [Reciviedrole, editRecord]);
 
   const handleUpload = async ({ file }) => {
     setLoading(true);
@@ -302,7 +339,7 @@ const UpdateUserProfile = ({
             ? extracted?.primaryClouds
             : [extracted?.primaryClouds]
         ).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
         );
         setPrimaryClouds(primClouds);
         form.setFieldsValue({ primaryClouds: primClouds });
@@ -314,7 +351,7 @@ const UpdateUserProfile = ({
             ? extracted.secondaryClouds
             : [extracted.secondaryClouds]
         ).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
         );
         setSecondaryClouds(secClouds);
         form.setFieldsValue({ secondaryClouds: secClouds });
@@ -382,25 +419,50 @@ const UpdateUserProfile = ({
     }
   };
 
-  // Update handlers - NOW syncing with form like education
+  // const handlePrimarySkillsChange = (updatedSkills) => {
+  //   setPrimarySkills(updatedSkills);
+  //   form.setFieldsValue({ primarySkills: updatedSkills });
+  //   form.validateFields(["primarySkills"]);
+  // };
   const handlePrimarySkillsChange = (updatedSkills) => {
+    const totalExp = parseFloat(form.getFieldValue("totalExperience") || 0);
+
+    const invalidSkill = updatedSkills.find(
+      (skill) => Number(skill.experience || 0) > totalExp
+    );
+
+    if (invalidSkill) {
+      messageAPI.error(
+        `Skill experience for "${invalidSkill.name}" cannot be greater than Total Experience`
+      );
+      return;
+    }
+
     setPrimarySkills(updatedSkills);
     form.setFieldsValue({ primarySkills: updatedSkills });
+    form.validateFields(["primarySkills"]);
   };
 
+  // const handleSecondarySkillsChange = (updatedSkills) => {
+  //   setSecondarySkills(updatedSkills);
+  //   form.setFieldsValue({ secondarySkills: updatedSkills });
+  // };
   const handleSecondarySkillsChange = (updatedSkills) => {
     setSecondarySkills(updatedSkills);
     form.setFieldsValue({ secondarySkills: updatedSkills });
+    form.validateFields(["secondarySkills"]); // 👈 IMPORTANT
   };
 
   const handlePrimaryCloudsChange = (updatedClouds) => {
     setPrimaryClouds(updatedClouds);
     form.setFieldsValue({ primaryClouds: updatedClouds });
+    form.validateFields(["primaryClouds"]);
   };
 
   const handleSecondaryCloudsChange = (updatedClouds) => {
     setSecondaryClouds(updatedClouds);
     form.setFieldsValue({ secondaryClouds: updatedClouds });
+    form.validateFields(["secondaryClouds"]);
   };
 
   const handleEducationChange = (updatedEducationList) => {
@@ -422,6 +484,32 @@ const UpdateUserProfile = ({
       // -------------------------------
       // 1️⃣ HANDLE PROFILE PICTURE UPLOAD
       // -------------------------------
+
+      // let profilePicUrl = editRecord?.profilePicture || null;
+
+      // const fileList = values?.profilePicture || [];
+
+      // if (Array.isArray(fileList) && fileList.length > 0) {
+      //   const fileItem = fileList[0];
+
+      //   if (fileItem.originFileObj instanceof File) {
+      //     const fd = new FormData();
+      //     fd.append("file", fileItem.originFileObj);
+
+      //     const uploadRes = await uploadProfilePicture(fd);
+
+      //     profilePicUrl =
+      //       uploadRes?.url ||
+      //       uploadRes?.data?.url ||
+      //       uploadRes?.data?.location ||
+      //       null;
+
+      //     if (!profilePicUrl) {
+      //       messageAPI.error("Failed to upload profile picture");
+      //       return;
+      //     }
+      //   }
+      // }
 
       let profilePicUrl = editRecord?.profilePicture || null;
 
@@ -481,7 +569,9 @@ const UpdateUserProfile = ({
         portfolioLink: values?.portfolioLink,
         profilePicture: profilePicUrl, // <---- SAVED
         title: values?.title || null,
+        // summary: values.summary,
         summary: values?.summary ?? form.getFieldValue("summary") ?? "",
+        // summary: values?.summary || null,
         currentCTC: String(values?.currentCTC) || null,
         expectedCTC: String(values?.expectedCTC) || null,
         joiningPeriod: values?.joiningPeriod || null,
@@ -533,13 +623,13 @@ const UpdateUserProfile = ({
         messageAPI.success(
           isEditMode
             ? "Profile updated successfully!"
-            : "Profile created successfully!",
+            : "Profile created successfully!"
         );
       } else {
         messageAPI.error(
           isEditMode
             ? "Failed to update profile. Please try again."
-            : "Failed to create profile. Please try again.",
+            : "Failed to create profile. Please try again."
         );
       }
     } catch (error) {
@@ -557,7 +647,7 @@ const UpdateUserProfile = ({
 
   const renderSection = ({ key, title, children }) => (
     <Collapse
-      defaultActiveKey={[key]}
+      defaultActiveKey={[key]} // ✅ default open
       bordered={false}
       style={{ marginBottom: 24 }}
     >
@@ -578,23 +668,19 @@ const UpdateUserProfile = ({
   return (
     <div
       style={{
-        height: "100vh",
+        // height: "100vh",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        // overflow: "hidden",
+        minHeight: "100vh",
+        overflowY: "auto",
+
         background: "#f5f6fa",
       }}
     >
       {contextHolder}
-      <div
-      // style={{
-      //   flex: 1,
-      //   overflowY: "auto",
-      //   overflowX: "hidden",
-      //   minHeight: 0,
-      //   padding: "16px",
-      // }}
-      >
+
+      <div>
         <Card
           extra={
             Reciviedrole &&
@@ -622,8 +708,24 @@ const UpdateUserProfile = ({
           <Upload
             customRequest={handleUpload}
             showUploadList={false}
-            accept=".pdf"
+            accept=".pdf,.doc,.docx"
             maxCount={1}
+            beforeUpload={(file) => {
+              const allowedTypes = [
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              ];
+
+              if (!allowedTypes.includes(file.type)) {
+                message.error(
+                  "Only PDF and Word (.doc, .docx) files are allowed!"
+                );
+                return Upload.LIST_IGNORE;
+              }
+
+              return true;
+            }}
           >
             <Button
               type="primary"
@@ -631,10 +733,22 @@ const UpdateUserProfile = ({
               size="large"
               loading={loading}
             >
-              Extract Details from Resume
+              Extract Details from Resume (PDF / DOC / DOCX)
             </Button>
           </Upload>
 
+          {isCandidate && (
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleDownloadResume}
+              style={{ marginLeft: 12 }}
+            >
+              Download Resume
+            </Button>
+          )}
+
+          {/* INNER CARD START */}
           <Card title="Candidate Information Form" style={{ marginTop: 20 }}>
             <Form
               form={form}
@@ -685,7 +799,7 @@ const UpdateUserProfile = ({
                               ];
                               if (!allowed.includes(file.type)) {
                                 message.error(
-                                  "Only JPG, JPEG, PNG images are allowed!",
+                                  "Only JPG, JPEG, PNG images are allowed!"
                                 );
                                 return Upload.LIST_IGNORE;
                               }
@@ -693,7 +807,7 @@ const UpdateUserProfile = ({
 
                               if (file.size > maxSize) {
                                 message.error(
-                                  "Image must be smaller than 200KB!",
+                                  "Image must be smaller than 200KB!"
                                 );
                                 return Upload.LIST_IGNORE;
                               }
@@ -755,7 +869,7 @@ const UpdateUserProfile = ({
                       </Col>
 
                       <Col xs={24} sm={12} md={12}>
-                        <Form.Item
+                        {/* <Form.Item
                           label="Phone Number"
                           name="phoneNumber"
                           rules={[
@@ -765,7 +879,7 @@ const UpdateUserProfile = ({
 
                                 if (!/^\d+$/.test(value)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed"),
+                                    new Error("Only numbers are allowed")
                                   );
                                 }
 
@@ -778,8 +892,8 @@ const UpdateUserProfile = ({
 
                                 return Promise.reject(
                                   new Error(
-                                    "Indian phone number must be 10 or 12 digits",
-                                  ),
+                                    "Indian phone number must be 10 or 12 digits"
+                                  )
                                 );
                               },
                             },
@@ -801,6 +915,18 @@ const UpdateUserProfile = ({
                               }
                             }}
                           />
+                        </Form.Item> */}
+                        <Form.Item
+                          label="Phone Number"
+                          name="phoneNumber"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter phone number",
+                            },
+                          ]}
+                        >
+                          <Input placeholder="Enter phone number" />
                         </Form.Item>
                       </Col>
 
@@ -836,7 +962,7 @@ const UpdateUserProfile = ({
                                   }
 
                                   return Promise.reject(
-                                    "Please provide a personal ID.",
+                                    "Please provide a personal ID."
                                   );
                                 }
 
@@ -860,7 +986,7 @@ const UpdateUserProfile = ({
                                 }
 
                                 return Promise.reject(
-                                  "Please provide a work email ID.",
+                                  "Please provide a work email ID."
                                 );
                               },
                             },
@@ -912,8 +1038,8 @@ const UpdateUserProfile = ({
                                 if (value.length > 3) {
                                   return Promise.reject(
                                     new Error(
-                                      "You can select up to 3 locations only",
-                                    ),
+                                      "You can select up to 3 locations only"
+                                    )
                                   );
                                 }
 
@@ -963,13 +1089,13 @@ const UpdateUserProfile = ({
 
                                     if (!/^[0-9]+$/.test(value)) {
                                       return Promise.reject(
-                                        new Error("Only numbers are allowed"),
+                                        new Error("Only numbers are allowed")
                                       );
                                     }
 
                                     if (value.length > 10) {
                                       return Promise.reject(
-                                        new Error("Maximum 10 digits allowed"),
+                                        new Error("Maximum 10 digits allowed")
                                       );
                                     }
 
@@ -999,13 +1125,13 @@ const UpdateUserProfile = ({
 
                                     if (!/^[0-9]+$/.test(value)) {
                                       return Promise.reject(
-                                        new Error("Only numbers are allowed"),
+                                        new Error("Only numbers are allowed")
                                       );
                                     }
 
                                     if (value.length > 10) {
                                       return Promise.reject(
-                                        new Error("Maximum 10 digits allowed"),
+                                        new Error("Maximum 10 digits allowed")
                                       );
                                     }
 
@@ -1048,15 +1174,13 @@ const UpdateUserProfile = ({
 
                                       if (!/^\d+$/.test(value)) {
                                         return Promise.reject(
-                                          new Error("Only numbers are allowed"),
+                                          new Error("Only numbers are allowed")
                                         );
                                       }
 
                                       if (value.length > 10) {
                                         return Promise.reject(
-                                          new Error(
-                                            "Maximum 10 digits allowed",
-                                          ),
+                                          new Error("Maximum 10 digits allowed")
                                         );
                                       }
 
@@ -1118,6 +1242,7 @@ const UpdateUserProfile = ({
                       </Col>
 
                       {/* Total Experience */}
+
                       <Col xs={24} sm={12}>
                         <Form.Item
                           label="Total Experience"
@@ -1128,38 +1253,87 @@ const UpdateUserProfile = ({
                               required: true,
                               message: "Please enter total experience!",
                             },
+                            // {
+                            //   validator: (_, value) => {
+                            //     if (!value) return Promise.resolve();
+
+                            //     // ❌ letters or special characters
+                            //     if (/[^0-9.]/.test(value)) {
+                            //       return Promise.reject(
+                            //         new Error("Only numbers are allowed")
+                            //       );
+                            //     }
+
+                            //     // ❌ more than one dot
+                            //     if ((value.match(/\./g) || []).length > 1) {
+                            //       return Promise.reject(
+                            //         new Error(
+                            //           "Only one decimal point is allowed"
+                            //         )
+                            //       );
+                            //     }
+
+                            //     // ❌ more than 2 decimal places
+                            //     if (!/^\d+(\.\d{0,2})?$/.test(value)) {
+                            //       return Promise.reject(
+                            //         new Error(
+                            //           "Maximum 2 digits allowed after decimal"
+                            //         )
+                            //       );
+                            //     }
+
+                            //     // ❌ max 2 digits before decimal
+                            //     const [intPart] = value.split(".");
+                            //     if (intPart.length > 1) {
+                            //       return Promise.reject(
+                            //         new Error(
+                            //           "Maximum 2 digits allowed before decimal"
+                            //         )
+                            //       );
+                            //     }
+
+                            //     return Promise.resolve();
+                            //   },
+                            // },
                             {
                               validator: (_, value) => {
                                 if (!value) return Promise.resolve();
 
-                                if (/[^0-9.]/.test(value)) {
+                                // ✅ Convert to string and trim spaces
+                                const val = value.toString().trim();
+
+                                // ❌ letters or special characters
+                                if (/[^0-9.]/.test(val)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed"),
+                                    new Error("Only numbers are allowed")
                                   );
                                 }
 
-                                if ((value.match(/\./g) || []).length > 1) {
-                                  return Promise.reject(
-                                    new Error(
-                                      "Only one decimal point is allowed",
-                                    ),
-                                  );
-                                }
-
-                                if (!/^\d+(\.\d{0,2})?$/.test(value)) {
+                                // ❌ more than one dot
+                                if ((val.match(/\./g) || []).length > 1) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed after decimal",
-                                    ),
+                                      "Only one decimal point is allowed"
+                                    )
                                   );
                                 }
 
-                                const [intPart] = value.split(".");
+                                // ❌ more than 2 decimal places
+                                if (!/^\d+(\.\d{0,2})?$/.test(val)) {
+                                  return Promise.reject(
+                                    new Error(
+                                      "Maximum 2 digits allowed after decimal"
+                                    )
+                                  );
+                                }
+
+                                // ❌ max 2 digits before decimal
+                                const [intPart] = val.split(".");
                                 if (intPart.length > 2) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed before decimal",
-                                    ),
+                                      "Maximum 2 digits allowed before decimal"
+                                    )
                                   );
                                 }
 
@@ -1172,7 +1346,6 @@ const UpdateUserProfile = ({
                         </Form.Item>
                       </Col>
 
-                      {/* Relevant Salesforce Experience */}
                       <Col xs={24} sm={12}>
                         <Form.Item
                           label="Relevant Experience in Salesforce"
@@ -1183,38 +1356,87 @@ const UpdateUserProfile = ({
                               required: true,
                               message: "Please enter total experience!",
                             },
+                            // {
+                            //   validator: (_, value) => {
+                            //     if (!value) return Promise.resolve();
+
+                            //     // ❌ letters or special characters
+                            //     if (/[^0-9.]/.test(value)) {
+                            //       return Promise.reject(
+                            //         new Error("Only numbers are allowed")
+                            //       );
+                            //     }
+
+                            //     // ❌ more than one dot
+                            //     if ((value.match(/\./g) || []).length > 1) {
+                            //       return Promise.reject(
+                            //         new Error(
+                            //           "Only one decimal point is allowed"
+                            //         )
+                            //       );
+                            //     }
+
+                            //     // ❌ more than 2 decimal places
+                            //     if (!/^\d+(\.\d{0,2})?$/.test(value)) {
+                            //       return Promise.reject(
+                            //         new Error(
+                            //           "Maximum 2 digits allowed after decimal"
+                            //         )
+                            //       );
+                            //     }
+
+                            //     // ❌ max 2 digits before decimal
+                            //     const [intPart] = value.split(".");
+                            //     if (intPart.length > 2) {
+                            //       return Promise.reject(
+                            //         new Error(
+                            //           "Maximum 2 digits allowed before decimal"
+                            //         )
+                            //       );
+                            //     }
+
+                            //     return Promise.resolve();
+                            //   },
+                            // },
                             {
                               validator: (_, value) => {
                                 if (!value) return Promise.resolve();
 
-                                if (/[^0-9.]/.test(value)) {
+                                // ✅ Convert to string and trim spaces
+                                const val = value.toString().trim();
+
+                                // ❌ letters or special characters
+                                if (/[^0-9.]/.test(val)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed"),
+                                    new Error("Only numbers are allowed")
                                   );
                                 }
 
-                                if ((value.match(/\./g) || []).length > 1) {
-                                  return Promise.reject(
-                                    new Error(
-                                      "Only one decimal point is allowed",
-                                    ),
-                                  );
-                                }
-
-                                if (!/^\d+(\.\d{0,2})?$/.test(value)) {
+                                // ❌ more than one dot
+                                if ((val.match(/\./g) || []).length > 1) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed after decimal",
-                                    ),
+                                      "Only one decimal point is allowed"
+                                    )
                                   );
                                 }
 
-                                const [intPart] = value.split(".");
+                                // ❌ more than 2 decimal places
+                                if (!/^\d+(\.\d{0,2})?$/.test(val)) {
+                                  return Promise.reject(
+                                    new Error(
+                                      "Maximum 2 digits allowed after decimal"
+                                    )
+                                  );
+                                }
+
+                                // ❌ max 2 digits before decimal
+                                const [intPart] = val.split(".");
                                 if (intPart.length > 2) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed before decimal",
-                                    ),
+                                      "Maximum 2 digits allowed before decimal"
+                                    )
                                   );
                                 }
 
@@ -1299,6 +1521,7 @@ const UpdateUserProfile = ({
                             name="linkedInUrl"
                             rules={[
                               {
+                                required: true,
                                 pattern:
                                   /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9._-]+\/?$/i,
                                 message:
@@ -1336,6 +1559,7 @@ const UpdateUserProfile = ({
                             name="trailheadUrl"
                             rules={[
                               {
+                                required: true,
                                 pattern:
                                   /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
                                 message: "Please enter a valid Trailhead URL",
@@ -1383,8 +1607,8 @@ const UpdateUserProfile = ({
                                     if (!value || value.length === 0) {
                                       return Promise.reject(
                                         new Error(
-                                          "Please add at least one primary skill",
-                                        ),
+                                          "Please add at least one primary skill"
+                                        )
                                       );
                                     }
                                     return Promise.resolve();
@@ -1400,6 +1624,9 @@ const UpdateUserProfile = ({
                                 fetchFunction={GetSkills}
                                 addFunction={PostSkills}
                                 hasError={error}
+                                totalExperience={form.getFieldValue(
+                                  "totalExperience"
+                                )}
                               />
                             </Form.Item>
                           );
@@ -1416,6 +1643,9 @@ const UpdateUserProfile = ({
                           onSkillsChange={handleSecondarySkillsChange}
                           fetchFunction={GetSkills}
                           addFunction={PostSkills}
+                          totalExperience={form.getFieldValue(
+                            "totalExperience"
+                          )}
                         />
                       </Form.Item>
                     </Collapse>
@@ -1441,7 +1671,7 @@ const UpdateUserProfile = ({
                           validator: (_, value) => {
                             if (!value || value.length === 0) {
                               return Promise.reject(
-                                "Please add at least one primary cloud!",
+                                "Please add at least one primary cloud!"
                               );
                             }
                             return Promise.resolve();
@@ -1456,6 +1686,7 @@ const UpdateUserProfile = ({
                         onSkillsChange={handlePrimaryCloudsChange}
                         fetchFunction={GetClouds}
                         addFunction={PostClouds}
+                        totalExperience={form.getFieldValue("totalExperience")}
                       />
                     </Form.Item>
 
@@ -1466,6 +1697,7 @@ const UpdateUserProfile = ({
                         onSkillsChange={handleSecondaryCloudsChange}
                         fetchFunction={GetClouds}
                         addFunction={PostClouds}
+                        totalExperience={form.getFieldValue("totalExperience")}
                       />
                     </Form.Item>
                   </Collapse>
@@ -1624,7 +1856,35 @@ const UpdateUserProfile = ({
               </Form.Item>
             </Form>
           </Card>
-        </Card>
+          {/* INNER CARD END */}
+        </Card>{" "}
+        {/* ✅ OUTER CARD CLOSED ONLY ONCE */}
+      </div>
+
+      {/* Hidden Resume Template */}
+      <div style={{ display: "none" }}>
+        <ResumeTemplate
+          ref={componentRef}
+          candidate={{
+            ...form.getFieldsValue(),
+            skillsJson: [
+              ...primarySkills.map((s) => ({
+                name: s.name,
+                experience: s.experience,
+                level: "primary",
+              })),
+              ...secondarySkills.map((s) => ({
+                name: s.name,
+                experience: s.experience,
+                level: "secondary",
+              })),
+            ],
+            primaryClouds,
+            secondaryClouds,
+            workExperience: experienceList,
+            education: educationList,
+          }}
+        />
       </div>
     </div>
   );
