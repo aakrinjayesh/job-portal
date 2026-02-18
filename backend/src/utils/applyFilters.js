@@ -21,35 +21,6 @@ const levenshtein = (a, b) => {
   return dp[m][n];
 };
 
-
-// const smartMatch = (text, search) => {
-//   if (!text || !search) return false;
-
-//   text = text.toLowerCase();
-//   search = search.toLowerCase();
-
-//   const words = text.split(/\s+/);
-
-//   // 1. Exact token match
-//   if (words.includes(search)) return true;
-
-//   // 2. Levenshtein on each token (allows misspellings)
-//   for (const word of words) {
-//     const dist = levenshtein(word, search);
-//     if (dist <= 2) return true;
-//   }
-
-//   // 3. Prefix match (hyd → hyderabad)
-//   for (const word of words) {
-//     if (word.startsWith(search) || search.startsWith(word)) {
-//       return true;
-//     }
-//   }
-
-//   return false;
-// };
-
-
 const smartMatchScore = (text, search) => {
   if (!text || !search) return 0;
 
@@ -79,36 +50,6 @@ const smartMatchScore = (text, search) => {
   return bestScore; // 0 if no match
 };
 
-
-
-// const fuzzyMatch = (a, b) => {
-//   if (!a || !b) return false;
-
-//   a = a.toLowerCase().trim();
-//   b = b.toLowerCase().trim();
-
-//   // 1. Direct substring check
-//   if (a.includes(b) || b.includes(a)) return true;
-
-//   // 2. Regex partial match
-//   const pattern = b.split("").join(".*");
-//   const regex = new RegExp(pattern, "i");
-//   if (regex.test(a)) return true;
-
-//   // 3. Similarity score
-//   let matches = 0;
-//   for (let char of b) {
-//     if (a.includes(char)) matches++;
-//   }
-//   const score = matches / Math.max(a.length, b.length);
-//   return score >= 0.6;
-// };
-
-// ============================================
-// MAIN FILTERING LOGIC
-// ============================================
-
-
 const fuzzyMatchScore = (a, b) => {
   if (!a || !b) return 0;
 
@@ -133,145 +74,8 @@ const fuzzyMatchScore = (a, b) => {
   return score >= 0.6 ? score : 0;
 };
 
-// const applyFilters = (jobs, filters) => {
-//   const scoredJobs = [];
-
-//   for (const job of jobs) {
-//     let score = 0;
-
-
-//     // ---------- EXPERIENCE ----------
-//     if (filters.experience !== null && filters.experience !== undefined) {
-//       let enteredExp = null;
-
-//       // 🔥 HANDLE AI EXPERIENCE OBJECT
-//       if (typeof filters.experience === "object") {
-//         enteredExp = parseInt(filters.experience.number);
-//       } else {
-//         enteredExp = parseInt(filters.experience);
-//       }
-
-//       const jobExp = parseInt(job.experience?.number);
-
-//       if (
-//         isNaN(enteredExp) ||
-//         isNaN(jobExp) ||
-//         jobExp !== enteredExp
-//       ) {
-//         continue;
-//       }
-
-//       score += 1;
-//     }
-
-
-//     // ---------- SKILLS ----------
-//     if (filters.skills?.length) {
-//       const jobSkills = (job.skills || []).map(s => s.toLowerCase());
-
-//       let skillScore = 0;
-//       for (const fs of filters.skills) {
-//         const best = Math.max(
-//           ...jobSkills.map(js => smartMatchScore(js, fs))
-//         );
-//         if (best === 0) continue;
-//         skillScore += best;
-//       }
-
-//       if (skillScore === 0) continue;
-//       score += skillScore;
-//     }
-
-//     // ---------- CLOUDS ----------
-//     if (filters.clouds?.length) {
-//       const jobClouds = (job.clouds || []).map(c => c.toLowerCase());
-
-//       let cloudScore = 0;
-//       for (const fc of filters.clouds) {
-//         const best = Math.max(
-//           ...jobClouds.map(jc => fuzzyMatchScore(jc, fc))
-//         );
-//         if (best === 0) continue;
-//         cloudScore += best;
-//       }
-
-//       if (cloudScore === 0) continue;
-//       score += cloudScore;
-//     }
-
-//     // ---------- SALARY ----------
-//     if (filters.salary?.length) {
-//       const jobSalaryNum = parseFloat(job.salary);
-//       const jobSalaryInLakhs = jobSalaryNum / 100000;
-
-//       const matches = filters.salary.some((range) => {
-//         const clean = range.replace(" Lakhs", "").trim();
-
-//         if (clean.includes("-")) {
-//           const [min, max] = clean.split("-").map(Number);
-//           return jobSalaryInLakhs >= min && jobSalaryInLakhs <= max;
-//         }
-//         if (clean.includes("+")) {
-//           return jobSalaryInLakhs >= parseFloat(clean);
-//         }
-//         return Math.abs(jobSalaryInLakhs - parseFloat(clean)) < 0.1;
-//       });
-
-//       if (!matches) continue;
-//       score += 0.5;
-//     }
-
-//     // ---------- LOCATION ----------
-//     if (filters.location?.length) {
-//       const jobLocation = job.location || "";
-
-//       const best = Math.max(
-//         ...filters.location.map(loc => fuzzyMatchScore(jobLocation, loc))
-//       );
-
-//       if (best === 0) continue;
-//       score += best;
-//     }
-
-//     // ---------- JOB TYPE ----------
-//     if (filters.jobType?.length) {
-//       const jobType = job.jobType?.toLowerCase() || "";
-//       if (!filters.jobType.some(jt => jobType.includes(jt.toLowerCase())))
-//         continue;
-//       score += 0.5;
-//     }
-
-//     // ---------- EMPLOYMENT TYPE ----------
-//     if (filters.employmentType?.length) {
-//       const emp = job.employmentType?.toLowerCase() || "";
-//       if (!filters.employmentType.some(et => emp.includes(et.toLowerCase())))
-//         continue;
-//       score += 0.5;
-//     }
-
-//     // ---------- CANDIDATE TYPE (optional / future) ----------
-//     if (filters.candidateType?.length && job.candidateType) {
-//       const type = job.candidateType.toLowerCase();
-//       if (!filters.candidateType.some(ct => type.includes(ct.toLowerCase())))
-//         continue;
-//       score += 0.3;
-//     }
-
-//     scoredJobs.push({ ...job, _score: score });
-//   }
-
-//   // 🔥 MOST RELEVANT FIRST
-//   return scoredJobs.sort((a, b) => b._score - a._score);
-// };
-
-
-
-// applyCandidateFilters.js
-
-
-// ---------------- NORMALIZER ----------------
 const normalizeFilters = (filters) => {
-  const makeArray = (v) => Array.isArray(v) ? v : v ? [v] : [];
+  const makeArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
   return {
     ...filters,
@@ -284,6 +88,17 @@ const normalizeFilters = (filters) => {
     candidateType: makeArray(filters.candidateType),
   };
 };
+
+const normalizeCity = (city) =>
+  city?.toLowerCase().replace(/\s+/g, "").trim();
+
+const cityAliases = {
+  bangalore: "bengaluru",
+  bengaluru: "bengaluru",
+  bombay: "mumbai",
+  delhi: "newdelhi",
+};
+
 
 
 // ---------------- MAIN FILTER FUNCTION ----------------
@@ -312,8 +127,8 @@ const applyFilters = (jobs, filters) => {
         continue;
       }
 
-      score += 1;
-    }
+  score += 1;
+}
 
 
     // ---------- SKILLS ----------
@@ -448,45 +263,35 @@ const applyCandidateFilters = (candidates, filters) => {
   for (const candidate of candidates) {
     let score = 0;
 
-    // ---------------- EXPERIENCE ----------------
+       // ---------------- EXPERIENCE ----------------
     if (
       filters.experience &&
       filters.experience !== "Any" &&
       filters.experience !== 30
     ) {
-      const enteredExp = parseInt(filters.experience);
+      const enteredExp = parseFloat(filters.experience);
+      const totalExp = parseFloat(candidate.totalExperience);
 
-      const expFields = [
-        candidate.totalExperience,
-        candidate.relevantSalesforceExperience,
-      ]
-        .map(e => parseInt(e))
-        .filter(e => !isNaN(e));
-
-      // ✅ >= experience instead of exact
-      if (!expFields.some(e => e >= enteredExp)) continue;
+      // ✅ Exact year match — only 2.0 to 2.9 passes when user enters 2
+      if (isNaN(totalExp) || Math.floor(totalExp) !== Math.floor(enteredExp)) continue;
 
       score += 1;
     }
 
     // ---------------- SKILLS ----------------
     if (filters.skills?.length) {
-      const skills = candidate.skillsJson?.map(s => s.name) || [];
-
+      const skills = candidate.skillsJson?.map((s) => s.name) || [];
       let skillScore = 0;
 
       for (const fs of filters.skills) {
-        const best = Math.max(
-          ...skills.map(cs => smartMatchScore(cs, fs)),
-          0
-        );
+        const best = skills.length
+          ? Math.max(...skills.map((cs) => smartMatchScore(cs, fs)), 0)
+          : 0;
 
-        // ❌ reject candidate, NOT function
         if (best === 0) {
           skillScore = -1;
           break;
         }
-
         skillScore += best;
       }
 
@@ -496,21 +301,21 @@ const applyCandidateFilters = (candidates, filters) => {
 
     // ---------------- CLOUDS ----------------
     if (filters.clouds?.length) {
-      const clouds = candidate.primaryClouds?.map(c => c.name) || [];
-
+      const clouds = [
+        ...(candidate.primaryClouds?.map((c) => c.name) || []),
+        ...(candidate.secondaryClouds?.map((c) => c.name) || []),
+      ];
       let cloudScore = 0;
 
       for (const fc of filters.clouds) {
-        const best = Math.max(
-          ...clouds.map(cc => fuzzyMatchScore(cc, fc)),
-          0
-        );
+        const best = clouds.length
+          ? Math.max(...clouds.map((cc) => fuzzyMatchScore(cc, fc)), 0)
+          : 0;
 
         if (best === 0) {
           cloudScore = -1;
           break;
         }
-
         cloudScore += best;
       }
 
@@ -518,13 +323,15 @@ const applyCandidateFilters = (candidates, filters) => {
       score += cloudScore;
     }
 
-    // ---------------- LOCATION (AI uses preferredLocation) ----------------
-    if (filters.preferredLocation?.length) {
+    // ---------------- LOCATION ----------------
+    if (filters.location?.length) {
       const locations = candidate.preferredLocation || [];
 
       const best = Math.max(
-        ...filters.preferredLocation.map(loc =>
-          Math.max(...locations.map(cl => fuzzyMatchScore(cl, loc)), 0)
+        ...filters.location.map((loc) =>
+          locations.length
+            ? Math.max(...locations.map((cl) => fuzzyMatchScore(cl, loc)))
+            : 0
         ),
         0
       );
@@ -536,7 +343,7 @@ const applyCandidateFilters = (candidates, filters) => {
     // ---------------- JOB TYPE ----------------
     if (filters.jobType?.length) {
       const jobType = candidate.jobType?.toLowerCase() || "";
-      if (!filters.jobType.some(jt => jobType.includes(jt.toLowerCase())))
+      if (!filters.jobType.some((jt) => jobType.includes(jt.toLowerCase())))
         continue;
       score += 0.5;
     }
@@ -544,7 +351,9 @@ const applyCandidateFilters = (candidates, filters) => {
     // ---------------- EMPLOYMENT TYPE ----------------
     if (filters.employmentType?.length) {
       const emp = candidate.employmentType?.toLowerCase() || "";
-      if (!filters.employmentType.some(et => emp.includes(et.toLowerCase())))
+      if (
+        !filters.employmentType.some((et) => emp.includes(et.toLowerCase()))
+      )
         continue;
       score += 0.5;
     }
@@ -553,10 +362,8 @@ const applyCandidateFilters = (candidates, filters) => {
     if (filters.candidateType?.length) {
       const wantsVendor = filters.candidateType.includes("vendor");
       const wantsIndividual = filters.candidateType.includes("individual");
-
       if (wantsVendor && !candidate.vendorId) continue;
       if (wantsIndividual && candidate.vendorId) continue;
-
       score += 0.5;
     }
 
@@ -567,9 +374,5 @@ const applyCandidateFilters = (candidates, filters) => {
   return scored.sort((a, b) => b._score - a._score);
 };
 
+export { applyFilters, applyCandidateFilters };
 
-
-
-
-
-export {applyFilters, applyCandidateFilters}

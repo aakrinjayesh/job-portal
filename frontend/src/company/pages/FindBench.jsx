@@ -20,7 +20,7 @@ function FindBench() {
   const controllerRef = useRef(null);
   const location = useLocation();
 
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   // const [selectedCandidate, setSelectedCandidate] = useState(null);
   // const [detailsModalVisible, setDetailsModalVisible] = useState(false);
 
@@ -30,51 +30,51 @@ function FindBench() {
       controllerRef.current.abort();
     }
 
-    controllerRef.current = new AbortController();
-
-    setLoading(true);
-    try {
-      console.log("Fetching bench with filters:", filters);
-
-      // ✅ Pass filters to API
-      const res = await GetAllVendorCandidates(
-        pageNum,
-        10,
-        filters,
-        controllerRef.current.signal
-      );
-    if (res.status === "success") {
-  const newList = res?.candidates || [];
+  controllerRef.current = new AbortController();
 
   if (pageNum === 1) {
-    setBench(newList);
+    setInitialLoading(true);
+    setLoading(true);
+    setProgress(10);
   } else {
-    setBench((prev) => [...prev, ...newList]);
+    setLoading(true);
   }
 
-  setTotalCount(res.totalCount || 0);
+  try {
+    const res = await GetAllVendorCandidates(
+      pageNum,
+      10,
+      filters,
+      controllerRef.current.signal
+    );
 
-  if (pageNum >= res.totalPages) {
-    setHasMore(false);
-  } else {
-    setHasMore(true);
-  }
+    const newList = res?.candidates || [];
 
-  setLoading(false);
-  setInitialLoading(false);
-}
+    setBench((prev) =>
+      pageNum === 1 ? newList : [...prev, ...newList]
+    );
 
-    } catch (error) {
-      if (error.code === "ERR_CANCELED") {
-        console.log("FindBench API aborted");
-        return;
-      }
-      console.error(error);
+    setTotalCount(res.totalCount || 0);
+    setHasMore(pageNum < res.totalPages);
+
+  } catch (error) {
+    if (error.code !== "ERR_CANCELED") {
       message.error("Failed to load bench candidates");
-      setLoading(false);
-      setInitialLoading(false);
     }
-  }, []);
+  } finally {
+    if (pageNum === 1) {
+      setProgress(100);
+
+      setTimeout(() => {
+        setInitialLoading(false);
+        setLoading(false);
+        setProgress(0);
+      }, 300);
+    } else {
+      setLoading(false);
+    }
+  }
+}, []);
 
   // Cleanup on route change
   useEffect(() => {
@@ -87,9 +87,11 @@ function FindBench() {
   }, [location.pathname]);
 
   // Initial load
-  useEffect(() => {
-    fetchBench(1, currentFilters);
-  }, []);
+ useEffect(() => {
+  setPage(1);
+  fetchBench(1, currentFilters);
+}, [currentFilters]);
+
 
   // ===============================
   // INFINITE SCROLL OBSERVER
@@ -115,7 +117,7 @@ function FindBench() {
     if (page > 1) {
       fetchBench(page, currentFilters);
     }
-  }, [page, currentFilters, fetchBench]);
+  }, [page]);
 
   useEffect(() => {
   if (initialLoading || (loading && page === 1)) {
@@ -134,10 +136,10 @@ function FindBench() {
   const handleFiltersChange = (filters) => {
     console.log("Received filters:", filters);
     setCurrentFilters(filters);
-    setPage(1);
-    setProgress(0);
+    // setPage(1);
+    // setProgress(0);
     setHasMore(true);
-    fetchBench(1, filters);
+    // fetchBench(1, filters);
   };
 
   // ✅ Clear filters and fetch all from server
@@ -146,7 +148,7 @@ function FindBench() {
     setPage(1);
     setHasMore(true);
     setProgress(0);
-    fetchBench(1, {});
+    // fetchBench(1, {});
   };
 
   // ===============================

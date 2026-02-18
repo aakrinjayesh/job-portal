@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Spin, message, Button, Table, Tag, Modal, Input } from "antd";
+import { Progress, message, Button, Table, Tag, Modal, Input } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GetCandidateList } from "../../api/api";
@@ -28,6 +28,7 @@ const CandidateList = () => {
   const [total, setTotal] = useState(0);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [groupName, setGroupName] = useState(jobRole);
+  const [progress, setProgress] = useState(0);
 
   // ✅ NEW STATE FOR GROUP CHAT
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -40,6 +41,59 @@ const CandidateList = () => {
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [activityCandidate, setActivityCandidate] = useState(null);
   const [activityTab, setActivityTab] = useState("NOTE");
+
+  useEffect(() => {
+  const fetchCandidates = async () => {
+    try {
+      setLoading(true);
+      setProgress(10);
+
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev;
+          return prev + 10;
+        });
+      }, 200);
+
+      const payload = { jobId };
+      const response = await GetCandidateList(payload);
+
+      clearInterval(interval);
+
+      setProgress(100);
+
+      setTimeout(() => {
+        setLoading(false);
+      }, 400);
+
+      if (response?.data && response.data.length > 0) {
+        const map = {};
+        response.data.forEach((c) => {
+          if (c.status === "Rejected") {
+            map[c.applicationId] = "Rejected";
+          } else if (c.status === "BookMark") {
+            map[c.applicationId] = "BookMark";
+          } else {
+            map[c.applicationId] = "Not Updated";
+          }
+        });
+
+        setStatusMap(map);
+        setCandidates(response.data);
+        setTotal(response.total || response.data.length);
+      } else {
+        setCandidates([]);
+        messageAPI.warning("No candidates found for this job.");
+      }
+    } catch (error) {
+      console.error("Error fetching candidates:", error);
+      messageAPI.error("Failed to load candidates.");
+    }
+  };
+
+  if (jobId) fetchCandidates();
+}, [jobId]);
+
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -794,6 +848,7 @@ const CandidateList = () => {
 
   return (
     <div style={{ padding: 0 }}>
+      
       {contextHolder}
 
       {/* ================= FIGMA HEADER CARD ================= */}
@@ -968,108 +1023,125 @@ const CandidateList = () => {
         </div>
       </div>
 
-      <Spin spinning={loading}>
-        <Table
-          rowSelection={rowSelection}
-          columns={columns}
-          // dataSource={candidates}
-          dataSource={filteredCandidates}
-          // rowKey={(record) => record.id || record.userId}
-          // rowKey={(record) => record.id}
-          rowKey={(record) => record.applicationId}
-          bordered
-          scroll={{ x: "max-content" }}
-          pagination={{
-            current: page,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            onChange: (p, ps) => {
-              setPage(p);
-              setPageSize(ps);
-            },
-          }}
-        />
-        <Modal
-          title="Create Group Chat"
-          open={isGroupModalOpen}
-          onCancel={() => {
-            setIsGroupModalOpen(false);
-            setGroupName("");
-          }}
-          okText="Create"
-          onOk={() => {
-            if (!groupName.trim()) {
-              message.warning("Please enter a group name");
-              return;
-            }
+   {loading ? (
+  <div
+    style={{
+      height: "60vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      flexDirection: "column",
+      gap: 20,
+    }}
+  >
+    <Progress
+      type="circle"
+      percent={progress}
+      width={120}
+      strokeColor={{
+        "0%": "#1677FF",
+        "100%": "#52c41a",
+      }}
+      showInfo={false}
+    />
+    <div style={{ fontSize: 16, fontWeight: 500 }}>
+      Loading Candidates...
+    </div>
+  </div>
+) : (
+  <>
+    <Table
+      rowSelection={rowSelection}
+      columns={columns}
+      dataSource={filteredCandidates}
+      rowKey={(record) => record.applicationId}
+      bordered
+      scroll={{ x: "max-content" }}
+      pagination={{
+        current: page,
+        pageSize,
+        total,
+        showSizeChanger: true,
+        onChange: (p, ps) => {
+          setPage(p);
+          setPageSize(ps);
+        },
+      }}
+    />
 
-            const chatUserIds = selectedCandidates
-              .map((c) => c?.profile?.chatuserid)
-              .filter(Boolean);
+    <Modal
+      title="Create Group Chat"
+      open={isGroupModalOpen}
+      onCancel={() => {
+        setIsGroupModalOpen(false);
+        setGroupName("");
+      }}
+      okText="Create"
+      onOk={() => {
+        if (!groupName.trim()) {
+          message.warning("Please enter a group name");
+          return;
+        }
 
-            if (!chatUserIds.length) {
-              message.warning("No valid chat users selected");
-              return;
-            }
+        const chatUserIds = selectedCandidates
+          .map((c) => c?.profile?.chatuserid)
+          .filter(Boolean);
 
-            setIsGroupModalOpen(false);
-            setGroupName("");
+        if (!chatUserIds.length) {
+          message.warning("No valid chat users selected");
+          return;
+        }
 
-            console.log("participat", chatUserIds);
-            console.log("groupname", groupName);
+        const uniqueIds = [...new Set(chatUserIds)];
 
-            if (chatUserIds.length < 1) {
-              messageAPI.warning("Select atleast 2 candidates to create group");
-              return;
-            }
+        navigate("/company/chat", {
+          state: {
+            groupUserIds: uniqueIds,
+            groupName: groupName.trim(),
+          },
+        });
 
-            const uniqueIds = [...new Set(chatUserIds)];
-            console.log("uniueid", uniqueIds);
-            navigate("/company/chat", {
-              state: {
-                groupUserIds: uniqueIds,
-                groupName: groupName.trim(), // ✅ PASS GROUP NAME
-              },
-            });
+        setIsGroupModalOpen(false);
+        setGroupName("");
+      }}
+    >
+      <Input
+        placeholder="Enter group name"
+        value={groupName}
+        onChange={(e) => setGroupName(e.target.value)}
+        maxLength={50}
+      />
+    </Modal>
+
+    <Modal
+      open={activityModalOpen}
+      footer={null}
+      width={420}
+      destroyOnClose
+      closable
+      closeIcon={
+        <span
+          style={{
+            fontSize: 18,
+            fontWeight: 600,
+            color: "#595959",
           }}
         >
-          <Input
-            placeholder="Enter group name"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            maxLength={50}
-          />
-        </Modal>
-      </Spin>
-
-      <Modal
-        open={activityModalOpen}
-        footer={null}
-        width={420}
-        destroyOnClose
-        closable
-        closeIcon={
-          <span
-            style={{
-              fontSize: 18,
-              fontWeight: 600,
-              color: "#595959",
-            }}
-          >
-            ✕
-          </span>
-        }
-        onCancel={() => setActivityModalOpen(false)}
-      >
-        {activityCandidate && (
-          <CandidateActivity
-            candidateId={activityCandidate.profile.id} // ✅ PROFILE ID
-            jobId={jobId}
-            defaultTab={activityTab}
-          />
-        )}
-      </Modal>
+          ✕
+        </span>
+      }
+      onCancel={() => setActivityModalOpen(false)}
+    >
+      {activityCandidate && (
+        <CandidateActivity
+          candidateId={activityCandidate.profile.id}
+          jobId={jobId}
+          defaultTab={activityTab}
+        />
+      )}
+    </Modal>
+  </>
+  )}
     </div>
   );
 };

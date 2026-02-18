@@ -72,14 +72,24 @@ function FindJob() {
 
 
  useEffect(() => {
-  if (!(initialLoading || (loading && page === 1))) return;
+  const isLoading = initialLoading || (loading && page === 1);
 
-  const interval = setInterval(() => {
-    setProgress((prev) => (prev < 85 ? prev + 5 : prev));
-  }, 300);
+  if (isLoading) {
+    setProgress(0);
 
-  return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) return prev; // stop at 95% until API finishes
+        return prev + 5;
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(100);
+  }
 }, [initialLoading, loading, page]);
+
 
 
 

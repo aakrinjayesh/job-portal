@@ -99,17 +99,23 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    if (loadingChats || loadingMessages) {
-      const interval = setInterval(() => {
-        setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
-      }, 400);
+useEffect(() => {
+  if (loadingChats || loadingMessages) {
+    setProgress(0);
 
-      return () => clearInterval(interval);
-    } else {
-      setProgress(0);
-    }
-  }, [loadingChats, loadingMessages]);
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) return prev; // stop at 95%
+        return prev + 5;
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  } else {
+    setProgress(100);
+  }
+}, [loadingChats, loadingMessages]);
+
 
   const updateChatLastMessage = (chatToUpdateId, message) => {
     const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId);
@@ -327,12 +333,17 @@ const Chat = () => {
     updateChatLastMessageOnDeletion(message.chat, message);
   };
 
-  const handleFileChange = (info) => {
-    const files = info.fileList.map((file) => file.originFileObj);
-    setPreviewFiles(files);
-    setCaption("");
-    setPreviewOpen(true);
-  };
+ const handleFileChange = (info) => {
+  if (info.fileList.length > 3) {
+    alertMessage.error("Only 3 files allowed per message.");
+    return;
+  }
+
+  const files = info.fileList.map((file) => file.originFileObj);
+  setPreviewFiles(files);
+  setCaption("");
+  setPreviewOpen(true);
+};
 
   const removeAttachment = (index) => {
     setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
@@ -544,24 +555,26 @@ const Chat = () => {
               // // background: "#FFFFFF",
             }}
           >
-            {loadingChats ? (
-              <div
-              // style={{
-              //   // display: "flex",
-              //   // flexDirection: "column",
-              //   alignItems: "center",
-              //   justifyContent: "center",
-              //   // marginTop: 80,
-              //   // gap: 16,
-              // }}
-              >
+           {loadingChats ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+      minHeight: "80vh", // match sidebar scroll height
+      gap: 16,
+    }}
+  >
+
                 <Progress
                   type="circle"
                   percent={progress}
                   width={80}
                   strokeColor={{
-                    "0%": "#25D366",
-                    "100%": "#128C7E",
+                   "0%": "#4F63F6",
+        "100%": "#7C8CFF",
                   }}
                   trailColor="#E5E7EB"
                   showInfo={false}
@@ -679,8 +692,8 @@ const Chat = () => {
                       percent={progress}
                       width={80}
                       strokeColor={{
-                        "0%": "#25D366",
-                        "100%": "#128C7E",
+                        "0%": "#4F63F6",
+        "100%": "#7C8CFF",
                       }}
                       trailColor="#E5E7EB"
                       showInfo={false}
@@ -860,12 +873,18 @@ const Chat = () => {
                     borderRadius: 24,
                   }}
                 >
-                <Upload
+               <Upload
   multiple
+  maxCount={3} // ✅ HARD LIMIT
   fileList={uploadFileList}
   showUploadList={false}
   beforeUpload={() => false}
   onChange={(info) => {
+    if (info.fileList.length > 3) {
+      alertMessage.error("You can send maximum 3 files at once.");
+      return;
+    }
+
     setUploadFileList(info.fileList);
     handleFileChange(info);
   }}

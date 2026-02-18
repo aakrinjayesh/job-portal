@@ -66,7 +66,7 @@ export const queueRecruiterEmails = async (recruiters, job) => {
 
           <tr>
             <td style="background:#f9fafb; padding:12px; text-align:center; font-size:12px; color:#9ca3af;">
-              © ${new Date().getFullYear()} QuickHireSF
+              © ${new Date().getFullYear()} ForceHead
             </td>
           </tr>
 

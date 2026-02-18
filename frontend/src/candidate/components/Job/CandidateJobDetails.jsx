@@ -7,7 +7,7 @@ import {
   Tag,
   Space,
   Button,
-  Spin,
+  Progress,
   Divider,
   message,
   Modal,
@@ -35,6 +35,9 @@ const CandidateJobDetails = () => {
   const [ApplyLoading, setApplyLoading] = useState(false);
   const [messageAPI, contextHolder] = message.useMessage();
   const [isApplied, setIsApplied] = useState(false);
+  const [progress, setProgress] = useState(0);
+const [readyToShow, setReadyToShow] = useState(false);
+
 
   // ✅ Modal state
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -46,19 +49,75 @@ const CandidateJobDetails = () => {
     }
   }, [id, jobids]);
 
-  const fetchJobDetails = async () => {
-    try {
-      const payload = { jobid: id };
-      const response = await GetJobDetails(payload);
-      setJob(response?.job);
-    } catch (error) {
-      messageAPI.error("Failed to load job details");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+  if (!loading) return;
 
-  if (loading) return <Spin size="large" style={{ marginTop: 100 }} />;
+  const interval = setInterval(() => {
+    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+  }, 300);
+
+  return () => clearInterval(interval);
+}, [loading]);
+
+
+ const fetchJobDetails = async () => {
+  setProgress(10);
+  setReadyToShow(false);
+
+  try {
+    const payload = { jobid: id };
+    const response = await GetJobDetails(payload);
+    setJob(response?.job);
+  } catch (error) {
+    messageAPI.error("Failed to load job details");
+  } finally {
+    setProgress(100);
+
+    setTimeout(() => {
+      setLoading(false);
+      setReadyToShow(true);
+      setProgress(0);
+    }, 250);
+  }
+};
+
+ if (!readyToShow) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "80vh",
+      }}
+    >
+      <Progress
+        type="circle"
+        percent={progress}
+        width={90}
+        strokeColor={{
+          "0%": "#4F63F6",
+          "100%": "#7C8CFF",
+        }}
+        trailColor="#E6E8FF"
+        showInfo={false}
+      />
+
+      <div
+        style={{
+          marginTop: 16,
+          color: "#555",
+          fontSize: 14,
+          fontWeight: 500,
+        }}
+      >
+        Loading job details…
+      </div>
+    </div>
+  );
+}
+
   if (!job) return <Text type="danger">Job not found</Text>;
 
   // -----------------------------------------

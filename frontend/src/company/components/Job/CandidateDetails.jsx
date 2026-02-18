@@ -21,7 +21,7 @@ import {
   message,
   Tooltip,
   Modal,
-  Spin,
+  Progress,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -48,6 +48,10 @@ const CandidateDetails = () => {
 
   const [ratingValue, setRatingValue] = useState(0);
 
+  const [progress, setProgress] = useState(0);
+const [readyToShow, setReadyToShow] = useState(false);
+
+
   const { jobId, source } = location.state || {};
   const [candidate, setCandidate] = useState(null);
   const [addReviewLoading, setAddReviewLoading] = useState(false);
@@ -59,23 +63,44 @@ const CandidateDetails = () => {
   console.log("sourcw", source);
   console.log("location", location);
 
-  useEffect(() => {
-    const fetchCandidate = async () => {
-      try {
-        const res = await getCandidateDetails(id);
+ useEffect(() => {
+  const fetchCandidate = async () => {
+    try {
+      setProgress(10);
+      setReadyToShow(false);
+      setLoadingCandidate(true);
 
-        if (res.status === "success") {
-          setCandidate(res.candidate);
-        }
-      } catch (err) {
-        message.error("Failed to load candidate details");
-      } finally {
-        setLoadingCandidate(false);
+      const res = await getCandidateDetails(id);
+
+      if (res.status === "success") {
+        setCandidate(res.candidate);
       }
-    };
+    } catch (err) {
+      message.error("Failed to load candidate details");
+    } finally {
+      setProgress(100);
 
-    if (id) fetchCandidate();
-  }, [id]);
+      setTimeout(() => {
+        setLoadingCandidate(false);
+        setReadyToShow(true);
+      }, 300);
+    }
+  };
+
+  if (id) fetchCandidate();
+}, [id]);
+
+
+
+useEffect(() => {
+  if (!loadingCandidate) return;
+
+  const interval = setInterval(() => {
+    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+  }, 250);
+
+  return () => clearInterval(interval);
+}, [loadingCandidate]);
 
   const reloadCandidate = async () => {
     try {
@@ -109,13 +134,43 @@ const CandidateDetails = () => {
     }
   };
 
-  if (loadingCandidate) {
-    return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        <Spin size="large" />
+   if (!readyToShow) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        background: "#fafafa",
+      }}
+    >
+      <Progress
+        type="circle"
+        percent={progress}
+        width={95}
+        strokeColor={{
+          "0%": "#4F63F6",
+          "100%": "#7C8CFF",
+        }}
+        trailColor="#E6E8FF"
+        showInfo={false}
+      />
+      <div
+        style={{
+          marginTop: 18,
+          color: "#64748b",
+          fontSize: 14,
+          fontWeight: 500,
+        }}
+      >
+        Loading candidate details…
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   if (!candidate) {
     return <p style={{ padding: "20px" }}>No candidate details found.</p>;

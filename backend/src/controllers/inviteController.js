@@ -132,21 +132,77 @@ export const sendInvite = async (req, res) => {
       },
     });
 
-    const acceptLink = `${process.env.FRONTEND_URL}/createpassword?email=${encodeURIComponent(
-      email,
-    )}&role=company&token=${token}`;
+   const acceptLink = `${process.env.FRONTEND_URL}/createpassword?email=${encodeURIComponent(
+  email
+)}&role=company&token=${token}`;
 
-    await sendEmail({
-      to: email,
-      subject: "Organization Invitation",
-      html: `
-        <h2>You are invited to join an organization</h2>
-        <a href="${acceptLink}" 
-           style="padding:10px 20px;background:#4CAF50;color:#fff;text-decoration:none;">
-           Accept
-        </a>
-      `,
-    });
+await sendEmail({
+  to: email,
+  subject: "You're Invited to Join FORCEHEAD 🚀",
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white; padding: 35px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="margin: 0; font-size: 26px;">Welcome to FORCEHEAD 🚀</h1>
+        <p style="margin: 10px 0 0; font-size: 15px; opacity: 0.9;">
+          Salesforce B2B Hiring & Vendor Portal
+        </p>
+      </div>
+
+      <!-- Body -->
+      <div style="background: #f9fafb; padding: 35px; border-radius: 0 0 12px 12px;">
+        
+        <h2 style="color: #333; margin-top: 0;">You're Invited to Join an Organization</h2>
+
+        <p style="color: #555; font-size: 15px; line-height: 1.6;">
+          You have been invited to join an organization on <strong>FORCEHEAD</strong>.
+          Click the button below to set your password and activate your account.
+        </p>
+
+        <!-- CTA Button -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${acceptLink}"
+             style="display: inline-block;
+                    padding: 14px 28px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    text-decoration: none;
+                    font-weight: bold;
+                    border-radius: 8px;
+                    font-size: 16px;">
+            Accept Invitation
+          </a>
+        </div>
+
+        <!-- Security Note -->
+        <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-top: 25px;">
+          <p style="margin: 0; font-size: 14px; color: #666;">
+            🔒 For security reasons, this link may expire. 
+            If you did not expect this invitation, you can safely ignore this email.
+          </p>
+        </div>
+
+        <p style="color: #666; font-size: 13px; margin-top: 30px;">
+          If the button above does not work, copy and paste this link into your browser:
+        </p>
+
+        <p style="word-break: break-all; font-size: 12px; color: #667eea;">
+          ${acceptLink}
+        </p>
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;" />
+
+        <p style="font-size: 12px; color: #999; text-align: center;">
+          This is an automated message from FORCEHEAD. <br/>
+          © ${new Date().getFullYear()} FORCEHEAD. All rights reserved.
+        </p>
+
+      </div>
+    </div>
+  `,
+});
 
     res.status(200).json({
       status: "success",
