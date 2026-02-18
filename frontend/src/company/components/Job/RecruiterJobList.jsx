@@ -1238,7 +1238,7 @@ const RecruiterJobList = () => {
                       )}
                     </div>
                   </Card>
-                  <Modal
+                  {/* <Modal
                     open={!!closeJobId}
                     title="Close Job"
                     okText="Yes, Close"
@@ -1257,7 +1257,7 @@ const RecruiterJobList = () => {
                     }}
                   >
                     Are you sure you want to close this job?
-                  </Modal>
+                  </Modal> */}
                 </Col>
               ))}
               {loading && jobs.length > 0 && hasMore && (
@@ -1276,6 +1276,25 @@ const RecruiterJobList = () => {
             </>
           )}
         </Row>
+        <Modal
+          open={!!closeJobId}
+          title="Close Job"
+          okText="Yes, Close"
+          okButtonProps={{ danger: true }}
+          mask={false} // ✅ removes black background
+          centered
+          onCancel={() => setCloseJobId(null)}
+          onOk={async () => {
+            try {
+              await handleCloseJob(closeJobId);
+              setCloseJobId(null);
+            } catch (e) {
+              setCloseJobId(null);
+            }
+          }}
+        >
+          Are you sure you want to close this job?
+        </Modal>
       </div>
 
       <Modal

@@ -55,7 +55,7 @@ export const sendOtpController = async (req, res) => {
   } catch (err) {
     logger.error(
       "Error in sendOtpController:",
-      JSON.stringify(err.message, null, 2)
+      JSON.stringify(err.message, null, 2),
     );
     return res
       .status(500)
@@ -102,7 +102,7 @@ export const verifyOtpController = async (req, res) => {
   } catch (err) {
     logger.error(
       "Error in verifyOtpController:",
-      JSON.stringify(err.message, null, 2)
+      JSON.stringify(err.message, null, 2),
     );
     return res
       .status(500)
@@ -126,7 +126,7 @@ const otpEmailTemplate = (name, otp) => `
 
           <tr>
             <td style="background:#2196F3; color:#ffffff; padding:20px; text-align:center;">
-              <h2 style="margin:0;">QuickHireSF</h2>
+              <h2 style="margin:0;">FORCEHEAD</h2>
             </td>
           </tr>
 
@@ -137,7 +137,7 @@ const otpEmailTemplate = (name, otp) => `
               </p>
 
               <p style="font-size:14px;">
-                Welcome to <strong>QuickHireSF</strong>.  
+                Welcome to <strong>FORCEHEAD</strong>.  
                 Use the verification code below:
               </p>
 
@@ -158,13 +158,13 @@ const otpEmailTemplate = (name, otp) => `
                 Please do not share this OTP with anyone.
               </p>
 
-              <p>— <strong>QuickHireSF Team</strong></p>
+              <p>— <strong>FORCEHEAD Team</strong></p>
             </td>
           </tr>
 
           <tr>
             <td style="background:#f9fafb; padding:12px; text-align:center; font-size:12px; color:#9ca3af;">
-              © ${new Date().getFullYear()} QuickHireSF
+              © ${new Date().getFullYear()} FORCEHEAD
             </td>
           </tr>
 

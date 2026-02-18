@@ -18,6 +18,7 @@ import {
   EnvironmentOutlined,
   FileTextOutlined,
   ClockCircleOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -86,12 +87,51 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
       {/* {applications?.map((app, index) => { */}
       {applications
         ?.filter((app) =>
-          statusFilter === "All" ? true : app.status === statusFilter
+          statusFilter === "All" ? true : app.status === statusFilter,
         )
         .sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
         .map((app, index) => {
           const job = app?.job;
           const isLast = index === applications.length - 1;
+
+          const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
+            const visible = items.slice(0, max);
+            const remaining = items.length - max;
+
+            return (
+              <>
+                {visible.map((item, index) => (
+                  <Tooltip title={item} key={index}>
+                    <Tag
+                      style={{
+                        ...tagStyle,
+                        borderRadius: 100,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "inline-block",
+                        maxWidth: 200,
+                      }}
+                    >
+                      {item}
+                    </Tag>
+                  </Tooltip>
+                ))}
+
+                {remaining > 0 && (
+                  <Tag
+                    style={{
+                      borderRadius: 100,
+                      background: "#F5F5F5",
+                      border: "1px dashed #999",
+                    }}
+                  >
+                    +{remaining} more
+                  </Tag>
+                )}
+              </>
+            );
+          };
 
           return (
             <Col
@@ -170,10 +210,10 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
                       app?.status === "Pending"
                         ? "orange"
                         : app?.status === "Accepted"
-                        ? "green"
-                        : app?.status === "Rejected"
-                        ? "red"
-                        : "blue"
+                          ? "green"
+                          : app?.status === "Rejected"
+                            ? "red"
+                            : "blue"
                     }
                     style={{
                       fontWeight: 500,
@@ -203,17 +243,19 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
                     )}
 
                     {/* Experience */}
-                    {job?.experience && (
-                      <span>
-                        {job.experience.number} {job.experience.type}
-                      </span>
-                    )}
-
-                    {/* Salary */}
                     {job?.salary && <span>₹ {job.salary} Lacs PA</span>}
 
-                    {/* Employment Type */}
-                    {job?.employmentType && <span>{job.employmentType}</span>}
+                    {job?.employmentType && (
+                      <span>
+                        <ClockCircleOutlined /> {job.employmentType}
+                      </span>
+                    )}
+                    {job?.experience && (
+                      <span>
+                        <UserOutlined /> {job.experience.number}{" "}
+                        {job.experience.type}
+                      </span>
+                    )}
                   </Space>
                 </div>
 
@@ -237,7 +279,7 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
 
                 {/* Skills */}
                 {/* Clouds */}
-                {job?.clouds?.length > 0 && (
+                {/* {job?.clouds?.length > 0 && (
                   <div
                     style={{
                       marginTop: 10,
@@ -285,7 +327,82 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
                       </Tag>
                     ))}
                   </div>
-                )}
+                )} */}
+                {/* SKILLS + CLOUDS (Same as Find Job) */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    marginTop: 12,
+                  }}
+                >
+                  {job?.clouds?.length > 0 && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        flex: 1,
+                        padding: 12,
+                        border: "1px solid #EEEEEE",
+                        borderRadius: 8,
+                        minWidth: 220,
+                        height: 120,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        Related Clouds
+                      </div>
+
+                      <div
+                        style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+                      >
+                        <TagsWithMore
+                          items={job.clouds}
+                          tagStyle={{
+                            background: "#E7F0FE",
+                            border: "1px solid #1677FF",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {job?.skills?.length > 0 && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        flex: 1,
+                        padding: 12,
+                        border: "1px solid #EEEEEE",
+                        borderRadius: 8,
+                        minWidth: 220,
+                        height: 120,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        Related Skills
+                      </div>
+
+                      <div
+                        style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+                      >
+                        <TagsWithMore
+                          items={job.skills}
+                          tagStyle={{
+                            background: "#FBEBFF",
+                            border: "1px solid #800080",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Applied Info */}
                 <div

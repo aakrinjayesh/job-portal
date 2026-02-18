@@ -1,4 +1,9 @@
 import React, { forwardRef } from "react";
+import {
+  MailOutlined,
+  EnvironmentOutlined,
+  MobileOutlined,
+} from "@ant-design/icons";
 
 const ResumeTemplate = forwardRef(({ candidate }, ref) => {
   if (!candidate) return null;
@@ -614,7 +619,7 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
           <h1>{name}</h1>
           <div className="title">{title}</div>
 
-          <div className="contact-info">
+          {/* <div className="contact-info">
             {displayEmail && (
               <span className="contact-item">✉ {displayEmail}</span>
             )}
@@ -625,6 +630,34 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
 
             {currentLocation && (
               <span className="contact-item">📍 {currentLocation}</span>
+            )}
+          </div> */}
+          <div className="contact-info">
+            {displayEmail && (
+              <span className="contact-item">
+                <MailOutlined
+                  style={{ marginRight: 6, fontSize: 13, color: "white" }}
+                />
+                {displayEmail}
+              </span>
+            )}
+
+            {displayPhone && (
+              <span className="contact-item">
+                <MobileOutlined
+                  style={{ marginRight: 6, fontSize: 13, color: "white" }}
+                />
+                {displayPhone}
+              </span>
+            )}
+
+            {currentLocation && (
+              <span className="contact-item">
+                <EnvironmentOutlined
+                  style={{ marginRight: 6, fontSize: 13, color: "white" }}
+                />
+                {currentLocation}
+              </span>
             )}
           </div>
         </div>

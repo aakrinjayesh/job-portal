@@ -89,6 +89,12 @@ const CandidateDetails = () => {
 
       if (res.status === "success") {
         messageApi.success(res.message || "Review Submitted!");
+        // 🔥 REFETCH UPDATED DATA
+        const updated = await getCandidateDetails(id);
+
+        if (updated.status === "success") {
+          setCandidate(updated.candidate); // ✅ update state
+        }
         setIsReviewModalOpen(false); // close modal
         setTempReview("");
         setRatingValue(0);
@@ -245,7 +251,20 @@ const CandidateDetails = () => {
               >
                 <Row align="middle" justify="space-between">
                   <Space size={12} align="center">
-                    <Avatar size={40}>{candidate.name?.charAt(0)}</Avatar>
+                    {/* <Avatar size={40}>{candidate.name?.charAt(0)}</Avatar> */}
+                    <Avatar
+                      size={40}
+                      src={
+                        candidate?.profile?.profilePicture
+                          ? `${
+                              candidate.profile.profilePicture
+                            }?t=${Date.now()}`
+                          : undefined
+                      }
+                    >
+                      {!candidate?.profile?.profilePicture &&
+                        candidate.name?.charAt(0)}
+                    </Avatar>
 
                     <Space direction="vertical" size={0}>
                       <Text style={{ fontWeight: 600 }}>{candidate.name}</Text>
@@ -302,7 +321,7 @@ const CandidateDetails = () => {
 
                           const message = `Hi ${candidate.name},`;
                           const url = `https://wa.me/${number}?text=${encodeURIComponent(
-                            message,
+                            message
                           )}`;
 
                           window.open(url, "_blank");
@@ -389,10 +408,62 @@ const CandidateDetails = () => {
                         }}
                       >
                         {/* ROW 1 */}
-                        <div style={{ display: "flex", gap: 28 }}>
-                          <InfoItem label="Email" value={candidate.email} />
+
+                        {/* <div style={{ display: "flex", gap: 28 }}>
+                          {profile.isVendor ? (
+                            <>
+                              <InfoItem
+                                label="POC Email"
+                                value={profile.vendor?.email}
+                              />
+                              <InfoItem
+                                label="POC Phone"
+                                value={profile.vendor?.phoneNumber}
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <InfoItem label="Email" value={profile.email} />
+                              <InfoItem
+                                label="Phone"
+                                value={profile.phoneNumber}
+                              />
+                            </>
+                          )}
+
                           <InfoItem label="Title" value={profile.title} />
-                          <InfoItem label="Phone" value={profile.phoneNumber} />
+                        </div> */}
+                        <div style={{ display: "flex", gap: 28 }}>
+                          {profile.isVendor ? (
+                            <>
+                              <InfoItem
+                                label="POC Email"
+                                value={profile.vendor?.email}
+                              />
+                              <InfoItem
+                                label="POC Phone"
+                                value={
+                                  profile.vendor?.phoneNumber
+                                    ? `+91 ${profile.vendor.phoneNumber}`
+                                    : "-"
+                                }
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <InfoItem label="Email" value={profile.email} />
+                              <InfoItem
+                                label="Phone"
+                                value={
+                                  profile.phoneNumber
+                                    ? `+91 ${profile.phoneNumber}`
+                                    : "-"
+                                }
+                              />
+                            </>
+                          )}
+
+                          <InfoItem label="Title" value={profile.title} />
                         </div>
 
                         {/* ROW 2 */}
@@ -402,8 +473,8 @@ const CandidateDetails = () => {
                             value={profile.currentLocation}
                           />
                           <InfoItem
-                            label="Preferred Job Type"
-                            value={profile.preferredJobType?.join(", ")}
+                            label="Preferred Location"
+                            value={profile.preferredLocation?.join(", ")}
                           />
 
                           <InfoItem
@@ -434,9 +505,13 @@ const CandidateDetails = () => {
                                 : "-"
                             }
                           />
-                          <InfoItem
+                          {/* <InfoItem
                             label="LinkedIn"
                             value={profile.linkedInUrl}
+                          /> */}
+                          <InfoItem
+                            label="Joining Period (in days)"
+                            value={profile.joiningPeriod}
                           />
                         </div>
 
@@ -450,9 +525,13 @@ const CandidateDetails = () => {
                             label="Trailhead"
                             value={profile.trailheadUrl}
                           />
-                          <InfoItem
+                          {/* <InfoItem
                             label="Joining Period (in days)"
                             value={profile.joiningPeriod}
+                          /> */}
+                          <InfoItem
+                            label="LinkedIn"
+                            value={profile.linkedInUrl}
                           />
                         </div>
                       </div>
@@ -510,7 +589,7 @@ const CandidateDetails = () => {
                             }}
                           >
                             {profile.skillsJson?.filter(
-                              (s) => s.level === "primary",
+                              (s) => s.level === "primary"
                             )?.length ? (
                               profile.skillsJson
                                 .filter((s) => s.level === "primary")
@@ -526,12 +605,12 @@ const CandidateDetails = () => {
 
                           {/* GAP */}
                           {profile.skillsJson?.some(
-                            (s) => s.level === "secondary",
+                            (s) => s.level === "secondary"
                           ) && <Divider style={{ margin: "16px 0 12px" }} />}
 
                           {/* SECONDARY SKILLS */}
                           {profile.skillsJson?.some(
-                            (s) => s.level === "secondary",
+                            (s) => s.level === "secondary"
                           ) && (
                             <>
                               <Text
@@ -992,7 +1071,7 @@ const CandidateDetails = () => {
         {/* Textarea */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-            <div style={{ color: "#B60554", fontSize: 12 }}>*</div>
+            {/* <div style={{ color: "#B60554", fontSize: 12 }}>*</div> */}
             <div style={{ fontSize: 13, fontWeight: 590 }}>Add review</div>
           </div>
 
@@ -1008,7 +1087,7 @@ const CandidateDetails = () => {
 
               if (!regex.test(value)) {
                 message.error(
-                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed',
+                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed'
                 );
                 return;
               }

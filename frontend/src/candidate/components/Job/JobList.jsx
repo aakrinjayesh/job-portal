@@ -154,21 +154,24 @@ const JobList = ({
         break;
 
       case "salary_desc":
-  sorted.sort((a, b) => {
-    const salaryA = parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
-    const salaryB = parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
-    return salaryB - salaryA;
-  });
-  break;
+        sorted.sort((a, b) => {
+          const salaryA =
+            parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
+          const salaryB =
+            parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
+          return salaryB - salaryA;
+        });
+        break;
 
-case "salary_asc":
-  sorted.sort((a, b) => {
-    const salaryA = parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
-    const salaryB = parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
-    return salaryA - salaryB;
-  });
-  break;
-
+      case "salary_asc":
+        sorted.sort((a, b) => {
+          const salaryA =
+            parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
+          const salaryB =
+            parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
+          return salaryA - salaryB;
+        });
+        break;
 
       default:
         break;
@@ -455,7 +458,7 @@ case "salary_asc":
                   )}
 
                   <div style={{ maxWidth: 350 }}>
-                    <div
+                    {/* <div
                       style={{
                         fontSize: 16,
                         fontWeight: 600,
@@ -468,6 +471,26 @@ case "salary_asc":
                       }}
                     >
                       {job.role || job.title}
+                    </div> */}
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: "#212121",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          lineHeight: "20px",
+                        }}
+                      >
+                        {job.role || job.title}
+                      </div>
+
+                      {job.status === "Closed" && <Tag color="red">Closed</Tag>}
                     </div>
 
                     <div
@@ -482,11 +505,23 @@ case "salary_asc":
                       {job.companyName}
                     </div>
 
-                    <div style={{ fontSize: 12, color: "#A3A3A3" }}>
+                    {/* <div style={{ fontSize: 12, color: "#A3A3A3" }}>
                       Posted{" "}
                       {job?.updatedAt
                         ? dayjs(job.updatedAt).fromNow()
                         : "Recently"}
+                    </div> */}
+                    <div style={{ fontSize: 12, color: "#A3A3A3" }}>
+                      {type === "save" && job.savedAt ? (
+                        <>Saved {dayjs(job.savedAt).fromNow()}</>
+                      ) : (
+                        <>
+                          Posted{" "}
+                          {job?.updatedAt
+                            ? dayjs(job.updatedAt).fromNow()
+                            : "Recently"}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -522,23 +557,23 @@ case "salary_asc":
                 }}
               >
                 <span>
-                  <UserOutlined /> {job.experience?.number}{" "}
-                  {job.experience?.type}
+                  <EnvironmentOutlined /> {job.location}
+                  {/* <UserOutlined /> {job.experience?.number}{" "}
+                  {job.experience?.type} */}
                 </span>
                 <Divider type="vertical" />
                 <span>₹ {job.salary} LPA</span>
                 <Divider type="vertical" />
                 <span>
-                  <ClockCircleOutlined /> {job.jobType}
+                  <ClockCircleOutlined /> {job.employmentType}
                 </span>
                 <Divider type="vertical" />
-                <span>
-                  <EnvironmentOutlined /> {job.location}
-                </span>
-                {/* <Divider type="vertical" />
-                <span>
-                  <ClockCircleOutlined /> {job.employmentType}
-                </span> */}
+                {/* <span>{job.experienceLevel ?? "Not Specified"}</span> */}
+                <UserOutlined /> {job.experience?.number} {job.experience?.type}
+                <Divider type="vertical" />
+                <span>{/* <EnvironmentOutlined /> {job.location} */}</span>
+                {/* <UserOutlined /> {job.experience?.number} {job.experience?.type} */}
+                <span>{job.experienceLevel ?? "Not Specified"}</span>
               </div>
 
               {/* SKILLS + CLOUDS */}
@@ -554,6 +589,7 @@ case "salary_asc":
               >
                 {job.clouds?.length > 0 && (
                   <div
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       flex: 1,
                       padding: 12,
@@ -583,6 +619,7 @@ case "salary_asc":
 
                 {job.skills?.length > 0 && (
                   <div
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       flex: 1,
                       padding: 12,
