@@ -153,85 +153,95 @@ const CandidateJobDetails = () => {
           padding: 24,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 16,
-          }}
-        >
-          {/* LEFT SIDE */}
-          <div style={{ display: "flex", gap: 16 }}>
+      <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 16,
+  }}
+>
+  {/* LEFT SIDE */}
+  <div style={{ display: "flex", gap: 16 }}>
             {/* ✅ COMPANY LOGO */}
-            {job.companyLogo ? (
-              <img
-                src={job.companyLogo}
-                alt="logo"
-                style={{
-                  width: 70,
-                  height: 70,
-                  borderRadius: 12,
-                  objectFit: "cover",
-                  border: "1px solid #f0f0f0",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 70,
-                  height: 70,
-                  borderRadius: 12,
-                  background: "linear-gradient(135deg, #1677FF, #69B1FF)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 26,
-                  fontWeight: 700,
-                  color: "#fff",
-                }}
-              >
-                {(job.companyName || job.role || "").charAt(0).toUpperCase()}
-              </div>
-            )}
+    {job.companyLogo ? (
+      <img
+        src={job.companyLogo}
+        alt="logo"
+        style={{
+          width: 70,
+          height: 70,
+          borderRadius: 12,
+          objectFit: "cover",
+          border: "1px solid #f0f0f0",
+        }}
+      />
+    ) : (
+      <div
+        style={{
+          width: 70,
+          height: 70,
+          borderRadius: 12,
+          background: "linear-gradient(135deg, #1677FF, #69B1FF)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 26,
+          fontWeight: 700,
+          color: "#fff",
+        }}
+      >
+        {(job.companyName || job.role || "").charAt(0).toUpperCase()}
+      </div>
+    )}
 
             {/* ROLE + COMPANY */}
-            <div>
-              <Title level={4} style={{ marginBottom: 0 }}>
-                {job.role}
-              </Title>
-              <Text type="secondary">{job.companyName}</Text>
-            </div>
-            {/* SAVE */}
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSaveToggle(job.id);
-              }}
-              style={{ fontSize: 22, marginLeft: 450, cursor: "pointer" }}
-            >
-              <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
-                {job?.isSaved ? (
-                  <LuBookmarkCheck size={22} color="#1677ff" />
-                ) : (
-                  <LuBookmark size={22} color="#9CA3AF" />
-                )}
-              </Tooltip>
-            </div>
-          </div>
+    <div>
+      <Title level={4} style={{ marginBottom: 0 }}>
+        {job.role}
+      </Title>
+      <Text type="secondary">{job.companyName}</Text>
+    </div>
+  </div>
 
-          {/* STATUS TAG */}
-          <Tag
-            color={job.status === "Closed" ? "error" : "success"}
-            style={{
-              borderRadius: 20,
-              padding: "2px 12px",
-              fontSize: 12,
-            }}
-          >
-            {job.status}
-          </Tag>
-        </div>
+  {/* RIGHT SIDE */}
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+    }}
+  >
+    {/* SAVE BUTTON */}
+    <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          handleSaveToggle();
+        }}
+        style={{ cursor: "pointer", fontSize: 22 }}
+      >
+        {job?.isSaved ? (
+          <LuBookmarkCheck size={22} color="#1677ff" />
+        ) : (
+          <LuBookmark size={22} color="#9CA3AF" />
+        )}
+      </div>
+    </Tooltip>
+
+    {/* STATUS TAG */}
+    <Tag
+      color={job.status === "Closed" ? "error" : "success"}
+      style={{
+        borderRadius: 20,
+        padding: "2px 12px",
+        fontSize: 12,
+      }}
+    >
+      {job.status}
+    </Tag>
+  </div>
+</div>
 
         <Divider style={{ margin: "16px 0" }} />
 
@@ -321,6 +331,37 @@ const CandidateJobDetails = () => {
             </Tag>
           ))}
         </div>
+            {/* ===== CERTIFICATES ===== */}
+        <Divider style={{ margin: "16px 0" }} />
+        
+        <Text strong>Certificates:</Text>
+        
+        <div
+          style={{
+            marginTop: 8,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          {job.certifications && job.certifications.length > 0 ? (
+            job.certifications.map((cert, i) => (
+              <Tag
+                key={i}
+                style={{
+                  background: "#E6FFFB",
+                  borderRadius: 100,
+                  border: "1px solid #13C2C2",
+                }}
+              >
+                {cert}
+              </Tag>
+            ))
+          ) : (
+            <Text type="secondary">Not specified</Text>
+          )}
+        </div>
+        
 
         <Divider style={{ margin: "16px 0" }} />
 
