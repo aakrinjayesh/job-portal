@@ -402,9 +402,10 @@ const setPassword = async (req, res) => {
     });
   }
 
-  try {
-    let invite = null;
+  let invite = null;
+  let externalUserId = null;
 
+  try {
     /* ─────────────────────────────
        1️⃣ VALIDATE INVITE (IF EXISTS)
     ───────────────────────────── */
@@ -455,136 +456,8 @@ const setPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     /* ─────────────────────────────
-       4️⃣ TRANSACTION (USER + ORG)
+       4️⃣ REGISTER EXTERNAL CHAT USER FIRST
     ───────────────────────────── */
-    const result = await prisma.$transaction(async (tx) => {
-      // Update password
-      const updatedUser = await tx.users.update({
-        where: { email },
-        data: { password: hashedPassword },
-      });
-
-      // 🔹 INVITE FLOW → Join existing org + ASSIGN LICENSE
-      if (invite) {
-        // Get active subscription
-        const subscription = await tx.organizationSubscription.findFirst({
-          where: {
-            organizationId: invite.organizationId,
-            status: "ACTIVE",
-          },
-        });
-
-        if (!subscription) {
-          throw new Error("No active subscription found for organization");
-        }
-
-        // Find an available license seat
-        const freeLicense = await tx.license.findFirst({
-          where: {
-            subscriptionId: subscription.id,
-            isActive: true,
-            assignedToId: null,
-            validUntil: { gte: new Date() },
-          },
-          orderBy: {
-            validUntil: "asc",
-          },
-        });
-
-        if (!freeLicense) {
-          throw new Error(
-            "No available license seat. Please contact your admin.",
-          );
-        }
-
-        // Create organization member
-        const newMember = await tx.organizationMember.create({
-          data: {
-            userId: updatedUser.id,
-            organizationId: invite.organizationId,
-            role: invite.role, // TRUST INVITE ROLE
-            permissions: invite.permissions,
-          },
-        });
-
-        // 🔥 ASSIGN LICENSE TO NEW MEMBER
-        await tx.license.update({
-          where: { id: freeLicense.id },
-          data: {
-            assignedToId: newMember.id,
-          },
-        });
-
-        // Delete the invite
-        await tx.organizationInvite.delete({
-          where: { id: invite.id },
-        });
-      }
-
-      // 🔹 NORMAL FLOW → Create org and license if company
-      if (!invite && role === "company") {
-        const existingMembership = await tx.organizationMember.findFirst({
-          where: { userId: updatedUser.id },
-        });
-
-        if (!existingMembership) {
-          // 1️⃣ Create organization
-          const org = await tx.organization.create({
-            data: {
-              name:
-                updatedUser.companyName || `${updatedUser.name}'s Organization`,
-            },
-          });
-
-          // 2️⃣ Create subscription (FREE / BASIC equivalent)
-          const subscription = await tx.organizationSubscription.create({
-            data: {
-              organizationId: org.id,
-              status: "ACTIVE",
-              billingCycle: "MONTHLY",
-              autoRenew: false,
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: new Date(
-                new Date().setMonth(new Date().getMonth() + 1),
-              ),
-              nextBillingDate: new Date(
-                new Date().setMonth(new Date().getMonth() + 1),
-              ),
-            },
-          });
-
-          // 3️⃣ Create org member (ADMIN)
-          const member = await tx.organizationMember.create({
-            data: {
-              userId: updatedUser.id,
-              organizationId: org.id,
-              role: "COMPANY_ADMIN",
-            },
-          });
-
-          // 4️⃣ Create license and assign to admin
-          await tx.license.create({
-            data: {
-              subscriptionId: subscription.id,
-              planId: "9767d926-261d-4d48-a9b8-c805876ee341",
-              assignedToId: member.id,
-              validUntil: new Date(
-                new Date().setMonth(new Date().getMonth() + 1),
-              ),
-              isActive: true,
-            },
-          });
-        }
-      }
-
-      return updatedUser;
-    });
-
-    /* ─────────────────────────────
-       5️⃣ EXTERNAL CHAT REGISTRATION
-    ───────────────────────────── */
-    let externalUserId;
-
     try {
       const payload = {
         email,
@@ -604,9 +477,6 @@ const setPassword = async (req, res) => {
     } catch (err) {
       console.error("External chat registration failed:", err.message);
 
-      // HARD ROLLBACK USER
-      await prisma.users.delete({ where: { email } });
-
       return res.status(500).json({
         status: "error",
         message: "External chat registration failed",
@@ -614,15 +484,123 @@ const setPassword = async (req, res) => {
     }
 
     /* ─────────────────────────────
-       6️⃣ SYNC CHAT USER ID
+       5️⃣ MAIN DATABASE TRANSACTION
     ───────────────────────────── */
-    await prisma.users.update({
-      where: { id: result.id },
-      data: { chatuserid: externalUserId },
+    const result = await prisma.$transaction(async (tx) => {
+      // Update user password + chat id
+      const updatedUser = await tx.users.update({
+        where: { email },
+        data: {
+          password: hashedPassword,
+          chatuserid: externalUserId,
+        },
+      });
+
+      /* 🔹 INVITE FLOW */
+      if (invite) {
+        const subscription = await tx.organizationSubscription.findFirst({
+          where: {
+            organizationId: invite.organizationId,
+            status: "ACTIVE",
+          },
+        });
+
+        if (!subscription) {
+          throw new Error("No active subscription found for organization");
+        }
+
+        const freeLicense = await tx.license.findFirst({
+          where: {
+            subscriptionId: subscription.id,
+            isActive: true,
+            assignedToId: null,
+            validUntil: { gte: new Date() },
+          },
+          orderBy: { validUntil: "asc" },
+        });
+
+        if (!freeLicense) {
+          throw new Error(
+            "No available license seat. Please contact your admin.",
+          );
+        }
+
+        const newMember = await tx.organizationMember.create({
+          data: {
+            userId: updatedUser.id,
+            organizationId: invite.organizationId,
+            role: invite.role,
+            permissions: invite.permissions,
+          },
+        });
+
+        await tx.license.update({
+          where: { id: freeLicense.id },
+          data: { assignedToId: newMember.id },
+        });
+
+        await tx.organizationInvite.delete({
+          where: { id: invite.id },
+        });
+      }
+
+      /* 🔹 NORMAL COMPANY FLOW */
+      if (!invite && role === "company") {
+        const existingMembership = await tx.organizationMember.findFirst({
+          where: { userId: updatedUser.id },
+        });
+
+        if (!existingMembership) {
+          const org = await tx.organization.create({
+            data: {
+              name:
+                updatedUser.companyName || `${updatedUser.name}'s Organization`,
+            },
+          });
+
+          const subscription = await tx.organizationSubscription.create({
+            data: {
+              organizationId: org.id,
+              status: "ACTIVE",
+              billingCycle: "MONTHLY",
+              autoRenew: false,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(
+                new Date().setMonth(new Date().getMonth() + 1),
+              ),
+              nextBillingDate: new Date(
+                new Date().setMonth(new Date().getMonth() + 1),
+              ),
+            },
+          });
+
+          const member = await tx.organizationMember.create({
+            data: {
+              userId: updatedUser.id,
+              organizationId: org.id,
+              role: "COMPANY_ADMIN",
+            },
+          });
+
+          await tx.license.create({
+            data: {
+              subscriptionId: subscription.id,
+              planId: "9767d926-261d-4d48-a9b8-c805876ee341",
+              assignedToId: member.id,
+              validUntil: new Date(
+                new Date().setMonth(new Date().getMonth() + 1),
+              ),
+              isActive: true,
+            },
+          });
+        }
+      }
+
+      return updatedUser;
     });
 
     /* ─────────────────────────────
-       7️⃣ SUCCESS
+       6️⃣ SUCCESS RESPONSE
     ───────────────────────────── */
     return res.status(200).json({
       status: "success",
@@ -638,6 +616,7 @@ const setPassword = async (req, res) => {
     });
   }
 };
+
 /**
  * Local + External login flow
  */
@@ -688,7 +667,7 @@ const login = async (req, res) => {
       where: { userId: user.id },
     });
 
-    console.log("member", member);
+    // console.log("member", member);
 
     if (role === "company" && !member) {
       return res.status(500).json({
@@ -788,6 +767,10 @@ const login = async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
+        organizationId: member?.organizationId || null,
+        companyName: user.companyName || null,
+        profileUrl: user.profileUrl || null,
+        phoneNumber: user.phoneNumber || null,
       },
       chatmeatadata: loginResponse?.data?.data
         ? {
