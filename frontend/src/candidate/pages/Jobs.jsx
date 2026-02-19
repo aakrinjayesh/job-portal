@@ -241,7 +241,7 @@ function Jobs() {
                       padding: "20px",
                     }}
                   >
-                    <Spin size="large" />
+                    {/* <Spin size="large" /> */}
                   </div>
                 )}
 
