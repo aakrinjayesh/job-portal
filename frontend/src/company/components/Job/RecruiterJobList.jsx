@@ -12,7 +12,7 @@ import {
   Col,
   Tooltip,
   Divider,
-  Spin,
+  Progress,
   Checkbox,
   message,
   InputNumber,
@@ -91,6 +91,7 @@ const RecruiterJobList = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   const LIMIT = 10;
 
@@ -112,6 +113,19 @@ const RecruiterJobList = () => {
   //     }
   //   };
   // }, [location.pathname]);
+
+   useEffect(() => {
+    if (initialLoading || (loading && page === 1)) {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+      }, 400);
+  
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [initialLoading, loading, page]);
+  
 
   // ✅ ADD THIS FUNCTION HERE
   const handleNext = async () => {
@@ -877,7 +891,17 @@ const RecruiterJobList = () => {
                   minHeight: "300px",
                 }}
               >
-                <Spin size="large" />
+                <Progress
+                   type="circle"
+                   percent={progress}
+                   width={90}
+                   strokeColor={{
+                     "0%": "#4F63F6",
+                     "100%": "#7C8CFF",
+                   }}
+                   trailColor="#E6E8FF"
+                   showInfo={false}
+                 />
               </div>
             </Col>
           ) : (
@@ -1269,7 +1293,17 @@ const RecruiterJobList = () => {
                       padding: "24px 0",
                     }}
                   >
-                    <Spin />
+                    <Progress
+                          type="circle"
+                          percent={progress}
+                          width={90}
+                          strokeColor={{
+                            "0%": "#4F63F6",
+                            "100%": "#7C8CFF",
+                          }}
+                          trailColor="#E6E8FF"
+                          showInfo={false}
+                        />
                   </div>
                 </Col>
               )}
