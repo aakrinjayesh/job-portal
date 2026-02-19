@@ -260,7 +260,7 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
                 </div>
 
                 {/* Description */}
-                {job?.description && (
+                {/* {job?.description && (
                   <Space align="start" style={{ marginTop: 12 }}>
                     <FileTextOutlined style={{ marginTop: 4 }} />
                     <Paragraph
@@ -275,7 +275,7 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
                       {job.description}
                     </Paragraph>
                   </Space>
-                )}
+                )} */}
 
                 {/* Skills */}
                 {/* Clouds */}

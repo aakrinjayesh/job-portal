@@ -6,6 +6,7 @@ import {
   Select,
   message,
   DatePicker,
+  Progress
   // TimePicker,
 } from "antd";
 import dayjs from "dayjs";
@@ -105,7 +106,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
             justifyContent: "center",
           }}
         >
-          <Progress type="circle" percent={70} status="active" />
+          <Progress type="circle" percent={70} status="active" showInfo={false} />
         </div>
       )}
 

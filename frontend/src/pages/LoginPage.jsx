@@ -79,7 +79,7 @@ const LoginPage = () => {
           res?.user?.role === "candidate"
             ? // ? "/candidate/dashboard"
             "/candidate/profile"
-            : "/company/dashboard",
+            : "/company/jobs",
         );
       } else {
         messageApi.error(res.message || "Login Failed!");
@@ -514,7 +514,7 @@ const styles = {
     marginTop: 110,
     left: "48%",
     transform: "translateX(-50%)",
-    height: 420,
+    height: 520,
     zIndex: 2,
   },
 

@@ -8,6 +8,7 @@ import {
   Divider,
   Row,
   Col,
+  Checkbox,
 } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GenerateOtp, ValidateOtp, CheckUserExist } from "../candidate/api/api";
@@ -316,6 +317,41 @@ const Signup = () => {
               >
                 <Input size="large" placeholder="Email" />
               </Form.Item>
+              <Form.Item
+  name="agree"
+  valuePropName="checked"
+  rules={[
+    {
+      validator: (_, value) =>
+        value
+          ? Promise.resolve()
+          : Promise.reject(
+              new Error("You must agree to the Privacy Policy and Terms & Conditions")
+            ),
+    },
+  ]}
+  style={{ marginTop: 10 }}
+>
+  <Checkbox>
+    I agree to the{" "}
+    <a
+      href="/privacy-policy"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Privacy Policy
+    </a>{" "}
+    and{" "}
+    <a
+      href="/terms-and-conditions"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Terms & Conditions
+    </a>
+  </Checkbox>
+</Form.Item>
+
 
               {/* SEND OTP (only first time) */}
               {!otpSent && (

@@ -237,11 +237,11 @@ const CompanyLayout = ({ children }) => {
             onClick={onMenuClick}
             style={{ background: "transparent", border: "none" }}
             items={[
-              {
-                key: "dashboard",
-                icon: <DashboardOutlined />,
-                label: "Dashboard",
-              },
+              // {
+              //   key: "dashboard",
+              //   icon: <DashboardOutlined />,
+              //   label: "Dashboard",
+              // },
               { key: "jobs", icon: <FileTextOutlined />, label: "My Jobs" },
               {
                 key: "myactivity",

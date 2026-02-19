@@ -194,7 +194,7 @@ if (route && route.length) {
   onClick={onMenuClick}
   style={{ background: "transparent", border: "none" }}
   items={[
-    { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+    // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
     { key: "profile", icon: <UserOutlined />, label: "Profile" },
     { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
   ]}

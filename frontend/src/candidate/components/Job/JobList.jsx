@@ -28,6 +28,7 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   RightOutlined,
+  LineChartOutlined
 } from "@ant-design/icons";
 import { LuBookmark } from "react-icons/lu";
 import { LuBookmarkCheck } from "react-icons/lu";
@@ -572,8 +573,15 @@ const JobList = ({
                 <UserOutlined /> {job.experience?.number} {job.experience?.type}
                 <Divider type="vertical" />
                 <span>{/* <EnvironmentOutlined /> {job.location} */}</span>
-                {/* <UserOutlined /> {job.experience?.number} {job.experience?.type} */}
-                <span>{job.experienceLevel ?? "Not Specified"}</span>
+               {job.experienceLevel && (
+  <>
+    <Divider type="vertical" />
+    <span>
+      <LineChartOutlined /> {job.experienceLevel}
+    </span>
+  </>
+)}
+
               </div>
 
               {/* SKILLS + CLOUDS */}
