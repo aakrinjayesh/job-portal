@@ -19,12 +19,6 @@ const FEATURE_MAP = [
     feature: "JOB_POST_CREATION",
     usesAI: false,
   },
-  // {
-  //   match: (path, method) =>
-  //     method === "POST" && path === "/organization/invite",
-  //   feature: "TEAM_MEMBERS",
-  //   usesAI: false,
-  // },
 ];
 
 export const featureLimitMiddleware = async (req, res, next) => {
@@ -32,7 +26,6 @@ export const featureLimitMiddleware = async (req, res, next) => {
     if (!req.user?.organizationId) return next();
 
     const route = FEATURE_MAP.find((r) => r.match(req.path, req.method));
-
     if (!route) return next();
 
     const { id: userId, organizationId } = req.user;
@@ -49,10 +42,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
         status: "success",
         code: "NO_ACTIVE_LICENSE",
         message: "No Active License Found",
-        metadata: {
-          organizationId,
-          feature,
-        },
+        metadata: { organizationId, feature },
       });
     }
 
@@ -105,6 +95,20 @@ export const featureLimitMiddleware = async (req, res, next) => {
         });
       }
 
+      // ✅ UNLIMITED PLAN (-1)
+      if (limit.maxAllowed === -1) {
+        await prisma.usageRecord.update({
+          where: { id: record.id },
+          data: {
+            currentUsage: { increment: 1 },
+          },
+        });
+
+        // Never block
+        continue;
+      }
+
+      // ✅ LIMITED PLAN
       const updated = await prisma.usageRecord.updateMany({
         where: {
           id: record.id,
@@ -142,9 +146,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
       status: "success",
       code: "LIMIT_ENFORCEMENT_FAILED",
       message: "Unable to enforce feature limits",
-      metadata: {
-        error: err.message,
-      },
+      metadata: { error: err.message },
     });
   }
 };
