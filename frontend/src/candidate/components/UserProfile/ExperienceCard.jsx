@@ -486,27 +486,28 @@ const ExperienceCard = ({
                       </Col>
 
                       <Col span={12}>
-                        <Form.Item
-                          {...restField}
-                          name={[name, "skillsUsed"]}
-                          label="Skills Used"
-                          rules={[
-                            {
-                              // required: true,
-                              message: "Add at least one skill",
-                            },
-                          ]}
-                        >
-                          {/* <Select
-                            mode="tags"
-                            placeholder="Add skills (type and press enter)"
-                          /> */}
-                          <ReusableSelect
-                            placeholder="Select or add Skills"
-                            fetchFunction={GetSkills}
-                            addFunction={PostSkills}
-                            single={false}
-                          />
+                       <Form.Item
+  {...restField}
+  name={[name, "skillsUsed"]}
+  label="Skills Used"
+  rules={[
+    {
+      validator: (_, value) => {
+        if (!value || value.length === 0) {
+          return Promise.reject("Add at least one skill");
+        }
+        return Promise.resolve();
+      },
+    },
+  ]}
+>
+               
+  <ReusableSelect
+    placeholder="Select or add Skills"
+    fetchFunction={GetSkills}
+    addFunction={PostSkills}
+    single={false}
+  />
                         </Form.Item>
                       </Col>
                     </Row>

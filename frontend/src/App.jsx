@@ -34,6 +34,7 @@ import LandingRedirect from "./pages/LandingRedirect";
 import { useLocation } from "react-router-dom";
 import axiosInstance from "./candidate/api/axiosInstance";
 import PricingPage from "./pages/PricingPage";
+import TermsAndConditions from "./pages/TermsAndConditions";
 
 function App() {
   const location = useLocation();
@@ -75,6 +76,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/createpassword" element={<CreatePassword />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         {/* <Route path="/resetpassword" element={<ResetPassword />} /> */}
 
         {/* Candidate routes */}

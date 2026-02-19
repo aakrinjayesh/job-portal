@@ -134,7 +134,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
   const handleClose = () => {
     setRenamingGroup(false);
     setAddingParticipant(false);
-    setParticipantToBeAdded("");
+    setParticipantsToBeAdded("");
     onClose();
   };
 
