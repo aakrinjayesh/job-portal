@@ -77,6 +77,7 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
           }}
           prompt="select_account"
           useOneTap={false}
+           auto_select={false}
         />
       )}
     </GoogleOAuthProvider>
