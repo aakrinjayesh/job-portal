@@ -169,18 +169,33 @@ const isCandidate = role === "candidate";
 </Button>
 
 
-               <Form.Item
-              name="otp"
-              rules={[{ required: true, message: "Enter OTP" }]}
-              style={{
-                marginTop: 16,
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-                <Input.OTP length={4} size="large" />
-              </Form.Item>
-
+           <Form.Item
+  name="otp"
+  rules={[
+    { required: true, message: "Enter OTP" },
+    {
+      pattern: /^\d{4}$/,
+      message: "OTP must be 4 digits (numbers only)",
+    },
+  ]}
+  style={{
+    marginTop: 16,
+    display: "flex",
+    justifyContent: "center",
+  }}
+>
+  <Input.OTP
+    length={4}
+    size="large"
+    style={{ gap: 12 }}
+    formatter={(value) => value.replace(/\D/g, "")} // ✅ Only allow digits
+    onChange={(value) => {
+      // ✅ Additional filter to ensure only numbers
+      const numericValue = value.replace(/\D/g, "");
+      form.setFieldValue("otp", numericValue);
+    }}
+  />
+</Form.Item>
               <Button
                 type="primary"
                 htmlType="submit"

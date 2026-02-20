@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { googleLogout } from "@react-oauth/google";
 import {
   Layout,
   Menu,
@@ -63,6 +64,7 @@ const CompanyLayout = ({ children }) => {
     } catch (err) {
     } finally {
       localStorage.clear();
+       googleLogout();
       navigate("/login");
     }
   };

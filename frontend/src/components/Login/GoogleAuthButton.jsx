@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
+import { GoogleLogin, GoogleOAuthProvider, googleLogout  } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { GoogleAuth } from "../../candidate/api/api";
 import { useAuth } from "../../chat/context/AuthContext";
@@ -75,6 +75,8 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
           onError={() => {
             console.log("Login Failed");
           }}
+          prompt="select_account"
+          useOneTap={false}
         />
       )}
     </GoogleOAuthProvider>
