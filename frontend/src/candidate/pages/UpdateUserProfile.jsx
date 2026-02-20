@@ -80,9 +80,51 @@ const UpdateUserProfile = ({
   const [isCandidate, setIsCandidate] = useState(false);
 
   const role = localStorage.getItem("role");
+  const isCompany = role === "company";
+  console.log("role", role);
+
   const isEditMode = Boolean(editRecord && editRecord.id);
 
   const componentRef = useRef();
+  // useEffect(() => {
+  //   // Only prefill when NOT in edit mode
+  //   if (!editRecord) {
+  //     const storedUser = localStorage.getItem("user");
+
+  //     if (storedUser) {
+  //       try {
+  //         const parsedUser = JSON.parse(storedUser);
+
+  //         form.setFieldsValue({
+  //           email: parsedUser?.email || "",
+  //           phoneNumber: parsedUser?.phoneNumber || "",
+  //           // name: parsedUser?.name || "",
+  //         });
+  //       } catch (error) {
+  //         console.error("Error parsing user from localStorage:", error);
+  //       }
+  //     }
+  //   }
+  // }, [editRecord]);
+  useEffect(() => {
+    if (!editRecord && isCompany) {
+      // ✅ ADD isCompany check
+      const storedUser = localStorage.getItem("user");
+
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+
+          form.setFieldsValue({
+            email: parsedUser?.email || "",
+            phoneNumber: parsedUser?.phoneNumber || "",
+          });
+        } catch (error) {
+          console.error("Error parsing user from localStorage:", error);
+        }
+      }
+    }
+  }, [editRecord, isCompany]); // ✅ add isCompany dependency
 
   const handleDownloadResume = () => {
     if (!componentRef.current) return;
@@ -126,10 +168,10 @@ const UpdateUserProfile = ({
 
       // Extract clouds safely
       const primClouds = (editRecord?.primaryClouds || []).map((c) =>
-        typeof c === "string" ? { name: c, experience: 0 } : c
+        typeof c === "string" ? { name: c, experience: 0 } : c,
       );
       const secClouds = (editRecord?.secondaryClouds || []).map((c) =>
-        typeof c === "string" ? { name: c, experience: 0 } : c
+        typeof c === "string" ? { name: c, experience: 0 } : c,
       );
 
       // Update local states (for SkillManagerCard, etc.)
@@ -230,10 +272,10 @@ const UpdateUserProfile = ({
 
         // Convert clouds to object format if they're strings
         const primClouds = (user.primaryClouds || []).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
         );
         const secClouds = (user.secondaryClouds || []).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
         );
 
         setPrimaryClouds(primClouds);
@@ -253,12 +295,24 @@ const UpdateUserProfile = ({
             },
           ]);
         }
+        const storedUser = localStorage.getItem("user");
+        let parsedUser = {};
+
+        if (storedUser) {
+          try {
+            parsedUser = JSON.parse(storedUser);
+          } catch (e) {}
+        }
 
         // Populate form - INCLUDING skills and clouds
         form.setFieldsValue({
           name: user?.name || "",
-          phoneNumber: user?.phoneNumber || "",
-          email: user?.email || "",
+
+          phoneNumber: isCompany
+            ? (parsedUser?.phoneNumber ?? user?.phoneNumber)
+            : user?.phoneNumber,
+
+          email: isCompany ? (parsedUser?.email ?? user?.email) : user?.email,
           portfolioLink: user?.portfolioLink || "",
           profilePicture: user?.profilePicture || null,
           preferredLocation: user?.preferredLocation || [],
@@ -339,7 +393,7 @@ const UpdateUserProfile = ({
             ? extracted?.primaryClouds
             : [extracted?.primaryClouds]
         ).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
         );
         setPrimaryClouds(primClouds);
         form.setFieldsValue({ primaryClouds: primClouds });
@@ -351,7 +405,7 @@ const UpdateUserProfile = ({
             ? extracted.secondaryClouds
             : [extracted.secondaryClouds]
         ).map((cloud) =>
-          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud
+          typeof cloud === "string" ? { name: cloud, experience: 0 } : cloud,
         );
         setSecondaryClouds(secClouds);
         form.setFieldsValue({ secondaryClouds: secClouds });
@@ -370,13 +424,29 @@ const UpdateUserProfile = ({
         setExperienceList(extracted?.workExperience);
         form.setFieldValue({ workExperience: extracted?.workExperience });
       }
+      const storedUser = localStorage.getItem("user");
+      let parsedUser = {};
+
+      if (storedUser) {
+        try {
+          parsedUser = JSON.parse(storedUser);
+        } catch (e) {}
+      }
 
       // Populate other fields
       form.setFieldsValue({
         name: extracted?.name || form.getFieldValue("name"),
-        phoneNumber:
-          extracted?.phoneNumber || form.getFieldValue("phoneNumber"),
-        email: extracted?.email || form.getFieldValue("email"),
+        // phoneNumber:
+        //   extracted?.phoneNumber || form.getFieldValue("phoneNumber"),
+        // email: extracted?.email || form.getFieldValue("email"),
+        phoneNumber: isCompany
+          ? (parsedUser?.phoneNumber ?? form.getFieldValue("phoneNumber"))
+          : (extracted?.phoneNumber ?? form.getFieldValue("phoneNumber")),
+
+        email: isCompany
+          ? (parsedUser?.email ?? form.getFieldValue("email"))
+          : (extracted?.email ?? form.getFieldValue("email")),
+
         portfolioLink:
           extracted?.portfolioLink || form.getFieldValue("portfolioLink"),
         title: extracted?.title || form.getFieldValue("title"),
@@ -428,12 +498,12 @@ const UpdateUserProfile = ({
     const totalExp = parseFloat(form.getFieldValue("totalExperience") || 0);
 
     const invalidSkill = updatedSkills.find(
-      (skill) => Number(skill.experience || 0) > totalExp
+      (skill) => Number(skill.experience || 0) > totalExp,
     );
 
     if (invalidSkill) {
       messageAPI.error(
-        `Skill experience for "${invalidSkill.name}" cannot be greater than Total Experience`
+        `Skill experience for "${invalidSkill.name}" cannot be greater than Total Experience`,
       );
       return;
     }
@@ -623,13 +693,13 @@ const UpdateUserProfile = ({
         messageAPI.success(
           isEditMode
             ? "Profile updated successfully!"
-            : "Profile created successfully!"
+            : "Profile created successfully!",
         );
       } else {
         messageAPI.error(
           isEditMode
             ? "Failed to update profile. Please try again."
-            : "Failed to create profile. Please try again."
+            : "Failed to create profile. Please try again.",
         );
       }
     } catch (error) {
@@ -719,7 +789,7 @@ const UpdateUserProfile = ({
 
               if (!allowedTypes.includes(file.type)) {
                 message.error(
-                  "Only PDF and Word (.doc, .docx) files are allowed!"
+                  "Only PDF and Word (.doc, .docx) files are allowed!",
                 );
                 return Upload.LIST_IGNORE;
               }
@@ -799,7 +869,7 @@ const UpdateUserProfile = ({
                               ];
                               if (!allowed.includes(file.type)) {
                                 message.error(
-                                  "Only JPG, JPEG, PNG images are allowed!"
+                                  "Only JPG, JPEG, PNG images are allowed!",
                                 );
                                 return Upload.LIST_IGNORE;
                               }
@@ -807,7 +877,7 @@ const UpdateUserProfile = ({
 
                               if (file.size > maxSize) {
                                 message.error(
-                                  "Image must be smaller than 200KB!"
+                                  "Image must be smaller than 200KB!",
                                 );
                                 return Upload.LIST_IGNORE;
                               }
@@ -916,8 +986,13 @@ const UpdateUserProfile = ({
                             }}
                           />
                         </Form.Item> */}
-                        <Form.Item
+                        {/* <Form.Item
                           label="Phone Number"
+                          name="phoneNumber" */}
+                        <Form.Item
+                          label={
+                            isCompany ? "POC Phone Number" : "Phone Number"
+                          }
                           name="phoneNumber"
                           rules={[
                             {
@@ -931,8 +1006,11 @@ const UpdateUserProfile = ({
                       </Col>
 
                       <Col xs={24} sm={12} md={12}>
-                        <Form.Item
+                        {/* <Form.Item
                           label="Email"
+                          name="email" */}
+                        <Form.Item
+                          label={isCompany ? "POC Email" : "Email"}
                           name="email"
                           rules={[
                             { required: true, message: "Please enter email" },
@@ -962,7 +1040,7 @@ const UpdateUserProfile = ({
                                   }
 
                                   return Promise.reject(
-                                    "Please provide a personal ID."
+                                    "Please provide a personal ID.",
                                   );
                                 }
 
@@ -986,7 +1064,7 @@ const UpdateUserProfile = ({
                                 }
 
                                 return Promise.reject(
-                                  "Please provide a work email ID."
+                                  "Please provide a work email ID.",
                                 );
                               },
                             },
@@ -1038,8 +1116,8 @@ const UpdateUserProfile = ({
                                 if (value.length > 3) {
                                   return Promise.reject(
                                     new Error(
-                                      "You can select up to 3 locations only"
-                                    )
+                                      "You can select up to 3 locations only",
+                                    ),
                                   );
                                 }
 
@@ -1089,13 +1167,13 @@ const UpdateUserProfile = ({
 
                                     if (!/^[0-9]+$/.test(value)) {
                                       return Promise.reject(
-                                        new Error("Only numbers are allowed")
+                                        new Error("Only numbers are allowed"),
                                       );
                                     }
 
                                     if (value.length > 10) {
                                       return Promise.reject(
-                                        new Error("Maximum 10 digits allowed")
+                                        new Error("Maximum 10 digits allowed"),
                                       );
                                     }
 
@@ -1125,13 +1203,13 @@ const UpdateUserProfile = ({
 
                                     if (!/^[0-9]+$/.test(value)) {
                                       return Promise.reject(
-                                        new Error("Only numbers are allowed")
+                                        new Error("Only numbers are allowed"),
                                       );
                                     }
 
                                     if (value.length > 10) {
                                       return Promise.reject(
-                                        new Error("Maximum 10 digits allowed")
+                                        new Error("Maximum 10 digits allowed"),
                                       );
                                     }
 
@@ -1174,13 +1252,15 @@ const UpdateUserProfile = ({
 
                                       if (!/^\d+$/.test(value)) {
                                         return Promise.reject(
-                                          new Error("Only numbers are allowed")
+                                          new Error("Only numbers are allowed"),
                                         );
                                       }
 
                                       if (value.length > 10) {
                                         return Promise.reject(
-                                          new Error("Maximum 10 digits allowed")
+                                          new Error(
+                                            "Maximum 10 digits allowed",
+                                          ),
                                         );
                                       }
 
@@ -1305,7 +1385,7 @@ const UpdateUserProfile = ({
                                 // ❌ letters or special characters
                                 if (/[^0-9.]/.test(val)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed")
+                                    new Error("Only numbers are allowed"),
                                   );
                                 }
 
@@ -1313,8 +1393,8 @@ const UpdateUserProfile = ({
                                 if ((val.match(/\./g) || []).length > 1) {
                                   return Promise.reject(
                                     new Error(
-                                      "Only one decimal point is allowed"
-                                    )
+                                      "Only one decimal point is allowed",
+                                    ),
                                   );
                                 }
 
@@ -1322,8 +1402,8 @@ const UpdateUserProfile = ({
                                 if (!/^\d+(\.\d{0,2})?$/.test(val)) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed after decimal"
-                                    )
+                                      "Maximum 2 digits allowed after decimal",
+                                    ),
                                   );
                                 }
 
@@ -1332,8 +1412,8 @@ const UpdateUserProfile = ({
                                 if (intPart.length > 2) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed before decimal"
-                                    )
+                                      "Maximum 2 digits allowed before decimal",
+                                    ),
                                   );
                                 }
 
@@ -1408,7 +1488,7 @@ const UpdateUserProfile = ({
                                 // ❌ letters or special characters
                                 if (/[^0-9.]/.test(val)) {
                                   return Promise.reject(
-                                    new Error("Only numbers are allowed")
+                                    new Error("Only numbers are allowed"),
                                   );
                                 }
 
@@ -1416,8 +1496,8 @@ const UpdateUserProfile = ({
                                 if ((val.match(/\./g) || []).length > 1) {
                                   return Promise.reject(
                                     new Error(
-                                      "Only one decimal point is allowed"
-                                    )
+                                      "Only one decimal point is allowed",
+                                    ),
                                   );
                                 }
 
@@ -1425,8 +1505,8 @@ const UpdateUserProfile = ({
                                 if (!/^\d+(\.\d{0,2})?$/.test(val)) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed after decimal"
-                                    )
+                                      "Maximum 2 digits allowed after decimal",
+                                    ),
                                   );
                                 }
 
@@ -1435,8 +1515,8 @@ const UpdateUserProfile = ({
                                 if (intPart.length > 2) {
                                   return Promise.reject(
                                     new Error(
-                                      "Maximum 2 digits allowed before decimal"
-                                    )
+                                      "Maximum 2 digits allowed before decimal",
+                                    ),
                                   );
                                 }
 
@@ -1607,8 +1687,8 @@ const UpdateUserProfile = ({
                                     if (!value || value.length === 0) {
                                       return Promise.reject(
                                         new Error(
-                                          "Please add at least one primary skill"
-                                        )
+                                          "Please add at least one primary skill",
+                                        ),
                                       );
                                     }
                                     return Promise.resolve();
@@ -1625,7 +1705,7 @@ const UpdateUserProfile = ({
                                 addFunction={PostSkills}
                                 hasError={error}
                                 totalExperience={form.getFieldValue(
-                                  "totalExperience"
+                                  "totalExperience",
                                 )}
                               />
                             </Form.Item>
@@ -1644,7 +1724,7 @@ const UpdateUserProfile = ({
                           fetchFunction={GetSkills}
                           addFunction={PostSkills}
                           totalExperience={form.getFieldValue(
-                            "totalExperience"
+                            "totalExperience",
                           )}
                         />
                       </Form.Item>
@@ -1671,7 +1751,7 @@ const UpdateUserProfile = ({
                           validator: (_, value) => {
                             if (!value || value.length === 0) {
                               return Promise.reject(
-                                "Please add at least one primary cloud!"
+                                "Please add at least one primary cloud!",
                               );
                             }
                             return Promise.resolve();

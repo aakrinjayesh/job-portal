@@ -6,7 +6,7 @@ import {
   Select,
   message,
   DatePicker,
-  Progress
+  Progress,
   // TimePicker,
 } from "antd";
 import dayjs from "dayjs";
@@ -106,7 +106,12 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
             justifyContent: "center",
           }}
         >
-          <Progress type="circle" percent={70} status="active" showInfo={false} />
+          <Progress
+            type="circle"
+            percent={70}
+            status="active"
+            showInfo={false}
+          />
         </div>
       )}
 
@@ -128,7 +133,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
         requiredMark={false} // ✅ prevents duplicate red star
       >
         {/* ===== Subject ===== */}
-        {/* <Form.Item
+        <Form.Item
           label={
             <span style={{ fontSize: 13, fontWeight: 590, color: "#2E2E2E" }}>
               <span style={{ color: "#B60554" }}>*</span> Subject
@@ -167,7 +172,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               />
             </Form.Item>
           </div>
-        </Form.Item> */}
+        </Form.Item>
 
         {/* ===== Type ===== */}
         <Form.Item
@@ -204,7 +209,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
         </Form.Item>
 
         {/* ===== Time ===== */}
-        {/* <Form.Item
+        <Form.Item
           label={
             <span style={{ fontSize: 13, fontWeight: 590 }}>
               <span style={{ color: "#B60554" }}>*</span> Time
@@ -224,7 +229,6 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               noStyle
               rules={[{ required: true, message: "Time is required" }]}
             >
-              
               <DatePicker
                 bordered={false}
                 showTime
@@ -234,8 +238,9 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               />
             </Form.Item>
           </div>
-        </Form.Item> */}
-        <Form.Item
+        </Form.Item>
+
+        {/* <Form.Item
           label={
             <span style={{ fontSize: 13, fontWeight: 590 }}>
               <span style={{ color: "#B60554" }}>*</span> Time
@@ -261,7 +266,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
 
                     if (value.isBefore(dayjs())) {
                       return Promise.reject(
-                        new Error("Date & time cannot be in the past")
+                        new Error("Date & time cannot be in the past"),
                       );
                     }
 
@@ -282,7 +287,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               />
             </Form.Item>
           </div>
-        </Form.Item>
+        </Form.Item> */}
 
         {/* ===== Description ===== */}
         <Form.Item
@@ -322,7 +327,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
 
                     if (wordCount > 1000) {
                       return Promise.reject(
-                        new Error("Maximum 1000 words allowed")
+                        new Error("Maximum 1000 words allowed"),
                       );
                     }
 

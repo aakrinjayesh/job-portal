@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Progress, message } from "antd";
+import { Progress, message, Spin } from "antd";
 import JobList from "../components/Job/JobList";
 import { SavedJobsList, UserJobsids } from "../api/api";
 
@@ -11,69 +11,66 @@ function SavedJobs() {
   const observer = useRef();
   const [ids, setIds] = useState();
   const [initialLoading, setInitialLoading] = useState(true);
-const [progress, setProgress] = useState(0);
-const [readyToShow, setReadyToShow] = useState(false);
-
+  const [progress, setProgress] = useState(0);
+  const [readyToShow, setReadyToShow] = useState(false);
 
   // Fetch saved jobs
- const fetchSavedJobs = useCallback(async (pageNum = 1) => {
-  setLoading(true);
-  setReadyToShow(false);
+  const fetchSavedJobs = useCallback(async (pageNum = 1) => {
+    setLoading(true);
+    setReadyToShow(false);
 
-  if (pageNum === 1) {
-    setProgress(10); // start only on first load
-  }
-
-  try {
-    const resp = await SavedJobsList(pageNum, 10);
-
-    if (resp?.status === "success") {
-      const { savedJobs, pagination } = resp.data || {};
-
-      const formattedJobs =
-        savedJobs?.map((item) => ({
-          ...item,
-          savedAt: item.savedAt,
-        })) || [];
-
-      setJobs((prev) =>
-        pageNum === 1 ? formattedJobs : [...prev, ...formattedJobs]
-      );
-
-      setHasMore(pagination?.page < pagination?.totalPages);
-    } else {
-      message.error("Failed to load saved jobs");
-    }
-  } catch (error) {
-    message.error("Error fetching saved jobs");
-  } finally {
     if (pageNum === 1) {
-      setProgress(100);
-      setTimeout(() => {
-        setInitialLoading(false);
-        setReadyToShow(true);
-        setProgress(0);
-      }, 250);
+      setProgress(10); // start only on first load
     }
-    setLoading(false);
-  }
-}, []);
 
+    try {
+      const resp = await SavedJobsList(pageNum, 10);
+
+      if (resp?.status === "success") {
+        const { savedJobs, pagination } = resp.data || {};
+
+        const formattedJobs =
+          savedJobs?.map((item) => ({
+            ...item,
+            savedAt: item.savedAt,
+          })) || [];
+
+        setJobs((prev) =>
+          pageNum === 1 ? formattedJobs : [...prev, ...formattedJobs],
+        );
+
+        setHasMore(pagination?.page < pagination?.totalPages);
+      } else {
+        message.error("Failed to load saved jobs");
+      }
+    } catch (error) {
+      message.error("Error fetching saved jobs");
+    } finally {
+      if (pageNum === 1) {
+        setProgress(100);
+        setTimeout(() => {
+          setInitialLoading(false);
+          setReadyToShow(true);
+          setProgress(0);
+        }, 250);
+      }
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchSavedJobs(1);
   }, [fetchSavedJobs]);
 
   useEffect(() => {
-  if (!loading) return;
+    if (!loading) return;
 
-  const interval = setInterval(() => {
-    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
-  }, 300);
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+    }, 300);
 
-  return () => clearInterval(interval);
-}, [loading]);
-
+    return () => clearInterval(interval);
+  }, [loading]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -104,7 +101,7 @@ const [readyToShow, setReadyToShow] = useState(false);
 
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore],
   );
 
   useEffect(() => {
@@ -164,39 +161,39 @@ const [readyToShow, setReadyToShow] = useState(false);
           minHeight: 0, // 🔑 CRITICAL for flex scroll
         }}
       >
-       {!readyToShow ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      minHeight: "400px",
-    }}
-  >
-    <Progress
-      type="circle"
-      percent={progress}
-      width={90}
-      strokeColor={{
-        "0%": "#4F63F6",
-        "100%": "#7C8CFF",
-      }}
-      trailColor="#E6E8FF"
-      showInfo={false}
-    />
-    <div
-      style={{
-        marginTop: 16,
-        color: "#555",
-        fontSize: 14,
-        fontWeight: 500,
-      }}
-    >
-      Loading saved jobs…
-    </div>
-  </div>
-) : jobs.length > 0 ? (
+        {!readyToShow ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "400px",
+            }}
+          >
+            <Progress
+              type="circle"
+              percent={progress}
+              width={90}
+              strokeColor={{
+                "0%": "#4F63F6",
+                "100%": "#7C8CFF",
+              }}
+              trailColor="#E6E8FF"
+              showInfo={false}
+            />
+            <div
+              style={{
+                marginTop: 16,
+                color: "#555",
+                fontSize: 14,
+                fontWeight: 500,
+              }}
+            >
+              Loading saved jobs…
+            </div>
+          </div>
+        ) : jobs.length > 0 ? (
           <JobList
             jobs={jobs}
             lastJobRef={lastJobRef}

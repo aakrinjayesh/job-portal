@@ -25,13 +25,13 @@ const renderGreenTags = (items = [], max = 3) => {
         <Tag
           key={idx}
           style={{
-             background: "#FBEBFF",
-    borderRadius: 100,
-    border: "1px solid #800080",
-    whiteSpace: "nowrap",     // ✅ prevent wrap
-    maxWidth: 100,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+            background: "#FBEBFF",
+            borderRadius: 100,
+            border: "1px solid #800080",
+            whiteSpace: "nowrap", // ✅ prevent wrap
+            maxWidth: 100,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           {item}
@@ -41,14 +41,14 @@ const renderGreenTags = (items = [], max = 3) => {
       {extra > 0 && (
         <Tag
           style={{
-    background: "transparent",
-    borderRadius: 100,
-    color: "#1976d2",
-    whiteSpace: "nowrap",     // ✅ prevent wrap
-    cursor: "pointer",
-    maxWidth: 100,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+            background: "transparent",
+            borderRadius: 100,
+            color: "#1976d2",
+            whiteSpace: "nowrap", // ✅ prevent wrap
+            cursor: "pointer",
+            maxWidth: 100,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           +{extra} more
@@ -135,82 +135,78 @@ const ApplyBenchJob = ({ jobId }) => {
 
   const rowSelection = {
     selectedRowKeys,
-    onChange: (newSelectedRowKeys,selectedRow) => {
+    onChange: (newSelectedRowKeys, selectedRow) => {
       console.log("ids selected", newSelectedRowKeys);
       setSelectedRowKeys(newSelectedRowKeys);
-       },
+    },
     preserveSelectedRowKeys: true,
   };
 
   // ------------------- APPLY BUTTON FUNCTION -------------------
-const handleApply = async () => {
-  if (selectedRowKeys.length === 0) {
-    messageApi.warning("Please select at least one candidate");
-    return;
-  }
+  const handleApply = async () => {
+    if (selectedRowKeys.length === 0) {
+      messageApi.warning("Please select at least one candidate");
+      return;
+    }
 
-  const payload = {
-    jobId,
-    candidateProfileIds: selectedRowKeys,
+    const payload = {
+      jobId,
+      candidateProfileIds: selectedRowKeys,
+    };
+
+    try {
+      // ✅ Show loading message immediately
+      const hide = messageApi.loading({
+        content: "Applying selected candidates...",
+        duration: 0, // keep until manually closed
+      });
+
+      const res = await ApplyBenchCandidate(payload);
+
+      hide(); // remove loading message
+
+      messageApi.success({
+        content: `${selectedRowKeys.length} candidate(s) applied successfully`,
+        duration: 3,
+      });
+
+      setSelectedRowKeys([]);
+    } catch (err) {
+      messageApi.error(
+        err?.response?.data?.message || "❌ Failed to apply candidates",
+      );
+    }
   };
 
-  try {
-    // ✅ Show loading message immediately
-    const hide = messageApi.loading({
-      content: "Applying selected candidates...",
-      duration: 0, // keep until manually closed
-    });
-
-    const res = await ApplyBenchCandidate(payload);
-
-    hide(); // remove loading message
-
-    messageApi.success({
-      content: `${selectedRowKeys.length} candidate(s) applied successfully`,
-      duration: 3,
-    });
-
-    setSelectedRowKeys([]);
-
-  } catch (err) {
-    messageApi.error(
-      err?.response?.data?.message || "❌ Failed to apply candidates"
-    );
-  }
-};
-
-
-
   const columns = [
-  { title: "Name", dataIndex: "name", width: 180 },
+    { title: "Name", dataIndex: "name", width: 180 },
 
-  {
-    title: "Clouds",
-    key: "clouds",
-    width: 260,
-    render: (_, r) => {
-      const clouds = r.primaryClouds.map((s) => s.name) || [];
-      return renderPinkTags(clouds, 3);
+    {
+      title: "Clouds",
+      key: "clouds",
+      width: 260,
+      render: (_, r) => {
+        const clouds = r.primaryClouds.map((s) => s.name) || [];
+        return renderPinkTags(clouds, 3);
+      },
     },
-  },
 
-  {
-    title: "Skills",
-    key: "skills",
-    width: 280,
-    render: (_, r) => {
-      const skills =
-        r.skillsJson
-          ?.filter((s) => s.level === "primary")
-          .map((s) => s.name) || [];
-      return renderGreenTags(skills, 3);
+    {
+      title: "Skills",
+      key: "skills",
+      width: 280,
+      render: (_, r) => {
+        const skills =
+          r.skillsJson
+            ?.filter((s) => s.level === "primary")
+            .map((s) => s.name) || [];
+        return renderGreenTags(skills, 3);
+      },
     },
-  },
 
-  { title: "Location", dataIndex: "currentLocation", width: 180 },
-  { title: "Experience", dataIndex: "totalExperience", width: 140 },
-];
-
+    { title: "Location", dataIndex: "currentLocation", width: 180 },
+    { title: "Experience", dataIndex: "totalExperience", width: 140 },
+  ];
 
   // ------------------- FETCH CANDIDATES -------------------
   useEffect(() => {
@@ -218,7 +214,11 @@ const handleApply = async () => {
       setLoading(true);
       try {
         const res = await GetVendorCandidates();
-        const active = res?.data?.filter((x) => x.status !== "active");
+        // const active = res?.data?.filter((x) => x.status !== "active");
+        const active = res?.data?.filter(
+          (x) => x.status?.toLowerCase() === "active",
+        );
+
         setCandidates(active || []);
       } catch (err) {
         message.error("Failed to load candidates");
@@ -259,7 +259,7 @@ const handleApply = async () => {
             AI Eligibility Check
           </Button>
 
-           {contextHolder}
+          {contextHolder}
 
           <Button
             onClick={handleApply}
@@ -290,10 +290,10 @@ const handleApply = async () => {
         scroll={{ y: 400 }}
         emptyText="No bench candidates available"
         pagination={{
-        pageSize: 5, // ✅ Number of candidates per page
-        showSizeChanger: true, // Optional: allow user to change page size
-        pageSizeOptions: ["5", "10", "20"], // Optional page size options
-  }}
+          pageSize: 5, // ✅ Number of candidates per page
+          showSizeChanger: true, // Optional: allow user to change page size
+          pageSizeOptions: ["5", "10", "20"], // Optional page size options
+        }}
       />
     </Spin>
   );

@@ -13,7 +13,7 @@ export const sendOtpController = async (req, res) => {
   try {
     logger.info("sendOtpController API hit");
 
-    const { userProfileId } = req.body;
+    const { userProfileId, email } = req.body;
     if (!userProfileId) {
       logger.warn("userProfileId missing in request");
       return res
@@ -41,9 +41,12 @@ export const sendOtpController = async (req, res) => {
       where: { id: userProfileId },
       data: { verificationOtp: otp, otpExpiry: expiry },
     });
+    const targetEmail = email || user.email; // 👈 IMPORTANT
+
+    logger.info(`Generated OTP for ${targetEmail}`);
 
     const mailOptions = {
-      to: user.email,
+      to: targetEmail,
       subject: "Candidate Verification OTP",
       html: otpEmailTemplate(user.fullName, otp), // 👈 HTML email
     };

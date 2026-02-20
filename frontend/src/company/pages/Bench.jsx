@@ -57,11 +57,11 @@ const Bench = () => {
   const [otpTimers, setOtpTimers] = useState({});
   const [activeOtpCandidateId, setActiveOtpCandidateId] = useState(null);
   const [otpError, setOtpError] = useState("");
+  const [verifyEmail, setVerifyEmail] = useState("");
 
   const [progress, setProgress] = useState(0);
-const [readyToShow, setReadyToShow] = useState(false);
-const [initialLoading, setInitialLoading] = useState(true);
-
+  const [readyToShow, setReadyToShow] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // add near other useState() calls
   const [verifiedCount, setVerifiedCount] = useState(0);
@@ -75,6 +75,7 @@ const [initialLoading, setInitialLoading] = useState(true);
   const [isCounting, setIsCounting] = useState(false);
   const controllerRef = useRef(null);
   const location = useLocation();
+  const otpInputRefs = useRef([]);
 
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
@@ -184,66 +185,66 @@ const [initialLoading, setInitialLoading] = useState(true);
   }, [otp]);
 
   useEffect(() => {
-  if (!loading) return;
+    if (!loading) return;
 
-  const interval = setInterval(() => {
-    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
-  }, 300);
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+    }, 300);
 
-  return () => clearInterval(interval);
-}, [loading]);
-
+    return () => clearInterval(interval);
+  }, [loading]);
 
   // 🔹 Fetch candidates from API
+  // 🔹 Fetch candidates from API
   const fetchCandidates = async () => {
-  if (controllerRef.current) {
-    controllerRef.current.abort();
-  }
-
-  controllerRef.current = new AbortController();
-
-  try {
-    setLoading(true);
-    setReadyToShow(false);
-    setProgress(10);   // 🔥 start animation
-
-    const res = await GetVendorCandidates(controllerRef.current.signal);
-
-    if (res.status === "success") {
-      const list = Array.isArray(res?.data) && res.data;
-
-      setAllCandidates(list || []);
-      setCandidates(list || []);
-      setActiveTab("all");
-
-      if (Array.isArray(list)) {
-        const verified = list.filter((c) => !!c.isVerified).length;
-        const unverified = list.length - verified;
-        const active = list.filter((c) => c.status !== "inactive").length;
-        const inactive = list.filter((c) => c.status === "inactive").length;
-
-        setVerifiedCount(verified);
-        setUnverifiedCount(unverified);
-        setActiveCount(active);
-        setInactiveCount(inactive);
-      }
+    if (controllerRef.current) {
+      controllerRef.current.abort();
     }
-  } catch (error) {
-    if (error.code === "ERR_CANCELED") return;
 
-    message.error("Failed to fetch vendor candidates.");
-  } finally {
-    setProgress(100);
+    // 🔵 create new controller
+    controllerRef.current = new AbortController();
+    try {
+      setLoading(true);
+      const res = await GetVendorCandidates(controllerRef.current.signal);
+      // if (res.status === "success") {
+      if (res?.status === "success") {
+        const list = Array.isArray(res?.data) && res.data;
+        setAllCandidates(list || []);
+        setCandidates(list || []);
 
-    setTimeout(() => {
+        setActiveTab("all");
+
+        if (Array.isArray(list)) {
+          const verified = list.filter((c) => !!c.isVerified).length;
+          const unverified = list.length - verified;
+
+          const active = list.filter((c) => c.status !== "inactive").length;
+          const inactive = list.filter((c) => c.status === "inactive").length;
+
+          setVerifiedCount(verified);
+          setUnverifiedCount(unverified);
+          setActiveCount(active);
+          setInactiveCount(inactive);
+        } else {
+          setVerifiedCount(0);
+          setUnverifiedCount(0);
+          setActiveCount(0);
+          setInactiveCount(0);
+        }
+
+        setLoading(false);
+        setReadyToShow(true);
+      }
+    } catch (error) {
+      if (error.code === "ERR_CANCELED") {
+        console.log("Bench API aborted");
+        return;
+      }
+      console.error("Error fetching candidates:", error);
+      message.error("Failed to fetch vendor candidates.");
       setLoading(false);
-      setInitialLoading(false);
-      setReadyToShow(true);
-      setProgress(0);
-    }, 250);
-  }
-};
-
+    }
+  };
 
   useEffect(() => {
     fetchCandidates();
@@ -346,23 +347,31 @@ const [initialLoading, setInitialLoading] = useState(true);
     setVerifyCandidate(record);
     setActiveOtpCandidateId(record.id);
     setOtp("");
+    setVerifyEmail("");
     setVerifyModalVisible(true);
   };
 
   // 🔹 Send OTP to candidate's email
   const handleSendOtp = async () => {
-    if (!verifyCandidate?.email) {
-      message.error("Candidate email not available");
+    // if (!verifyCandidate?.email) {
+    //   message.error("Candidate email not available");
+    //   return;
+    // }
+    if (!verifyEmail) {
+      message.error("Please enter email");
       return;
     }
+
     try {
       setOtpSending(true);
       const res = await SendVerificationOtp({
         userProfileId: verifyCandidate.id,
+        email: verifyEmail,
       });
 
       if (res?.status === "success") {
-        message.success(`OTP sent to ${verifyCandidate.email}`);
+        // message.success(`OTP sent to ${verifyCandidate.email}`);
+        message.success(`OTP sent to ${verifyEmail}`);
 
         setOtp("");
         setOtpError(""); // ✅ clear error
@@ -1343,89 +1352,119 @@ const [initialLoading, setInitialLoading] = useState(true);
         </div>
       </div>
 
-     {!readyToShow ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      minHeight: "60vh",
-    }}
-  >
-    <Progress
-      type="circle"
-      percent={progress}
-      width={90}
-      strokeColor={{
-        "0%": "#4F63F6",
-        "100%": "#7C8CFF",
-      }}
-      trailColor="#E6E8FF"
-      showInfo={false}
-    />
-    <div
-      style={{
-        marginTop: 16,
-        color: "#555",
-        fontSize: 14,
-        fontWeight: 500,
-      }}
-    >
-      Loading bench candidates…
-    </div>
-  </div>
-) : (
-  <>
-    <Table
-      columns={columns}
-      dataSource={
-        activeTab === "all"
-          ? candidates
-          : activeTab === "active"
-          ? candidates.filter((c) => c.status !== "inactive")
-          : candidates.filter((c) => c.status === "inactive")
-      }
-      rowKey={(record) => record.id || record.name}
-      pagination={{ pageSize: 5 }}
-      scroll={{ x: "max-content" }}
-      style={{ cursor: "pointer" }}
-      rowClassName={(_, index) =>
-        index % 2 === 0 ? "bench-row-light" : "bench-row-dark"
-      }
-      onRow={(record) => ({
-        onClick: () => {
-          navigate(`/company/candidate/${record.id}`, {
-            state: { source: "bench", highlight: "bench" },
-          });
-        },
-        style: { cursor: "pointer" },
-      })}
-    />
+      {!readyToShow ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <Progress
+            type="circle"
+            percent={progress}
+            width={90}
+            strokeColor={{
+              "0%": "#4F63F6",
+              "100%": "#7C8CFF",
+            }}
+            trailColor="#E6E8FF"
+            showInfo={false}
+          />
+          <div
+            style={{
+              marginTop: 16,
+              color: "#555",
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            Loading bench candidates…
+          </div>
+        </div>
+      ) : (
+        <>
+          <Table
+            columns={columns}
+            dataSource={
+              activeTab === "all"
+                ? candidates
+                : activeTab === "active"
+                  ? candidates.filter((c) => c.status !== "inactive")
+                  : candidates.filter((c) => c.status === "inactive")
+            }
+            rowKey={(record) => record.id || record.name}
+            pagination={{ pageSize: 5 }}
+            scroll={{ x: "max-content" }}
+            style={{ cursor: "pointer" }}
+            rowClassName={(_, index) =>
+              index % 2 === 0 ? "bench-row-light" : "bench-row-dark"
+            }
+            onRow={(record) => ({
+              onClick: () => {
+                navigate(`/company/candidate/${record.id}`, {
+                  state: { source: "bench", highlight: "bench" },
+                });
+              },
+              style: { cursor: "pointer" },
+            })}
+          />
 
-    <div
-      style={{
-        width: "100%",
-        padding: "22px 24px",
-        background: "#FBFBFB",
-        display: "flex",
-        justifyContent: "flex-end",
-      }}
-    >
-      {/* Buttons section unchanged */}
-    </div>
-  </>
-)}
+          <div
+            style={{
+              width: "100%",
+              padding: "22px 24px",
+              background: "#FBFBFB",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            {/* Buttons section unchanged */}
+            <div style={{ display: "flex", gap: 24 }}>
+              <Button
+                disabled={selectedRowKeys.length === 0}
+                onClick={() => updateStatus("inactive")}
+                style={{
+                  height: 35,
+                  borderRadius: 100,
+                  padding: "10px 24px",
+                  background: "transparent",
+                  border: "1px solid #666666",
+                  color: "#666666",
+                  fontSize: 14,
+                  fontWeight: 590,
+                  textTransform: "capitalize",
+                }}
+              >
+                Deactivate Selected
+              </Button>
 
+              <Button
+                disabled={selectedRowKeys.length === 0}
+                onClick={() => updateStatus("active")}
+                style={{
+                  height: 40,
+                  borderRadius: 100,
+                  padding: "10px 24px",
+                  background: "#1677FF",
+                  border: "none",
+                  color: "#FFFFFF",
+                  fontSize: 14,
+                  fontWeight: 590,
+                  textTransform: "capitalize",
+                }}
+              >
+                Activate Selected
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ✅ Add/Edit Candidate Modal */}
-      {/* <Modal
-        title={editRecord ? "Edit Candidate" : "Add Candidate"}
-        open={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-        width={900}
-      > */}
+
       <Modal
         open={isModalVisible}
         onCancel={handleCancel}
@@ -1594,29 +1633,23 @@ const [initialLoading, setInitialLoading] = useState(true);
               border: "1px solid #F1F1F1",
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 510 }}>
-              Email :
-              <span style={{ color: "#0B0BD6", marginLeft: 6 }}>
-                {verifyCandidate?.email}
-              </span>
+            <div style={{ width: "100%" }}>
+              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>
+                Email
+              </div>
+
+              <Input
+                value={verifyEmail}
+                onChange={(e) => setVerifyEmail(e.target.value)}
+                placeholder="Enter candidate email"
+                style={{
+                  height: 44,
+                  borderRadius: 8,
+                }}
+              />
             </div>
           </div>
 
-          {/* <Button
-            onClick={handleSendOtp}
-            loading={otpSending}
-            // disabled={otpSending || isCounting}
-            disabled={otpSending || otpTimers[verifyCandidate?.id]?.isCounting}
-            style={{
-              height: 40,
-              borderRadius: 100,
-              background: "#D1E4FF",
-              border: "none",
-              fontWeight: 590,
-            }}
-          >
-            Send OTP
-          </Button> */}
           <Button
             onClick={handleSendOtp}
             loading={otpSending}
@@ -1639,20 +1672,6 @@ const [initialLoading, setInitialLoading] = useState(true);
         </div>
 
         {/* OTP INPUT */}
-        {/* <Input
-    value={otp}
-    onChange={(e) => setOtp(e.target.value)}
-    maxLength={6}
-    style={{
-      height: 46,
-      borderRadius: 6,
-      border: "1px solid #666666",
-      fontSize: 16,
-      textAlign: "center",
-      letterSpacing: 8,
-      marginBottom: 16,
-    }}
-  /> */}
 
         <div
           style={{
@@ -1675,16 +1694,43 @@ const [initialLoading, setInitialLoading] = useState(true);
                 }}
               >
                 <input
+                  ref={(el) => (otpInputRefs.current[index] = el)}
                   type="text"
                   value={digit}
                   maxLength={1}
-                  onChange={(e) => handleOtpChange(e.target.value, index)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    if (!/^\d?$/.test(value)) return;
+
+                    setOtpError("");
+
+                    const otpArray = otp.split("");
+                    otpArray[index] = value;
+                    const newOtp = otpArray.join("").slice(0, 6);
+                    setOtp(newOtp);
+
+                    // ✅ Auto move forward
+                    if (value && index < 5) {
+                      otpInputRefs.current[index + 1]?.focus();
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Backspace" && !digit && index > 0) {
-                      const otpArray = otp.split("");
-                      otpArray[index - 1] = "";
-                      setOtp(otpArray.join(""));
+                      otpInputRefs.current[index - 1]?.focus();
                     }
+                  }}
+                  onPaste={(e) => {
+                    const paste = e.clipboardData.getData("text").slice(0, 6);
+                    if (!/^\d+$/.test(paste)) return;
+
+                    setOtp(paste);
+
+                    paste.split("").forEach((char, i) => {
+                      if (otpInputRefs.current[i]) {
+                        otpInputRefs.current[i].value = char;
+                      }
+                    });
                   }}
                   style={{
                     width: "100%",

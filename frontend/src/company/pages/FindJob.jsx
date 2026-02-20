@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Spin, Empty, Progress} from "antd";
+import { Col, Row, Card, message, Spin, Empty, Progress } from "antd";
 import FiltersPanel from "../../candidate/components/Job/FilterPanel";
 import JobList from "../../candidate/components/Job/JobList";
 import { GetJobsList } from "../../company/api/api";
@@ -16,7 +16,6 @@ function FindJob() {
   const [totalCount, setTotalCount] = useState(0);
   const [progress, setProgress] = useState(0);
 
-
   const observer = useRef();
   const controllerRef = useRef(null);
   const location = useLocation();
@@ -25,73 +24,67 @@ function FindJob() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const fetchJobs = useCallback(async (pageNum = 1, filters = {}) => {
-  if (controllerRef.current) controllerRef.current.abort();
-  controllerRef.current = new AbortController();
+    if (controllerRef.current) controllerRef.current.abort();
+    controllerRef.current = new AbortController();
 
-  if (pageNum === 1) {
-    setInitialLoading(true);
-    setLoading(true);
-    setProgress(10);
-  } else {
-    setLoading(true);
-  }
-
-  try {
-    const response = await GetJobsList(
-      pageNum,
-      10,
-      filters,
-      controllerRef.current.signal
-    );
-
-    const newJobs = response?.jobs || [];
-
-    setJobs((prev) =>
-      pageNum === 1 ? newJobs : [...prev, ...newJobs]
-    );
-
-    setTotalCount(response.totalCount || 0);
-    setHasMore(pageNum < response.totalPages);
-  } catch (error) {
-    if (error.code !== "ERR_CANCELED") {
-      message.error("Error fetching jobs");
-    }
-  } finally {
     if (pageNum === 1) {
-      setProgress(100); // ✅ reach 100 ONLY when API is done
-      setTimeout(() => {
-        setInitialLoading(false);
-        setLoading(false);
-        setProgress(0);
-      }, 300);
+      setInitialLoading(true);
+      setLoading(true);
+      setProgress(10);
     } else {
-      setLoading(false);
+      setLoading(true);
     }
-  }
-}, []);
 
+    try {
+      const response = await GetJobsList(
+        pageNum,
+        10,
+        filters,
+        controllerRef.current.signal,
+      );
 
- useEffect(() => {
-  const isLoading = initialLoading || (loading && page === 1);
+      const newJobs = response?.jobs || [];
 
-  if (isLoading) {
-    setProgress(0);
+      setJobs((prev) => (pageNum === 1 ? newJobs : [...prev, ...newJobs]));
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 95) return prev; // stop at 95% until API finishes
-        return prev + 5;
-      });
-    }, 200);
+      setTotalCount(response.totalCount || 0);
+      setHasMore(pageNum < response.totalPages);
+    } catch (error) {
+      if (error.code !== "ERR_CANCELED") {
+        message.error("Error fetching jobs");
+      }
+    } finally {
+      if (pageNum === 1) {
+        setProgress(100); // ✅ reach 100 ONLY when API is done
+        setTimeout(() => {
+          setInitialLoading(false);
+          setLoading(false);
+          setProgress(0);
+        }, 300);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, []);
 
-    return () => clearInterval(interval);
-  } else {
-    setProgress(100);
-  }
-}, [initialLoading, loading, page]);
+  useEffect(() => {
+    const isLoading = initialLoading || (loading && page === 1);
 
+    if (isLoading) {
+      setProgress(0);
 
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 95) return prev; // stop at 95% until API finishes
+          return prev + 5;
+        });
+      }, 200);
 
+      return () => clearInterval(interval);
+    } else {
+      setProgress(100);
+    }
+  }, [initialLoading, loading, page]);
 
   // Cleanup on route change
   useEffect(() => {
@@ -122,7 +115,7 @@ function FindJob() {
 
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore],
   );
 
   // Fetch next page when page changes
@@ -198,40 +191,40 @@ function FindJob() {
             bodyStyle={{ padding: "16px 24px" }}
           >
             {/* ✅ Show spinner on initial load or filter change (page 1 loading) */}
-     {initialLoading || (loading && page === 1) ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      minHeight: "400px",
-    }}
-  >
-    <Progress
-      type="circle"
-      percent={progress}
-      width={90}
-      strokeColor={{
-        "0%": "#4F63F6",
-        "100%": "#7C8CFF",
-      }}
-      trailColor="#E6E8FF"
-      status={progress === 100 ? "success" : "active"}
-      showInfo={false}
-    />
-    <div
-      style={{
-        marginTop: 16,
-        color: "#555",
-        fontSize: 14,
-        fontWeight: 500,
-      }}
-    >
-      Finding best jobs for you…
-    </div>
-  </div>
-) : (
+            {initialLoading || (loading && page === 1) ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minHeight: "400px",
+                }}
+              >
+                <Progress
+                  type="circle"
+                  percent={progress}
+                  width={90}
+                  strokeColor={{
+                    "0%": "#4F63F6",
+                    "100%": "#7C8CFF",
+                  }}
+                  trailColor="#E6E8FF"
+                  status={progress === 100 ? "success" : "active"}
+                  showInfo={false}
+                />
+                <div
+                  style={{
+                    marginTop: 16,
+                    color: "#555",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Finding best jobs for you…
+                </div>
+              </div>
+            ) : (
               <>
                 {/* Show total count */}
                 {totalCount > 0 && (
@@ -240,8 +233,18 @@ function FindJob() {
                   </div>
                 )}
 
-                <JobList
+                {/* <JobList
                   jobs={jobs}
+                  lastJobRef={lastJobRef}
+                  type="find"
+                  portal="company"
+                  isFilterOpen={isFilterOpen}
+                  toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+                /> */}
+                <JobList
+                  jobs={jobs.filter(
+                    (job) => job.status?.toLowerCase() !== "closed",
+                  )}
                   lastJobRef={lastJobRef}
                   type="find"
                   portal="company"

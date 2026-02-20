@@ -28,7 +28,7 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   RightOutlined,
-  LineChartOutlined
+  LineChartOutlined,
 } from "@ant-design/icons";
 import { LuBookmark } from "react-icons/lu";
 import { LuBookmarkCheck } from "react-icons/lu";
@@ -62,20 +62,23 @@ const JobList = ({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [sortOrder, setSortOrder] = useState("dsc");
 
-  // const sortOptions = [
-  //   {
-  //     value: "asc",
-  //     label: "Posted Time: Low to High",
-  //   },
-  //   {
-  //     value: "dsc",
-  //     label: "Posted Time: High to Low",
-  //   },
-  // ];
-
+  // useEffect(() => {
+  //   setSortedJobs(jobs);
+  // }, [jobs]);
   useEffect(() => {
-    setSortedJobs(jobs);
-  }, [jobs]);
+    if (!jobs) return;
+
+    let filteredJobs = jobs;
+
+    // 🚀 Hide closed jobs only for candidate
+    if (portal === "candidate") {
+      filteredJobs = jobs.filter(
+        (job) => job.status?.toLowerCase() !== "closed",
+      );
+    }
+
+    setSortedJobs(filteredJobs);
+  }, [jobs, portal]);
 
   useEffect(() => {
     setSavedJobIds(jobids || []);
@@ -573,15 +576,14 @@ const JobList = ({
                 <UserOutlined /> {job.experience?.number} {job.experience?.type}
                 <Divider type="vertical" />
                 <span>{/* <EnvironmentOutlined /> {job.location} */}</span>
-               {job.experienceLevel && (
-  <>
-    <Divider type="vertical" />
-    <span>
-      <LineChartOutlined /> {job.experienceLevel}
-    </span>
-  </>
-)}
-
+                {job.experienceLevel && (
+                  <>
+                    <Divider type="vertical" />
+                    <span>
+                      <LineChartOutlined /> {job.experienceLevel}
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* SKILLS + CLOUDS */}

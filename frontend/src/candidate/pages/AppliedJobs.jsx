@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Progress } from "antd";
+import { Col, Row, Card, message, Progress, Spin } from "antd";
 import AppliedJobsList from "../../candidate/components/Job/AppliedJobsList";
 import { AppliedJobsList as GetAppliedJobs } from "../../candidate/api/api"; // your API call function
 

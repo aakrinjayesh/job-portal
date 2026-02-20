@@ -579,14 +579,35 @@ const BenchCandidateDetails = () => {
   const [candidate, setCandidate] = useState();
   const { id } = useParams();
   console.log("candidate id in bench candidate details", id);
+  // useEffect(() => {
+  //   const resp = getCandidateDetails(id);
+  //   if (resp.status === "success") {
+  //     // setCandidate(resp.candidate);
+  //     setCandidate(resp.candidate.profile);
+  //   } else {
+  //     setCandidate([]);
+  //   }
+  // }, []);
   useEffect(() => {
-    const resp = getCandidateDetails(id);
-    if (resp.status === "success") {
-      setCandidate(resp.candidate);
-    } else {
-      setCandidate([]);
-    }
-  }, []);
+    const fetchCandidate = async () => {
+      try {
+        const resp = await getCandidateDetails(id);
+
+        console.log("REAL RESPONSE:", resp);
+
+        if (resp?.status === "success") {
+          setCandidate(resp.candidate); // 🔥 store full candidate
+        } else {
+          setCandidate(null);
+        }
+      } catch (error) {
+        console.error("Error fetching candidate:", error);
+        setCandidate(null);
+      }
+    };
+
+    fetchCandidate();
+  }, [id]);
 
   if (!candidate) {
     return <Empty description="Candidate Details not Found" />;
@@ -690,6 +711,30 @@ const BenchCandidateDetails = () => {
         <Row align="middle" justify="space-between">
           {/* LEFT SIDE */}
           <Space size={15} align="center">
+            {/* <Avatar
+              size={70}
+              
+              src={
+                candidate?.profile?.profilePicture
+                  ? `${candidate.profile.profilePicture}?t=${Date.now()}`
+                  : undefined
+              }
+              icon={
+                !candidate?.profile?.profilePicture ? <UserOutlined /> : null
+              }
+              
+              style={{
+                
+                backgroundColor: candidate?.profile?.profilePicture
+                  ? undefined
+                  : "#1677ff",
+                color: "#fff",
+                fontSize: 24,
+              }}
+              onError={(e) => {
+                e.currentTarget.src = "";
+              }}
+            /> */}
             <Avatar
               size={70}
               src={

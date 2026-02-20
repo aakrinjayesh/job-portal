@@ -458,19 +458,19 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
         }
 
         /* ===== WATERMARK - MORE VISIBLE ===== */
-        .watermark-bg {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%) rotate(-45deg);
-          font-size: 110px;
-          font-weight: 900;
-          color: rgba(102, 126, 234, 0.06);
-          z-index: 0;
-          pointer-events: none;
-          user-select: none;
-          letter-spacing: 15px;
-        }
+        // .watermark-bg {
+        //   position: fixed;
+        //   top: 50%;
+        //   left: 50%;
+        //   transform: translate(-50%, -50%) rotate(-45deg);
+        //   font-size: 110px;
+        //   font-weight: 900;
+        //   color: rgba(102, 126, 234, 0.06);
+        //   z-index: 0;
+        //   pointer-events: none;
+        //   user-select: none;
+        //   letter-spacing: 15px;
+        // }
 
         /* Make sure content is above watermark */
         .header,
@@ -490,9 +490,9 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
             bottom: 0;
           }
 
-          .watermark-bg {
-            display: none;
-          }
+          // .watermark-bg {
+          //   display: none;
+          // }
 
           /* Prevent orphans and widows */
           p, .project-detail, .experience-item {
@@ -612,7 +612,7 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
 
       <div className="resume-container">
         {/* WATERMARK BACKGROUND - MORE VISIBLE */}
-        <div className="watermark-bg">FORCEHEAD</div>
+        {/* <div className="watermark-bg">FORCEHEAD</div> */}
 
         {/* HEADER */}
         <div className="header">
