@@ -361,7 +361,7 @@ import {
   Tooltip,
   Segmented,
   message,
-  Spin,
+  Progress,
 } from "antd";
 import {
   InfoCircleOutlined,
@@ -408,27 +408,47 @@ export default function PricingPage() {
   const [redirecting, setRedirecting] = useState(false);
   const [quantities, setQuantities] = useState({});
   const [billingCycle, setBillingCycle] = useState("monthly");
+  const [progress, setProgress] = useState(0);
+const [readyToShow, setReadyToShow] = useState(false);
+
 
   /* ===================== FETCH PLANS ===================== */
 
   useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        const data = await getSubscriptionPlans();
-        setPlans(data);
+  const fetchPlans = async () => {
+    try {
+      setInitialLoading(true);
+      setProgress(10);
 
-        const initial = {};
-        data.forEach((p) => (initial[p.tier] = 1));
-        setQuantities(initial);
-      } catch (err) {
-        messageApi.error("Failed to load plans");
-      } finally {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+      }, 300);
+
+      const data = await getSubscriptionPlans();
+      setPlans(data);
+
+      const initial = {};
+      data.forEach((p) => (initial[p.tier] = 1));
+      setQuantities(initial);
+
+      clearInterval(interval);
+
+      setProgress(100);
+
+      setTimeout(() => {
         setInitialLoading(false);
-      }
-    };
+        setReadyToShow(true);
+        setProgress(0);
+      }, 250);
+    } catch (err) {
+      messageApi.error("Failed to load plans");
+      setInitialLoading(false);
+    }
+  };
 
-    fetchPlans();
-  }, []);
+  fetchPlans();
+}, []);
+
 
   /* ===================== HELPERS ===================== */
 
@@ -536,26 +556,47 @@ export default function PricingPage() {
 
   /* ===================== INITIAL LOADING ===================== */
 
-  if (initialLoading) {
-    return (
-      <>
-        {contextHolder}
+ if (!readyToShow) {
+  return (
+    <>
+      {contextHolder}
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#f5f5f5",
+        }}
+      >
+        <Progress
+          type="circle"
+          percent={progress}
+          width={110}
+          strokeColor={{
+            "0%": "#4F63F6",
+            "100%": "#7C8CFF",
+          }}
+          trailColor="#E6E8FF"
+          showInfo={false}
+        />
+
         <div
           style={{
-            height: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#f5f5f5",
+            marginTop: 16,
+            color: "#555",
+            fontSize: 15,
+            fontWeight: 500,
           }}
         >
-          <Spin />
-          {/* <Text style={{ marginTop: 20 }}>Loading Plans...</Text> */}
+          Loading subscription plans…
         </div>
-      </>
-    );
-  }
+      </div>
+    </>
+  );
+}
+
 
   /* ===================== RENDER ===================== */
 
@@ -577,7 +618,7 @@ export default function PricingPage() {
             zIndex: 9999,
           }}
         >
-          <Spin />
+          {/* <Spin /> */}
         </div>
       )}
 

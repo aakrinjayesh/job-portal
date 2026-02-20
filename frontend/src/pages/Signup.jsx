@@ -14,7 +14,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { GenerateOtp, ValidateOtp, CheckUserExist } from "../candidate/api/api";
 import jobroleImg from "../assets/jobrole.png";
 import groupImg from "../assets/Group.png";
-import andrewImg from "../assets/andrew.png";
+import andrewImg from "../assets/person_candidate_design.png";
 import salaryImg from "../assets/salary.png";
 import cloudImage from "../assets/Fill-1.png";
 import personImg from "../assets/companyperson.png";

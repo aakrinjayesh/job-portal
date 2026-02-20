@@ -574,8 +574,7 @@ const JobList = ({
                 <Divider type="vertical" />
                 {/* <span>{job.experienceLevel ?? "Not Specified"}</span> */}
                 <UserOutlined /> {job.experience?.number} {job.experience?.type}
-                <Divider type="vertical" />
-                <span>{/* <EnvironmentOutlined /> {job.location} */}</span>
+               
                 {job.experienceLevel && (
                   <>
                     <Divider type="vertical" />

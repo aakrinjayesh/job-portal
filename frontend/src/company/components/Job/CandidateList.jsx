@@ -135,16 +135,20 @@ const CandidateList = () => {
     if (jobId) fetchCandidates();
   }, [jobId, page, pageSize]);
 
-  const filteredCandidates = candidates
-    .filter((c) => {
-      const vendorId = c?.profile?.vendorId;
+ const filteredCandidates = candidates
+  // ✅ SHOW ONLY ACTIVE CANDIDATES
+  .filter((c) => c?.status?.toLowerCase() === "active")
 
-      if (candidateType === "ALL") return true;
-      if (candidateType === "NORMAL") return vendorId == null;
-      if (candidateType === "VENDOR") return vendorId != null;
+  // Existing Vendor Filter
+  .filter((c) => {
+    const vendorId = c?.profile?.vendorId;
 
-      return true;
-    })
+    if (candidateType === "ALL") return true;
+    if (candidateType === "NORMAL") return vendorId == null;
+    if (candidateType === "VENDOR") return vendorId != null;
+
+    return true;
+  })
     // .filter((c) => {
     //   if (!searchText.trim()) return true;
 

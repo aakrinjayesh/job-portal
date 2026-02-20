@@ -521,9 +521,9 @@ const styles = {
   candidateperson: {
     position: "absolute",
     marginTop: 110,
-    left: "58%",
+    left: "68%",
     transform: "translateX(-50%)",
-    height: 420,
+    height: 480,
     zIndex: 2,
   },
 

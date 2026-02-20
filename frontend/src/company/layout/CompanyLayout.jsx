@@ -67,65 +67,69 @@ const CompanyLayout = ({ children }) => {
     }
   };
 
-  /* 🎯 ACTIVE MENU LOGIC */
-  const selectedKey = useMemo(() => {
-    const path = location.pathname;
-    const highlight = location.state?.highlight;
+ /* 🎯 ACTIVE MENU LOGIC */
+const selectedKey = useMemo(() => {
+  const path = location.pathname;
+  const highlight = location.state?.highlight;
 
-    /* 1️⃣ Most specific routes FIRST */
+  /* 1️⃣ Most specific routes FIRST */
 
-    // ✅ Find Jobs
-    if (path.startsWith("/company/job/find")) {
-      return "findjob";
-    }
+  // ✅ Find Jobs
+  if (path.startsWith("/company/job/find")) {
+    return "findjob";
+  }
 
-    // ✅ Saved Jobs
-    if (path.startsWith("/company/jobs/saved")) {
-      return "savedjobs";
-    }
+  // ✅ Saved Jobs
+  if (path.startsWith("/company/jobs/saved")) {
+    return "savedjobs";
+  }
 
-    // ✅ Find Candidate
-    if (path.startsWith("/company/candidate/find")) {
-      return "findbench";
-    }
+  // ✅ Find Candidate
+  if (path.startsWith("/company/candidate/find")) {
+    return "findbench";
+  }
 
-    // ✅ Saved Candidates
-    if (path.startsWith("/company/bench/saved")) {
-      return "savedcandidates";
-    }
+  // ✅ Saved Candidates
+  if (path.startsWith("/company/bench/saved")) {
+    return "savedcandidates";
+  }
 
-    // ✅ Bench Page
-    if (path.startsWith("/company/bench")) {
-      return "bench";
-    }
+  // ✅ Bench Page
+  if (path.startsWith("/company/bench")) {
+    return "bench";
+  }
 
-    // ✅ Candidate Details (dynamic)
-    if (path.startsWith("/company/candidate/")) {
-      if (highlight) return highlight;
-      return "jobs";
-    }
+  // ✅ Candidate Details (dynamic)
+  if (path.startsWith("/company/candidate/")) {
+    if (highlight) return highlight;
+    return "jobs";
+  }
 
-    if (path.startsWith("/company/candidate")) {
-      if (highlight) return highlight;
-      return "jobs";
-    }
+  if (path.startsWith("/company/candidate")) {
+    if (highlight) return highlight;
+    return "jobs";
+  }
 
-    // ✅ Job Details (dynamic)
-    if (path.startsWith("/company/job/")) {
-      if (highlight === "findjob") return "findjob";
-      return "findjobs";
-    }
+  // ✅ Job Details (dynamic) - FIXED
+  if (path.startsWith("/company/job/")) {
+    // If coming from Find Jobs
+    if (highlight === "findjob") return "findjob";
+    // If coming from Saved Jobs
+    if (highlight === "savedjobs") return "savedjobs";
+    // Default: coming from My Jobs
+    return "jobs";
+  }
 
-    // ✅ Direct Matches
-    if (path.startsWith("/company/my-activity")) return "myactivity";
-    if (path.startsWith("/company/chat")) return "chat";
-    if (path.startsWith("/company/profile")) return "profile";
-    if (path.startsWith("/company/pricing")) return "pricing";
-    if (path.startsWith("/company/dashboard")) return "dashboard";
-    if (path.startsWith("/company/jobs")) return "jobs";
+  // ✅ Direct Matches
+  if (path.startsWith("/company/my-activity")) return "myactivity";
+  if (path.startsWith("/company/chat")) return "chat";
+  if (path.startsWith("/company/profile")) return "profile";
+  if (path.startsWith("/company/pricing")) return "pricing";
+  if (path.startsWith("/company/dashboard")) return "dashboard";
+  if (path.startsWith("/company/jobs")) return "jobs";
 
-    return "dashboard";
-  }, [location.pathname, location.state]);
+  return "dashboard";
+}, [location.pathname, location.state]);
 
   /* 🧠 Menu Click */
   const onMenuClick = ({ key }) => {
