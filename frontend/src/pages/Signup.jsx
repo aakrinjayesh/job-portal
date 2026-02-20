@@ -140,20 +140,20 @@ const Signup = () => {
     try {
       setGenerateLoading(true);
 
-      const check = await CheckUserExist({ email, role });
+      // const check = await CheckUserExist({ email, role });
 
-      if (check.status === "success") {
-        // Show message with existing email
-        if (check.existingEmail) {
-          messageApi.warning(
-            `${check.message} Existing email: ${check.existingEmail}`,
-            5,
-          );
-        } else {
-          messageApi.warning(check.message);
-        }
-        return;
-      }
+      // if (check.status === "success") {
+      //   // Show message with existing email
+      //   if (check.existingEmail) {
+      //     messageApi.warning(
+      //       `${check.message} Existing email: ${check.existingEmail}`,
+      //       5,
+      //     );
+      //   } else {
+      //     messageApi.warning(check.message);
+      //   }
+      //   return;
+      // }
 
       const res = await GenerateOtp({
         email,
@@ -318,40 +318,41 @@ const Signup = () => {
                 <Input size="large" placeholder="Email" />
               </Form.Item>
               <Form.Item
-  name="agree"
-  valuePropName="checked"
-  rules={[
-    {
-      validator: (_, value) =>
-        value
-          ? Promise.resolve()
-          : Promise.reject(
-              new Error("You must agree to the Privacy Policy and Terms & Conditions")
-            ),
-    },
-  ]}
-  style={{ marginTop: 10 }}
->
-  <Checkbox>
-    I agree to the{" "}
-    <a
-      href="/privacy-policy"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Privacy Policy
-    </a>{" "}
-    and{" "}
-    <a
-      href="/terms-and-conditions"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Terms & Conditions
-    </a>
-  </Checkbox>
-</Form.Item>
-
+                name="agree"
+                valuePropName="checked"
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      value
+                        ? Promise.resolve()
+                        : Promise.reject(
+                            new Error(
+                              "You must agree to the Privacy Policy and Terms & Conditions",
+                            ),
+                          ),
+                  },
+                ]}
+                style={{ marginTop: 10 }}
+              >
+                <Checkbox>
+                  I agree to the{" "}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Privacy Policy
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/terms-and-conditions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Terms & Conditions
+                  </a>
+                </Checkbox>
+              </Form.Item>
 
               {/* SEND OTP (only first time) */}
               {!otpSent && (
@@ -395,33 +396,33 @@ const Signup = () => {
                 </Button>
               )}
 
-         <Form.Item
-  name="otp"
-  rules={[
-    { required: true, message: "Enter OTP" },
-    {
-      pattern: /^\d{4}$/,
-      message: "OTP must be 4 digits (numbers only)",
-    },
-  ]}
-  style={{
-    marginTop: 16,
-    display: "flex",
-    justifyContent: "center",
-  }}
->
-  <Input.OTP
-    length={4}
-    size="large"
-    style={{ gap: 12 }}
-    formatter={(value) => value.replace(/\D/g, "")} // ✅ Only allow digits
-    onChange={(value) => {
-      // ✅ Additional filter to ensure only numbers
-      const numericValue = value.replace(/\D/g, "");
-      form.setFieldValue("otp", numericValue);
-    }}
-  />
-</Form.Item>
+              <Form.Item
+                name="otp"
+                rules={[
+                  { required: true, message: "Enter OTP" },
+                  {
+                    pattern: /^\d{4}$/,
+                    message: "OTP must be 4 digits (numbers only)",
+                  },
+                ]}
+                style={{
+                  marginTop: 16,
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <Input.OTP
+                  length={4}
+                  size="large"
+                  style={{ gap: 12 }}
+                  formatter={(value) => value.replace(/\D/g, "")} // ✅ Only allow digits
+                  onChange={(value) => {
+                    // ✅ Additional filter to ensure only numbers
+                    const numericValue = value.replace(/\D/g, "");
+                    form.setFieldValue("otp", numericValue);
+                  }}
+                />
+              </Form.Item>
 
               <Button
                 type="primary"
