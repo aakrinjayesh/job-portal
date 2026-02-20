@@ -36,8 +36,7 @@ const CandidateJobDetails = () => {
   const [messageAPI, contextHolder] = message.useMessage();
   const [isApplied, setIsApplied] = useState(false);
   const [progress, setProgress] = useState(0);
-const [readyToShow, setReadyToShow] = useState(false);
-
+  const [readyToShow, setReadyToShow] = useState(false);
 
   // ✅ Modal state
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -50,73 +49,72 @@ const [readyToShow, setReadyToShow] = useState(false);
   }, [id, jobids]);
 
   useEffect(() => {
-  if (!loading) return;
+    if (!loading) return;
 
-  const interval = setInterval(() => {
-    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
-  }, 300);
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+    }, 300);
 
-  return () => clearInterval(interval);
-}, [loading]);
+    return () => clearInterval(interval);
+  }, [loading]);
 
+  const fetchJobDetails = async () => {
+    setProgress(10);
+    setReadyToShow(false);
 
- const fetchJobDetails = async () => {
-  setProgress(10);
-  setReadyToShow(false);
+    try {
+      // const payload = { jobid: id };
+      const response = await GetJobDetails(id);
+      setJob(response?.job);
+    } catch (error) {
+      messageAPI.error("Failed to load job details");
+    } finally {
+      setProgress(100);
 
-  try {
-    const payload = { jobid: id };
-    const response = await GetJobDetails(payload);
-    setJob(response?.job);
-  } catch (error) {
-    messageAPI.error("Failed to load job details");
-  } finally {
-    setProgress(100);
+      setTimeout(() => {
+        setLoading(false);
+        setReadyToShow(true);
+        setProgress(0);
+      }, 250);
+    }
+  };
 
-    setTimeout(() => {
-      setLoading(false);
-      setReadyToShow(true);
-      setProgress(0);
-    }, 250);
-  }
-};
-
- if (!readyToShow) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "80vh",
-      }}
-    >
-      <Progress
-        type="circle"
-        percent={progress}
-        width={90}
-        strokeColor={{
-          "0%": "#4F63F6",
-          "100%": "#7C8CFF",
-        }}
-        trailColor="#E6E8FF"
-        showInfo={false}
-      />
-
+  if (!readyToShow) {
+    return (
       <div
         style={{
-          marginTop: 16,
-          color: "#555",
-          fontSize: 14,
-          fontWeight: 500,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "80vh",
         }}
       >
-        Loading job details…
+        <Progress
+          type="circle"
+          percent={progress}
+          width={90}
+          strokeColor={{
+            "0%": "#4F63F6",
+            "100%": "#7C8CFF",
+          }}
+          trailColor="#E6E8FF"
+          showInfo={false}
+        />
+
+        <div
+          style={{
+            marginTop: 16,
+            color: "#555",
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
+          Loading job details…
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (!job) return <Text type="danger">Job not found</Text>;
 
@@ -175,7 +173,7 @@ const [readyToShow, setReadyToShow] = useState(false);
       if (resp?.status !== "success") throw new Error();
 
       messageAPI.success(
-        willBeSaved ? "Job saved successfully!" : "Job removed!"
+        willBeSaved ? "Job saved successfully!" : "Job removed!",
       );
     } catch (err) {
       // rollback
@@ -212,95 +210,95 @@ const [readyToShow, setReadyToShow] = useState(false);
           padding: 24,
         }}
       >
-      <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 16,
-  }}
->
-  {/* LEFT SIDE */}
-  <div style={{ display: "flex", gap: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 16,
+          }}
+        >
+          {/* LEFT SIDE */}
+          <div style={{ display: "flex", gap: 16 }}>
             {/* ✅ COMPANY LOGO */}
-    {job.companyLogo ? (
-      <img
-        src={job.companyLogo}
-        alt="logo"
-        style={{
-          width: 70,
-          height: 70,
-          borderRadius: 12,
-          objectFit: "cover",
-          border: "1px solid #f0f0f0",
-        }}
-      />
-    ) : (
-      <div
-        style={{
-          width: 70,
-          height: 70,
-          borderRadius: 12,
-          background: "linear-gradient(135deg, #1677FF, #69B1FF)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 26,
-          fontWeight: 700,
-          color: "#fff",
-        }}
-      >
-        {(job.companyName || job.role || "").charAt(0).toUpperCase()}
-      </div>
-    )}
+            {job.companyLogo ? (
+              <img
+                src={job.companyLogo}
+                alt="logo"
+                style={{
+                  width: 70,
+                  height: 70,
+                  borderRadius: 12,
+                  objectFit: "cover",
+                  border: "1px solid #f0f0f0",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 70,
+                  height: 70,
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg, #1677FF, #69B1FF)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 26,
+                  fontWeight: 700,
+                  color: "#fff",
+                }}
+              >
+                {(job.companyName || job.role || "").charAt(0).toUpperCase()}
+              </div>
+            )}
 
             {/* ROLE + COMPANY */}
-    <div>
-      <Title level={4} style={{ marginBottom: 0 }}>
-        {job.role}
-      </Title>
-      <Text type="secondary">{job.companyName}</Text>
-    </div>
-  </div>
+            <div>
+              <Title level={4} style={{ marginBottom: 0 }}>
+                {job.role}
+              </Title>
+              <Text type="secondary">{job.companyName}</Text>
+            </div>
+          </div>
 
-  {/* RIGHT SIDE */}
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-    }}
-  >
-    {/* SAVE BUTTON */}
-    <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          handleSaveToggle();
-        }}
-        style={{ cursor: "pointer", fontSize: 22 }}
-      >
-        {job?.isSaved ? (
-          <LuBookmarkCheck size={22} color="#1677ff" />
-        ) : (
-          <LuBookmark size={22} color="#9CA3AF" />
-        )}
-      </div>
-    </Tooltip>
+          {/* RIGHT SIDE */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            {/* SAVE BUTTON */}
+            <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveToggle();
+                }}
+                style={{ cursor: "pointer", fontSize: 22 }}
+              >
+                {job?.isSaved ? (
+                  <LuBookmarkCheck size={22} color="#1677ff" />
+                ) : (
+                  <LuBookmark size={22} color="#9CA3AF" />
+                )}
+              </div>
+            </Tooltip>
 
-    {/* STATUS TAG */}
-    <Tag
-      color={job.status === "Closed" ? "error" : "success"}
-      style={{
-        borderRadius: 20,
-        padding: "2px 12px",
-        fontSize: 12,
-      }}
-    >
-      {job.status}
-    </Tag>
-  </div>
-</div>
+            {/* STATUS TAG */}
+            <Tag
+              color={job.status === "Closed" ? "error" : "success"}
+              style={{
+                borderRadius: 20,
+                padding: "2px 12px",
+                fontSize: 12,
+              }}
+            >
+              {job.status}
+            </Tag>
+          </div>
+        </div>
 
         <Divider style={{ margin: "16px 0" }} />
 
@@ -390,11 +388,11 @@ const [readyToShow, setReadyToShow] = useState(false);
             </Tag>
           ))}
         </div>
-            {/* ===== CERTIFICATES ===== */}
+        {/* ===== CERTIFICATES ===== */}
         <Divider style={{ margin: "16px 0" }} />
-        
+
         <Text strong>Certificates:</Text>
-        
+
         <div
           style={{
             marginTop: 8,
@@ -420,7 +418,6 @@ const [readyToShow, setReadyToShow] = useState(false);
             <Text type="secondary">Not specified</Text>
           )}
         </div>
-        
 
         <Divider style={{ margin: "16px 0" }} />
 

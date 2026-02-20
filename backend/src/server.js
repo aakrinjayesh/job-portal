@@ -45,18 +45,18 @@ app.use(cookieParser());
 app.use(apiLimiter);
 app.use(authLimiter, LoginRouters);
 app.use(BillingRoute);
-app.use(authenticateToken, featureLimitMiddleware); // there are few api with no authentication look
 app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(userRouter);
-app.use(JobRouters);
 app.use(CommonRouters);
-app.use("/vendor", VendorRoutes);
 app.use("/verification", VerificationRoutes);
-app.use(authenticateToken, CVRouters);
+app.use(UsageRoute);
+app.use(JobRouters);
+app.use("/vendor", VendorRoutes);
+app.use(authenticateToken, featureLimitMiddleware, CVRouters);
 app.use("/api/todos", todoRoutes);
 app.use("/organization", OrganizationRoutes);
-app.use(UsageRoute);
+// app.use(authenticateToken, featureLimitMiddleware); // there are few api with no authentication look
 
 const PORT = process.env.PORT;
 

@@ -82,7 +82,11 @@ export const extractAIText = async (text, role, extra = {}) => {
     rawText = rawText.replace(/```json|```/g, "").trim();
 
     try {
-      return JSON.parse(rawText);
+      const parsed = JSON.parse(rawText);
+      return {
+        data: parsed,
+        tokenUsage,
+      };
       // return guardAIOutput({role, output: parsed});
     } catch (err) {
       console.error("❌ JSON parse error:", err.message);

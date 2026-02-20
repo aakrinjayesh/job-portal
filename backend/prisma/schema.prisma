@@ -588,7 +588,7 @@ model ActivityNote {
   activityId String   @unique
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  subject      String
+  subject      String?
   noteType     NoteType
   description  String?
   interactedAt DateTime
@@ -918,20 +918,21 @@ enum PaymentStatus {
 // }
 
 enum LimitFeature {
-  AI_TOKENS_TOTAL
-
-  JOB_POST_CREATION
-  CANDIDATE_PROFILE_VIEWS
-  FIND_CANDIDATE_SEARCH
   APPLY_BENCH_TO_JOB
+  CANDIDATE_PROFILE_VIEWS
+  JOB_POST_CREATION
   RESUME_EXTRACTION
   AI_FIT_SCORE
-  AI_SEARCH
+  FIND_CANDIDATE_SEARCH
+  FIND_JOB_SEARCH
+  JD_EXTRACTION
+  AI_TOKENS_TOTAL
 
+  // unused 
+  AI_SEARCH
   DIRECT_CHAT
   GROUP_CHAT
   WHATSAPP_CONNECT
-
   TEAM_MEMBERS
 }
 

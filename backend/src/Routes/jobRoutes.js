@@ -33,6 +33,7 @@ import {
   postedJobValidator,
   getJobDeatilsValidator,
 } from "../validators/userValidators.js";
+import { featureLimitMiddleware } from "../Middleware/featureLimitMiddleware.js";
 
 const JobRouters = express.Router();
 
@@ -41,13 +42,13 @@ JobRouters.post(
   "/jobs/list",
   // validateInput(getJobListValidator),
   authenticateToken,
-  getJobList
+  getJobList,
 );
-JobRouters.post(
-  "/job/details",
-  validateInput(getJobDeatilsValidator),
+JobRouters.get(
+  "/job/:jobId",
+  // validateInput(getJobDeatilsValidator),
   // authenticateToken,
-  getJobDetails
+  getJobDetails,
 );
 
 // User job application routes
@@ -55,7 +56,7 @@ JobRouters.post(
   "/jobs/apply",
   validateInput(applyJobValidator),
   authenticateToken,
-  userApplyJob
+  userApplyJob,
 );
 // JobRouters.delete('/jobs/:jobId/withdraw', validateInput(withdrawJobValidator), authenticateToken, userWithdrawJob)
 JobRouters.get("/jobs/applied/all", authenticateToken, userAllApplyedJobs);
@@ -66,14 +67,14 @@ JobRouters.post(
   "/jobs/save",
   // validateInput(saveJobValidator),
   authenticateToken,
-  userSaveJob
+  userSaveJob,
 );
 
 JobRouters.post(
   "/jobs/unsave",
   // validateInput(removeSavedJobValidator),
   authenticateToken,
-  userUnsaveJob
+  userUnsaveJob,
 );
 JobRouters.get("/jobs/saved", authenticateToken, userAllSavedJobs);
 
@@ -84,33 +85,34 @@ JobRouters.post(
   validateInput(postJobValidator),
   authenticateToken,
   ensureCompanyMember,
-  postJob
+  featureLimitMiddleware,
+  postJob,
 );
 JobRouters.get(
   "/jobs/posted",
   // validateInput(postedJobValidator),
   authenticateToken,
-  postedJobs
+  postedJobs,
 );
 JobRouters.post(
   "/jobs/update",
   validateInput(editJobValidator),
   authenticateToken,
   ensureCompanyMember,
-  editJob
+  editJob,
 );
 JobRouters.delete(
   "/jobs/delete",
   validateInput(deleteJobValidator),
   authenticateToken,
   ensureCompanyMember,
-  deleteJob
+  deleteJob,
 );
 JobRouters.patch(
   "/jobs/close/:jobId",
   authenticateToken,
   ensureCompanyMember,
-  closeJob
+  closeJob,
 );
 
 JobRouters.post("/job/applicants", authenticateToken, getApplicantsByJobId);
@@ -119,7 +121,7 @@ JobRouters.post(
   "/candidate/rating",
   authenticateToken,
   ensureCompanyMember,
-  saveCandidateRating
+  saveCandidateRating,
 );
 
 export default JobRouters;

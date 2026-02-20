@@ -16,6 +16,7 @@ import {
   markCandidateBookmark,
 } from "../controllers/vendorControllers.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
+import { featureLimitMiddleware } from "../Middleware/featureLimitMiddleware.js";
 
 const VendorRoutes = express.Router();
 
@@ -63,7 +64,12 @@ VendorRoutes.post(
 
 VendorRoutes.post("/candidates/all", authenticateToken, getAllCandidates);
 
-VendorRoutes.get("/candidates/:id", authenticateToken, getCandidateDetails);
+VendorRoutes.get(
+  "/candidates/:id",
+  authenticateToken,
+  featureLimitMiddleware,
+  getCandidateDetails,
+);
 
 VendorRoutes.post("/apply-candidate", authenticateToken, vendorApplyCandidate);
 

@@ -5,7 +5,8 @@ const FEATURE_MAP = [
   {
     match: (path, method) =>
       method === "POST" && path === "/vendor/apply-candidate",
-    feature: "JOB_APPLICATIONS",
+    // feature: "JOB_APPLICATIONS",
+    feature: "APPLY_BENCH_TO_JOB",
     usesAI: true,
   },
   {
@@ -19,7 +20,173 @@ const FEATURE_MAP = [
     feature: "JOB_POST_CREATION",
     usesAI: false,
   },
+
+  // 🔥 NEW AI FEATURES
+
+  {
+    match: (path, method) => method === "POST" && path === "/upload",
+    feature: "RESUME_EXTRACTION",
+    usesAI: true,
+  },
+  {
+    match: (path, method) => method === "POST" && path === "/check-eligibility",
+    feature: "AI_FIT_SCORE",
+    usesAI: true,
+  },
+  {
+    match: (path, method) =>
+      method === "POST" && path === "/ai-candidate-filter",
+    feature: "FIND_CANDIDATE_SEARCH",
+    usesAI: true,
+  },
+  {
+    match: (path, method) => method === "POST" && path === "/ai-job-filter",
+    feature: "FIND_JOB_SEARCH",
+    usesAI: true,
+  },
+  {
+    match: (path, method) => method === "POST" && path === "/generate-jd",
+    feature: "JD_EXTRACTION",
+    usesAI: true,
+  },
 ];
+
+// export const featureLimitMiddleware = async (req, res, next) => {
+//   try {
+//     if (!req.user?.organizationId) return next();
+
+//     const route = FEATURE_MAP.find((r) => r.match(req.path, req.method));
+//     if (!route) return next();
+
+//     const { id: userId, organizationId } = req.user;
+//     const { feature, usesAI } = route;
+
+//     // 1️⃣ Get member + license
+//     const member = await prisma.organizationMember.findUnique({
+//       where: { userId },
+//       include: { license: true },
+//     });
+
+//     if (!member?.license || !member.license.isActive) {
+//       return res.status(200).json({
+//         status: "success",
+//         code: "NO_ACTIVE_LICENSE",
+//         message: "No Active License Found",
+//         metadata: { organizationId, feature },
+//       });
+//     }
+
+//     const license = member.license;
+
+//     if (license.validUntil < new Date()) {
+//       return res.status(200).json({
+//         status: "success",
+//         code: "LICENSE_EXPIRED",
+//         message: "License Has Expired",
+//         metadata: {
+//           licenseId: license.id,
+//           planId: license.planId,
+//           validUntil: license.validUntil,
+//         },
+//       });
+//     }
+
+//     // 2️⃣ Get limits for this feature
+//     const limits = await prisma.planLimit.findMany({
+//       where: { planId: license.planId, feature },
+//     });
+
+//     if (!limits.length) return next();
+
+//     // 3️⃣ Enforce each period
+//     for (const limit of limits) {
+//       const { start, end } = getPeriodBounds(limit.period);
+
+//       let record = await prisma.usageRecord.findUnique({
+//         where: {
+//           licenseId_feature_period_periodStart: {
+//             licenseId: license.id,
+//             feature,
+//             period: limit.period,
+//             periodStart: start,
+//           },
+//         },
+//       });
+
+//       if (!record) {
+//         record = await prisma.usageRecord.create({
+//           data: {
+//             licenseId: license.id,
+//             feature,
+//             period: limit.period,
+//             periodStart: start,
+//             periodEnd: end,
+//           },
+//         });
+//       }
+
+//       // ✅ UNLIMITED PLAN (-1)
+//       if (limit.maxAllowed === -1) {
+//         await prisma.usageRecord.update({
+//           where: { id: record.id },
+//           data: {
+//             currentUsage: { increment: 1 },
+//           },
+//         });
+
+//         // Never block
+//         continue;
+//       }
+
+//       // ✅ LIMITED PLAN
+//       const updated = await prisma.usageRecord.updateMany({
+//         where: {
+//           id: record.id,
+//           currentUsage: { lt: limit.maxAllowed },
+//         },
+//         data: {
+//           currentUsage: { increment: 1 },
+//         },
+//       });
+
+//       if (updated.count === 0) {
+//         return res.status(200).json({
+//           status: "success",
+//           code: "LIMIT_EXCEEDED",
+//           message: `${feature} ${limit.period.toLowerCase()} Limit Exceeded`,
+//           metadata: {
+//             feature,
+//             period: limit.period,
+//             maxAllowed: limit.maxAllowed,
+//             currentUsage: record.currentUsage,
+//             licenseId: license.id,
+//             planId: license.planId,
+//           },
+//         });
+//       }
+//     }
+
+//     // 4️⃣ AI routes marker
+//     if (usesAI) {
+//       req.aiLimitCheckPassed = true;
+//       req.aiLimitMeta = {
+//         licenseId: license.id,
+//         feature,
+//         limits,
+//       };
+//     }
+
+//     next();
+//   } catch (err) {
+//     console.error("Limit middleware error:", err);
+//     return res.status(200).json({
+//       status: "success",
+//       code: "LIMIT_ENFORCEMENT_FAILED",
+//       message: "Unable to enforce feature limits",
+//       metadata: { error: err.message },
+//     });
+//   }
+// };
 
 export const featureLimitMiddleware = async (req, res, next) => {
   try {
@@ -31,7 +198,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
     const { id: userId, organizationId } = req.user;
     const { feature, usesAI } = route;
 
-    // 1️⃣ Get member + license
+    // 1️⃣ Get organization member + license
     const member = await prisma.organizationMember.findUnique({
       where: { userId },
       include: { license: true },
@@ -61,14 +228,14 @@ export const featureLimitMiddleware = async (req, res, next) => {
       });
     }
 
-    // 2️⃣ Get limits for this feature
+    // 2️⃣ Get plan limits for feature
     const limits = await prisma.planLimit.findMany({
       where: { planId: license.planId, feature },
     });
 
     if (!limits.length) return next();
 
-    // 3️⃣ Enforce each period
+    // 3️⃣ Validate per period
     for (const limit of limits) {
       const { start, end } = getPeriodBounds(limit.period);
 
@@ -83,6 +250,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
         },
       });
 
+      // Create usage record if not exists
       if (!record) {
         record = await prisma.usageRecord.create({
           data: {
@@ -91,11 +259,38 @@ export const featureLimitMiddleware = async (req, res, next) => {
             period: limit.period,
             periodStart: start,
             periodEnd: end,
+            currentUsage: 0,
           },
         });
       }
 
-      // ✅ UNLIMITED PLAN (-1)
+      // 🔥 AI ROUTES → CHECK ONLY (NO INCREMENT HERE)
+      if (usesAI) {
+        if (
+          limit.maxAllowed !== -1 &&
+          record.currentUsage >= limit.maxAllowed
+        ) {
+          return res.status(200).json({
+            status: "success",
+            code: "LIMIT_EXCEEDED",
+            message: `${feature} ${limit.period.toLowerCase()} Limit Exceeded`,
+            metadata: {
+              feature,
+              period: limit.period,
+              maxAllowed: limit.maxAllowed,
+              currentUsage: record.currentUsage,
+              licenseId: license.id,
+              planId: license.planId,
+            },
+          });
+        }
+
+        continue; // Skip increment
+      }
+
+      // 🔹 NON-AI ROUTES → INCREMENT IMMEDIATELY
+
+      // Unlimited plan
       if (limit.maxAllowed === -1) {
         await prisma.usageRecord.update({
           where: { id: record.id },
@@ -104,11 +299,10 @@ export const featureLimitMiddleware = async (req, res, next) => {
           },
         });
 
-        // Never block
         continue;
       }
 
-      // ✅ LIMITED PLAN
+      // Limited plan
       const updated = await prisma.usageRecord.updateMany({
         where: {
           id: record.id,
@@ -136,8 +330,17 @@ export const featureLimitMiddleware = async (req, res, next) => {
       }
     }
 
-    // 4️⃣ AI routes marker
-    if (usesAI) req.aiLimitCheckPassed = true;
+    // 4️⃣ Attach AI metadata for controller increment
+    if (usesAI) {
+      req.aiLimitCheckPassed = true;
+      req.aiLimitMeta = {
+        licenseId: license.id,
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        feature,
+        limits,
+      };
+    }
 
     next();
   } catch (err) {

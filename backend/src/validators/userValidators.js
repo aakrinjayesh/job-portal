@@ -57,7 +57,7 @@ const userProfileValidator = z.object({
         name: z.string().trim(),
         experience: z.number().optional(),
         level: z.string().optional(),
-      })
+      }),
     )
     .default([]),
 
@@ -215,6 +215,8 @@ const getJobDeatilsValidator = z.object({
 
 const cvRankerValidator = z.object({
   jobId: z.string(),
+  jobApplicationId: z.string(),
+  candidateProfileId: z.string(),
 });
 
 export {

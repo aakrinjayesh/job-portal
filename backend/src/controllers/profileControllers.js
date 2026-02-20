@@ -243,21 +243,21 @@ const uploadProfilePicture = async (req, res) => {
       });
     }
 
-    // 🔥 Upload directly from buffer
-    const uploadedFile = await uploadToCloudinary(req.file.buffer);
+    // 🔥 Upload file object (not just buffer)
+    const uploadedFile = await uploadToCloudinary(req.file, "profile");
 
     if (!uploadedFile) {
       return res.status(500).json({
         status: "error",
-        message: "Cloudinary upload failed",
+        message: "S3 upload failed",
       });
     }
 
     return res.status(200).json({
-      url: uploadedFile.secure_url, // always use secure_url
+      url: uploadedFile.url, // public S3 URL
     });
   } catch (error) {
-    console.error("Profile Picture Upload Error:", error.message);
+    console.error("Profile Picture Upload Error:", error);
 
     return res.status(500).json({
       status: "error",

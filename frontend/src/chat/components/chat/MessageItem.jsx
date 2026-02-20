@@ -352,12 +352,12 @@ const MessageItem = ({
                           <Text style={{ fontSize: 12, color: "#667781" }}>
                             {getFileType(file.url)}
                           </Text>
-                          <Text style={{ fontSize: 12, color: "#667781" }}>
+                          {/* <Text style={{ fontSize: 12, color: "#667781" }}>
                             •
                           </Text>
                           <Text style={{ fontSize: 12, color: "#667781" }}>
                             {getFileSize(file.url)}
-                          </Text>
+                          </Text> */}
                         </Space>
                       </div>
 

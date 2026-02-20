@@ -30,10 +30,10 @@ export async function PostedJobsList(page = 1, limit = 10, signal) {
   }
 }
 
-export async function GetJobDetails(payload) {
+export async function GetJobDetails(id) {
   try {
-    const data = JSON.stringify(payload);
-    const response = await axiosInstance.post("/job/details", data, {
+    // const data = JSON.stringify(payload);
+    const response = await axiosInstance.get(`/job/${id}`, {
       headers: { "Content-Type": "application/json" },
     });
     return response.data;
@@ -493,6 +493,21 @@ export async function checkUpdate({ taskId, completed }) {
     return response.data;
   } catch (error) {
     console.error("Error in checkUpdate:", error);
+  }
+}
+
+export async function CVEligibility(payload) {
+  try {
+    const data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/check-eligibility", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in ResetPassword:", error);
+    throw error;
   }
 }
 

@@ -1,7 +1,6 @@
 // api.js
 import axiosInstance from "./axiosInstance";
 
-
 //  login routes
 
 export async function GoogleAuth(payload) {
@@ -49,7 +48,6 @@ export async function ValidateOtp(payload) {
   }
 }
 
-
 export async function login(payload) {
   try {
     let data = JSON.stringify(payload);
@@ -75,7 +73,6 @@ export async function logout() {
   }
 }
 
-
 export const SetPassword = async (payload) => {
   try {
     const response = await axiosInstance.post(`/setpassword`, payload, {
@@ -98,7 +95,7 @@ export async function ForgotPassword(email) {
     throw error;
   }
 }
- 
+
 // Reset Password
 export async function ResetPasswords(payload) {
   try {
@@ -109,7 +106,6 @@ export async function ResetPasswords(payload) {
     throw error;
   }
 }
-
 
 export async function UploadPdf(formdata) {
   try {
@@ -140,12 +136,12 @@ export async function profiledata(payload) {
   }
 }
 
-
-
-export async function GetJobDetails(payload) {
+export async function GetJobDetails(id) {
   try {
-    const data = JSON.stringify(payload)
-    const response = await axiosInstance.post("/job/details",data, {headers: { 'Content-Type': 'application/json' }});
+    // const data = JSON.stringify(payload)
+    const response = await axiosInstance.get(`/job/${id}`, {
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in LoginRoute:", error);
@@ -155,11 +151,15 @@ export async function GetJobDetails(payload) {
 
 export async function GetUserProfile() {
   try {
-    const response = await axiosInstance.post("/profile/details", {}, {
-      headers: {
-        "Content-Type": "application/json",
+    const response = await axiosInstance.post(
+      "/profile/details",
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
     return response.data;
   } catch (error) {
     console.error("Error in ValidateOtp:", error);
@@ -169,7 +169,6 @@ export async function GetUserProfile() {
 
 export async function GetSkills() {
   try {
-    
     const response = await axiosInstance.get("/skills", {
       headers: {
         "Content-Type": "application/json",
@@ -184,7 +183,7 @@ export async function GetSkills() {
 
 export async function GetCertifications() {
   try {
-    const response = await axiosInstance.get("/certifications",  {
+    const response = await axiosInstance.get("/certifications", {
       headers: {
         "Content-Type": "application/json",
       },
@@ -195,7 +194,6 @@ export async function GetCertifications() {
     throw error;
   }
 }
-
 
 export async function GetLocations() {
   try {
@@ -241,7 +239,6 @@ export async function PostCertifications(payload) {
   }
 }
 
-
 export async function PostLocations(payload) {
   try {
     let data = JSON.stringify(payload);
@@ -256,7 +253,6 @@ export async function PostLocations(payload) {
     throw error;
   }
 }
-
 
 export async function GetClouds() {
   try {
@@ -282,7 +278,6 @@ export async function PostClouds(payload) {
     throw error;
   }
 }
-
 
 export async function GetRole() {
   try {
@@ -334,26 +329,25 @@ export async function PostQualification(payload) {
   }
 }
 
-
 export async function ApplyJob(payload) {
   try {
-      let data = JSON.stringify(payload)
-      const response = await axiosInstance.post('/jobs/apply', data , {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/jobs/apply", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
-
-
 
 export async function AppliedJobsList(page = 1, limit = 10) {
   try {
-    const response = await axiosInstance.get(`/jobs/applied/all?page=${page}&limit=${limit}`);
+    const response = await axiosInstance.get(
+      `/jobs/applied/all?page=${page}&limit=${limit}`,
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
@@ -363,60 +357,61 @@ export async function AppliedJobsList(page = 1, limit = 10) {
 
 export async function SaveJob(payload) {
   try {
-      let data = JSON.stringify(payload)
-      const response = await axiosInstance.post('/jobs/save', data , {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/jobs/save", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
 
 export async function UnSaveJob(payload) {
   try {
-      let data = JSON.stringify(payload)
-      const response = await axiosInstance.post('/jobs/unsave', data , {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    let data = JSON.stringify(payload);
+    const response = await axiosInstance.post("/jobs/unsave", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
 
-
-export async function  SavedJobsList(page = 1, limit = 10,signal) {
+export async function SavedJobsList(page = 1, limit = 10, signal) {
   try {
-      const response = await axiosInstance.get(`/jobs/saved?page=${page}&limit=${limit}`, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      },{signal})
-      return response.data
+    const response = await axiosInstance.get(
+      `/jobs/saved?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+      { signal },
+    );
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
 
-
-export async function  UserJobsids() {
+export async function UserJobsids() {
   try {
-      const response = await axiosInstance.get(`/job/applied/ids`, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      })
-      return response.data
+    const response = await axiosInstance.get(`/job/applied/ids`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
-  } 
+  }
 }
-
 
 export async function uploadProfilePicture(formData) {
   try {
@@ -425,25 +420,24 @@ export async function uploadProfilePicture(formData) {
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
-      }
+      },
     );
 
-    return response.data;  // RETURN ONLY DATA
+    return response.data; // RETURN ONLY DATA
   } catch (error) {
     console.error("Upload picture API error:", error);
     throw error;
   }
 }
 
-
 export async function CVEligibility(payload) {
   try {
-    const data = JSON.stringify(payload)
+    const data = JSON.stringify(payload);
     const response = await axiosInstance.post("/check-eligibility", data, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      });
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in ResetPassword:", error);
@@ -454,10 +448,10 @@ export async function CVEligibility(payload) {
 export async function GenerateJobDescription(payload) {
   try {
     const response = await axiosInstance.post("/generate-jd", payload, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      });
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in ResetPassword:", error);
@@ -465,14 +459,13 @@ export async function GenerateJobDescription(payload) {
   }
 }
 
-
 export async function AiJobFilter(payload) {
   try {
     const response = await axiosInstance.post("/ai-job-filter", payload, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      });
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in ResetPassword:", error);
@@ -483,39 +476,27 @@ export async function AiJobFilter(payload) {
 export async function AiCandidateFilter(payload) {
   try {
     const response = await axiosInstance.post("/ai-candidate-filter", payload, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      });
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in ResetPassword:", error);
     throw error;
   }
 }
-
 
 export async function CheckUserExist(payload) {
   try {
     const response = await axiosInstance.post("/checkuser", payload, {
-        headers:{
-          "Content-Type": "application/json"
-        }
-      });
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error in ResetPassword:", error);
     throw error;
   }
 }
-
-
-
-
-
-
-
-
-
-
-

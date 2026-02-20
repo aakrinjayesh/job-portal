@@ -41,19 +41,19 @@ const upload = multer({
 //candidates routes
 
 // user to upload pdf in profile page
-userRouter.post(
-  "/upload",
-  authenticateToken,
-  upload.single("file"),
-  UploadResume
-);
+// userRouter.post(
+//   "/upload",
+//   authenticateToken,
+//   upload.single("file"),
+//   UploadResume
+// );
 
 // user profile details
 userRouter.post(
   "/profile",
   // validateInput(userProfileValidator),
   authenticateToken,
-  updateProfiledetails
+  updateProfiledetails,
 );
 
 userRouter.post("/profile/details", authenticateToken, getUserProfileDetails);
@@ -63,7 +63,7 @@ userRouter.post(
   "/profile/upload-picture",
   authenticateToken,
   upload.single("file"),
-  uploadProfilePicture
+  uploadProfilePicture,
 );
 
 // company routes purely
