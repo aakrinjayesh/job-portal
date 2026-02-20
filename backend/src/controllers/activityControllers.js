@@ -29,20 +29,49 @@ export const createActivity = async (req, res) => {
     }
 
     // ✅ Validate Candidate Application
+    // const application = await prisma.jobApplication.findFirst({
+    //   where: {
+    //     jobId,
+    //     candidateProfileId,
+    //     organizationId,
+    //   },
+    // });
+    // const application = await prisma.jobApplication.findFirst({
+    //   where: {
+    //     jobId,
+    //     organizationId,
+    //     user: {
+    //       CandidateProfile: {
+    //         id: candidateProfileId,
+    //       },
+    //     },
+    //   },
+    // });
     const application = await prisma.jobApplication.findFirst({
       where: {
         jobId,
-        candidateProfileId,
         organizationId,
+        OR: [
+          { candidateProfileId },
+          {
+            user: {
+              CandidateProfile: {
+                id: candidateProfileId,
+              },
+            },
+          },
+        ],
       },
     });
 
-    if (!application) {
-      return res.status(400).json({
-        status: "error",
-        message: "Candidate has not applied to this job",
-      });
-    }
+    console.log("application", application);
+
+    // if (!application) {
+    //   return res.status(400).json({
+    //     status: "error",
+    //     message: "Candidate has not applied to this job",
+    //   });
+    // }
 
     const result = await prisma.$transaction(async (tx) => {
       const activity = await tx.activity.create({

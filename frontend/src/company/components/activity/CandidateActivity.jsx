@@ -7,7 +7,7 @@ import {
   Tabs,
   Space,
   Popconfirm,
-  Progress
+  Progress,
 } from "antd";
 import dayjs from "dayjs";
 
@@ -17,11 +17,16 @@ import AddScheduleModal from "./AddScheduleModal";
 import TodoList from "./TodoList";
 
 // const CandidateActivity = ({ candidateId, jobId }) => {
-const CandidateActivity = ({ candidateId, jobId, defaultTab }) => {
+const CandidateActivity = ({
+  candidateId,
+  jobId,
+  defaultTab,
+  onActivityCreated,
+}) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
-const [initialLoading, setInitialLoading] = useState(true);
-const [progress, setProgress] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   const [noteOpen, setNoteOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -38,41 +43,39 @@ const [progress, setProgress] = useState(0);
   }, [defaultTab]);
 
   useEffect(() => {
-  if (initialLoading || loading) {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
-    }, 400);
+    if (initialLoading || loading) {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+      }, 400);
 
-    return () => clearInterval(interval);
-  } else {
-    setProgress(0);
-  }
-}, [initialLoading, loading]);
-
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [initialLoading, loading]);
 
   const fetchActivities = async () => {
-  try {
-    if (!candidateId) return;
-    setLoading(true);
+    try {
+      if (!candidateId) return;
+      setLoading(true);
 
-    const payload = {
-      candidateProfileId: candidateId,
-      jobId,
-    };
+      const payload = {
+        candidateProfileId: candidateId,
+        jobId,
+      };
 
-    const res = await GetCandidateActivities(payload);
+      const res = await GetCandidateActivities(payload);
 
-    if (res.status === "success") {
-      setActivities(res.data || []);
+      if (res.status === "success") {
+        setActivities(res.data || []);
+      }
+    } catch {
+      messageAPI.error("Failed to load activities");
+    } finally {
+      setLoading(false);
+      setInitialLoading(false); // 🔥 IMPORTANT
     }
-  } catch {
-    messageAPI.error("Failed to load activities");
-  } finally {
-    setLoading(false);
-    setInitialLoading(false); // 🔥 IMPORTANT
-  }
-};
-
+  };
 
   useEffect(() => {
     if (candidateId) fetchActivities();
@@ -95,6 +98,7 @@ const [progress, setProgress] = useState(0);
   const addActivityOptimistically = (activity) => {
     console.log("activity", activity);
     setActivities((prev) => [activity, ...prev]);
+    onActivityCreated?.();
   };
 
   const filteredActivities =
@@ -151,17 +155,17 @@ const [progress, setProgress] = useState(0);
         }}
       >
         {/* 🔥 TOP LOADING BAR */}
-{(initialLoading || loading) && (
-  <Progress
-    percent={progress}
-    showInfo={false}
-    strokeWidth={3}  
-    strokeColor={{
-      "0%": "#4F63F6",
-      "100%": "#7C8CFF",
-    }}
-  />
-)}
+        {(initialLoading || loading) && (
+          <Progress
+            percent={progress}
+            showInfo={false}
+            strokeWidth={3}
+            strokeColor={{
+              "0%": "#4F63F6",
+              "100%": "#7C8CFF",
+            }}
+          />
+        )}
 
         {/* ================= HEADER ================= */}
         <div style={{ padding: "20px 20px 0 20px" }}>
@@ -183,8 +187,6 @@ const [progress, setProgress] = useState(0);
             padding: "0 20px",
           }}
         >
-        
-
           {/* ============ TODO VIEW (UNCHANGED) ============ */}
           {activeTab === "TODO" && (
             <div style={{ marginTop: 12 }}>
@@ -264,18 +266,6 @@ const [progress, setProgress] = useState(0);
                       {item.category}
                     </Tag>
 
-                    {/* <Popconfirm
-                      title="Delete activity?"
-                      okText="Yes"
-                      cancelText="No"
-                      okButtonProps={{ loading: deletingId === item.id }}
-                      onConfirm={() => handleDelete(item.id)}
-                    >
-                      <Button type="link" danger>
-                        Delete
-                      </Button>
-                    </Popconfirm> */}
-
                     <Popconfirm
                       title={
                         <div style={{ width: 280 }}>
@@ -305,54 +295,59 @@ const [progress, setProgress] = useState(0);
                   </div>
 
                   {/* CONTENT */}
-                  {/* {item.note && (
-                    <>
-                      <div style={{ fontWeight: 600, marginBottom: 2, fontSize: 12,  }}>
-                        {item.note.subject}
-                      </div>
-                      <div style={{ color: "#666" }}>
-                        {item.note.description}
-                      </div>
-                    </>
-                  )} */}
 
                   {item.note && (
                     <>
-                      {/* SUBJECT */}
+                      {/* TYPE + DATE ROW */}
                       <div
                         style={{
-                          fontWeight: 600,
-                          marginBottom: 2,
-                          fontSize: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: 6,
+                          flexWrap: "wrap",
                         }}
                       >
-                        {item.note.subject}
-                      </div>
+                        {/* TYPE */}
+                        <Tag color="blue" style={{ borderRadius: 6 }}>
+                          {item.note.noteType}
+                        </Tag>
 
-                      {/* DESCRIPTION */}
-                      <div
-                        style={{
-                          color: "#666",
-                          fontSize: 12,
-                        }}
-                      >
-                        {item.note.description}
-                      </div>
-
-                      {/* ✅ START–END TIME (THIS IS WHAT YOU WANT) */}
-                      {item.note.startTime && item.note.endTime && (
-                        <div
+                        {/* DATE */}
+                        <span
                           style={{
-                            marginTop: 4,
                             fontSize: 11,
                             color: "#8A8A8A",
                           }}
                         >
+                          {dayjs(item.note.interactedAt).format("DD MMM YYYY")}
+                        </span>
+                      </div>
+
+                      {/* TIME */}
+                      {item.note.startTime && (
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#8A8A8A",
+                            marginBottom: 6,
+                          }}
+                        >
                           {dayjs(item.note.startTime).format("h:mm A")}
-                          {" – "}
-                          {dayjs(item.note.endTime).format("h:mm A")}
+                          {item.note.endTime &&
+                            ` - ${dayjs(item.note.endTime).format("h:mm A")}`}
                         </div>
                       )}
+
+                      {/* DESCRIPTION */}
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#555",
+                        }}
+                      >
+                        {item.note.description}
+                      </div>
                     </>
                   )}
 

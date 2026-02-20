@@ -133,7 +133,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
         requiredMark={false} // ✅ prevents duplicate red star
       >
         {/* ===== Subject ===== */}
-        <Form.Item
+        {/* <Form.Item
           label={
             <span style={{ fontSize: 13, fontWeight: 590, color: "#2E2E2E" }}>
               <span style={{ color: "#B60554" }}>*</span> Subject
@@ -172,7 +172,7 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
               />
             </Form.Item>
           </div>
-        </Form.Item>
+        </Form.Item> */}
 
         {/* ===== Type ===== */}
         <Form.Item

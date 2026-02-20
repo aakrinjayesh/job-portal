@@ -5,7 +5,7 @@ import {
   Avatar,
   Button,
   Tag,
- Progress,
+  Progress,
   Empty,
   Divider,
   Typography,
@@ -27,48 +27,44 @@ const MyActivity = () => {
   const [progress, setProgress] = useState(0);
   const [initialLoading, setInitialLoading] = useState(true);
 
-
-
   const controllerRef = useRef(null);
   const location = useLocation();
   const [messageApi, contextHolder] = message.useMessage();
 
   /* ================= FETCH ================= */
-const fetchMyActivity = async () => {
-  if (controllerRef.current) controllerRef.current.abort();
-  controllerRef.current = new AbortController();
+  const fetchMyActivity = async () => {
+    if (controllerRef.current) controllerRef.current.abort();
+    controllerRef.current = new AbortController();
 
-  try {
-    setInitialLoading(true);
-    setLoading(true);
-    setProgress(10);
+    try {
+      setInitialLoading(true);
+      setLoading(true);
+      setProgress(10);
 
-    const interval = setInterval(() => {
-      setProgress((p) => (p < 90 ? p + 10 : p));
-    }, 200);
+      const interval = setInterval(() => {
+        setProgress((p) => (p < 90 ? p + 10 : p));
+      }, 200);
 
-    const res = await GetMyActivity(controllerRef.current.signal);
+      const res = await GetMyActivity(controllerRef.current.signal);
 
-    if (res.status === "success") {
-      setJobs(res.data || []);
+      if (res.status === "success") {
+        setJobs(res.data || []);
+      }
+
+      clearInterval(interval);
+      setProgress(100);
+    } catch (err) {
+      if (err.code !== "ERR_CANCELED") {
+        messageApi.error("Failed to load activity");
+      }
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+        setInitialLoading(false);
+        setProgress(0);
+      }, 300);
     }
-
-    clearInterval(interval);
-    setProgress(100);
-  } catch (err) {
-    if (err.code !== "ERR_CANCELED") {
-      messageApi.error("Failed to load activity");
-    }
-  } finally {
-    setTimeout(() => {
-      setLoading(false);
-      setInitialLoading(false);
-      setProgress(0);
-    }, 300);
-  }
-};
-
-
+  };
 
   useEffect(() => {
     fetchMyActivity();
@@ -122,7 +118,7 @@ const fetchMyActivity = async () => {
                 zIndex: 10,
               }}
             >
-             {/* <Progress
+              {/* <Progress
   type="circle"
   percent={progress}
   width={90}
@@ -133,66 +129,67 @@ const fetchMyActivity = async () => {
   trailColor="#E6E8FF"
   showInfo={false}
 /> */}
-
             </div>
           )}
-       {initialLoading ? (
-  <div
-    style={{
-      height: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    <Progress
-      type="circle"
-      percent={progress}
-      width={90}
-      strokeColor={{
-        "0%": "#4F63F6",
-        "100%": "#7C8CFF",
-      }}
-      trailColor="#E6E8FF"
-      showInfo={false}
-    />
-  </div>
-) : jobs.length === 0 ? (
-           <div
-  style={{
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    padding: 40,
-  }}
->
-  <div
-    style={{
-      width: 120,
-      height: 120,
-      borderRadius: "50%",
-      background: "#F0F5FF",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: 44,
-      marginBottom: 24,
-    }}
-  >
-    🤷‍♂️
-  </div>
+          {initialLoading ? (
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Progress
+                type="circle"
+                percent={progress}
+                width={90}
+                strokeColor={{
+                  "0%": "#4F63F6",
+                  "100%": "#7C8CFF",
+                }}
+                trailColor="#E6E8FF"
+                showInfo={false}
+              />
+            </div>
+          ) : jobs.length === 0 ? (
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                padding: 40,
+              }}
+            >
+              <div
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: "50%",
+                  background: "#F0F5FF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 44,
+                  marginBottom: 24,
+                }}
+              >
+                🤷‍♂️
+              </div>
 
-  <Title level={4}>Oops! No activity yet</Title>
+              <Title level={4}>Oops! No activity yet</Title>
 
-  <Text type="secondary" style={{ maxWidth: 340, marginBottom: 24 }}>
-    No candidate interactions found.
-    Post a job or invite candidates to start seeing activity here.
-  </Text>
-</div>
-
+              <Text
+                type="secondary"
+                style={{ maxWidth: 340, marginBottom: 24 }}
+              >
+                No candidate interactions found. Post a job or invite candidates
+                to start seeing activity here.
+              </Text>
+            </div>
           ) : (
             jobs.map((jobBlock) => {
               const jobKey = String(jobBlock.job.id);
@@ -236,7 +233,7 @@ const fetchMyActivity = async () => {
                                   onClick={() =>
                                     handleSelectCandidate(
                                       item.candidate.id,
-                                      jobBlock.job.id
+                                      jobBlock.job.id,
                                     )
                                   }
                                   style={{
@@ -283,7 +280,7 @@ const fetchMyActivity = async () => {
                                     <Tag color="blue">
                                       Last Activity :
                                       {new Date(
-                                        item.lastActivityAt
+                                        item.lastActivityAt,
                                       ).toLocaleDateString()}
                                     </Tag>
                                   </div>
@@ -318,12 +315,12 @@ const fetchMyActivity = async () => {
 
           {detailLoading && (
             <div style={{ textAlign: "center", marginTop: 80 }}>
-             <Progress
-      type="circle"
-      percent={70}
-      width={70}
-      showInfo={false}
-    />
+              <Progress
+                type="circle"
+                percent={70}
+                width={70}
+                showInfo={false}
+              />
             </div>
           )}
 
@@ -344,6 +341,7 @@ const fetchMyActivity = async () => {
               <CandidateActivity
                 candidateId={activeCandidateId}
                 jobId={activeJobId}
+                onActivityCreated={fetchMyActivity}
               />
             </div>
           )}

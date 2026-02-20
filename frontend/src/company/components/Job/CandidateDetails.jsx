@@ -49,8 +49,7 @@ const CandidateDetails = () => {
   const [ratingValue, setRatingValue] = useState(0);
 
   const [progress, setProgress] = useState(0);
-const [readyToShow, setReadyToShow] = useState(false);
-
+  const [readyToShow, setReadyToShow] = useState(false);
 
   const { jobId, source } = location.state || {};
   const [candidate, setCandidate] = useState(null);
@@ -63,44 +62,42 @@ const [readyToShow, setReadyToShow] = useState(false);
   console.log("sourcw", source);
   console.log("location", location);
 
- useEffect(() => {
-  const fetchCandidate = async () => {
-    try {
-      setProgress(10);
-      setReadyToShow(false);
-      setLoadingCandidate(true);
+  useEffect(() => {
+    const fetchCandidate = async () => {
+      try {
+        setProgress(10);
+        setReadyToShow(false);
+        setLoadingCandidate(true);
 
-      const res = await getCandidateDetails(id);
+        const res = await getCandidateDetails(id);
 
-      if (res.status === "success") {
-        setCandidate(res.candidate);
+        if (res.status === "success") {
+          setCandidate(res.candidate);
+        }
+      } catch (err) {
+        message.error("Failed to load candidate details");
+      } finally {
+        setProgress(100);
+
+        setTimeout(() => {
+          setLoadingCandidate(false);
+          setReadyToShow(true);
+        }, 300);
       }
-    } catch (err) {
-      message.error("Failed to load candidate details");
-    } finally {
-      setProgress(100);
+    };
 
-      setTimeout(() => {
-        setLoadingCandidate(false);
-        setReadyToShow(true);
-      }, 300);
-    }
-  };
+    if (id) fetchCandidate();
+  }, [id]);
 
-  if (id) fetchCandidate();
-}, [id]);
+  useEffect(() => {
+    if (!loadingCandidate) return;
 
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+    }, 250);
 
-
-useEffect(() => {
-  if (!loadingCandidate) return;
-
-  const interval = setInterval(() => {
-    setProgress((prev) => (prev < 90 ? prev + 5 : prev));
-  }, 250);
-
-  return () => clearInterval(interval);
-}, [loadingCandidate]);
+    return () => clearInterval(interval);
+  }, [loadingCandidate]);
 
   const reloadCandidate = async () => {
     try {
@@ -134,43 +131,42 @@ useEffect(() => {
     }
   };
 
-   if (!readyToShow) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        background: "#fafafa",
-      }}
-    >
-      <Progress
-        type="circle"
-        percent={progress}
-        width={95}
-        strokeColor={{
-          "0%": "#4F63F6",
-          "100%": "#7C8CFF",
-        }}
-        trailColor="#E6E8FF"
-        showInfo={false}
-      />
+  if (!readyToShow) {
+    return (
       <div
         style={{
-          marginTop: 18,
-          color: "#64748b",
-          fontSize: 14,
-          fontWeight: 500,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          background: "#fafafa",
         }}
       >
-        Loading candidate details…
+        <Progress
+          type="circle"
+          percent={progress}
+          width={95}
+          strokeColor={{
+            "0%": "#4F63F6",
+            "100%": "#7C8CFF",
+          }}
+          trailColor="#E6E8FF"
+          showInfo={false}
+        />
+        <div
+          style={{
+            marginTop: 18,
+            color: "#64748b",
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
+          Loading candidate details…
+        </div>
       </div>
-    </div>
-  );
-}
-
+    );
+  }
 
   if (!candidate) {
     return <p style={{ padding: "20px" }}>No candidate details found.</p>;
@@ -376,7 +372,7 @@ useEffect(() => {
 
                           const message = `Hi ${candidate.name},`;
                           const url = `https://wa.me/${number}?text=${encodeURIComponent(
-                            message
+                            message,
                           )}`;
 
                           window.open(url, "_blank");
@@ -644,7 +640,7 @@ useEffect(() => {
                             }}
                           >
                             {profile.skillsJson?.filter(
-                              (s) => s.level === "primary"
+                              (s) => s.level === "primary",
                             )?.length ? (
                               profile.skillsJson
                                 .filter((s) => s.level === "primary")
@@ -660,12 +656,12 @@ useEffect(() => {
 
                           {/* GAP */}
                           {profile.skillsJson?.some(
-                            (s) => s.level === "secondary"
+                            (s) => s.level === "secondary",
                           ) && <Divider style={{ margin: "16px 0 12px" }} />}
 
                           {/* SECONDARY SKILLS */}
                           {profile.skillsJson?.some(
-                            (s) => s.level === "secondary"
+                            (s) => s.level === "secondary",
                           ) && (
                             <>
                               <Text
@@ -1142,7 +1138,7 @@ useEffect(() => {
 
               if (!regex.test(value)) {
                 message.error(
-                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed'
+                  'Only letters, numbers, spaces and . , ( ) / { } [ ] " ; : | \\ are allowed',
                 );
                 return;
               }
