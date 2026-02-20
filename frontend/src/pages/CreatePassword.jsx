@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Typography, message } from "antd";
+import { Form, Input, Button, Typography, message, Row, Col } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SetPassword, ResetPasswords } from "../candidate/api/api";
 import cloudImage from "../assets/Fill-1.png";
@@ -18,10 +18,10 @@ const CreatePassword = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
-   // 🔹 Normal flow (preferred)
+  // 🔹 Normal flow (preferred)
   const stateEmail = location?.state?.email;
   const stateRole = location?.state?.role;
-  const stateType = location?.state?.type
+  const stateType = location?.state?.type;
 
   // 🔹 Invite flow (fallback)
   const query = new URLSearchParams(location.search);
@@ -43,44 +43,43 @@ const CreatePassword = () => {
   }
 
   const onFinish = async (values) => {
-  if (values.password !== values.confirmPassword) {
-    messageApi.error("Passwords do not match!");
-    return;
-  }
-
-  setPasswordLoading(true);
-  try {
-    let res;
-
-    if (stateType === "forgotpage") {
-      // 🔹 Forget password flow
-      res = await ResetPasswords({
-        email,
-        password: values.password,
-      });
-    } else {
-      // 🔹 Existing set password flow
-      res = await SetPassword({
-        email,
-        password: values.password,
-        role,
-        ...(token && { token }),
-      });
+    if (values.password !== values.confirmPassword) {
+      messageApi.error("Passwords do not match!");
+      return;
     }
 
-    if (res.status === "success") {
-      messageApi.success("Password set successfully!");
-      navigate("/login", { state: { role } });
-    } else {
-      messageApi.error(res.message || "Failed to set password");
-    }
-  } catch (err) {
-    messageApi.error(err?.response?.data?.message || "Something went wrong");
-  } finally {
-    setPasswordLoading(false);
-  }
-};
+    setPasswordLoading(true);
+    try {
+      let res;
 
+      if (stateType === "forgotpage") {
+        // 🔹 Forget password flow
+        res = await ResetPasswords({
+          email,
+          password: values.password,
+        });
+      } else {
+        // 🔹 Existing set password flow
+        res = await SetPassword({
+          email,
+          password: values.password,
+          role,
+          ...(token && { token }),
+        });
+      }
+
+      if (res.status === "success") {
+        messageApi.success("Password set successfully!");
+        navigate("/login", { state: { role } });
+      } else {
+        messageApi.error(res.message || "Failed to set password");
+      }
+    } catch (err) {
+      messageApi.error(err?.response?.data?.message || "Something went wrong");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   return (
     <>
@@ -88,109 +87,103 @@ const CreatePassword = () => {
       <AppHeader />
 
       {/* ================= BODY ================= */}
-     <Row style={{ minHeight: "100vh" }}>
-  {/* LEFT – CREATE PASSWORD */}
-  <Col
-    xs={24}
-    md={12}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 24,
-      background: "#fff",
-    }}
-  >
-    <div style={styles.loginCard}>
-      <Title level={3}>Create Password</Title>
-      <Text type="secondary">
-        Secure your account to continue
-      </Text>
-
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        style={{ marginTop: 24 }}
-      >
-        <Form.Item
-          name="password"
-          rules={[
-            { required: true, message: "Enter password" },
-            {
-              pattern:
-                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/,
-              message:
-                "8–16 chars, uppercase, lowercase, number & symbol",
-            },
-          ]}
+      <Row style={{ minHeight: "100vh" }}>
+        {/* LEFT – CREATE PASSWORD */}
+        <Col
+          xs={24}
+          md={12}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            background: "#fff",
+          }}
         >
-          <Input.Password size="large" placeholder="New Password" />
-        </Form.Item>
+          <div style={styles.loginCard}>
+            <Title level={3}>Create Password</Title>
+            <Text type="secondary">Secure your account to continue</Text>
 
-        <Form.Item
-          name="confirmPassword"
-          dependencies={["password"]}
-          rules={[
-            { required: true, message: "Confirm password" },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue("password") === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(
-                  new Error("Passwords do not match")
-                );
-              },
-            }),
-          ]}
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              style={{ marginTop: 24 }}
+            >
+              <Form.Item
+                name="password"
+                rules={[
+                  { required: true, message: "Enter password" },
+                  {
+                    pattern:
+                      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/,
+                    message:
+                      "8–16 chars, uppercase, lowercase, number & symbol",
+                  },
+                ]}
+              >
+                <Input.Password size="large" placeholder="New Password" />
+              </Form.Item>
+
+              <Form.Item
+                name="confirmPassword"
+                dependencies={["password"]}
+                rules={[
+                  { required: true, message: "Confirm password" },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue("password") === value) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(
+                        new Error("Passwords do not match"),
+                      );
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password size="large" placeholder="Confirm Password" />
+              </Form.Item>
+
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={passwordLoading}
+                block
+                size="large"
+              >
+                Set Password
+              </Button>
+
+              <Text style={{ display: "block", marginTop: 16 }}>
+                Already have an account?{" "}
+                <Button type="link" onClick={() => navigate("/login")}>
+                  Login
+                </Button>
+              </Text>
+            </Form>
+          </div>
+        </Col>
+
+        {/* RIGHT HERO (SAME AS FORGOT PAGE) */}
+        <Col
+          xs={0}
+          md={12}
+          style={{
+            background: role === "candidate" ? "#094db9" : "#4F63F6",
+            position: "relative",
+            overflow: "hidden",
+            padding: 48,
+          }}
         >
-          <Input.Password
-            size="large"
-            placeholder="Confirm Password"
-          />
-        </Form.Item>
-
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={passwordLoading}
-          block
-          size="large"
-        >
-          Set Password
-        </Button>
-
-        <Text style={{ display: "block", marginTop: 16 }}>
-          Already have an account?{" "}
-          <Button type="link" onClick={() => navigate("/login")}>
-            Login
-          </Button>
-        </Text>
-      </Form>
-    </div>
-  </Col>
-
-  {/* RIGHT HERO (SAME AS FORGOT PAGE) */}
-  <Col
-    xs={0}
-    md={12}
-    style={{
-      background: role === "candidate" ? "#094db9" : "#4F63F6",
-      position: "relative",
-      overflow: "hidden",
-      padding: 48,
-    }}
-  >
-    {role === "candidate" ? <CandidateHero /> : <CompanyHero />}
-  </Col>
-</Row>
+          {role === "candidate" ? <CandidateHero /> : <CompanyHero />}
+        </Col>
+      </Row>
 
       {/* <AppFooter /> */}
     </>
   );
 };
-
 
 const CompanyHero = () => (
   <>
@@ -198,27 +191,31 @@ const CompanyHero = () => (
     <img src={personImg} alt="person" style={styles.person} />
 
     <div style={styles.heroText}>
-      <Title level={2}
+      <Title
+        level={2}
         style={{
           color: "#fff",
           fontSize: 22,
           fontWeight: 700,
           marginBottom: 12,
-        }}>
+        }}
+      >
         Connect with the right partners —
         <br />
         faster and smarter.
       </Title>
 
-      <Text style={{
-        color: "#D7DBFF",
-        fontSize: 15,
-        lineHeight: 1.6,
-        display: "block",
-        // maxWidth: 360,
-      }}>
-        An intelligent vendor platform to manage jobs, candidates,
-        and bench resources for Salesforce roles and projects.
+      <Text
+        style={{
+          color: "#D7DBFF",
+          fontSize: 15,
+          lineHeight: 1.6,
+          display: "block",
+          // maxWidth: 360,
+        }}
+      >
+        An intelligent vendor platform to manage jobs, candidates, and bench
+        resources for Salesforce roles and projects.
       </Text>
     </div>
 
@@ -231,7 +228,10 @@ const CompanyHero = () => (
     </div>
 
     <div style={styles.vendorCard}>
-      <strong>🌍 World’s First B2B Vendor Platform built exclusively for Salesforce Ecosystem.</strong>
+      <strong>
+        🌍 World’s First B2B Vendor Platform built exclusively for Salesforce
+        Ecosystem.
+      </strong>
     </div>
 
     <div style={styles.vendorType}>
@@ -246,13 +246,15 @@ const CandidateHero = () => (
     <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
 
     <div style={styles.heroText}>
-      <Title level={2}
+      <Title
+        level={2}
         style={{
           color: "#fff",
           fontSize: 22,
           fontWeight: 700,
           marginBottom: 12,
-        }}>
+        }}
+      >
         Find the right Salesforce job —
         <br />
         built for your career.
@@ -265,8 +267,10 @@ const CandidateHero = () => (
           lineHeight: 1.6,
           display: "block",
           maxWidth: 360,
-        }}>
-        A smarter way to find Salesforce opportunities, apply confidently, and chat with recruiters in real time.
+        }}
+      >
+        A smarter way to find Salesforce opportunities, apply confidently, and
+        chat with recruiters in real time.
       </Text>
     </div>
 
@@ -331,9 +335,8 @@ const styles = {
     position: "relative",
     zIndex: 5,
     // maxWidth: 420,
-    marginTop: -40,   // ⬆ moves text upward
+    marginTop: -40, // ⬆ moves text upward
   },
-
 
   badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
   badge: {
@@ -350,8 +353,8 @@ const styles = {
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     fontSize: 14,
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
@@ -362,8 +365,8 @@ const styles = {
     top: 450,
     left: "5%",
     background: "#fff",
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     padding: "10px 14px",
     borderRadius: 14,
     fontSize: 14,
@@ -376,8 +379,8 @@ const styles = {
     top: 350,
     left: "60%",
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
@@ -394,8 +397,8 @@ const styles = {
     padding: "6px 14px",
     borderRadius: 20,
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
@@ -405,8 +408,8 @@ const styles = {
     top: 350,
     left: "60%",
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
@@ -423,8 +426,8 @@ const styles = {
     padding: "6px 14px",
     borderRadius: 20,
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
@@ -449,7 +452,7 @@ const styles = {
     zIndex: 2,
   },
 
-   candidateperson: {
+  candidateperson: {
     position: "absolute",
     marginTop: 110,
     left: "58%",
