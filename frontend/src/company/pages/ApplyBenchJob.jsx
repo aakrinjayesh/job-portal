@@ -214,7 +214,6 @@ const ApplyBenchJob = ({ jobId }) => {
       setLoading(true);
       try {
         const res = await GetVendorCandidates();
-        // const active = res?.data?.filter((x) => x.status !== "active");
         const active = res?.data?.filter(
           (x) => x.status?.toLowerCase() === "active",
         );
