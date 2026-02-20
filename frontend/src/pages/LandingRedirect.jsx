@@ -11,7 +11,7 @@ const LandingRedirect = () => {
 
   // ✅ Logged in → role-based redirect
   if (role === "company") {
-    return <Navigate to="/company/dashboard" replace />;
+    return <Navigate to="/company/jobs" replace />;
   }
 
   if (role === "candidate") {
