@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Form, Input, Button, Typography, Divider, message, Tabs, Row, Col, Grid } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Typography,
+  Divider,
+  message,
+  Tabs,
+  Row,
+  Col,
+  Grid,
+} from "antd";
 import GoogleAuthButton from "../components/Login/GoogleAuthButton";
 import { login as LoginApi } from "../candidate/api/api";
 import { useAuth } from "../chat/context/AuthContext";
@@ -32,6 +43,7 @@ const LoginPage = () => {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const [form] = Form.useForm();
 
   useEffect(() => {
     if (role) setActiveTab(role);
@@ -78,7 +90,7 @@ const LoginPage = () => {
         navigate(
           res?.user?.role === "candidate"
             ? // ? "/candidate/dashboard"
-            "/candidate/profile"
+              "/candidate/profile"
             : "/company/jobs",
         );
       } else {
@@ -94,7 +106,7 @@ const LoginPage = () => {
   const LoginForm = useMemo(
     () =>
       ({ role }) => (
-        <Form layout="vertical" onFinish={(v) => onFinish(v, role)}>
+        <Form form={form} layout="vertical" onFinish={(v) => onFinish(v, role)}>
           <Form.Item
             name="email"
             rules={[
@@ -122,13 +134,14 @@ const LoginPage = () => {
 
           <Form.Item
             name="password"
-            rules={[{ required: true, message: "Enter password" },
-            {
-              pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,16}$/,
-              message:
-                "Password must be 8–16 characters long and include uppercase, lowercase, number, and special character"
-            }
-
+            rules={[
+              { required: true, message: "Enter password" },
+              {
+                pattern:
+                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,16}$/,
+                message:
+                  "Password must be 8–16 characters long and include uppercase, lowercase, number, and special character",
+              },
             ]}
           >
             <Input.Password size="large" placeholder="Password" />
@@ -224,7 +237,6 @@ const LoginPage = () => {
               </Text>
             </div>
 
-
             {/* GOOGLE AUTH – ONLY FOR CANDIDATE */}
             {activeTab === "candidate" && (
               <>
@@ -234,14 +246,13 @@ const LoginPage = () => {
                 </div>
               </>
             )}
-
           </div>
         </Col>
         {/* </div> */}
         {/* RIGHT */}
         {/* RIGHT HERO */}
         <Col
-          xs={0}       // ❗ hide on mobile
+          xs={0} // ❗ hide on mobile
           md={12}
           style={{
             background: activeTab === "candidate" ? "#094db9" : "#4F63F6",
@@ -265,27 +276,31 @@ const CompanyHero = () => (
     <img src={personImg} alt="person" style={styles.person} />
 
     <div style={styles.heroText}>
-      <Title level={2}
+      <Title
+        level={2}
         style={{
           color: "#fff",
           fontSize: 22,
           fontWeight: 700,
           marginBottom: 12,
-        }}>
+        }}
+      >
         Connect with the right salesforce partners —
         <br />
         faster and smarter.
       </Title>
 
-      <Text style={{
-        color: "#D7DBFF",
-        fontSize: 15,
-        lineHeight: 1.6,
-        display: "block",
-        // maxWidth: 360,
-      }}>
-        An intelligent vendor platform to manage jobs, candidates,
-        and bench resources for Salesforce roles and projects.
+      <Text
+        style={{
+          color: "#D7DBFF",
+          fontSize: 15,
+          lineHeight: 1.6,
+          display: "block",
+          // maxWidth: 360,
+        }}
+      >
+        An intelligent vendor platform to manage jobs, candidates, and bench
+        resources for Salesforce roles and projects.
       </Text>
     </div>
 
@@ -298,7 +313,10 @@ const CompanyHero = () => (
     </div>
 
     <div style={styles.vendorCard}>
-      <strong>🌍 World’s First B2B Vendor Platform built exclusively for Salesforce Ecosystem.</strong>
+      <strong>
+        🌍 World’s First B2B Vendor Platform built exclusively for Salesforce
+        Ecosystem.
+      </strong>
     </div>
 
     <div style={styles.vendorType}>
@@ -313,13 +331,15 @@ const CandidateHero = () => (
     <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
 
     <div style={styles.heroText}>
-      <Title level={2}
+      <Title
+        level={2}
         style={{
           color: "#fff",
           fontSize: 22,
           fontWeight: 700,
           marginBottom: 12,
-        }}>
+        }}
+      >
         Find the right Salesforce job —
         <br />
         built for your career.
@@ -332,8 +352,10 @@ const CandidateHero = () => (
           lineHeight: 1.6,
           display: "block",
           maxWidth: 360,
-        }}>
-        A smarter way to find Salesforce opportunities, apply confidently, and chat with recruiters in real time.
+        }}
+      >
+        A smarter way to find Salesforce opportunities, apply confidently, and
+        chat with recruiters in real time.
       </Text>
     </div>
 
@@ -354,8 +376,6 @@ const CandidateHero = () => (
     </div>
   </>
 );
-
-
 
 const styles = {
   header: {
@@ -400,9 +420,8 @@ const styles = {
     position: "relative",
     zIndex: 5,
     // maxWidth: 420,
-    marginTop: -40,   // ⬆ moves text upward
+    marginTop: -40, // ⬆ moves text upward
   },
-
 
   badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
   badge: {
@@ -419,8 +438,8 @@ const styles = {
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     fontSize: 14,
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
@@ -431,8 +450,8 @@ const styles = {
     top: 450,
     left: "5%",
     background: "#fff",
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     padding: "10px 14px",
     borderRadius: 14,
     fontSize: 14,
@@ -445,8 +464,8 @@ const styles = {
     top: 350,
     left: "60%",
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
@@ -463,8 +482,8 @@ const styles = {
     padding: "6px 14px",
     borderRadius: 20,
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
@@ -474,8 +493,8 @@ const styles = {
     top: 350,
     left: "60%",
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     background: "#fff",
     padding: "14px 16px",
     borderRadius: 16,
@@ -492,8 +511,8 @@ const styles = {
     padding: "6px 14px",
     borderRadius: 20,
     fontSize: 14,
-    fontFamily: 'SF Pro',
-    fontWeight: '590',
+    fontFamily: "SF Pro",
+    fontWeight: "590",
     zIndex: 4,
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },

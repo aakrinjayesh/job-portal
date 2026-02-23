@@ -114,18 +114,17 @@ const RecruiterJobList = () => {
   //   };
   // }, [location.pathname]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (initialLoading || (loading && page === 1)) {
       const interval = setInterval(() => {
         setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
       }, 400);
-  
+
       return () => clearInterval(interval);
     } else {
       setProgress(0);
     }
   }, [initialLoading, loading, page]);
-  
 
   // ✅ ADD THIS FUNCTION HERE
   const handleNext = async () => {
@@ -496,19 +495,60 @@ const RecruiterJobList = () => {
       };
       console.log("Payload", payload);
       if (isEditing) {
-        // ✅ Add job ID to payload
         payload.id = editingJob.id;
 
-        // ✅ Update existing job (backend call)
         const response = await UpdateJob(payload);
-        setPostLoading(false);
-        messageApi.success(response.message || "Job updated successfully");
+
+        // 🔴 LICENSE EXPIRED
+        if (response?.code === "LICENSE_EXPIRED") {
+          messageApi.error(
+            "Your license has expired. Please renew to update jobs.",
+          );
+          setPostLoading(false);
+          return;
+        }
+
+        // 🔴 LIMIT EXCEEDED
+        if (response?.code === "LIMIT_EXCEEDED") {
+          const { feature, period, maxAllowed, currentUsage } =
+            response?.metadata || {};
+
+          messageApi.warning(
+            `${feature} ${period?.toLowerCase()} limit exceeded. Usage: ${currentUsage}/${maxAllowed}`,
+          );
+          setPostLoading(false);
+          return;
+        }
+
+        // 🟢 SUCCESS
+        if (response?.status === "success") {
+          messageApi.success(response.message || "Job updated successfully");
+        }
       } else {
-        // ✅ Create new job (backend call)
         const response = await CreateJob(payload);
-        // setJobs()
-        setPostLoading(false);
-        messageApi.success(response.message || "Job created successfully");
+
+        if (response?.code === "LICENSE_EXPIRED") {
+          messageApi.error(
+            "Your license has expired. Please renew to post jobs.",
+          );
+          setPostLoading(false);
+          return;
+        }
+
+        if (response?.code === "LIMIT_EXCEEDED") {
+          const { feature, period, maxAllowed, currentUsage } =
+            response?.metadata || {};
+
+          messageApi.warning(
+            `${feature} ${period?.toLowerCase()} limit exceeded. Usage: ${currentUsage}/${maxAllowed}`,
+          );
+          setPostLoading(false);
+          return;
+        }
+
+        if (response?.status === "success") {
+          messageApi.success(response.message || "Job created successfully");
+        }
       }
       setIsModalVisible(false);
       await fetchJobs();
@@ -531,8 +571,8 @@ const RecruiterJobList = () => {
   const handleFileUpload = async ({ file }) => {
     const allowedTypes = [
       "application/pdf",
-      "application/msword", // .doc
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -541,14 +581,34 @@ const RecruiterJobList = () => {
     }
 
     setUploadLoading(true);
+
     const uploadFormData = new FormData();
     uploadFormData.append("file", file);
     uploadFormData.append("role", "company");
 
     try {
       const response = await UploadPdf(uploadFormData);
-      setUploadLoading(false);
 
+      // 🔴 LICENSE EXPIRED
+      if (response?.code === "LICENSE_EXPIRED") {
+        messageApi.error(
+          "Your license has expired. Please renew your subscription.",
+        );
+        return;
+      }
+
+      // 🔴 LIMIT EXCEEDED
+      if (response?.code === "LIMIT_EXCEEDED") {
+        const { feature, period, maxAllowed, currentUsage } =
+          response?.metadata || {};
+
+        messageApi.warning(
+          `${feature} ${period?.toLowerCase()} limit exceeded. Usage: ${currentUsage}/${maxAllowed}`,
+        );
+        return;
+      }
+
+      // 🟢 SUCCESS
       const extracted = response?.extracted || {};
 
       form.setFieldsValue({
@@ -567,7 +627,6 @@ const RecruiterJobList = () => {
         certifications: extracted.certifications || [],
         jobType: extracted.jobType || "Hybrid",
         status: extracted.status || "Open",
-        // applicationDeadline: extracted.applicationDeadline
         applicationDeadline: extracted.applicationDeadline
           ? dayjs(extracted.applicationDeadline)
           : null,
@@ -575,11 +634,9 @@ const RecruiterJobList = () => {
 
       messageApi.success("JD uploaded and fields auto-filled!");
     } catch (error) {
-      console.error(error);
       messageApi.error(
-        "Upload failed. Try again:" + error.response.data.message,
+        error?.response?.data?.message || "Upload failed. Try again.",
       );
-      setUploadLoading(false);
     } finally {
       setUploadLoading(false);
     }
@@ -600,34 +657,58 @@ const RecruiterJobList = () => {
 
       const res = await GenerateJobDescription(payload);
 
-      if (res.success === true) {
+      // 🔴 LICENSE EXPIRED
+      if (res?.code === "LICENSE_EXPIRED") {
+        messageApi.error({
+          content:
+            "Your license has expired. Please renew your plan to continue using AI features.",
+          duration: 5,
+        });
+        aiForm.resetFields();
+        return;
+      }
+
+      // 🔴 LIMIT EXCEEDED
+      if (res?.code === "LIMIT_EXCEEDED") {
+        const { feature, period, maxAllowed, currentUsage } =
+          res?.metadata || {};
+
+        messageApi.warning({
+          content: `${feature} ${period?.toLowerCase()} limit exceeded. Usage: ${currentUsage}/${maxAllowed}`,
+          duration: 5,
+        });
+        aiForm.resetFields();
+        return;
+      }
+
+      // 🟢 SUCCESS
+      if (res?.status === "success") {
         messageApi.success("JD generated successfully!");
-        // auto-fill fields in main form
+
         const experience = {
           type: "year",
           number: values?.experience,
         };
+
         form.setFieldsValue({
           role: res?.jobDescription?.role,
-          experience: experience,
+          experience,
           experienceLevel: values?.experienceLevel,
           description: res?.jobDescription?.description || "",
           responsibilities: res?.jobDescription?.responsibilities || "",
           skills: res?.jobDescription?.skills || [],
           clouds: res?.jobDescription?.clouds || [],
-          // qualifications: res?.jobDescription?.qualifications || [],
         });
-
         setAiModalVisible(false);
+        aiForm.resetFields();
       } else {
         messageApi.error("Failed to generate JD");
       }
     } catch (err) {
-      console.error(err);
-      messageApi.error("Error generating JD:" + err.response.data.message);
+      messageApi.error(err?.response?.data?.message || "Error generating JD");
+      aiForm.resetFields();
     } finally {
       setAiLoading(false);
-      aiForm.resetFields();
     }
   };
 
@@ -667,22 +748,6 @@ const RecruiterJobList = () => {
     }
   };
 
-  // if (loading) {
-  //   console.log("loading true");
-  //   return (
-  //     <div
-  //       style={{
-  //         display: "flex",
-  //         justifyContent: "center",
-  //         alignItems: "center",
-  //         minHeight: "400px",
-  //       }}
-  //     >
-  //       <Spin />
-  //     </div>
-  //   );
-  // }
-
   const Experienceoptions = [
     {
       value: "year",
@@ -700,18 +765,6 @@ const RecruiterJobList = () => {
     return `${end ? `${v}.${end}` : `${v}`}`;
   };
 
-  // const STEP_ITEMS = [
-  //   { title: "Basic Info", status: currentStep > 0 ? "finish" : "process" },
-  //   { title: "Job Details", status: currentStep > 1 ? "finish" : "process" },
-  //   {
-  //     title: "Location & Skills",
-  //     status: currentStep > 2 ? "finish" : "process",
-  //   },
-  //   {
-  //     title: " Other Details",
-  //     status: currentStep >= 3 ? "finish" : "process",
-  //   },
-  // ];
   const STEP_ITEMS = [
     { title: "Basic Info" },
     { title: "Job Details" },
@@ -892,16 +945,16 @@ const RecruiterJobList = () => {
                 }}
               >
                 <Progress
-                   type="circle"
-                   percent={progress}
-                   width={90}
-                   strokeColor={{
-                     "0%": "#4F63F6",
-                     "100%": "#7C8CFF",
-                   }}
-                   trailColor="#E6E8FF"
-                   showInfo={false}
-                 />
+                  type="circle"
+                  percent={progress}
+                  width={90}
+                  strokeColor={{
+                    "0%": "#4F63F6",
+                    "100%": "#7C8CFF",
+                  }}
+                  trailColor="#E6E8FF"
+                  showInfo={false}
+                />
               </div>
             </Col>
           ) : (
@@ -912,7 +965,11 @@ const RecruiterJobList = () => {
                     hoverable
                     onClick={() =>
                       navigate(`/company/job/${job.id}`, {
-                        state: { source: "myjobs", highlight: "jobs" , count: job.applicantCount },
+                        state: {
+                          source: "myjobs",
+                          highlight: "jobs",
+                          count: job.applicantCount,
+                        },
                       })
                     }
                     style={{
@@ -1294,16 +1351,16 @@ const RecruiterJobList = () => {
                     }}
                   >
                     <Progress
-                          type="circle"
-                          percent={progress}
-                          width={90}
-                          strokeColor={{
-                            "0%": "#4F63F6",
-                            "100%": "#7C8CFF",
-                          }}
-                          trailColor="#E6E8FF"
-                          showInfo={false}
-                        />
+                      type="circle"
+                      percent={progress}
+                      width={90}
+                      strokeColor={{
+                        "0%": "#4F63F6",
+                        "100%": "#7C8CFF",
+                      }}
+                      trailColor="#E6E8FF"
+                      showInfo={false}
+                    />
                   </div>
                 </Col>
               )}
@@ -2101,94 +2158,6 @@ const RecruiterJobList = () => {
           )}
         </div>
       </Modal>
-
-      {/* <Modal
-        title="Generate Job Description using AI"
-        open={aiModalVisible}
-        onCancel={() =>
-          aiModalVisible && !aiLoading && setAiModalVisible(false)
-        }
-        footer={null}
-        destroyOnHidden
-      >
-        <Form layout="vertical" form={aiForm} onFinish={handleAiGenerateJD}>
-          <Form.Item
-            label="Job Title(role)"
-            name="role"
-            rules={[
-              { required: true, message: "Job title is required" },
-              {
-                pattern: /^[A-Za-z][A-Za-z0-9 .,\/-]*$/,
-                message: "Special Characters are not allowed.",
-              },
-            ]}
-          >
-            <Input placeholder="e.g. SalesForce sales Developer" />
-          </Form.Item>
-
-          <Form.Item
-            label="Experience (Years)"
-            name="experience"
-            rules={[
-              { required: true, message: "Experience is required" },
-              {
-                pattern: /^[0-9]+(\.[0-9]{1,2})?$/,
-
-                message:
-                  "Only numbers with up to 2 decimal places allowed (e.g. 2, 2.1, 2.25)",
-              },
-            ]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              placeholder="e.g. 3"
-              min={0}
-              stringMode
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Experience Level"
-            name="experienceLevel"
-            // rules={[{ required: true}]}
-          >
-            <Select>
-              <Option value="Internship">Internship</Option>
-              <Option value="EntryLevel">Entry Level</Option>
-              <Option value="Mid">Mid</Option>
-              <Option value="Senior">Senior</Option>
-              <Option value="Lead">Lead</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="Extra Instructions (Optional)"
-            name="instructions"
-            rules={[
-              {
-                pattern: /^[A-Za-z0-9 .,\/\-\(\)'":\n]*$/,
-                message:
-                  "Only letters, numbers, space, and , . / - ( ) ' are allowed!",
-              },
-            ]}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Anything special you want to include?"
-            />
-          </Form.Item>
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={aiLoading}
-            block
-            disabled={aiLoading}
-          >
-            Generate JD
-          </Button>
-        </Form>
-      </Modal> */}
 
       <Modal
         open={aiModalVisible}
