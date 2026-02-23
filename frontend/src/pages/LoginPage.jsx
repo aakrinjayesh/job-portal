@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Form,
@@ -32,6 +32,82 @@ import AppFooter from "../components/layout/AppFooter";
 
 const { Title, Text } = Typography;
 
+/* ================= EMAIL HELPERS (module scope) ================= */
+const personalDomains = [
+  "gmail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "rediffmail.com",
+];
+
+const isCompanyEmail = (email) =>
+  email && !personalDomains.includes(email.split("@")[1]?.toLowerCase());
+
+const isPersonalEmail = (email) =>
+  email && personalDomains.includes(email.split("@")[1]?.toLowerCase());
+
+/* ================= LOGIN FORM (module scope) ================= */
+const LoginForm = ({ role, onFinish, submitting }) => {
+  const [form] = Form.useForm();
+
+  return (
+    <Form form={form} layout="vertical" onFinish={(v) => onFinish(v, role)}>
+      <Form.Item
+        name="email"
+        rules={[
+          { required: true, message: "Enter email" },
+          {
+            pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+            message: "Spaces and invalid formats are not allowed.",
+          },
+          {
+            validator: (_, value) => {
+              if (!value) return Promise.resolve();
+              if (role === "candidate" && !isPersonalEmail(value))
+                return Promise.reject(
+                  "Use personal email (gmail, outlook, etc.)",
+                );
+              if (role === "company" && !isCompanyEmail(value))
+                return Promise.reject("Use company email");
+              return Promise.resolve();
+            },
+          },
+        ]}
+      >
+        <Input size="large" placeholder="Email" />
+      </Form.Item>
+
+      <Form.Item
+        name="password"
+        rules={[
+          { required: true, message: "Enter password" },
+          {
+            pattern:
+              /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,16}$/,
+            message:
+              "Password must be 8–16 characters long and include uppercase, lowercase, number, and special character",
+          },
+        ]}
+      >
+        <Input.Password size="large" placeholder="Password" />
+      </Form.Item>
+
+      <Button
+        type="primary"
+        htmlType="submit"
+        block
+        size="large"
+        loading={submitting}
+      >
+        Login
+      </Button>
+    </Form>
+  );
+};
+
+/* ================= MAIN LOGIN PAGE ================= */
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState("company");
   const [messageApi, contextHolder] = message.useMessage();
@@ -43,27 +119,10 @@ const LoginPage = () => {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
   const isMobile = !screens.md;
-  const [form] = Form.useForm();
 
   useEffect(() => {
     if (role) setActiveTab(role);
   }, [role]);
-
-  /* ================= EMAIL HELPERS ================= */
-  const personalDomains = [
-    "gmail.com",
-    "yahoo.com",
-    "outlook.com",
-    "hotmail.com",
-    "icloud.com",
-    "rediffmail.com",
-  ];
-
-  const isCompanyEmail = (email) =>
-    email && !personalDomains.includes(email.split("@")[1]?.toLowerCase());
-
-  const isPersonalEmail = (email) =>
-    email && personalDomains.includes(email.split("@")[1]?.toLowerCase());
 
   const onFinish = async (values, role) => {
     try {
@@ -89,8 +148,7 @@ const LoginPage = () => {
 
         navigate(
           res?.user?.role === "candidate"
-            ? // ? "/candidate/dashboard"
-              "/candidate/profile"
+            ? "/candidate/profile"
             : "/company/jobs",
         );
       } else {
@@ -103,72 +161,12 @@ const LoginPage = () => {
     }
   };
 
-  const LoginForm = useMemo(
-    () =>
-      ({ role }) => (
-        <Form form={form} layout="vertical" onFinish={(v) => onFinish(v, role)}>
-          <Form.Item
-            name="email"
-            rules={[
-              { required: true, message: "Enter email" },
-              {
-                pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                message: "Spaces and invalid formats are not allowed.",
-              },
-              {
-                validator: (_, value) => {
-                  if (!value) return Promise.resolve();
-                  if (role === "candidate" && !isPersonalEmail(value))
-                    return Promise.reject(
-                      "Use personal email (gmail, outlook, etc.)",
-                    );
-                  if (role === "company" && !isCompanyEmail(value))
-                    return Promise.reject("Use company email");
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
-            <Input size="large" placeholder="Email" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            rules={[
-              { required: true, message: "Enter password" },
-              {
-                pattern:
-                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,16}$/,
-                message:
-                  "Password must be 8–16 characters long and include uppercase, lowercase, number, and special character",
-              },
-            ]}
-          >
-            <Input.Password size="large" placeholder="Password" />
-          </Form.Item>
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-            size="large"
-            loading={submitting}
-          >
-            Login
-          </Button>
-        </Form>
-      ),
-    [submitting],
-  );
-
   return (
     <>
       {contextHolder}
       <AppHeader />
 
-      {/* ================= BODY ================= */}
       <Row style={{ minHeight: "100vh" }}>
-        {/* LEFT */}
         {/* LEFT – LOGIN */}
         <Col
           xs={24}
@@ -191,12 +189,24 @@ const LoginPage = () => {
                 {
                   key: "candidate",
                   label: "Candidate",
-                  children: <LoginForm role="candidate" />,
+                  children: (
+                    <LoginForm
+                      role="candidate"
+                      onFinish={onFinish}
+                      submitting={submitting}
+                    />
+                  ),
                 },
                 {
                   key: "company",
                   label: "Company",
-                  children: <LoginForm role="company" />,
+                  children: (
+                    <LoginForm
+                      role="company"
+                      onFinish={onFinish}
+                      submitting={submitting}
+                    />
+                  ),
                 },
               ]}
             />
@@ -224,7 +234,7 @@ const LoginPage = () => {
               </Button>
 
               <Text>
-                Don’t have a registered email?{" "}
+                Don't have a registered email?{" "}
                 <Button
                   type="link"
                   style={{ padding: 0 }}
@@ -248,11 +258,10 @@ const LoginPage = () => {
             )}
           </div>
         </Col>
-        {/* </div> */}
-        {/* RIGHT */}
+
         {/* RIGHT HERO */}
         <Col
-          xs={0} // ❗ hide on mobile
+          xs={0}
           md={12}
           style={{
             background: activeTab === "candidate" ? "#094db9" : "#4F63F6",
@@ -264,12 +273,11 @@ const LoginPage = () => {
           {activeTab === "candidate" ? <CandidateHero /> : <CompanyHero />}
         </Col>
       </Row>
-
-      {/* <AppFooter /> */}
     </>
   );
 };
 
+/* ================= HERO COMPONENTS ================= */
 const CompanyHero = () => (
   <>
     <img src={cloudImage} alt="cloud" style={styles.cloud} />
@@ -296,7 +304,6 @@ const CompanyHero = () => (
           fontSize: 15,
           lineHeight: 1.6,
           display: "block",
-          // maxWidth: 360,
         }}
       >
         An intelligent vendor platform to manage jobs, candidates, and bench
@@ -314,7 +321,7 @@ const CompanyHero = () => (
 
     <div style={styles.vendorCard}>
       <strong>
-        🌍 World’s First B2B Vendor Platform built exclusively for Salesforce
+        🌍 World's First B2B Vendor Platform built exclusively for Salesforce
         Ecosystem.
       </strong>
     </div>
@@ -377,35 +384,8 @@ const CandidateHero = () => (
   </>
 );
 
+/* ================= STYLES ================= */
 const styles = {
-  header: {
-    height: 70,
-    padding: "0 60px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    background: "#fff",
-    borderBottom: "1px solid #eee",
-  },
-  logo: { fontWeight: 600, fontSize: 18 },
-  menu: { display: "flex", gap: 24, color: "#555" },
-
-  container: {
-    display: "flex",
-    minHeight: "100vh",
-    //alignItems: "stretch",
-  },
-
-  left: { width: "50%", padding: 60, background: "#fff" },
-  right: {
-    width: "50%",
-    background: "#4F63F6",
-    padding: "80px",
-    // color: "white",
-    position: "relative",
-    overflow: "hidden",
-  },
-
   cloud: {
     position: "absolute",
     bottom: 40,
@@ -419,16 +399,7 @@ const styles = {
   heroText: {
     position: "relative",
     zIndex: 5,
-    // maxWidth: 420,
-    marginTop: -40, // ⬆ moves text upward
-  },
-
-  badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
-  badge: {
-    background: "#fff",
-    padding: "8px 16px",
-    borderRadius: 20,
-    fontWeight: 500,
+    marginTop: -40,
   },
 
   vendorBadge: {
@@ -517,17 +488,6 @@ const styles = {
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
-  nameTag: {
-    position: "absolute",
-    bottom: 90,
-    right: 260,
-    background: "#fff",
-    padding: "6px 14px",
-    borderRadius: 20,
-    fontSize: 13,
-    fontWeight: 600,
-    zIndex: 3,
-  },
   person: {
     position: "absolute",
     marginTop: 110,
@@ -554,61 +514,6 @@ const styles = {
     borderRadius: 12,
     boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
     background: "#fff",
-  },
-
-  footer: {
-    height: 60,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#fff",
-    borderTop: "1px solid #eee",
-  },
-
-  footerWrapper: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-    //marginTop: 40,   // ❗ REMOVE negative margin
-    paddingBottom: 40,
-  },
-
-  footerCard: {
-    background: "#fff",
-    padding: "24px 40px",
-    borderRadius: 16,
-    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-    textAlign: "center",
-    maxWidth: 900,
-    width: "90%",
-  },
-
-  footerText: {
-    fontSize: 14,
-    fontWeight: 500,
-    marginBottom: 20,
-  },
-
-  footerLogos: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 24,
-    flexWrap: "wrap",
-  },
-
-  // logoBox: {
-  //   background: "#fff",
-  //   border: "1px solid #eee",
-  //   borderRadius: 12,
-  //   padding: "8px 16px",
-  //   display: "flex",
-  //   alignItems: "center",
-  //   justifyContent: "center",
-  // },
-
-  logoBoxImg: {
-    height: 24,
   },
 };
 
