@@ -499,9 +499,9 @@ const userApplyJob = async (req, res) => {
     let aiAllowed = false;
     let recruiterLicense = null;
     let limitConfigs = [];
-
+    let recruiterMember = null;
     if (job.postedById) {
-      const recruiterMember = await prisma.organizationMember.findUnique({
+      recruiterMember = await prisma.organizationMember.findUnique({
         where: { userId: job.postedById },
         include: {
           license: {
