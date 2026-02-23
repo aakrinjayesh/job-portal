@@ -582,10 +582,16 @@ const setPassword = async (req, res) => {
             },
           });
 
+          const plain = await tx.subscriptionPlan.findFirst({
+            where: {
+              tier: "BASIC",
+            },
+          });
+
           await tx.license.create({
             data: {
               subscriptionId: subscription.id,
-              planId: "9767d926-261d-4d48-a9b8-c805876ee341",
+              planId: plain.id,
               assignedToId: member.id,
               validUntil: new Date(
                 new Date().setMonth(new Date().getMonth() + 1),
