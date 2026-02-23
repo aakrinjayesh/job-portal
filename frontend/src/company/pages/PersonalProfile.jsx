@@ -25,6 +25,7 @@ import {
 } from "../../company/api/api";
 import Address from "../../company/components/Profile/Address";
 import { useLocation, useNavigate } from "react-router-dom";
+import { uploadProfilePicture } from "../../candidate/api/api";
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
@@ -53,6 +54,9 @@ const PersonalProfile = () => {
 
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
+  const [fileList, setFileList] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
 
   useEffect(() => {
     if (initialLoading) {
@@ -84,13 +88,15 @@ const PersonalProfile = () => {
             email,
             companyName,
             address,
+            profileUrl,
           } = res.data;
-
+          setProfileImageUrl(profileUrl);
           form.setFieldsValue({
             firstName,
             lastName,
             phoneNumber,
             email,
+            // companyProfileUrl: profileUrl,
             company: companyName,
             doorNumber: address?.doorNumber || "",
             street: address?.street || "",
@@ -117,6 +123,38 @@ const PersonalProfile = () => {
     loadProfile();
   }, []);
 
+  const handleUpload = async (file) => {
+    const allowed = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowed.includes(file.type)) {
+      messageApi.error("Only JPG, JPEG, PNG images allowed!");
+      return Upload.LIST_IGNORE;
+    }
+    if (file.size > 200 * 1024) {
+      messageApi.error("Image must be smaller than 200KB!");
+      return Upload.LIST_IGNORE;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await uploadProfilePicture(formData);
+      if (res?.url) {
+        setProfileImageUrl(res.url);
+        messageApi.success("Logo uploaded successfully!");
+      } else {
+        messageApi.error("Upload failed");
+      }
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Upload error");
+    } finally {
+      setUploading(false);
+    }
+
+    return false; // prevent antd default upload
+  };
+
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
@@ -126,7 +164,7 @@ const PersonalProfile = () => {
         name: `${values.firstName} ${values.lastName}`.trim(),
         phoneNumber: values.phoneNumber,
         companyName: values.company,
-        profileUrl: null,
+        profileUrl: profileImageUrl,
         address: {
           doorNumber: values.doorNumber,
           street: values.street,
@@ -384,9 +422,9 @@ const PersonalProfile = () => {
                 </Form.Item>
               </Col>
             </Row> */}
-            <Form.Item label="Company Logo">
+            <Form.Item label="Company Logo" name="companyProfileUrl">
               <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <Upload
+                {/* <Upload
                   showUploadList={false}
                   beforeUpload={(file) => {
                     setLogoFile(file);
@@ -406,19 +444,44 @@ const PersonalProfile = () => {
                       }}
                     />
                   </div>
-                </Upload>
+                </Upload> */}
 
-                {editable && (
-                  <Button
-                    icon={<UploadOutlined />}
-                    onClick={() => {}}
-                    style={{
-                      borderRadius: 999,
-                    }}
-                  >
-                    Change Logo
-                  </Button>
-                )}
+                <Upload
+                  beforeUpload={handleUpload}
+                  accept="image/jpeg,image/png,image/jpg"
+                  disabled={!editable}
+                  showUploadList={false}
+                >
+                  {profileImageUrl ? (
+                    <Avatar
+                      src={profileImageUrl}
+                      size={80}
+                      style={{ cursor: editable ? "pointer" : "default" }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: "50%",
+                        border: "1px dashed #d9d9d9",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: editable ? "pointer" : "default",
+                        backgroundColor: "#fafafa",
+                      }}
+                    >
+                      <UploadOutlined style={{ fontSize: 20, color: "#999" }} />
+                      <div
+                        style={{ fontSize: 12, color: "#999", marginTop: 4 }}
+                      >
+                        Upload
+                      </div>
+                    </div>
+                  )}
+                </Upload>
               </div>
             </Form.Item>
 

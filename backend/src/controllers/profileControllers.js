@@ -65,7 +65,7 @@ const UploadResume = async (req, res) => {
       fileName: originalname,
       mimeType: mimetype,
       size,
-      extracted: structuredData,
+      extracted: structuredData.data,
     });
   } catch (err) {
     logger.error("Error in UploadResume:", err);
@@ -244,7 +244,7 @@ const uploadProfilePicture = async (req, res) => {
     }
 
     // 🔥 Upload file object (not just buffer)
-    const uploadedFile = await uploadToCloudinary(req.file, "profile");
+    const uploadedFile = await uploadToCloudinary(req.file);
 
     if (!uploadedFile) {
       return res.status(500).json({

@@ -11,10 +11,7 @@ import {
   getStaticFilePath,
   removeLocalFile,
 } from "../../../utils/helpers.js";
-import {
-  uploadToCloudinary,
-  deleteFromCloudinary,
-} from "../../../utils/Storage.js";
+import { uploadToS3, deleteFromS3 } from "../../../utils/Storage.js";
 
 /**
  * @description Utility function which returns the pipeline stages to structure the chat message schema with common lookups
@@ -96,68 +93,70 @@ const sendMessage = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Chat does not exist");
   }
 
-  const messageFiles = [];
+  let messageFiles = [];
 
-  if (req.files && req.files.attachments?.length > 0) {
-    for (const file of req.files.attachments) {
-      const localPath = getLocalPath(file.filename);
+  // ==============================
+  // 📤 Upload Attachments to S3
+  // ==============================
+  if (req.files?.attachments?.length > 0) {
+    try {
+      const uploadPromises = req.files.attachments.map(async (file) => {
+        const uploadedFile = await uploadToS3(file);
 
-      const uploadedFile = await uploadToCloudinary(localPath);
-
-      if (uploadedFile) {
-        messageFiles.push({
-          url: uploadedFile.secure_url, // 🔥 save this
-          public_id: uploadedFile.public_id, // optional (for delete later)
-          resource_type: uploadedFile.resource_type,
+        return {
+          url: uploadedFile.url,
+          key: uploadedFile.key, // store S3 key for deletion
           original_name: file.originalname,
-        });
-      }
+          mimeType: file.mimetype,
+        };
+      });
+
+      messageFiles = await Promise.all(uploadPromises);
+    } catch (error) {
+      console.error("Attachment Upload Failed:", error);
+      throw new ApiError(500, "Failed to upload attachments");
     }
   }
 
-  // Create a new message instance with appropriate metadata
+  // ==============================
+  // 💬 Create Message
+  // ==============================
   const message = await ChatMessage.create({
-    sender: new mongoose.Types.ObjectId(req.user._id),
+    sender: req.user._id,
     content: content || "",
-    chat: new mongoose.Types.ObjectId(chatId),
+    chat: chatId,
     attachments: messageFiles,
   });
 
-  // update the chat's last message which could be utilized to show last message in the list item
+  // ==============================
+  // 🔄 Update Last Message
+  // ==============================
   const chat = await Chat.findByIdAndUpdate(
     chatId,
-    {
-      $set: {
-        lastMessage: message._id,
-      },
-    },
+    { $set: { lastMessage: message._id } },
     { new: true },
   );
 
-  // structure the message
+  // ==============================
+  // 📦 Aggregate Message
+  // ==============================
   const messages = await ChatMessage.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(message._id),
-      },
-    },
+    { $match: { _id: message._id } },
     ...chatMessageCommonAggregation(),
   ]);
 
-  // Store the aggregation result
   const receivedMessage = messages[0];
 
   if (!receivedMessage) {
     throw new ApiError(500, "Internal server error");
   }
 
-  // logic to emit socket event about the new message created to the other participants
+  // ==============================
+  // 🔔 Emit Socket Event
+  // ==============================
   chat.participants.forEach((participantObjectId) => {
-    // here the chat is the raw instance of the chat in which participants is the array of object ids of users
-    // avoid emitting event to the user who is sending the message
     if (participantObjectId.toString() === req.user._id.toString()) return;
 
-    // emit the receive message event to the other participants with received message as the payload
     emitSocketEvent(
       req,
       participantObjectId.toString(),
@@ -174,51 +173,60 @@ const sendMessage = asyncHandler(async (req, res) => {
 const deleteMessage = asyncHandler(async (req, res) => {
   const { chatId, messageId } = req.params;
 
-  // Find chat and ensure user is participant
+  // ==============================
+  // 🔎 Validate Chat
+  // ==============================
   const chat = await Chat.findOne({
-    _id: new mongoose.Types.ObjectId(chatId),
-    participants: req.user?._id,
+    _id: chatId,
+    participants: req.user._id,
   });
 
   if (!chat) {
     throw new ApiError(404, "Chat does not exist");
   }
 
-  // Find message
+  // ==============================
+  // 🔎 Find Message
+  // ==============================
   const message = await ChatMessage.findById(messageId);
 
   if (!message) {
     throw new ApiError(404, "Message does not exist");
   }
 
-  // Check if user is sender
+  // ==============================
+  // 🚫 Only Sender Can Delete
+  // ==============================
   if (message.sender.toString() !== req.user._id.toString()) {
     throw new ApiError(403, "You are not authorised to delete this message");
   }
 
   // ==============================
-  // 🔥 Delete Cloudinary Attachments
+  // 🗑️ Delete S3 Attachments
   // ==============================
   if (message.attachments?.length > 0) {
-    for (const asset of message.attachments) {
-      if (asset.public_id) {
-        await deleteFromCloudinary(
-          asset.public_id,
-          asset.resource_type || "image",
-        );
-      }
-    }
+    const deletePromises = message.attachments
+      .filter((file) => file.key)
+      .map(async (file) => {
+        try {
+          await deleteFromS3(file.key);
+        } catch (error) {
+          console.error("Failed to delete S3 file:", file.key);
+        }
+      });
+
+    await Promise.all(deletePromises);
   }
 
-  // Delete message from DB
-  await ChatMessage.deleteOne({
-    _id: new mongoose.Types.ObjectId(messageId),
-  });
+  // ==============================
+  // 🗑️ Delete Message from DB
+  // ==============================
+  await ChatMessage.deleteOne({ _id: messageId });
 
   // ==============================
-  // Update last message if needed
+  // 🔄 Update Last Message if Needed
   // ==============================
-  if (chat.lastMessage?.toString() === message._id.toString()) {
+  if (chat.lastMessage?.toString() === messageId.toString()) {
     const lastMessage = await ChatMessage.findOne(
       { chat: chatId },
       {},
@@ -231,7 +239,7 @@ const deleteMessage = asyncHandler(async (req, res) => {
   }
 
   // ==============================
-  // Emit socket event
+  // 🔔 Emit Delete Event
   // ==============================
   chat.participants.forEach((participantObjectId) => {
     if (participantObjectId.toString() === req.user._id.toString()) return;
@@ -246,7 +254,7 @@ const deleteMessage = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, message, "Message deleted successfully"));
+    .json(new ApiResponse(200, {}, "Message deleted successfully"));
 });
 
 export { getAllMessages, sendMessage, deleteMessage };
