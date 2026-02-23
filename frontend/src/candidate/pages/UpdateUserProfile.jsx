@@ -1541,11 +1541,11 @@ const UpdateUserProfile = ({
                             message: "Professional summary is required",
                           },
 
-                          {
-                            pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"\n\r]+$/,
-                            message:
-                              "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
-                          },
+                          // {
+                          //   pattern: /^[A-Za-z0-9 ,.\-(){}&\/'"\n\r]+$/,
+                          //   message:
+                          //     "Only letters, numbers, spaces and , . - ( ) { } & / ' \" are allowed",
+                          // },
                         ]}
                       >
                         <Input.TextArea
