@@ -67,16 +67,26 @@ const CandidateList = () => {
           setLoading(false);
         }, 400);
 
+        // if (response?.data && response.data.length > 0) {
+        //   const map = {};
+        //   response.data.forEach((c) => {
+        //     if (c.status === "Rejected") {
+        //       map[c.applicationId] = "Rejected";
+        //     } else if (c.status === "BookMark") {
+        //       map[c.applicationId] = "BookMark";
+        //     } else {
+        //       map[c.applicationId] = "Not Updated";
+        //     }
+        //   });
+
+        //   setStatusMap(map);
+        //   setCandidates(response.data);
+        //   setTotal(response.total || response.data.length);
         if (response?.data && response.data.length > 0) {
           const map = {};
           response.data.forEach((c) => {
-            if (c.status === "Rejected") {
-              map[c.applicationId] = "Rejected";
-            } else if (c.status === "BookMark") {
-              map[c.applicationId] = "BookMark";
-            } else {
-              map[c.applicationId] = "Not Updated";
-            }
+            // map[c.applicationId] = c.status || "Not Updated";
+            map[c.applicationId] = c.status || "Pending";
           });
 
           setStatusMap(map);
@@ -104,17 +114,9 @@ const CandidateList = () => {
 
         if (response?.data && response.data.length > 0) {
           const map = {};
-          // response.data.forEach((c) => {
-          //   map[c.applicationId] = c.status || "Pending";
-          // });
           response.data.forEach((c) => {
-            if (c.status === "Rejected") {
-              map[c.applicationId] = "Rejected";
-            } else if (c.status === "BookMark") {
-              map[c.applicationId] = "BookMark";
-            } else {
-              map[c.applicationId] = "Not Updated";
-            }
+            // map[c.applicationId] = c.status || "Not Updated";
+            map[c.applicationId] = c.status || "Pending";
           });
 
           setStatusMap(map);
@@ -145,17 +147,6 @@ const CandidateList = () => {
 
       return true;
     })
-    // .filter((c) => {
-    //   if (!searchText.trim()) return true;
-
-    //   const name = c?.name?.toLowerCase() || "";
-    //   const title = c?.profile?.title?.toLowerCase() || "";
-
-    //   return (
-    //     name.includes(searchText.toLowerCase()) ||
-    //     title.includes(searchText.toLowerCase())
-    //   );
-    // })
 
     .filter((c) => {
       if (!searchText.trim()) return true;
@@ -240,9 +231,9 @@ const CandidateList = () => {
   const DEFAULT_FLAG_COLOR = "#BFBFBF";
 
   const STATUS_FLAG_MAP = {
-    // Pending: { label: "Pending", color: "#bfbfbf" },
+    Pending: { label: "Pending", color: "#bfbfbf" },
     // Reviewed: { label: "Reviewed", color: "#1890ff" },
-    // Shortlisted: { label: "Shortlisted", color: "#52c41a" },
+    Shortlisted: { label: "Shortlisted", color: "#52c41a" },
     Rejected: { label: "Rejected", color: "#f5222d" },
     BookMark: { label: "BookMark", color: "#faad14" }, // gold
     // Clear: { label: "Clear", color: "#ff16ecff" },
@@ -250,7 +241,7 @@ const CandidateList = () => {
 
   const MANUAL_STATUS_OPTIONS = [
     // "Pending",
-    // "Shortlisted",
+    "Shortlisted",
     "Rejected",
     "BookMark",
     // "Clear",
@@ -271,8 +262,8 @@ const CandidateList = () => {
 
   const FlagDropdown = ({ record }) => {
     // const currentStatus = record.status || "Pending";
-    // const currentStatus = statusMap[record.applicationId] || "Pending";
-    const currentStatus = statusMap[record.applicationId] || "Not Updated";
+    const currentStatus = statusMap[record.applicationId] || "Pending";
+    // const currentStatus = statusMap[record.applicationId] || "Not Updated";
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -292,36 +283,26 @@ const CandidateList = () => {
                 backgroundColor: isActive ? "#f5f5f5" : "transparent",
                 fontWeight: isActive ? 600 : 400,
               }}
-              // onClick={async () => {
-              //   const finalStatus = status === "Clear" ? "Pending" : status;
-
-              //   await UpdateVendorCandidateStatus({
-              //     jobApplicationId: record.applicationId,
-              //     status: finalStatus,
-              //   });
-
-              //   setStatusMap((prev) => ({
-              //     ...prev,
-              //     [record.applicationId]: finalStatus,
-              //   }));
-              // }}
               onClick={async () => {
-                const finalStatus = status === "Clear" ? "Pending" : status;
+                let finalStatus = status;
+
+                if (status === "Clear") {
+                  finalStatus = "Pending"; // ✅ convert clear to pending
+                }
 
                 try {
-                  // if (finalStatus === "Bookmark") {
                   if (finalStatus === "BookMark") {
                     await MarkCandidateBookmark({
                       jobApplicationId: record.applicationId,
                     });
-                  } else if (finalStatus === "Rejected") {
+                  } else {
+                    // For Shortlisted, Rejected, Pending
                     await UpdateVendorCandidateStatus({
                       jobApplicationId: record.applicationId,
-                      status: "Rejected",
+                      status: finalStatus,
                     });
                   }
 
-                  // ✅ Update UI
                   setStatusMap((prev) => ({
                     ...prev,
                     [record.applicationId]: finalStatus,
@@ -340,6 +321,33 @@ const CandidateList = () => {
             </div>
           );
         })}
+        {/* ✅ CLEAR BUTTON */}
+        <div
+          onClick={async () => {
+            try {
+              await UpdateVendorCandidateStatus({
+                jobApplicationId: record.applicationId,
+                status: "Pending",
+              });
+
+              setStatusMap((prev) => ({
+                ...prev,
+                [record.applicationId]: "Pending",
+              }));
+            } catch {
+              messageAPI.error("Failed to clear status");
+            }
+          }}
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            color: "#1677ff",
+            cursor: "pointer",
+            textAlign: "right",
+          }}
+        >
+          Clear
+        </div>
       </div>
     );
   };
@@ -347,7 +355,7 @@ const CandidateList = () => {
   const FLAG_FILTER_STATUSES = [
     // "Pending",
     // "Reviewed",
-    // "Shortlisted",
+    "Shortlisted",
     "Rejected",
     "BookMark",
   ];
@@ -474,16 +482,16 @@ const CandidateList = () => {
 
       // ✅ KEEP THIS (filter logic)
       onFilter: (value, record) => {
-        // const currentStatus = statusMap[record.applicationId] || "Pending";
-        const currentStatus = statusMap[record.applicationId] || "Not Updated";
+        const currentStatus = statusMap[record.applicationId] || "Pending";
+        // const currentStatus = statusMap[record.applicationId] || "Not Updated";
 
         return currentStatus === value;
       },
 
       // ✅ KEEP THIS (row flag UI)
       render: (_, record) => {
-        // const currentStatus = statusMap[record.applicationId] || "Pending";
-        const currentStatus = statusMap[record.applicationId] || "Not Updated";
+        const currentStatus = statusMap[record.applicationId] || "Pending";
+        // const currentStatus = statusMap[record.applicationId] || "Not Updated";
 
         const flagMeta = STATUS_FLAG_MAP[currentStatus];
 
@@ -504,13 +512,6 @@ const CandidateList = () => {
       },
     },
 
-    // {
-    //   title: "Name",
-    //   dataIndex: "name",
-    //   key: "name",
-    //   fixed: "left",
-    //   // sorter: (a, b) => a.name.localeCompare(b.name),
-    // },
     {
       title: "Name",
       dataIndex: "name",
@@ -785,49 +786,38 @@ const CandidateList = () => {
 
     // {
     //   title: "Email",
-    //   dataIndex: "email",
     //   key: "email",
-    //   sorter: (a, b) => a.email.localeCompare(b.email),
+    //   render: (_, record) => {
+    //     const displayEmail =
+    //       record?.isVendor && record?.vendor?.email
+    //         ? record.vendor.email
+    //         : record.email;
+
+    //     return displayEmail || "N/A";
+    //   },
+    //   sorter: (a, b) => {
+    //     const emailA =
+    //       a?.isVendor && a?.vendor?.email ? a.vendor.email : a.email || "";
+    //     const emailB =
+    //       b?.isVendor && b?.vendor?.email ? b.vendor.email : b.email || "";
+
+    //     return emailA.localeCompare(emailB);
+    //   },
     // },
-    {
-      title: "Email",
-      key: "email",
-      render: (_, record) => {
-        const displayEmail =
-          record?.isVendor && record?.vendor?.email
-            ? record.vendor.email
-            : record.email;
-
-        return displayEmail || "N/A";
-      },
-      sorter: (a, b) => {
-        const emailA =
-          a?.isVendor && a?.vendor?.email ? a.vendor.email : a.email || "";
-        const emailB =
-          b?.isVendor && b?.vendor?.email ? b.vendor.email : b.email || "";
-
-        return emailA.localeCompare(emailB);
-      },
-    },
-
-    {
-      title: "Phone Number",
-      dataIndex: ["profile", "phoneNumber"],
-      key: "phone",
-      render: (phone) => phone || "N/A",
-    },
 
     // {
-    //   title: "Status",
-    //   dataIndex: "status",
-    //   key: "status",
+    //   title: "Phone Number",
+    //   dataIndex: ["profile", "phoneNumber"],
+    //   key: "phone",
+    //   render: (phone) => phone || "N/A",
     // },
+
     {
       title: "Status",
       key: "status",
       render: (_, record) => {
-        const currentStatus = statusMap[record.applicationId] || "Not Updated";
-
+        // const currentStatus = statusMap[record.applicationId] || "Not Updated";
+        const currentStatus = statusMap[record.applicationId] || "Pending";
         return currentStatus;
       },
     },

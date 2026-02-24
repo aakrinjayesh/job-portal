@@ -408,11 +408,12 @@ const JobList = ({
                 borderRadius: 12,
                 background: "#fff",
                 border: "1px solid #EEEEEE",
-                height: 320,
+                // height: 320,
+                minHeight: 260,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                padding: 16,
+                padding: 0,
                 position: "relative",
               }}
             >
@@ -424,7 +425,7 @@ const JobList = ({
                   alignItems: "flex-start",
                   gap: 16,
                   flexWrap: "wrap",
-                  minHeight: 90,
+                  // minHeight: 50,
                 }}
               >
                 <div style={{ display: "flex", gap: 12 }}>
@@ -558,6 +559,8 @@ const JobList = ({
                   fontSize: 13,
                   maxHeight: 42,
                   overflow: "hidden",
+                  // padding: "0 px",
+                  marginTop: 10,
                 }}
               >
                 <span>
@@ -574,7 +577,6 @@ const JobList = ({
                 <Divider type="vertical" />
                 {/* <span>{job.experienceLevel ?? "Not Specified"}</span> */}
                 <UserOutlined /> {job.experience?.number} {job.experience?.type}
-               
                 {job.experienceLevel && (
                   <>
                     <Divider type="vertical" />
@@ -609,6 +611,7 @@ const JobList = ({
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
+                      // gap: 8,
                     }}
                   >
                     <div style={{ fontSize: 13, fontWeight: 600 }}>

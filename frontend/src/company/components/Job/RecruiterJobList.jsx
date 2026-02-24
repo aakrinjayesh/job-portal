@@ -172,6 +172,16 @@ const RecruiterJobList = () => {
     }
   }, [page]);
 
+  useEffect(() => {
+    if (isModalVisible && currentStep === 3 && !isEditing) {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      form.setFieldsValue({
+        companyName: storedUser?.companyName || "",
+      });
+    }
+  }, [isModalVisible, currentStep]);
+
   const showCreateModal = () => {
     setIsEditing(false);
     form.resetFields();
@@ -448,16 +458,20 @@ const RecruiterJobList = () => {
         //   number: String(values.experience.number),
         //   type: values.experience.type,
         // },
-        experience:
-          values.experience?.number && values.experience?.type
-            ? {
-                number: String(values.experience.number),
-                type: values.experience.type,
-              }
-            : {
-                number: null,
-                type: null,
-              },
+        // experience:
+        //   values.experience?.number && values.experience?.type
+        //     ? {
+        //         number: String(values.experience.number),
+        //         type: values.experience.type,
+        //       }
+        //     : {
+        //         number: null,
+        //         type: null,
+        //       },
+        experience: {
+          number: String(values.experience.number),
+          type: values.experience.type,
+        },
 
         experienceLevel: values.experienceLevel,
         // tenure: values.tenure,
@@ -609,7 +623,8 @@ const RecruiterJobList = () => {
       }
 
       // 🟢 SUCCESS
-      const extracted = response?.extracted || {};
+      // const extracted = response?.extracted || {};
+      const extracted = response?.extracted?.data || {};
 
       form.setFieldsValue({
         role: extracted.role || "",
@@ -1607,12 +1622,23 @@ const RecruiterJobList = () => {
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value) {
+                                // form.setFieldsValue({
+                                //   tenure: {
+                                //     number: value,
+                                //     type:
+                                //       form.getFieldValue(["tenure", "type"]) ||
+                                //       "year",
+                                //   },
+                                // });
                                 form.setFieldsValue({
                                   tenure: {
-                                    number: value,
+                                    number: form.getFieldValue([
+                                      "tenure",
+                                      "number",
+                                    ]),
                                     type:
                                       form.getFieldValue(["tenure", "type"]) ||
-                                      "month",
+                                      "year",
                                   },
                                 });
                               }
@@ -1998,11 +2024,25 @@ const RecruiterJobList = () => {
 
               {currentStep === 3 && (
                 <>
-                  <Form.Item
+                  {/* <Form.Item
                     name="companyName"
                     label="Company Name"
                     rules={[
                       { required: true },
+                      {
+                        pattern: /^[A-Za-z0-9 .,()\-&]+$/,
+                        message:
+                          "Only letters, numbers, spaces, and . , & - ( ) are allowed",
+                      },
+                    ]}
+                  >
+                    <Input placeholder="Company Name" />
+                  </Form.Item> */}
+                  <Form.Item
+                    name="companyName"
+                    label="Company Name"
+                    rules={[
+                      { required: true, message: "Company Name is required" },
                       {
                         pattern: /^[A-Za-z0-9 .,()\-&]+$/,
                         message:

@@ -565,6 +565,9 @@ const getCandidateDetails = async (req, res) => {
       candidate: {
         name: profile.name,
         email: profile.email,
+        role: role, // ✅ ADD THIS
+        organizationId: organizationId, // ✅ ADD THIS
+        id: id, // ✅ ADD THIS (candidate id)
         profile: {
           ...profile,
           isVendor,

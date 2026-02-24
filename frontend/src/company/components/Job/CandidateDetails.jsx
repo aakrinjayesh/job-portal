@@ -28,6 +28,8 @@ import {
   WhatsAppOutlined,
   CloudDownloadOutlined,
   MessageOutlined,
+  ShareAltOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 import CandidateActivity from "../activity/CandidateActivity";
 import { getCandidateDetails, SaveCandidateRating } from "../../api/api";
@@ -43,6 +45,8 @@ const CandidateDetails = () => {
   const location = useLocation();
   // 🔹 Review state (per candidate)
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   // const [reviewsByCandidate, setReviewsByCandidate] = useState({});
   const [tempReview, setTempReview] = useState("");
 
@@ -276,6 +280,9 @@ const CandidateDetails = () => {
 
     html2pdf().set(options).from(element).save();
   };
+  const shareLink = candidate
+    ? `${window.location.origin}/company/candidate/${candidate.id}?role=${candidate.role}&orgId=${candidate.organizationId}`
+    : "";
 
   return (
     <div style={{ padding: "0px" }}>
@@ -350,6 +357,21 @@ const CandidateDetails = () => {
                       </Space>
                     </Space>
                   </Space>
+                  <Tooltip title="Share Candidate">
+                    <Button
+                      shape="circle"
+                      icon={<ShareAltOutlined style={{ fontSize: 20 }} />}
+                      style={{
+                        backgroundColor: "#0EA5E9",
+                        color: "#FFFFFF",
+                        border: "none",
+                        height: 40,
+                        width: 40,
+                      }}
+                      onClick={() => setIsShareModalOpen(true)}
+                    />
+                  </Tooltip>
+
                   <Space>
                     <Tooltip title={`Whatsapp ${candidate.name}`}>
                       <Button
@@ -1160,6 +1182,57 @@ const CandidateDetails = () => {
           >
             Add
           </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={isShareModalOpen}
+        footer={null}
+        centered
+        width={500}
+        onCancel={() => setIsShareModalOpen(false)}
+      >
+        <div style={{ marginBottom: 20 }}>
+          <Title level={4}>Share Candidate</Title>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Text>
+            <strong>Candidate ID:</strong> {candidate?.id}
+          </Text>
+          <Text>
+            <strong>Role:</strong> {candidate?.role}
+          </Text>
+          <Text>
+            <strong>Organization ID:</strong> {candidate?.organizationId}
+          </Text>
+
+          <Divider />
+
+          <Text strong>Share Link</Text>
+
+          <Space style={{ width: "100%" }}>
+            {/* <Input
+              value={`${window.location.origin}/company/candidate/${candidate?.id}`}
+              readOnly
+            /> */}
+            <Input value={shareLink} readOnly />
+
+            <Button
+              icon={<CopyOutlined />}
+              type="primary"
+              onClick={() => {
+                // navigator.clipboard.writeText(
+                //   `${window.location.origin}/company/candidate/${candidate?.id}`,
+                // );
+                navigator.clipboard.writeText(shareLink);
+
+                messageApi.success("Link copied!");
+              }}
+            >
+              Copy
+            </Button>
+          </Space>
         </div>
       </Modal>
 

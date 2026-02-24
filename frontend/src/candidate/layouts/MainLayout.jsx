@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Layout,
   Menu,
@@ -34,10 +34,27 @@ const MainLayout = ({ children }) => {
   const location = useLocation();
 
   /* 👤 User Info */
-  const user = JSON.parse(localStorage.getItem("user")) || {
-    name: "Guest",
-    role: "Candidate",
-  };
+  // const user = JSON.parse(localStorage.getItem("user")) || {
+  //   name: "Guest",
+  //   role: "Candidate",
+  // };
+  const [user, setUser] = useState(() => {
+    return (
+      JSON.parse(localStorage.getItem("user")) || {
+        name: "Guest",
+        role: "Candidate",
+      }
+    );
+  });
+
+  useEffect(() => {
+    const updatedUser = JSON.parse(localStorage.getItem("user")) || {
+      name: "Guest",
+      role: "Candidate",
+    };
+
+    setUser(updatedUser);
+  }, [location.pathname]);
 
   /* 🔗 Menu → Route mapping */
   const menuRoutes = {
@@ -50,23 +67,24 @@ const MainLayout = ({ children }) => {
   };
 
   /* 🎯 Active menu */
- const selectedKey = React.useMemo(() => {
-   const path = location.pathname;
- 
-   // 🔑 sort routes by longest path first
-   const sortedRoutes = Object.entries(menuRoutes).sort(
-     (a, b) => Math.max(...b[1].map(p => p.length)) -
-               Math.max(...a[1].map(p => p.length))
-   );
- 
-   for (const [key, paths] of sortedRoutes) {
-     if (paths.some((p) => path.startsWith(p))) {
-       return key;
-     }
-   }
- 
-   return "jobs";
- }, [location.pathname]);
+  const selectedKey = React.useMemo(() => {
+    const path = location.pathname;
+
+    // 🔑 sort routes by longest path first
+    const sortedRoutes = Object.entries(menuRoutes).sort(
+      (a, b) =>
+        Math.max(...b[1].map((p) => p.length)) -
+        Math.max(...a[1].map((p) => p.length)),
+    );
+
+    for (const [key, paths] of sortedRoutes) {
+      if (paths.some((p) => path.startsWith(p))) {
+        return key;
+      }
+    }
+
+    return "jobs";
+  }, [location.pathname]);
 
   /* 🧠 Menu click */
   const onMenuClick = ({ key }) => {
@@ -96,10 +114,10 @@ const MainLayout = ({ children }) => {
       return;
     }
 
-   const route = menuRoutes[key];
-if (route && route.length) {
-  navigate(route[0]); // always navigate to first route
-}
+    const route = menuRoutes[key];
+    if (route && route.length) {
+      navigate(route[0]); // always navigate to first route
+    }
   };
 
   /* 🧭 Title mapping */
@@ -187,19 +205,18 @@ if (route && route.length) {
         />
 
         {/* ⚙️ Bottom Menu */}
-       <Menu
-  mode="inline"
-  theme="dark"
-  selectedKeys={[selectedKey]}
-  onClick={onMenuClick}
-  style={{ background: "transparent", border: "none" }}
-  items={[
-    // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
-    { key: "profile", icon: <UserOutlined />, label: "Profile" },
-    { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
-  ]}
-/>
-
+        <Menu
+          mode="inline"
+          theme="dark"
+          selectedKeys={[selectedKey]}
+          onClick={onMenuClick}
+          style={{ background: "transparent", border: "none" }}
+          items={[
+            // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+            { key: "profile", icon: <UserOutlined />, label: "Profile" },
+            { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
+          ]}
+        />
       </Sider>
 
       {/* 📄 Main Layout */}
@@ -234,8 +251,7 @@ if (route && route.length) {
             <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
 
             <div>
-              <Breadcrumb
-              />
+              <Breadcrumb />
               <Title level={4} style={{ margin: 0 }}>
                 {pageTitle}
               </Title>
@@ -255,24 +271,24 @@ if (route && route.length) {
               }}
             /> */}
 
-            <Space>
-              <Avatar size={56}>
+          <Space>
+            {/* <Avatar size={56}>
                 {user.name?.slice(0, 2).toUpperCase()}
-              </Avatar>
+              </Avatar> */}
+            <Avatar size={56} src={user?.profilePicture || undefined}>
+              {!user?.profilePicture && user?.name?.slice(0, 2)?.toUpperCase()}
+            </Avatar>
 
-              <div style={{ lineHeight: 1.2 }}>
-                <Space size={4}>
-                  <Text strong>Hi, {user.name}</Text>
-                  <DownOutlined style={{ fontSize: 12 }} />
-                </Space>
-                <Text
-                  type="secondary"
-                  style={{ display: "block", fontSize: 12 }}
-                >
-                  {user.role}
-                </Text>
-              </div>
-            </Space>
+            <div style={{ lineHeight: 1.2 }}>
+              <Space size={4}>
+                <Text strong>Hi, {user.name}</Text>
+                <DownOutlined style={{ fontSize: 12 }} />
+              </Space>
+              <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+                {user.role}
+              </Text>
+            </div>
+          </Space>
           {/* </Space> */}
         </Header>
 

@@ -366,7 +366,9 @@ const UpdateUserProfile = ({
 
     try {
       const response = await UploadPdf(uploadFormData);
-      const extracted = response?.extracted || {};
+      // const extracted = response?.extracted || {};
+      const extracted = response?.extracted?.data || {};
+
       console.log("ectracted", extracted);
 
       // Handle skills extraction
@@ -422,7 +424,7 @@ const UpdateUserProfile = ({
         Array.isArray(extracted?.workExperience)
       ) {
         setExperienceList(extracted?.workExperience);
-        form.setFieldValue({ workExperience: extracted?.workExperience });
+        form.setFieldsValue({ workExperience: extracted?.workExperience });
       }
       const storedUser = localStorage.getItem("user");
       let parsedUser = {};
@@ -470,8 +472,9 @@ const UpdateUserProfile = ({
         preferredLocation:
           extracted?.preferredLocation ||
           form.getFieldValue("preferredLocation"),
-        currentLocation:
-          extracted?.currentLocation || form.getFieldValue("currentLocation"),
+        // currentLocation:
+        //   extracted?.currentLocation || form.getFieldValue("currentLocation"),
+        currentLocation: extracted?.currentLocation ?? null,
         preferredJobType:
           extracted?.preferredJobType || form.getFieldValue("preferredJobType"),
         certifications:
@@ -690,6 +693,19 @@ const UpdateUserProfile = ({
       const response = await profiledata(payload);
 
       if (response?.status === "success") {
+        const currentRole = localStorage.getItem("role");
+
+        if (currentRole === "candidate") {
+          const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+
+          storedUser.name = values?.name || storedUser.name;
+          storedUser.profilePicture = profilePicUrl || null;
+
+          localStorage.setItem("user", JSON.stringify(storedUser));
+
+          // 🔥 trigger header update
+          window.dispatchEvent(new Event("storage"));
+        }
         messageAPI.success(
           isEditMode
             ? "Profile updated successfully!"
@@ -1551,7 +1567,7 @@ const UpdateUserProfile = ({
                         <Input.TextArea
                           rows={4}
                           showCount
-                          maxLength={600}
+                          maxLength={5000}
                           placeholder="Salesforce-focused professional summary (minimum 100 characters)"
                         />
                       </Form.Item>

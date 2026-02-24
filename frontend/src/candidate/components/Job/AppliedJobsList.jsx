@@ -43,7 +43,7 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
       {/* FILTER OPTIONS */}
       <Col span={24}>
         <Space style={{ marginBottom: 16 }}>
-          {["All", "Pending", "Accepted", "Rejected"].map((status) => (
+          {["All", "Pending", "Shortlisted", "Rejected"].map((status) => (
             <Tag
               key={status}
               onClick={() => setStatusFilter(status)}
@@ -209,7 +209,7 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
                     color={
                       app?.status === "Pending"
                         ? "orange"
-                        : app?.status === "Accepted"
+                        : app?.status === "Shortlisted"
                           ? "green"
                           : app?.status === "Rejected"
                             ? "red"
