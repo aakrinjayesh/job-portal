@@ -8,405 +8,8 @@ import path from "path";
 import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
 import { applyFilters } from "../utils/applyFilters.js";
-import { queueRecruiterEmails } from "../utils/BulkEmail/jobEmail.service.js";
+import { queueJobEmails } from "../utils/BulkEmail/jobEmail.service.js";
 import { canCreate, canDelete, canEdit, canView } from "../utils/permission.js";
-
-// User applies for a job
-
-// const userApplyJob = async (req, res) => {
-//   try {
-//     const { jobId } = req.body;
-//     const userId = req.user.id;
-
-//     if (!jobId) {
-//       logger.warn("Job ID missing in userApplyJob");
-//       return res
-//         .status(400)
-//         .json({ status: "error", message: "Job ID is required" });
-//     }
-
-//     // 1. Fetch Job
-//     const job = await prisma.job.findFirst({
-//       where: { id: jobId, isDeleted: false },
-//       include: {
-//         postedBy: { select: { id: true, name: true, email: true } },
-//         _count: {
-//           select: { applications: true },
-//         },
-//       },
-//     });
-
-//     if (!job) {
-//       return res
-//         .status(404)
-//         .json({ status: "error", message: "Job not found" });
-//     }
-//     if (job.status !== "Open") {
-//       return res
-//         .status(200)
-//         .json({ status: "error", message: "No Longer Accepting Jobs" });
-//     }
-
-//     if (
-//       job.ApplicationLimit !== null &&
-//       job._count.applications >= job.ApplicationLimit
-//     ) {
-//       await prisma.job.update({
-//         where: { id: jobId },
-//         data: { status: "Closed" },
-//       });
-
-//       return res.status(200).json({
-//         status: "error",
-//         message: "Application limit reached. Job is closed.",
-//       });
-//     }
-
-//     // 2. Fetch User Profile
-//     const user = await prisma.users.findUnique({
-//       where: { id: userId },
-//       include: { CandidateProfile: true },
-//     });
-
-//     if (!user) {
-//       logger.warn(`User not found - ID: ${userId}`);
-//       return res
-//         .status(404)
-//         .json({ status: "error", message: "User not found" });
-//     }
-
-//     if (!user.CandidateProfile) {
-//       return res.status(404).json({
-//         status: "error",
-//         message: "Fill The Candidate Details First!",
-//       });
-//     }
-
-//     const profile = user.CandidateProfile;
-//     // 3. Check Existing Application
-//     const existingApplication = await prisma.jobApplication.findUnique({
-//       where: {
-//         jobId_candidateProfileId: {
-//           jobId,
-//           candidateProfileId: profile.id,
-//         },
-//       },
-//     });
-
-//     if (existingApplication) {
-//       logger.warn(
-//         `User already applied - jobId: ${jobId}, user profile id: ${profile.id}`
-//       );
-//       return res
-//         .status(409)
-//         .json({ status: "error", message: "Already applied" });
-//     }
-
-//     // STEP 4: AI ANALYSIS (Real-time)
-//     let aiAnalysisResult = null;
-
-//     const jobDescription = {
-//       job_id: job?.id,
-//       role: job?.role,
-//       description: job?.description || "",
-//       employmentType: job?.employmentType || "FullTime",
-//       skills: job?.skills || [],
-//       clouds: job?.clouds || [],
-//       salary: job?.salary,
-//       companyName: job?.companyName,
-//       responsibilities: job?.responsibilities || [],
-//       qualifications: job?.qualifications || [],
-//       experience: job?.experience || "",
-//       experienceLevel: job?.experienceLevel || "",
-//       location: job?.location || "",
-//       companyName: job?.companyName || "",
-//     };
-
-//     const candidateDetails = {
-//       // id: profile?.id,
-//       userId: profile?.userId,
-//       profilePicture: profile?.profilePicture || null,
-//       title: profile?.title || "",
-//       name: profile?.name || "",
-//       phoneNumber: profile?.phoneNumber || "",
-//       email: profile?.email || "",
-//       currentLocation: profile?.currentLocation || "",
-//       preferredLocation: profile?.preferredLocation || [],
-//       portfolioLink: profile?.portfolioLink || "",
-//       preferredJobType: profile?.preferredJobType || [],
-//       currentCTC: profile?.currentCTC || "",
-//       expectedCTC: profile?.expectedCTC || "",
-//       rateCardPerHour: profile?.rateCardPerHour || {},
-//       joiningPeriod: profile?.joiningPeriod || "",
-//       totalExperience: profile?.totalExperience || "",
-//       relevantSalesforceExperience: profile?.relevantSalesforceExperience || "",
-//       skills: profile?.skillsJson || [],
-//       primaryClouds: profile?.primaryClouds || [],
-//       secondaryClouds: profile?.secondaryClouds || [],
-//       certifications: profile?.certifications || [],
-//       workExperience: profile?.workExperience || [],
-//       education: profile?.education || [],
-//       linkedInUrl: profile?.linkedInUrl || null,
-//       trailheadUrl: profile?.trailheadUrl || null,
-//     };
-
-//     // Only run AI if candidate has a profile
-//     if (user.CandidateProfile) {
-//       aiAnalysisResult = await extractAIText("CV_RANKING", "cvranker", {
-//         jobDescription,
-//         candidateDetails,
-//       });
-//       logger.info("aicvranker", JSON.stringify(aiAnalysisResult, null, 2));
-//     }
-
-//     // STEP 5: SAVE TO DB (Transaction)
-//     const application = await prisma.$transaction(async (tx) => {
-//       const currentCount = await tx.jobApplication.count({
-//         where: { jobId },
-//       });
-
-//       if (
-//         job.ApplicationLimit !== null &&
-//         currentCount >= job.ApplicationLimit
-//       ) {
-//         await tx.job.update({
-//           where: { id: jobId },
-//           data: { status: "Closed" },
-//         });
-
-//         throw new Error("APPLICATION_LIMIT_REACHED");
-//       }
-
-//       // Create the base Application
-//       const newApp = await tx.jobApplication.create({
-//         data: {
-//           jobId,
-//           userId,
-//           candidateProfileId: profile.id,
-//           appliedById: userId,
-//           status: "Pending",
-//         },
-//       });
-
-//       // Create the Analysis (if AI succeeded)
-//       if (aiAnalysisResult) {
-//         await tx.applicationAnalysis.create({
-//           data: {
-//             jobApplicationId: newApp.id,
-//             fitPercentage: aiAnalysisResult.fit_percentage || 0,
-//             details: aiAnalysisResult, // Stores the full JSON
-//             status: "COMPLETED",
-//           },
-//         });
-//       }
-
-//       if (
-//         job.ApplicationLimit !== null &&
-//         currentCount + 1 >= job.ApplicationLimit
-//       ) {
-//         await tx.job.update({
-//           where: { id: jobId },
-//           data: { status: "Closed" },
-//         });
-//       }
-
-//       return newApp;
-//     });
-
-//     // Generate resume HTML
-//     const resumeHTML = generateResumeHTML(user, user.CandidateProfile, job);
-//     let pdfBuffer;
-
-//     try {
-//       const browser = await puppeteer.launch({
-//         headless: "new",
-//         args: ["--no-sandbox"],
-//       });
-//       const page = await browser.newPage();
-//       await page.setContent(resumeHTML, { waitUntil: "networkidle0" });
-//       pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
-//       await browser.close();
-//     } catch (pdfError) {
-//       logger.error(
-//         "PDF Generation Error:",
-//         JSON.stringify(pdfError.message, null, 2)
-//       );
-//     }
-
-//     // Send Email to Recruiter
-//     if (job.postedBy?.email) {
-//       try {
-//         await sendEmail({
-//           to: job.postedBy.email,
-//           subject: `New Application for ${job.role} - ${user.name}`,
-//           html: `
-//             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-//               <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-//                 <h1 style="margin: 0;">New Job Application Received! 🎉</h1>
-//               </div>
-
-//               <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-//                 <h2 style="color: #333; margin-top: 0;">Application Details</h2>
-
-//                 <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-//                   <p style="margin: 10px 0;"><strong>Job Position:</strong> ${
-//                     job.role
-//                   }</p>
-//                   <p style="margin: 10px 0;"><strong>Company:</strong> ${
-//                     job.companyName
-//                   }</p>
-//                   <p style="margin: 10px 0;"><strong>Candidate Name:</strong> ${
-//                     user.name
-//                   }</p>
-//                   <p style="margin: 10px 0;"><strong>Candidate Email:</strong> ${
-//                     user.email
-//                   }</p>
-//                   <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
-//                     "en-US",
-//                     { year: "numeric", month: "long", day: "numeric" }
-//                   )}</p>
-//                 </div>
-
-//                 ${
-//                   user.CandidateProfile
-//                     ? `
-//                 <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-//                   <h3 style="color: #667eea; margin-top: 0;">Quick Summary</h3>
-//                   ${
-//                     user.CandidateProfile.title
-//                       ? `<p><strong>Current Role:</strong> ${user.CandidateProfile.title}</p>`
-//                       : ""
-//                   }
-//                   ${
-//                     user.CandidateProfile.totalExperience
-//                       ? `<p><strong>Experience:</strong> ${user.CandidateProfile.totalExperience}</p>`
-//                       : ""
-//                   }
-//                   ${
-//                     user.CandidateProfile.currentLocation
-//                       ? `<p><strong>Location:</strong> ${user.CandidateProfile.currentLocation}</p>`
-//                       : ""
-//                   }
-//                   ${
-//                     user.CandidateProfile.expectedCTC
-//                       ? `<p><strong>Expected CTC:</strong> ₹${user.CandidateProfile.expectedCTC}</p>`
-//                       : ""
-//                   }
-//                   ${
-//                     user.CandidateProfile.joiningPeriod
-//                       ? `<p><strong>Notice Period:</strong> ${user.CandidateProfile.joiningPeriod}</p>`
-//                       : ""
-//                   }
-//                 </div>
-//                 `
-//                     : ""
-//                 }
-
-//                 <p style="color: #666; font-size: 14px; margin-top: 30px;">
-//                   📎 Please find the detailed resume attached to this email.
-//                 </p>
-
-//                 <p style="color: #666; font-size: 14px; margin-top: 20px;">
-//                   <em>This is an automated notification from the Job Portal.</em>
-//                 </p>
-//               </div>
-//             </div>
-//           `,
-//           attachments: pdfBuffer
-//             ? [
-//                 {
-//                   filename: `${user.name.replace(/\s+/g, "_")}_Resume.pdf`,
-//                   content: pdfBuffer,
-//                   contentType: "application/pdf",
-//                 },
-//               ]
-//             : [],
-//         });
-//       } catch (emailError) {
-//         logger.error(
-//           "Error sending email to poster:",
-//           JSON.stringify(emailError.message, null, 2)
-//         );
-//       }
-//     }
-
-//     // Send Email to Candidate
-//     try {
-//       await sendEmail({
-//         to: user.email,
-//         subject: `Application Submitted - ${job.role} at ${job.companyName}`,
-//         html: `
-//           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-//             <div style="background: linear-gradient(135deg, #2196F3 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-//               <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
-//             </div>
-
-//             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-//               <p style="color: #333; font-size: 16px;">Hi ${user.name},</p>
-
-//               <p style="color: #666;">Your application has been successfully submitted for the following position:</p>
-
-//               <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-//                 <p style="margin: 10px 0;"><strong>Position:</strong> ${
-//                   job.role
-//                 }</p>
-//                 <p style="margin: 10px 0;"><strong>Company:</strong> ${
-//                   job.companyName
-//                 }</p>
-//                 <p style="margin: 10px 0;"><strong>Location:</strong> ${
-//                   job.location || "Not specified"
-//                 }</p>
-//                 <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
-//                   "en-US",
-//                   { year: "numeric", month: "long", day: "numeric" }
-//                 )}</p>
-//               </div>
-
-//               <p style="color: #666;">The employer will review your application and get back to you if your profile matches their requirements.</p>
-
-//               <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
-
-//               <p style="color: #999; font-size: 14px; margin-top: 30px;">
-//                 <em>This is an automated confirmation from the Job Portal.</em>
-//               </p>
-//             </div>
-//           </div>
-//         `,
-//       });
-//     } catch (emailError) {
-//       logger.error(
-//         "Error sending confirmation email:",
-//         JSON.stringify(emailError.message, null, 2)
-//       );
-//     }
-
-//     return res.status(201).json({
-//       status: "success",
-//       message: "Application submitted successfully",
-//       data: {
-//         application: {
-//           id: application.id,
-//           jobId: application.jobId,
-//           status: application.status,
-//           // Return the score to the frontend immediately if you want
-//           matchScore: aiAnalysisResult?.fit_percentage,
-//         },
-//       },
-//     });
-//   } catch (error) {
-//     if (error.message === "APPLICATION_LIMIT_REACHED") {
-//       return res.status(400).json({
-//         status: "error",
-//         message: "Application limit reached. Job is closed.",
-//       });
-//     }
-//     logger.error("userApplyJob Error:", error.message);
-//     return res.status(500).json({
-//       status: "error",
-//       message: "Failed to submit application:" + error.message,
-//     });
-//   }
-// };
 
 const userApplyJob = async (req, res) => {
   try {
@@ -1742,30 +1345,49 @@ const postJob = async (req, res) => {
 
     (async () => {
       try {
+        // 🔹 Get recruiters
         const recruiters = await prisma.users.findMany({
+          where: { role: "company" },
+          select: { email: true, id: true },
+        });
+
+        // 🔹 Get candidates from userProfile
+        const candidates = await prisma.userProfile.findMany({
           where: {
-            role: "company",
+            isVerified: true,
           },
           select: {
-            email: true,
-            id: true,
+            user: {
+              select: {
+                email: true,
+                id: true,
+              },
+            },
           },
         });
 
-        if (!recruiters.length) {
-          console.warn("No recruiters found for email notification");
+        const recruiterEmails = recruiters.map((r) => r.email);
+        const candidateEmails = candidates
+          .map((c) => c.user?.email)
+          .filter(Boolean);
+
+        if (!recruiterEmails.length && !candidateEmails.length) {
+          console.warn("No recipients found for job email");
           return;
         }
 
-        await queueRecruiterEmails(recruiters, job);
+        await queueJobEmails({
+          recruiterEmails,
+          candidateEmails,
+          job,
+        });
 
         console.log(
-          `Queued job emails for ${recruiters.length} recruiters (jobId: ${job.id})`,
+          `Queued emails for ${recruiterEmails.length} recruiters and ${candidateEmails.length} candidates`,
         );
       } catch (emailError) {
-        // ❗ DO NOT throw — email failure should not break job posting
         logger.error(
-          "Failed to queue recruiter emails",
+          "Failed to queue job emails",
           JSON.stringify(emailError.message, null, 2),
         );
       }

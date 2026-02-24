@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import {
   Card,
   Typography,
   Tag,
-  Space,
   Button,
   Progress,
   Divider,
@@ -13,44 +17,58 @@ import {
   Modal,
 } from "antd";
 import { LuBookmark, LuBookmarkCheck } from "react-icons/lu";
-import axios from "axios";
-import {
-  ArrowLeftOutlined,
-  EnvironmentOutlined,
-  DownOutlined,
-  RightOutlined,
-} from "@ant-design/icons";
 import { GetJobDetails, SaveJob, UnSaveJob } from "../../api/api";
-import { useLocation } from "react-router-dom";
+import { ShareAltOutlined, CopyOutlined } from "@ant-design/icons";
+import { Input, Space } from "antd";
+import { ApplyJob } from "../../../candidate/api/api";
 import ApplyBenchJob from "../../pages/ApplyBenchJob";
 
 const { Title, Text, Paragraph } = Typography;
 
-const JobDetails = () => {
+const JobDetails = ({ mode }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const show = searchParams.get("show");
+  const source = location?.state?.source;
+  const count = location?.state?.count;
+  const jobids = location?.state?.jobids;
+
+  const isCandidate = mode === "candidate";
+  const isCompany = mode === "company";
+  console.log("mode", mode);
+
   const [job, setJob] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [messageApi, contextHolder] = message.useMessage();
+
+  const [isApplied, setIsApplied] = useState(false);
+  const [applyLoading, setApplyLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
 
-  const location = useLocation();
+  const [messageApi, contextHolder] = message.useMessage();
 
-  const type = location?.state?.type;
-  const portal = location?.state?.portal;
-  const source = location?.state?.source;
-  const count = location?.state?.count;
-
-  console.log("type in compant jobdetails", type);
-  console.log("portal", portal);
-
+  // ===============================
+  // FETCH JOB
+  // ===============================
   useEffect(() => {
     fetchJobDetails();
-  }, []);
 
+    if (jobids && jobids.includes(id)) {
+      setIsApplied(true);
+    }
+  }, [id]);
+
+  // ===============================
+  // PROGRESS ANIMATION (your logic)
+  // ===============================
   useEffect(() => {
     if (initialLoading || loading) {
       const interval = setInterval(() => {
@@ -65,17 +83,19 @@ const JobDetails = () => {
 
   const fetchJobDetails = async () => {
     try {
-      // const payload = { jobid: id };
       const response = await GetJobDetails(id);
       setJob(response?.job);
-    } catch (error) {
-      message.error("Failed to load job details");
+    } catch {
+      messageApi.error("Failed to load job details");
     } finally {
       setLoading(false);
       setInitialLoading(false);
     }
   };
 
+  // ===============================
+  // SAVE / UNSAVE
+  // ===============================
   const handleSaveToggle = async () => {
     if (!job) return;
 
@@ -88,11 +108,7 @@ const JobDetails = () => {
 
     const willBeSaved = !job.isSaved;
 
-    // optimistic UI
-    setJob((prev) => ({
-      ...prev,
-      isSaved: willBeSaved,
-    }));
+    setJob((prev) => ({ ...prev, isSaved: willBeSaved }));
 
     try {
       const resp = willBeSaved
@@ -104,20 +120,49 @@ const JobDetails = () => {
       messageApi.success(
         willBeSaved ? "Job saved successfully!" : "Job removed!",
       );
-    } catch (err) {
-      // rollback
-      setJob((prev) => ({
-        ...prev,
-        isSaved: !willBeSaved,
-      }));
+    } catch {
+      setJob((prev) => ({ ...prev, isSaved: !willBeSaved }));
       messageApi.error("Something went wrong!");
     }
   };
 
-  const handleViewCandidates = () => {
-    navigate("/company/candidates", { state: { id } });
+  // ===============================
+  // APPLY (Candidate Only)
+  // ===============================
+  const handleApply = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setShowLoginModal(true); // modal should pass redirect
+      return;
+    }
+
+    setApplyLoading(true);
+
+    try {
+      const resp = await ApplyJob({ jobId: id });
+
+      if (resp?.status === "success") {
+        setIsApplied(true);
+        messageApi.success(resp?.message || "Successfully applied");
+      }
+    } catch (error) {
+      const { status, data } = error?.response || {};
+      console.log("status", status);
+      console.log("data", data);
+      if (status === 404 && data?.message) {
+        messageApi.error(data.message);
+      } else {
+        messageApi.error("Something went wrong");
+      }
+    } finally {
+      setApplyLoading(false);
+    }
   };
 
+  // ===============================
+  // LOADING SCREEN (your original)
+  // ===============================
   if (initialLoading || loading) {
     return (
       <div
@@ -140,43 +185,68 @@ const JobDetails = () => {
           trailColor="#E6E8FF"
           showInfo={false}
         />
-        <div
-          style={{
-            marginTop: 16,
-            color: "#555",
-            fontSize: 14,
-            fontWeight: 500,
-          }}
-        >
+        <div style={{ marginTop: 16, fontWeight: 500 }}>
           Loading job details…
         </div>
       </div>
     );
   }
 
+  if (!job) return <Text type="danger">Job not found</Text>;
+
+  const handleShare = () => {
+    const generatedUrl = `${window.location.origin}/job/${id}`;
+
+    const customMessage = `
+    🚀 We're hiring!
+
+    💼 Role: ${job?.role}
+    🏢 Company: ${job?.companyName}
+    📍 Location: ${job?.location}
+    💰 Salary: ₹ ${job?.salary} LPA
+
+    ✨ Check out this opportunity and apply here:
+    ${generatedUrl}
+    `;
+
+    setShareUrl(generatedUrl);
+    setShareMessage(customMessage.trim());
+    setShowShareModal(true);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      messageApi.success("Link copied successfully!");
+    } catch {
+      messageApi.error("Failed to copy link");
+    }
+  };
+
+  const handleCopyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(shareMessage);
+      messageApi.success("Share message copied!");
+    } catch {
+      messageApi.error("Failed to copy message");
+    }
+  };
+
   return (
     <>
       {contextHolder}
-      <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>
-        <Card
-          style={{
-            borderRadius: 14,
-            border: "1px solid #f0f0f0",
-            boxShadow: "none",
-            // padding: 24,
-          }}
-        >
-          {/* ===== HEADER ===== */}
 
+      <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>
+        <Card style={{ borderRadius: 14 }}>
+          {/* HEADER */}
           <div
             style={{
               display: "flex",
-              alignItems: "center",
               justifyContent: "space-between",
-              width: "100%",
+              alignItems: "center",
             }}
           >
-            {/* LEFT SIDE */}
+            {/* LEFT */}
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
               {job.companyLogo ? (
                 <img
@@ -187,7 +257,6 @@ const JobDetails = () => {
                     height: 56,
                     borderRadius: 8,
                     objectFit: "cover",
-                    border: "1px solid #E5E7EB",
                   }}
                 />
               ) : (
@@ -200,9 +269,8 @@ const JobDetails = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 22,
                     fontWeight: 700,
-                    color: "#FFFFFF",
+                    color: "#fff",
                   }}
                 >
                   {(job.companyName || job.role || "").charAt(0).toUpperCase()}
@@ -217,54 +285,51 @@ const JobDetails = () => {
               </div>
             </div>
 
-            {/* RIGHT SIDE */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              {source === "myjobs" && (
+            {/* RIGHT */}
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              {isCompany && source === "myjobs" && (
                 <Button
                   style={{
                     background: "#D1E4FF",
                     borderRadius: 100,
                     fontWeight: 600,
                   }}
-                  onClick={handleViewCandidates}
+                  onClick={() =>
+                    navigate("/company/candidates", {
+                      state: { id },
+                    })
+                  }
                 >
                   View Candidates ({count || 0})
                 </Button>
               )}
 
-              {/* SAVE */}
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSaveToggle(job.id);
-                }}
-                style={{ fontSize: 22, cursor: "pointer" }}
-              >
-                <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+              <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+                <div onClick={handleSaveToggle} style={{ cursor: "pointer" }}>
                   {job?.isSaved ? (
                     <LuBookmarkCheck size={22} color="#1677ff" />
                   ) : (
                     <LuBookmark size={22} color="#9CA3AF" />
                   )}
-                </Tooltip>
-              </div>
+                </div>
+              </Tooltip>
 
-              <Tag
-                color={job.status === "Closed" ? "error" : "success"}
-                style={{
-                  borderRadius: 20,
-                  padding: "2px 12px",
-                  fontSize: 12,
-                }}
-              >
+              <Tooltip title="Share Job">
+                <ShareAltOutlined
+                  style={{ fontSize: 20, cursor: "pointer", color: "#6B7280" }}
+                  onClick={handleShare}
+                />
+              </Tooltip>
+
+              <Tag color={job.status === "Closed" ? "error" : "success"}>
                 {job.status}
               </Tag>
             </div>
           </div>
 
-          {/* ===== DETAILS GRID ===== */}
-          <Divider style={{ margin: "16px 0" }} />
+          <Divider />
 
+          {/* DETAILS GRID */}
           <div
             style={{
               display: "grid",
@@ -285,13 +350,6 @@ const JobDetails = () => {
             </div>
 
             <div>
-              <Text strong>Experience Level</Text>
-              <div>
-                <div>{job.experienceLevel}</div>
-              </div>
-            </div>
-
-            <div>
               <Text strong>Salary</Text>
               <div>₹ {job.salary} LPA</div>
             </div>
@@ -306,125 +364,140 @@ const JobDetails = () => {
               <div>{job.jobType}</div>
             </div>
           </div>
-          <Divider style={{ margin: "16px 0" }} />
 
-          {/* ===== CLOUDS ===== */}
+          <Divider />
+
+          {/* CLOUDS */}
           <Text strong>Clouds:</Text>
-          <div
-            style={{
-              marginTop: 8,
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            {job.clouds?.map((cloud, i) => (
-              <Tag
-                key={i}
-                style={{
-                  background: "#E7F0FE",
-                  borderRadius: 100,
-                  border: "1px solid #1677FF",
-                }}
-              >
-                {cloud}
-              </Tag>
+          <div style={{ marginTop: 8 }}>
+            {job.clouds?.map((c, i) => (
+              <Tag key={i}>{c}</Tag>
             ))}
           </div>
 
-          <Divider style={{ margin: "16px 0" }} />
+          <Divider />
 
-          {/* ===== SKILLS ===== */}
+          {/* SKILLS */}
           <Text strong>Skills:</Text>
-          <div
-            style={{
-              marginTop: 8,
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            {job.skills?.map((skill, i) => (
-              <Tag
-                key={i}
-                style={{
-                  background: "#FBEBFF",
-                  borderRadius: 100,
-                  border: "1px solid #800080",
-                }}
-              >
-                {skill}
+          <div style={{ marginTop: 8 }}>
+            {job.skills?.map((s, i) => (
+              <Tag key={i} color="purple">
+                {s}
               </Tag>
             ))}
           </div>
 
-          {/* ===== CERTIFICATES ===== */}
-          <Divider style={{ margin: "16px 0" }} />
-
-          <Text strong>Certificates:</Text>
-
-          <div
-            style={{
-              marginTop: 8,
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            {job.certifications && job.certifications.length > 0 ? (
-              job.certifications.map((cert, i) => (
-                <Tag
-                  key={i}
-                  style={{
-                    background: "#E6FFFB",
-                    borderRadius: 100,
-                    border: "1px solid #13C2C2",
-                  }}
-                >
-                  {cert}
-                </Tag>
-              ))
-            ) : (
-              <Text type="secondary">Not specified</Text>
-            )}
-          </div>
-
-          {/* ===== DESCRIPTION ===== */}
-          <Divider style={{ margin: "16px 0" }} />
+          <Divider />
 
           <Text strong>Description</Text>
-          <Paragraph style={{ marginTop: 6, color: "#555" }}>
-            {job.description}
-          </Paragraph>
-          {/* ===== RESPONSIBILITIES ===== */}
-          <Divider style={{ margin: "16px 0" }} />
+          <Paragraph>{job.description}</Paragraph>
+
+          <Divider />
 
           <Text strong>Roles & Responsibilities</Text>
+          <Paragraph>{job.responsibilities}</Paragraph>
 
-          <div style={{ marginTop: 8 }}>
-            {job.responsibilities ? (
-              <Paragraph style={{ marginBottom: 6, color: "#555" }}>
-                {job.responsibilities}
-              </Paragraph>
-            ) : (
-              <Text type="secondary">Not specified</Text>
-            )}
-          </div>
+          <Divider />
+
+          {/* CANDIDATE APPLY */}
+          {isCandidate && (
+            <Button
+              type="primary"
+              onClick={handleApply}
+              loading={applyLoading}
+              disabled={isApplied}
+              style={{ borderRadius: 8 }}
+            >
+              {isApplied ? "Applied" : "Apply Now"}
+            </Button>
+          )}
         </Card>
 
-        <Modal
-          open={showLoginModal}
-          title="Login Required"
-          onCancel={() => setShowLoginModal(false)}
-          okText="Go to Login"
-          onOk={() => navigate("/login")}
-        >
-          <p>Please login to use this button.</p>
-        </Modal>
-
-        {/* <ApplyBenchJob jobId={id} /> */}
-        {source !== "myjobs" && <ApplyBenchJob jobId={job?.id} />}
+        {/* APPLY BENCH JOB (your original condition) */}
+        {isCompany && source !== "myjobs" && show !== "jobdetails" && (
+          <ApplyBenchJob jobId={job?.id} />
+        )}
       </div>
+
+      {/* LOGIN MODAL */}
+      <Modal
+        open={showLoginModal}
+        title="Login Required"
+        onCancel={() => setShowLoginModal(false)}
+        okText="Go to Login"
+        onOk={() =>
+          navigate("/login", {
+            state: {
+              redirect: location.pathname,
+              // role: "candidate",
+            },
+          })
+        }
+      >
+        <p>Please login to continue.</p>
+      </Modal>
+      <Modal
+        open={showShareModal}
+        title="Share This Job"
+        onCancel={() => setShowShareModal(false)}
+        footer={null}
+        width={600}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* SECTION 1 — COPY LINK */}
+          <div>
+            <Text strong style={{ fontSize: 15 }}>
+              🔗 Direct Job Link
+            </Text>
+
+            <div
+              style={{
+                marginTop: 10,
+                display: "flex",
+                gap: 8,
+              }}
+            >
+              <Input value={shareUrl} readOnly />
+
+              <Button type="primary" onClick={handleCopyLink}>
+                Copy
+              </Button>
+            </div>
+          </div>
+
+          <Divider />
+
+          {/* SECTION 2 — COPY MESSAGE */}
+          <div>
+            <Text strong style={{ fontSize: 15 }}>
+              ✨ Share with Custom Message
+            </Text>
+
+            <div
+              style={{
+                marginTop: 10,
+                background: "#F9FAFB",
+                padding: 16,
+                borderRadius: 10,
+                border: "1px solid #E5E7EB",
+                whiteSpace: "pre-line",
+                fontSize: 14,
+              }}
+            >
+              {shareMessage}
+            </div>
+
+            <Button
+              style={{ marginTop: 12 }}
+              type="primary"
+              block
+              onClick={handleCopyMessage}
+            >
+              Copy Full Message
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

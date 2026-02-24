@@ -1,4 +1,5 @@
 import axios from "axios";
+import { triggerLimitModal } from "../../utils/limitEventBus";
 
 /* ================= MAIN API INSTANCE ================= */
 console.log("url", import.meta.env.VITE_BACKEND_URL);
@@ -40,6 +41,16 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (
+      (error.response?.status === 403 &&
+        error.response?.data?.code === "LIMIT_EXCEEDED") ||
+      error.response?.data?.code === "LICENSE_EXPIRED"
+    ) {
+      console.log("limit triggered");
+      triggerLimitModal(error.response.data);
+      return Promise.reject(error);
+    }
 
     // Don't intercept refresh call itself
     if (originalRequest.url.includes("/auth/refresh-token")) {

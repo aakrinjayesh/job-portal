@@ -49,9 +49,7 @@ const isPersonalEmail = (email) =>
   email && personalDomains.includes(email.split("@")[1]?.toLowerCase());
 
 /* ================= LOGIN FORM (module scope) ================= */
-const LoginForm = ({ role, onFinish, submitting }) => {
-  const [form] = Form.useForm();
-
+const LoginForm = ({ role, onFinish, submitting, form }) => {
   return (
     <Form form={form} layout="vertical" onFinish={(v) => onFinish(v, role)}>
       <Form.Item
@@ -116,9 +114,13 @@ const LoginPage = () => {
   const { login } = useAuth();
   const location = useLocation();
   const role = location?.state?.role;
+  const redirectPath = location?.state?.redirect;
+  console.log("redirect", redirectPath);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const [candidateForm] = Form.useForm();
+  const [companyForm] = Form.useForm();
 
   useEffect(() => {
     if (role) setActiveTab(role);
@@ -146,16 +148,36 @@ const LoginPage = () => {
         login(res?.chatmeatadata?.user, res?.chatmeatadata?.accessToken);
         messageApi.success("Logged in successfully!");
 
-        navigate(
-          res?.user?.role === "candidate"
-            ? "/candidate/profile"
-            : "/company/jobs",
-        );
+        const rolePrefix =
+          res?.user?.role === "candidate" ? "/candidate" : "/company";
+
+        if (redirectPath) {
+          // remove leading slash if present
+          const cleanPath = redirectPath.startsWith("/")
+            ? redirectPath.slice(1)
+            : redirectPath;
+
+          navigate(`${rolePrefix}/${cleanPath}`, { replace: true });
+        } else {
+          navigate(
+            res?.user?.role === "candidate"
+              ? "/candidate/jobs"
+              : "/company/jobs",
+          );
+        }
       } else {
         messageApi.error(res.message || "Login Failed!");
       }
-    } catch (err) {
-      messageApi.error("Login failed");
+    } catch (error) {
+      // messageApi.error("Login failed");
+      const { status, data } = error?.response || {};
+      console.log("status", status);
+      console.log("data", data);
+      if (data?.message) {
+        messageApi.error(data.message);
+      } else {
+        messageApi.error("Something went wrong");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -191,6 +213,7 @@ const LoginPage = () => {
                   label: "Candidate",
                   children: (
                     <LoginForm
+                      form={candidateForm}
                       role="candidate"
                       onFinish={onFinish}
                       submitting={submitting}
@@ -203,6 +226,7 @@ const LoginPage = () => {
                   children: (
                     <LoginForm
                       role="company"
+                      form={companyForm}
                       onFinish={onFinish}
                       submitting={submitting}
                     />
@@ -239,7 +263,9 @@ const LoginPage = () => {
                   type="link"
                   style={{ padding: 0 }}
                   onClick={() =>
-                    navigate("/signup", { state: { role: activeTab } })
+                    navigate("/signup", {
+                      state: { role: activeTab, redirect: redirectPath },
+                    })
                   }
                 >
                   Create account

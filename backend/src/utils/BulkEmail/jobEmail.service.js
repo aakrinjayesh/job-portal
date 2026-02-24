@@ -1,18 +1,13 @@
-import { email } from "zod";
 import sendEmail from "../sendEmail.js";
 
-export const queueRecruiterEmails = async (recruiters, job) => {
+export const queueJobEmails = async ({
+  recruiterEmails = [],
+  candidateEmails = [],
+  job,
+}) => {
+  const jobUrl = `${process.env.FRONTEND_URL}/job/${job.id}`;
 
-  console.log('emails',recruiters)
-  const BATCH_SIZE = 50;
-
-  for (let i = 0; i < recruiters.length; i += BATCH_SIZE) {
-    const batch = recruiters.slice(i, i + BATCH_SIZE);
-
-    await sendEmail({
-      bcc: batch.map(r => r.email), // 🔐 privacy safe
-      subject: `New Job Posted: ${job.role}`,
-   html: `
+  const emailHtml = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -41,7 +36,7 @@ export const queueRecruiterEmails = async (recruiters, job) => {
 
               <div style="text-align:center; margin:30px 0;">
                 <a
-                  href="${process.env.FRONTEND_URL}/candidate/job/${job.id}"
+                  href="${jobUrl}"
                   target="_blank"
                   style="
                     background:#1677ff;
@@ -59,7 +54,7 @@ export const queueRecruiterEmails = async (recruiters, job) => {
               </div>
 
               <p style="font-size:13px; color:#6b7280;">
-                You are receiving this email because a new job matching your profile was posted.
+                A new job has been posted on ForceHead.
               </p>
             </td>
           </tr>
@@ -76,7 +71,23 @@ export const queueRecruiterEmails = async (recruiters, job) => {
   </table>
 </body>
 </html>
-`,
+`;
+
+  // 🔹 Send individually to recruiters
+  for (const email of recruiterEmails) {
+    await sendEmail({
+      to: email,
+      subject: `New Job Posted: ${job.role}`,
+      html: emailHtml,
+    });
+  }
+
+  // 🔹 Send individually to candidates
+  for (const email of candidateEmails) {
+    await sendEmail({
+      to: email,
+      subject: `New Job Opportunity: ${job.role}`,
+      html: emailHtml,
     });
   }
 };

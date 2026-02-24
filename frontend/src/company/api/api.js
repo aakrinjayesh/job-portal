@@ -15,6 +15,7 @@ export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
+    throw error;
   }
 }
 
@@ -27,6 +28,7 @@ export async function PostedJobsList(page = 1, limit = 10, signal) {
     return response.data;
   } catch (error) {
     console.error("Error fetching jobs:", error);
+    throw error;
   }
 }
 
@@ -39,6 +41,7 @@ export async function GetJobDetails(id) {
     return response.data;
   } catch (error) {
     console.error("Error in LoginRoute:", error);
+    throw error;
   }
 }
 
@@ -51,6 +54,7 @@ export async function DeleteJobDetails(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in DeleteJobDetails:", error);
+    throw error;
   }
 }
 
@@ -64,6 +68,7 @@ export async function UploadPdf(formdata) {
     return response.data;
   } catch (error) {
     console.error("Error in UploadPdf:", error);
+    throw error;
   }
 }
 
@@ -76,6 +81,7 @@ export async function CreateJob(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in CreateJob:", error.response?.data || error);
+    throw error;
   }
 }
 
@@ -88,6 +94,7 @@ export async function UpdateJob(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
+    throw error;
   }
 }
 
@@ -100,6 +107,7 @@ export async function GetCandidateList(payload, signal) {
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
+    throw error;
   }
 }
 
@@ -114,6 +122,7 @@ export async function GetVendorCandidates(signal) {
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
+    throw error;
   }
 }
 
@@ -129,6 +138,7 @@ export async function CreateVendorCandidate(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
+    throw error;
   }
 }
 
@@ -144,6 +154,7 @@ export async function UpdateVendorCandidate(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
+    throw error;
   }
 }
 
@@ -159,6 +170,7 @@ export async function DeleteVendorCandidate(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in UpdateJob:", error);
+    throw error;
   }
 }
 
@@ -172,6 +184,7 @@ export async function SendVerificationOtp(payload) {
     return response.data;
   } catch (error) {
     console.error("Error sending OTP:", error);
+    throw error;
   }
 }
 
@@ -185,6 +198,7 @@ export async function VerifyCandidateOtp(payload) {
     return response.data;
   } catch (error) {
     console.error("Error verifying OTP:", error);
+    throw error;
   }
 }
 
@@ -198,6 +212,7 @@ export async function UserJobsids() {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -216,6 +231,7 @@ export async function UpdateVendorCandidateStatus(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -238,6 +254,7 @@ export async function GetAllVendorCandidates(
     return response.data;
   } catch (error) {
     console.error("Error fetching vendor candidates:", error);
+    throw error;
   }
 }
 
@@ -251,6 +268,7 @@ export async function AiCandidateFilter(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -266,6 +284,7 @@ export async function ApplyBenchCandidate(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in ApplyBenchJob:", error);
+    throw error;
   }
 }
 
@@ -282,6 +301,7 @@ export async function CreateActivity(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in CreateActivity:", error);
+    throw error;
   }
 }
 
@@ -300,6 +320,7 @@ export async function GetMyActivity(signal) {
     return response.data;
   } catch (error) {
     console.error("Error in GetMyActivity:", error);
+    throw error;
   }
 }
 
@@ -314,6 +335,7 @@ export async function GetCandidateActivities(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in GetCandidateActivities:", error);
+    throw error;
   }
 }
 
@@ -332,6 +354,7 @@ export async function UpdateActivity(activityId, payload) {
     return response.data;
   } catch (error) {
     console.error("Error in UpdateActivity:", error);
+    throw error;
   }
 }
 
@@ -348,6 +371,7 @@ export async function DeleteActivity(activityId) {
     return response.data;
   } catch (error) {
     console.error("Error in DeleteActivity:", error);
+    throw error;
   }
 }
 
@@ -358,6 +382,7 @@ export async function GetUserProfileDetails() {
     return response.data;
   } catch (error) {
     console.error("Error fetching user profile:", error);
+    throw error;
   }
 }
 
@@ -369,6 +394,7 @@ export async function UpdateUserProfileDetails(payload) {
     return response.data;
   } catch (error) {
     console.error("Error updating user profile:", error);
+    throw error;
   }
 }
 
@@ -378,6 +404,7 @@ export async function GetCountries() {
     return response.data;
   } catch (error) {
     console.error("Error fetching countries:", error);
+    throw error;
   }
 }
 
@@ -392,6 +419,7 @@ export async function SaveJob(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -406,6 +434,7 @@ export async function UnSaveJob(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -420,6 +449,7 @@ export async function SaveCandidate(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -438,6 +468,7 @@ export async function UnsaveCandidate(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -451,6 +482,7 @@ export async function SavedCandidatesList() {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -467,6 +499,7 @@ export async function MarkCandidateReviewed(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in MarkCandidateReviewed:", error);
+    throw error;
   }
 }
 
@@ -480,6 +513,7 @@ export async function getCandidateTasks({ candidateId, jobId }) {
     return response.data;
   } catch (error) {
     console.error("Error in getCandidateTasks:", error);
+    throw error;
   }
 }
 
@@ -493,6 +527,7 @@ export async function checkUpdate({ taskId, completed }) {
     return response.data;
   } catch (error) {
     console.error("Error in checkUpdate:", error);
+    throw error;
   }
 }
 
@@ -524,6 +559,7 @@ export async function GetAllTodoTemplates() {
     return response.data;
   } catch (error) {
     console.error("Error in GetAllTodoTemplates:", error);
+    throw error;
   }
 }
 
@@ -538,6 +574,7 @@ export async function CreateTodoTemplate({ title }) {
     return response.data;
   } catch (error) {
     console.error("Error in CreateTodoTemplate:", error);
+    throw error;
   }
 }
 
@@ -552,6 +589,7 @@ export async function EditTodoTemplate({ id, title }) {
     return response.data;
   } catch (error) {
     console.error("Error in EditTodoTemplate:", error);
+    throw error;
   }
 }
 
@@ -566,6 +604,7 @@ export async function DeleteTodoTemplate({ id }) {
     return response.data;
   } catch (error) {
     console.error("Error in DeleteTodoTemplate:", error);
+    throw error;
   }
 }
 
@@ -580,6 +619,7 @@ export async function ToggleTodoTemplate({ id, isActive }) {
     return response.data;
   } catch (error) {
     console.error("Error in ToggleTodoTemplate:", error);
+    throw error;
   }
 }
 
@@ -592,6 +632,7 @@ export async function SaveCandidateRating(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in SaveCandidateRating:", error);
+    throw error;
   }
 }
 
@@ -603,6 +644,7 @@ export async function getOrganizationMembers() {
     return response.data;
   } catch (error) {
     console.error("Error in getOrganizationMembers:", error);
+    throw error;
   }
 }
 
@@ -612,6 +654,7 @@ export async function inviteOrganizationMember(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in inviteOrganizationMember:", error);
+    throw error;
   }
 }
 
@@ -624,6 +667,7 @@ export async function removeOrganizationMember(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in removeOrganizationMember:", error);
+    throw error;
   }
 }
 
@@ -636,6 +680,7 @@ export async function revokeOrganizationInvite(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in revokeOrganizationInvite:", error);
+    throw error;
   }
 }
 
@@ -645,6 +690,7 @@ export async function createInvoice(payload) {
     return res.data;
   } catch (error) {
     console.error("error in create Invoice", error);
+    throw error;
   }
 }
 
@@ -656,6 +702,7 @@ export async function createRazorpayOrder(invoiceId) {
     return res.data;
   } catch (error) {
     console.error("error in razorpay order", error);
+    throw error;
   }
 }
 
@@ -665,6 +712,7 @@ export async function verifyRazorpayPayment(payload) {
     return res.data;
   } catch (error) {
     console.error("error in verify razorpay payment", error);
+    throw error;
   }
 }
 
@@ -695,6 +743,7 @@ export async function CloseJob(jobId) {
     return response.data;
   } catch (error) {
     console.error("Error in CloseJob:", error.response?.data || error);
+    throw error;
   }
 }
 
@@ -707,6 +756,7 @@ export async function getCandidateDetails(params) {
       "Error in get candidate details:",
       error.response?.data || error,
     );
+    throw error;
   }
 }
 
@@ -722,5 +772,6 @@ export async function MarkCandidateBookmark(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in MarkCandidateBookmark:", error);
+    throw error;
   }
 }

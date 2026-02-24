@@ -66,6 +66,7 @@ const CandidateDetails = () => {
   const activityOnly = location?.state?.activityOnly;
   const defaultTab = location?.state?.defaultTab;
   const [loadingCandidate, setLoadingCandidate] = useState(true);
+
   console.log("sourcw", source);
   console.log("location", location);
 
@@ -79,8 +80,8 @@ const CandidateDetails = () => {
         const res = await getCandidateDetails(id);
 
         if (res.status === "success") {
-           setCandidate(res.candidate);
-  setSaved(res.candidate?.isSaved || false); // 👈 important
+          setCandidate(res.candidate);
+          setSaved(res.candidate?.isSaved || false); // 👈 important
         }
       } catch (err) {
         message.error("Failed to load candidate details");
@@ -98,34 +99,34 @@ const CandidateDetails = () => {
   }, [id]);
 
   const handleSaveToggle = async (e) => {
-  e.stopPropagation();
+    e.stopPropagation();
 
-  if (!candidate?.id) return;
+    if (!candidate?.id) return;
 
-  const willBeSaved = !saved;
-  setSaved(willBeSaved);
+    const willBeSaved = !saved;
+    setSaved(willBeSaved);
 
-  try {
-    if (willBeSaved) {
-      const resp = await SaveCandidate({
-        candidateProfileId: candidate.id,
-      });
+    try {
+      if (willBeSaved) {
+        const resp = await SaveCandidate({
+          candidateProfileId: candidate.id,
+        });
 
-      if (resp?.status !== "success") throw new Error();
-      messageApi.success("Candidate saved!");
-    } else {
-      const resp = await UnsaveCandidate({
-        candidateProfileId: candidate.id,
-      });
+        if (resp?.status !== "success") throw new Error();
+        messageApi.success("Candidate saved!");
+      } else {
+        const resp = await UnsaveCandidate({
+          candidateProfileId: candidate.id,
+        });
 
-      if (resp?.status !== "success") throw new Error();
-      messageApi.success("Candidate removed!");
+        if (resp?.status !== "success") throw new Error();
+        messageApi.success("Candidate removed!");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      setSaved(!willBeSaved); // rollback
     }
-  } catch (error) {
-    console.error("Save error:", error);
-    setSaved(!willBeSaved); // rollback
-  }
-};
+  };
 
   useEffect(() => {
     if (!loadingCandidate) return;
@@ -391,21 +392,6 @@ const CandidateDetails = () => {
                       </Space>
                     </Space>
                   </Space>
-                  <Tooltip title="Share Candidate">
-                    <Button
-                      shape="circle"
-                      icon={<ShareAltOutlined style={{ fontSize: 20 }} />}
-                      style={{
-                        backgroundColor: "#0EA5E9",
-                        color: "#FFFFFF",
-                        border: "none",
-                        height: 40,
-                        width: 40,
-                      }}
-                      onClick={() => setIsShareModalOpen(true)}
-                    />
-                  </Tooltip>
-
                   <Space>
                     <Tooltip title={`Whatsapp ${candidate.name}`}>
                       <Button
@@ -471,20 +457,38 @@ const CandidateDetails = () => {
                         }
                       />
                     </Tooltip>
+                    <Tooltip title="Share Candidate">
+                      <Button
+                        shape="circle"
+                        icon={<ShareAltOutlined style={{ fontSize: 20 }} />}
+                        style={{
+                          backgroundColor: "#0EA5E9",
+                          color: "#FFFFFF",
+                          border: "none",
+                          height: 40,
+                          width: 40,
+                        }}
+                        onClick={() => setIsShareModalOpen(true)}
+                      />
+                    </Tooltip>
 
-                    <Tooltip title={saved ? "Saved Candidate" : "Save Candidate"}>
-  <Button
-    type="text"
-    onClick={handleSaveToggle}
-    icon={
-      saved ? (
-        <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 20 }} />
-      ) : (
-        <LuBookmark style={{ fontSize: 20 }} />
-      )
-    }
-  />
-</Tooltip>
+                    <Tooltip
+                      title={saved ? "Saved Candidate" : "Save Candidate"}
+                    >
+                      <Button
+                        type="text"
+                        onClick={handleSaveToggle}
+                        icon={
+                          saved ? (
+                            <LuBookmarkCheck
+                              style={{ color: "#1677ff", fontSize: 20 }}
+                            />
+                          ) : (
+                            <LuBookmark style={{ fontSize: 20 }} />
+                          )
+                        }
+                      />
+                    </Tooltip>
                   </Space>
                 </Row>
               </div>

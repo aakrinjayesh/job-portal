@@ -35,9 +35,15 @@ import { useLocation } from "react-router-dom";
 import axiosInstance from "./candidate/api/axiosInstance";
 import PricingPage from "./pages/PricingPage";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import PublicJobRedirect from "./pages/PublicJobRedirect";
+import LimitExceededAlert from "./components/alert/LimitExceededAlert";
+import { subscribeToLimit, unsubscribeFromLimit } from "./utils/limitEventBus";
+import { useState } from "react";
 
 function App() {
   const location = useLocation();
+  const [limitOpen, setLimitOpen] = useState(false);
+  const [limitData, setLimitData] = useState(null);
 
   useEffect(() => {
     if (location.pathname === "/login") return;
@@ -55,6 +61,19 @@ function App() {
     initAuth();
   }, []);
 
+  useEffect(() => {
+    const handler = (data) => {
+      setLimitData(data);
+      setLimitOpen(true);
+    };
+
+    subscribeToLimit(handler);
+
+    return () => {
+      unsubscribeFromLimit(handler);
+    };
+  }, []);
+
   return (
     <ConfigProvider
       theme={{
@@ -67,7 +86,6 @@ function App() {
         },
       }}
     >
-      {/* <BrowserRouter> */}
       <Routes>
         {/* Public routes */}
         {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
@@ -77,6 +95,15 @@ function App() {
         <Route path="/createpassword" element={<CreatePassword />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route
+          path="/job/:id"
+          element={
+            <>
+              <PublicJobRedirect />
+              <JobDetails mode="candidate" />
+            </>
+          }
+        />
         {/* <Route path="/resetpassword" element={<ResetPassword />} /> */}
 
         {/* Candidate routes */}
@@ -148,7 +175,8 @@ function App() {
           path="/candidate/job/:id"
           element={
             <MainLayout>
-              <CandidateJobDetails />
+              {/* <CandidateJobDetails /> */}
+              <JobDetails mode="candidate" />
             </MainLayout>
           }
         />
@@ -203,7 +231,8 @@ function App() {
           path="/company/job/:id"
           element={
             <CompanyLayout>
-              <JobDetails />
+              {/* <JobDetails /> */}
+              <JobDetails mode="company" />
             </CompanyLayout>
           }
         />
@@ -298,8 +327,11 @@ function App() {
           }
         />
       </Routes>
-
-      {/* </BrowserRouter> */}
+      <LimitExceededAlert
+        open={limitOpen}
+        onClose={() => setLimitOpen(false)}
+        message={limitData?.message}
+      />
     </ConfigProvider>
   );
 }

@@ -24,7 +24,7 @@ const sendEmail = async (options) => {
 
   try {
     const info = await transporter.sendMail({
-      from: process.env.SENDEREMAIL,
+      from: `"ForceHead" <${process.env.SENDEREMAIL}>`,
       ...options,
     });
 

@@ -27,6 +27,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const role = location?.state?.role || "candidate";
+  const redirectPath = location.state.redirect;
 
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
@@ -73,7 +74,7 @@ const Signup = () => {
       if (response.status === "success") {
         messageApi.success("OTP verified successfully!");
         navigate("/createpassword", {
-          state: { email: values.email, role },
+          state: { email: values.email, role, redirect: redirectPath },
         });
       } else {
         messageApi.error(response.message || "Invalid OTP");
@@ -439,7 +440,12 @@ const Signup = () => {
 
             <Text>
               Already have an account?{" "}
-              <Button type="link" onClick={() => navigate("/login")}>
+              <Button
+                type="link"
+                onClick={() =>
+                  navigate("/login", { state: { redirect: redirectPath } })
+                }
+              >
                 Login
               </Button>
             </Text>

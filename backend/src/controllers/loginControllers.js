@@ -392,6 +392,237 @@ const userOtpValidator = async (req, res) => {
 //   }
 // };
 
+// const setPassword = async (req, res) => {
+//   const { email, password, role, token } = req.body;
+
+//   if (!email || !password || !role) {
+//     return res.status(400).json({
+//       status: "error",
+//       message: "Email, password, and role are required",
+//     });
+//   }
+
+//   let invite = null;
+//   let externalUserId = null;
+
+//   try {
+//     /* ─────────────────────────────
+//        1️⃣ VALIDATE INVITE (IF EXISTS)
+//     ───────────────────────────── */
+//     if (token) {
+//       invite = await prisma.organizationInvite.findUnique({
+//         where: { token },
+//       });
+
+//       if (!invite)
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invalid or already used invite",
+//         });
+
+//       if (invite.expiresAt < new Date())
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite has expired",
+//         });
+
+//       if (invite.email !== email)
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite data mismatch",
+//         });
+//     }
+
+//     /* ─────────────────────────────
+//        2️⃣ FIND USER
+//     ───────────────────────────── */
+//     const user = await prisma.users.findUnique({ where: { email } });
+
+//     if (!user)
+//       return res.status(404).json({
+//         status: "error",
+//         message: "User not found. Please complete OTP verification first.",
+//       });
+
+//     if (user.role !== role)
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Invalid role for this user",
+//       });
+
+//     /* ─────────────────────────────
+//        3️⃣ HASH PASSWORD
+//     ───────────────────────────── */
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     /* ─────────────────────────────
+//        4️⃣ REGISTER EXTERNAL CHAT USER FIRST
+//     ───────────────────────────── */
+//     try {
+//       const payload = {
+//         email,
+//         username: email.split("@")[0].toLowerCase(),
+//         password,
+//       };
+
+//       const registerResponse = await axios.post(
+//         `${external_backend_url}/api/v1/users/register`,
+//         payload,
+//         { headers: { "Content-Type": "application/json" } },
+//       );
+
+//       externalUserId = registerResponse?.data?.data?.user?._id;
+
+//       if (!externalUserId) throw new Error("Chat user id missing");
+//     } catch (err) {
+//       console.error("External chat registration failed:", err.message);
+
+//       return res.status(500).json({
+//         status: "error",
+//         message: "External chat registration failed",
+//       });
+//     }
+
+//     /* ─────────────────────────────
+//        5️⃣ MAIN DATABASE TRANSACTION
+//     ───────────────────────────── */
+//     const result = await prisma.$transaction(async (tx) => {
+//       // Update user password + chat id
+//       const updatedUser = await tx.users.update({
+//         where: { email },
+//         data: {
+//           password: hashedPassword,
+//           chatuserid: externalUserId,
+//         },
+//       });
+
+//       /* 🔹 INVITE FLOW */
+//       if (invite) {
+//         const subscription = await tx.organizationSubscription.findFirst({
+//           where: {
+//             organizationId: invite.organizationId,
+//             status: "ACTIVE",
+//           },
+//         });
+
+//         if (!subscription) {
+//           throw new Error("No active subscription found for organization");
+//         }
+
+//         const freeLicense = await tx.license.findFirst({
+//           where: {
+//             subscriptionId: subscription.id,
+//             isActive: true,
+//             assignedToId: null,
+//             validUntil: { gte: new Date() },
+//           },
+//           orderBy: { validUntil: "asc" },
+//         });
+
+//         if (!freeLicense) {
+//           throw new Error(
+//             "No available license seat. Please contact your admin.",
+//           );
+//         }
+
+//         const newMember = await tx.organizationMember.create({
+//           data: {
+//             userId: updatedUser.id,
+//             organizationId: invite.organizationId,
+//             role: invite.role,
+//             permissions: invite.permissions,
+//           },
+//         });
+
+//         await tx.license.update({
+//           where: { id: freeLicense.id },
+//           data: { assignedToId: newMember.id },
+//         });
+
+//         await tx.organizationInvite.delete({
+//           where: { id: invite.id },
+//         });
+//       }
+
+//       /* 🔹 NORMAL COMPANY FLOW */
+//       if (!invite && role === "company") {
+//         const existingMembership = await tx.organizationMember.findFirst({
+//           where: { userId: updatedUser.id },
+//         });
+
+//         if (!existingMembership) {
+//           const org = await tx.organization.create({
+//             data: {
+//               name:
+//                 updatedUser.companyName || `${updatedUser.name}'s Organization`,
+//             },
+//           });
+
+//           const subscription = await tx.organizationSubscription.create({
+//             data: {
+//               organizationId: org.id,
+//               status: "ACTIVE",
+//               billingCycle: "MONTHLY",
+//               autoRenew: false,
+//               currentPeriodStart: new Date(),
+//               currentPeriodEnd: new Date(
+//                 new Date().setMonth(new Date().getMonth() + 1),
+//               ),
+//               nextBillingDate: new Date(
+//                 new Date().setMonth(new Date().getMonth() + 1),
+//               ),
+//             },
+//           });
+
+//           const member = await tx.organizationMember.create({
+//             data: {
+//               userId: updatedUser.id,
+//               organizationId: org.id,
+//               role: "COMPANY_ADMIN",
+//             },
+//           });
+
+//           const plain = await tx.subscriptionPlan.findFirst({
+//             where: {
+//               tier: "BASIC",
+//             },
+//           });
+
+//           await tx.license.create({
+//             data: {
+//               subscriptionId: subscription.id,
+//               planId: plain.id,
+//               assignedToId: member.id,
+//               validUntil: new Date(
+//                 new Date().setMonth(new Date().getMonth() + 1),
+//               ),
+//               isActive: true,
+//             },
+//           });
+//         }
+//       }
+
+//       return updatedUser;
+//     });
+
+//     /* ─────────────────────────────
+//        6️⃣ SUCCESS RESPONSE
+//     ───────────────────────────── */
+//     return res.status(200).json({
+//       status: "success",
+//       message: invite
+//         ? "Password set, organization joined & license assigned successfully"
+//         : "Password set & organization created successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in setPassword:", error.message);
+//     return res.status(500).json({
+//       status: "error",
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// };
+
 const setPassword = async (req, res) => {
   const { email, password, role, token } = req.body;
 
@@ -456,43 +687,49 @@ const setPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     /* ─────────────────────────────
-       4️⃣ REGISTER EXTERNAL CHAT USER FIRST
+       4️⃣ OPTIONAL EXTERNAL CHAT REGISTER
     ───────────────────────────── */
     try {
-      const payload = {
-        email,
-        username: email.split("@")[0].toLowerCase(),
-        password,
-      };
+      if (external_backend_url) {
+        const payload = {
+          email,
+          username: email.split("@")[0].toLowerCase(),
+          password,
+        };
 
-      const registerResponse = await axios.post(
-        `${external_backend_url}/api/v1/users/register`,
-        payload,
-        { headers: { "Content-Type": "application/json" } },
-      );
+        const registerResponse = await axios.post(
+          `${external_backend_url}/api/v1/users/register`,
+          payload,
+          {
+            headers: { "Content-Type": "application/json" },
+            timeout: 3000, // prevents hanging
+          },
+        );
 
-      externalUserId = registerResponse?.data?.data?.user?._id;
+        externalUserId = registerResponse?.data?.data?.user?._id || null;
 
-      if (!externalUserId) throw new Error("Chat user id missing");
+        if (externalUserId) {
+          console.log("✅ External chat registration successful");
+        }
+      }
     } catch (err) {
-      console.error("External chat registration failed:", err.message);
-
-      return res.status(500).json({
-        status: "error",
-        message: "External chat registration failed",
-      });
+      console.warn(
+        "⚠️ External chat registration failed — continuing without chat:",
+        err.message,
+      );
+      // Silent fail — DO NOT RETURN ERROR
     }
 
     /* ─────────────────────────────
        5️⃣ MAIN DATABASE TRANSACTION
     ───────────────────────────── */
     const result = await prisma.$transaction(async (tx) => {
-      // Update user password + chat id
+      // Update user password (+ chatuserid only if exists)
       const updatedUser = await tx.users.update({
         where: { email },
         data: {
           password: hashedPassword,
-          chatuserid: externalUserId,
+          ...(externalUserId && { chatuserid: externalUserId }),
         },
       });
 
@@ -583,9 +820,7 @@ const setPassword = async (req, res) => {
           });
 
           const plain = await tx.subscriptionPlan.findFirst({
-            where: {
-              tier: "BASIC",
-            },
+            where: { tier: "BASIC" },
           });
 
           await tx.license.create({
@@ -613,9 +848,11 @@ const setPassword = async (req, res) => {
       message: invite
         ? "Password set, organization joined & license assigned successfully"
         : "Password set & organization created successfully",
+      chatIntegrated: !!externalUserId, // tells frontend if chat is active
     });
   } catch (error) {
     console.error("Error in setPassword:", error.message);
+
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
@@ -631,6 +868,7 @@ const login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
+    // 1️⃣ Validate input
     if (!email || !password || !role) {
       logger.warn("⚠️ Missing login fields");
       return res.status(400).json({
@@ -639,7 +877,7 @@ const login = async (req, res) => {
       });
     }
 
-    // Check user
+    // 2️⃣ Check user
     const user = await prisma.users.findUnique({
       where: { email },
     });
@@ -652,7 +890,7 @@ const login = async (req, res) => {
       });
     }
 
-    // Validate password
+    // 3️⃣ Validate password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
@@ -661,7 +899,7 @@ const login = async (req, res) => {
       });
     }
 
-    // Validate role
+    // 4️⃣ Validate role
     if (user.role !== role) {
       return res.status(403).json({
         status: "error",
@@ -669,11 +907,10 @@ const login = async (req, res) => {
       });
     }
 
+    // 5️⃣ Fetch organization member (if company)
     const member = await prisma.organizationMember.findUnique({
       where: { userId: user.id },
     });
-
-    // console.log("member", member);
 
     if (role === "company" && !member) {
       return res.status(500).json({
@@ -682,13 +919,17 @@ const login = async (req, res) => {
       });
     }
 
+    // 6️⃣ Create default task templates if not exists
     if (role === "company") {
-      const Default = await prisma.taskTemplate.findFirst({
-        where: { recruiterId: user.id, organizationId: member?.organizationId },
-        select: { isDefault: true },
+      const existingDefault = await prisma.taskTemplate.findFirst({
+        where: {
+          recruiterId: user.id,
+          organizationId: member?.organizationId,
+          isDefault: true,
+        },
       });
 
-      if (!Default) {
+      if (!existingDefault) {
         const defaultTasks = [
           "Review Resume",
           "HR Screening",
@@ -709,7 +950,7 @@ const login = async (req, res) => {
       }
     }
 
-    // Generate local JWT
+    // 7️⃣ Generate JWT
     const userjwt = {
       id: user.id,
       email: user.email,
@@ -718,9 +959,11 @@ const login = async (req, res) => {
       organizationId: member?.organizationId || null,
       permission: member?.permissions || null,
     };
+
     const token = generateToken(userjwt);
     const refreshToken = generateRefreshToken({ id: user.id });
 
+    // 8️⃣ Store session
     await prisma.userSession.create({
       data: {
         userId: user.id,
@@ -731,31 +974,45 @@ const login = async (req, res) => {
       },
     });
 
-    // Attempt external login
-    let loginResponse = null;
+    // 9️⃣ OPTIONAL External Chat Login (Will NEVER block login)
+    let chatMetadata = null;
+
     try {
-      const payload = {
-        email: user.email,
-        username: user.email.split("@")[0].toLocaleLowerCase(),
-        password,
-      };
+      if (external_backend_url) {
+        const payload = {
+          email: user.email,
+          username: user.email.split("@")[0].toLowerCase(),
+          password,
+        };
 
-      loginResponse = await axios.post(
-        `${external_backend_url}/api/v1/users/login`,
-        payload,
-        { headers: { "Content-Type": "application/json" } },
-      );
+        const loginResponse = await axios.post(
+          `${external_backend_url}/api/v1/users/login`,
+          payload,
+          {
+            headers: { "Content-Type": "application/json" },
+            timeout: 3000, // prevents hanging
+          },
+        );
 
-      console.log("✅ External Login Response:", loginResponse?.data);
+        if (loginResponse?.data?.data) {
+          chatMetadata = {
+            user: loginResponse.data.data.user,
+            accessToken: loginResponse.data.data.accessToken,
+            refreshToken: loginResponse.data.data.refreshToken,
+          };
+
+          logger.info("✅ External chat login successful");
+        }
+      }
     } catch (err) {
-      console.error(
-        "⚠️ External login failed (continuing local flow):",
-        err.message,
-        null,
-        2,
-      );
+      logger.warn("⚠️ External chat login failed. Skipping chat integration.", {
+        message: err.message,
+        status: err.response?.status,
+      });
+      // NO THROW → Silent fail
     }
 
+    // 🔟 Set refresh token cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -763,7 +1020,7 @@ const login = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // Final response
+    // ✅ Final response (always succeeds if local auth passed)
     return res.status(200).json({
       status: "success",
       message: "Login successful",
@@ -778,13 +1035,7 @@ const login = async (req, res) => {
         profileUrl: user.profileUrl || null,
         phoneNumber: user.phoneNumber || null,
       },
-      chatmeatadata: loginResponse?.data?.data
-        ? {
-            user: loginResponse.data.data.user,
-            accessToken: loginResponse.data.data.accessToken,
-            refreshToken: loginResponse.data.data.refreshToken,
-          }
-        : null,
+      chatmeatadata: chatMetadata, // null if external fails
     });
   } catch (error) {
     console.log("error", error.message);

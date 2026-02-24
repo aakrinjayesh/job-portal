@@ -1106,7 +1106,6 @@ const vendorApplyCandidate = async (req, res) => {
       existingApps.map((a) => a.candidateProfileId),
     );
 
-    // Build skipped list with full details for a useful response
     const skippedCandidates = profiles
       .filter((p) => alreadyAppliedIds.has(p.id))
       .map((p) => ({
@@ -1117,7 +1116,6 @@ const vendorApplyCandidate = async (req, res) => {
 
     let newProfiles = profiles.filter((p) => !alreadyAppliedIds.has(p.id));
 
-    // Respect remaining slot count — slice to prevent overflow
     if (limit !== null) {
       newProfiles = newProfiles.slice(0, remainingSlots);
     }
@@ -1184,27 +1182,7 @@ const vendorApplyCandidate = async (req, res) => {
     }
 
     /* ─────────────────────────────
-       5️⃣ PREPARE JOB DESCRIPTION (reused across all candidates)
-    ───────────────────────────── */
-    const jobDescription = aiAllowed
-      ? {
-          job_id: job.id,
-          role: job.role,
-          description: job.description || "",
-          employmentType: job.employmentType || "FullTime",
-          skills: job.skills || [],
-          clouds: job.clouds || [],
-          salary: job.salary,
-          companyName: job.companyName,
-          responsibilities: job.responsibilities || [],
-          qualifications: job.qualifications || [],
-          experience: job.experience || "",
-          location: job.location || "",
-        }
-      : null;
-
-    /* ─────────────────────────────
-       6️⃣ PROCESS EACH CANDIDATE
+       5️⃣ CREATE APPLICATIONS IN DB (main thread — fast)
     ───────────────────────────── */
     const appliedCandidates = [];
     const failedApplications = [];
@@ -1213,48 +1191,8 @@ const vendorApplyCandidate = async (req, res) => {
     for (const profile of newProfiles) {
       if (limitReached) break;
 
-      let pdfBuffer = null;
-
       try {
-        /* ── A. AI Analysis ── */
-        let aiAnalysisResult = null;
-
-        if (aiAllowed) {
-          const candidateDetails = {
-            userId: profile.userId,
-            name: profile.name || "",
-            email: profile.email || "",
-            title: profile.title || "",
-            totalExperience: profile.totalExperience || "",
-            skills: profile.skillsJson || [],
-            primaryClouds: profile.primaryClouds || [],
-            secondaryClouds: profile.secondaryClouds || [],
-            certifications: profile.certifications || [],
-            workExperience: profile.workExperience || [],
-            education: profile.education || [],
-            linkedInUrl: profile.linkedInUrl || null,
-          };
-
-          try {
-            const aiResponse = await extractAIText("CV_RANKING", "cvranker", {
-              jobDescription,
-              candidateDetails,
-            });
-
-            if (aiResponse?.data) {
-              aiAnalysisResult = aiResponse.data;
-            }
-          } catch (aiError) {
-            logger.error(
-              `AI Analysis failed for profile ${profile.id}:`,
-              aiError.message,
-            );
-            // Continue without AI — do NOT deduct usage on failure
-          }
-        }
-
-        /* ── B. Transaction: Create Application + Save AI + Track Usage ── */
-        await prisma.$transaction(async (tx) => {
+        const app = await prisma.$transaction(async (tx) => {
           const count = await tx.jobApplication.count({ where: { jobId } });
 
           if (limit !== null && count >= limit) {
@@ -1265,7 +1203,7 @@ const vendorApplyCandidate = async (req, res) => {
             throw new Error("APPLICATION_LIMIT_REACHED");
           }
 
-          const app = await tx.jobApplication.create({
+          return await tx.jobApplication.create({
             data: {
               jobId,
               userId: vendorId,
@@ -1274,140 +1212,23 @@ const vendorApplyCandidate = async (req, res) => {
               status: "Pending",
             },
           });
-
-          // Save AI analysis if it succeeded
-          if (aiAllowed && aiAnalysisResult) {
-            await tx.applicationAnalysis.create({
-              data: {
-                jobApplicationId: app.id,
-                fitPercentage: aiAnalysisResult.fit_percentage || 0,
-                details: aiAnalysisResult,
-                status: "COMPLETED",
-              },
-            });
-
-            const now = new Date();
-
-            for (const lim of limitConfigs) {
-              let periodStart, periodEnd;
-
-              if (lim.period === "DAILY") {
-                periodStart = new Date(
-                  now.getFullYear(),
-                  now.getMonth(),
-                  now.getDate(),
-                  0,
-                  0,
-                  0,
-                  0,
-                );
-                periodEnd = new Date(
-                  now.getFullYear(),
-                  now.getMonth(),
-                  now.getDate(),
-                  23,
-                  59,
-                  59,
-                  999,
-                );
-              } else if (lim.period === "MONTHLY") {
-                periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-              } else if (lim.period === "YEARLY") {
-                periodStart = new Date(now.getFullYear(), 0, 1);
-                periodEnd = new Date(now.getFullYear(), 11, 31);
-              }
-
-              await tx.usageRecord.upsert({
-                where: {
-                  licenseId_feature_period_periodStart: {
-                    licenseId: recruiterLicense.id,
-                    feature: "FIT_SCORE_ANALYSES",
-                    period: lim.period,
-                    periodStart,
-                  },
-                },
-                update: {
-                  currentUsage: { increment: 1 },
-                },
-                create: {
-                  licenseId: recruiterLicense.id,
-                  feature: "FIT_SCORE_ANALYSES",
-                  period: lim.period,
-                  currentUsage: 1,
-                  periodStart,
-                  periodEnd,
-                },
-              });
-            }
-
-            // 🔥 NEW — Insert token usage
-            await tx.aITokenUsage.create({
-              data: {
-                organizationId: organizationId,
-                userId: job.postedById, // recruiter who owns license
-                licenseId: recruiterLicense.id,
-                inputTokens: tokenUsage?.prompt || 0,
-                outputTokens: tokenUsage?.completion || 0,
-                totalTokens: tokenUsage?.total || 0,
-                featureUsed: "FIT_SCORE_ANALYSES",
-              },
-            });
-          }
         });
 
-        /* ── C. PDF Generation ── */
-        try {
-          const resumeHTML = generateResumeHTML(
-            { name: profile.name, email: profile.email },
-            profile,
-            job,
-          );
-
-          const browser = await puppeteer.launch({
-            headless: "new",
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-          });
-
-          const page = await browser.newPage();
-          await page.setContent(resumeHTML, { waitUntil: "networkidle0" });
-
-          pdfBuffer = await page.pdf({
-            format: "A4",
-            printBackground: true,
-            margin: {
-              top: "20px",
-              right: "20px",
-              bottom: "20px",
-              left: "20px",
-            },
-          });
-
-          await browser.close();
-        } catch (pdfErr) {
-          logger.error(
-            `PDF generation failed for profile ${profile.id}:`,
-            pdfErr.message,
-          );
-          // Continue without PDF
-        }
-
         appliedCandidates.push({
+          applicationId: app.id,
           candidateProfileId: profile.id,
           candidateName: profile.name,
           email: profile.email,
-          matchScore: aiAllowed
-            ? (aiAnalysisResult?.fit_percentage ?? null)
-            : null,
-          pdfBuffer,
         });
       } catch (error) {
-        // ✅ Fixed: was incorrectly referencing undefined 'e' instead of 'error'
         if (error.message === "APPLICATION_LIMIT_REACHED") {
           limitReached = true;
           break;
         }
-        logger.error(`Failed to apply profile ${profile.id}:`, error.message);
+        logger.error(
+          `Failed to create application for profile ${profile.id}:`,
+          error.message,
+        );
         failedApplications.push({
           candidateProfileId: profile.id,
           candidateName: profile.name,
@@ -1418,7 +1239,7 @@ const vendorApplyCandidate = async (req, res) => {
     }
 
     /* ─────────────────────────────
-       7️⃣ CLOSE JOB IF LIMIT NOW REACHED
+       6️⃣ CLOSE JOB IF LIMIT NOW REACHED
     ───────────────────────────── */
     if (limit !== null && currentCount + appliedCandidates.length >= limit) {
       await prisma.job.update({
@@ -1428,135 +1249,357 @@ const vendorApplyCandidate = async (req, res) => {
     }
 
     /* ─────────────────────────────
-       8️⃣ EMAIL TO RECRUITER
+       7️⃣ EMAIL TO VENDOR (fast — no PDF needed, send on main thread)
     ───────────────────────────── */
-    if (job.postedBy?.email && appliedCandidates.length > 0) {
-      try {
-        await sendEmail({
-          to: job.postedBy.email,
-          subject: `New Vendor Applications – ${job.role}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-                <h1 style="margin: 0;">New Job Applications Received! 🎉</h1>
-              </div>
-              <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-                <h2 style="color: #333; margin-top: 0;">Vendor Submissions</h2>
-                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                  <p style="margin: 10px 0;"><strong>Job:</strong> ${job.role}</p>
-                  <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
-                  <p style="margin: 10px 0;"><strong>Total Candidates:</strong> ${appliedCandidates.length}</p>
-                  <p style="margin: 10px 0;"><strong>AI Ranking:</strong> ${aiAllowed ? "Enabled" : "Disabled"}</p>
-                </div>
-                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                  <h3 style="color: #667eea; margin-top: 0;">Submitted Candidates</h3>
-                  ${appliedCandidates
-                    .map(
-                      (c) => `
-                      <p style="margin: 8px 0;">
-                        <strong>${c.candidateName}</strong>
-                        ${aiAllowed ? ` – Fit Score: ${c.matchScore ?? "N/A"}%` : ""}
-                      </p>
-                    `,
-                    )
-                    .join("")}
-                </div>
-                <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                  📎 Please find the detailed resumes attached to this email.
-                </p>
-                <p style="color: #666; font-size: 14px; margin-top: 20px;">
-                  <em>This is an automated notification from the Job Portal.</em>
-                </p>
-              </div>
+    if (vendor?.email && appliedCandidates.length > 0) {
+      sendEmail({
+        to: vendor.email,
+        subject: `Application Submitted - ${job.role} at ${job.companyName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
+              <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
             </div>
-          `,
-          attachments: appliedCandidates
-            .filter((c) => c.pdfBuffer)
-            .map((c) => ({
-              filename: `${c.candidateName.replace(/\s+/g, "_")}_Resume.pdf`,
-              content: c.pdfBuffer,
-              contentType: "application/pdf",
-            })),
-        });
-      } catch (emailError) {
-        logger.error("Recruiter email failed:", emailError.message);
-      }
-    }
-
-    /* ─────────────────────────────
-       9️⃣ EMAIL TO VENDOR
-    ───────────────────────────── */
-    if (vendor?.email) {
-      try {
-        await sendEmail({
-          to: vendor.email,
-          subject: `Application Submitted - ${job.role} at ${job.companyName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-                <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
+            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+              <p style="color: #333; font-size: 16px;">Hi ${vendor.name},</p>
+              <p style="color: #666;">Your applications have been successfully submitted for the following position:</p>
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 10px 0;"><strong>Position:</strong> ${job.role}</p>
+                <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
+                <p style="margin: 10px 0;"><strong>Location:</strong> ${job.location || "Not specified"}</p>
+                <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+                <p style="margin: 10px 0;"><strong>Total Candidates Submitted:</strong> ${appliedCandidates.length}</p>
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;" />
+                ${appliedCandidates
+                  .map(
+                    (c) =>
+                      `<p style="margin: 5px 0;">• <strong>${c.candidateName}</strong></p>`,
+                  )
+                  .join("")}
               </div>
-              <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-                <p style="color: #333; font-size: 16px;">Hi ${vendor.name},</p>
-                <p style="color: #666;">Your applications have been successfully submitted for the following position:</p>
-                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <p style="margin: 10px 0;"><strong>Position:</strong> ${job.role}</p>
-                  <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
-                  <p style="margin: 10px 0;"><strong>Location:</strong> ${job.location || "Not specified"}</p>
-                  <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
-                  <p style="margin: 10px 0;"><strong>Total Candidates Submitted:</strong> ${appliedCandidates.length}</p>
-                  <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;" />
-                  ${appliedCandidates
-                    .map(
-                      (c) => `
-                      <p style="margin: 5px 0;">
-                        • <strong>${c.candidateName}</strong>
-                        ${aiAllowed ? ` (Match Score: ${c.matchScore ?? "N/A"}%)` : ""}
-                      </p>
-                    `,
-                    )
-                    .join("")}
-                </div>
-                <p style="color: #666;">The employer will review the applications and get back to you if profiles match their requirements.</p>
-                <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
-                <p style="color: #999; font-size: 14px; margin-top: 30px;">
-                  <em>This is an automated confirmation from the Job Portal.</em>
-                </p>
-              </div>
+              <p style="color: #666;">The employer will review the applications and get back to you if profiles match their requirements.</p>
+              <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
+              <p style="color: #999; font-size: 14px; margin-top: 30px;">
+                <em>This is an automated confirmation from the Job Portal.</em>
+              </p>
             </div>
-          `,
-        });
-      } catch (emailError) {
+          </div>
+        `,
+      }).catch((emailError) => {
         logger.error(
           "Error sending confirmation email to vendor:",
           emailError.message,
         );
-      }
+      });
     }
 
     /* ─────────────────────────────
-       RESPONSE — strip pdfBuffers before sending
+       8️⃣ SEND RESPONSE IMMEDIATELY ← user is free now
     ───────────────────────────── */
-    const responseApplied = appliedCandidates.map(
-      ({ pdfBuffer, ...rest }) => rest,
-    );
-
-    return res.status(201).json({
+    res.status(201).json({
       status: "success",
       message: "Vendor applications processed successfully",
       appliedCount: appliedCandidates.length,
       skippedAlreadyApplied: skippedCandidates.length,
       aiProcessEnabled: aiAllowed,
-      appliedCandidates: responseApplied,
+      appliedCandidates: appliedCandidates.map(
+        ({ applicationId, ...rest }) => rest,
+      ),
       skippedCandidates,
       ...(failedApplications.length > 0 && { failedApplications }),
     });
+
+    /* ─────────────────────────────
+       9️⃣ BACKGROUND: AI → PDF → Recruiter Email (non-blocking, runs after response)
+    ───────────────────────────── */
+    if (appliedCandidates.length > 0) {
+      processInBackground({
+        appliedCandidates,
+        job,
+        aiAllowed,
+        recruiterLicense,
+        limitConfigs,
+        organizationId,
+        newProfiles,
+      });
+    }
   } catch (error) {
     logger.error("Vendor Apply Error:", error.message);
     return res.status(500).json({
       status: "failed",
       message: error?.message || "Vendor Apply failed",
     });
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   BACKGROUND PROCESSOR
+   Runs completely after the HTTP response has been sent.
+   Chain per candidate: AI Analysis → save to DB
+   Then batch: generate all PDFs → send one recruiter email
+═══════════════════════════════════════════════════════════════ */
+const processInBackground = async ({
+  appliedCandidates,
+  job,
+  aiAllowed,
+  recruiterLicense,
+  limitConfigs,
+  organizationId,
+  newProfiles,
+}) => {
+  // Build a quick lookup: profileId → profile object
+  const profileMap = new Map(newProfiles.map((p) => [p.id, p]));
+
+  const jobDescription = aiAllowed
+    ? {
+        job_id: job.id,
+        role: job.role,
+        description: job.description || "",
+        employmentType: job.employmentType || "FullTime",
+        skills: job.skills || [],
+        clouds: job.clouds || [],
+        salary: job.salary,
+        companyName: job.companyName,
+        responsibilities: job.responsibilities || [],
+        qualifications: job.qualifications || [],
+        experience: job.experience || "",
+        location: job.location || "",
+      }
+    : null;
+
+  // Will accumulate results for the recruiter email at the end
+  const processedCandidates = [];
+
+  /* ── Per-candidate: AI analysis (sequential to respect license limits safely) ── */
+  for (const candidate of appliedCandidates) {
+    const profile = profileMap.get(candidate.candidateProfileId);
+    if (!profile) continue;
+
+    let aiAnalysisResult = null;
+    let tokenUsage = null;
+
+    /* ── A. AI Analysis ── */
+    if (aiAllowed) {
+      try {
+        const candidateDetails = {
+          userId: profile.userId,
+          name: profile.name || "",
+          email: profile.email || "",
+          title: profile.title || "",
+          totalExperience: profile.totalExperience || "",
+          skills: profile.skillsJson || [],
+          primaryClouds: profile.primaryClouds || [],
+          secondaryClouds: profile.secondaryClouds || [],
+          certifications: profile.certifications || [],
+          workExperience: profile.workExperience || [],
+          education: profile.education || [],
+          linkedInUrl: profile.linkedInUrl || null,
+        };
+
+        const aiResponse = await extractAIText("CV_RANKING", "cvranker", {
+          jobDescription,
+          candidateDetails,
+        });
+
+        if (aiResponse?.data) {
+          aiAnalysisResult = aiResponse.data;
+          tokenUsage = aiResponse.tokenUsage ?? null;
+        }
+      } catch (aiError) {
+        logger.error(
+          `[Background] AI analysis failed for profile ${profile.id}:`,
+          aiError.message,
+        );
+        // Continue without AI score — application already created in DB
+      }
+    }
+
+    /* ── B. Save AI result + update usage in DB ── */
+    if (aiAllowed && aiAnalysisResult) {
+      try {
+        const now = new Date();
+
+        await prisma.$transaction(async (tx) => {
+          await tx.applicationAnalysis.create({
+            data: {
+              jobApplicationId: candidate.applicationId,
+              fitPercentage: aiAnalysisResult.fit_percentage || 0,
+              details: aiAnalysisResult,
+              status: "COMPLETED",
+            },
+          });
+
+          for (const lim of limitConfigs) {
+            let periodStart, periodEnd;
+
+            if (lim.period === "DAILY") {
+              periodStart = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate(),
+                0,
+                0,
+                0,
+                0,
+              );
+              periodEnd = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate(),
+                23,
+                59,
+                59,
+                999,
+              );
+            } else if (lim.period === "MONTHLY") {
+              periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+              periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            } else if (lim.period === "YEARLY") {
+              periodStart = new Date(now.getFullYear(), 0, 1);
+              periodEnd = new Date(now.getFullYear(), 11, 31);
+            }
+
+            await tx.usageRecord.upsert({
+              where: {
+                licenseId_feature_period_periodStart: {
+                  licenseId: recruiterLicense.id,
+                  feature: "FIT_SCORE_ANALYSES",
+                  period: lim.period,
+                  periodStart,
+                },
+              },
+              update: {
+                currentUsage: { increment: 1 },
+              },
+              create: {
+                licenseId: recruiterLicense.id,
+                feature: "FIT_SCORE_ANALYSES",
+                period: lim.period,
+                currentUsage: 1,
+                periodStart,
+                periodEnd,
+              },
+            });
+          }
+
+          await tx.aITokenUsage.create({
+            data: {
+              organizationId,
+              userId: job.postedById,
+              licenseId: recruiterLicense.id,
+              inputTokens: tokenUsage?.prompt || 0,
+              outputTokens: tokenUsage?.completion || 0,
+              totalTokens: tokenUsage?.total || 0,
+              featureUsed: "FIT_SCORE_ANALYSES",
+            },
+          });
+        });
+      } catch (dbError) {
+        logger.error(
+          `[Background] Failed to save AI result for profile ${profile.id}:`,
+          dbError.message,
+        );
+      }
+    }
+
+    processedCandidates.push({
+      candidateName: profile.name,
+      email: profile.email,
+      matchScore: aiAnalysisResult?.fit_percentage ?? null,
+      profile, // needed for PDF generation
+    });
+  }
+
+  /* ── C. PDF Generation (all candidates) ── */
+  const candidatesWithPdfs = await Promise.all(
+    processedCandidates.map(async (candidate) => {
+      let pdfBuffer = null;
+
+      try {
+        const resumeHTML = generateResumeHTML(
+          { name: candidate.profile.name, email: candidate.profile.email },
+          candidate.profile,
+          job,
+        );
+
+        const browser = await puppeteer.launch({
+          headless: "new",
+          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        });
+
+        const page = await browser.newPage();
+        await page.setContent(resumeHTML, { waitUntil: "networkidle0" });
+
+        pdfBuffer = await page.pdf({
+          format: "A4",
+          printBackground: true,
+          margin: { top: "20px", right: "20px", bottom: "20px", left: "20px" },
+        });
+
+        await browser.close();
+      } catch (pdfErr) {
+        logger.error(
+          `[Background] PDF generation failed for profile ${candidate.profile.id}:`,
+          pdfErr.message,
+        );
+      }
+
+      return { ...candidate, pdfBuffer };
+    }),
+  );
+
+  /* ── D. Send one batched recruiter email with all PDFs attached ── */
+  if (job.postedBy?.email) {
+    try {
+      await sendEmail({
+        to: job.postedBy.email,
+        subject: `New Vendor Applications – ${job.role}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
+              <h1 style="margin: 0;">New Job Applications Received! 🎉</h1>
+            </div>
+            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+              <h2 style="color: #333; margin-top: 0;">Vendor Submissions</h2>
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 10px 0;"><strong>Job:</strong> ${job.role}</p>
+                <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
+                <p style="margin: 10px 0;"><strong>Total Candidates:</strong> ${candidatesWithPdfs.length}</p>
+                <p style="margin: 10px 0;"><strong>AI Ranking:</strong> ${aiAllowed ? "Enabled" : "Disabled"}</p>
+              </div>
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #667eea; margin-top: 0;">Submitted Candidates</h3>
+                ${candidatesWithPdfs
+                  .map(
+                    (c) => `
+                    <p style="margin: 8px 0;">
+                      <strong>${c.candidateName}</strong>
+                      ${aiAllowed ? ` – Fit Score: ${c.matchScore ?? "N/A"}%` : ""}
+                    </p>
+                  `,
+                  )
+                  .join("")}
+              </div>
+              <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                📎 Please find the detailed resumes attached to this email.
+              </p>
+              <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                <em>This is an automated notification from the Job Portal.</em>
+              </p>
+            </div>
+          </div>
+        `,
+        attachments: candidatesWithPdfs
+          .filter((c) => c.pdfBuffer)
+          .map((c) => ({
+            filename: `${c.candidateName.replace(/\s+/g, "_")}_Resume.pdf`,
+            content: c.pdfBuffer,
+            contentType: "application/pdf",
+          })),
+      });
+    } catch (emailError) {
+      logger.error("[Background] Recruiter email failed:", emailError.message);
+    }
   }
 };
 

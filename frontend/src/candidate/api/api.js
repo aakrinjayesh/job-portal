@@ -81,7 +81,7 @@ export const SetPassword = async (payload) => {
     return response.data;
   } catch (error) {
     console.error("Error in SetPassword:", error);
-    return { status: "failed", message: "Something went wrong" };
+    throw error;
   }
 };
 
@@ -340,6 +340,7 @@ export async function ApplyJob(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -366,6 +367,7 @@ export async function SaveJob(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -380,6 +382,7 @@ export async function UnSaveJob(payload) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -397,6 +400,7 @@ export async function SavedJobsList(page = 1, limit = 10, signal) {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 
@@ -410,6 +414,7 @@ export async function UserJobsids() {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
   }
 }
 

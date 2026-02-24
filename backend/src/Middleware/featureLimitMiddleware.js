@@ -11,7 +11,7 @@ const FEATURE_MAP = [
   },
   {
     match: (path, method) =>
-      method === "GET" && /^\/vendor\/candidates\/[^/]+$/.test(path),
+      method === "GET" && /^\/candidates\/[^/]+$/.test(path),
     feature: "CANDIDATE_PROFILE_VIEWS",
     usesAI: false,
   },
@@ -51,148 +51,12 @@ const FEATURE_MAP = [
   },
 ];
 
-// export const featureLimitMiddleware = async (req, res, next) => {
-//   try {
-//     if (!req.user?.organizationId) return next();
-
-//     const route = FEATURE_MAP.find((r) => r.match(req.path, req.method));
-//     if (!route) return next();
-
-//     const { id: userId, organizationId } = req.user;
-//     const { feature, usesAI } = route;
-
-//     // 1️⃣ Get member + license
-//     const member = await prisma.organizationMember.findUnique({
-//       where: { userId },
-//       include: { license: true },
-//     });
-
-//     if (!member?.license || !member.license.isActive) {
-//       return res.status(200).json({
-//         status: "success",
-//         code: "NO_ACTIVE_LICENSE",
-//         message: "No Active License Found",
-//         metadata: { organizationId, feature },
-//       });
-//     }
-
-//     const license = member.license;
-
-//     if (license.validUntil < new Date()) {
-//       return res.status(200).json({
-//         status: "success",
-//         code: "LICENSE_EXPIRED",
-//         message: "License Has Expired",
-//         metadata: {
-//           licenseId: license.id,
-//           planId: license.planId,
-//           validUntil: license.validUntil,
-//         },
-//       });
-//     }
-
-//     // 2️⃣ Get limits for this feature
-//     const limits = await prisma.planLimit.findMany({
-//       where: { planId: license.planId, feature },
-//     });
-
-//     if (!limits.length) return next();
-
-//     // 3️⃣ Enforce each period
-//     for (const limit of limits) {
-//       const { start, end } = getPeriodBounds(limit.period);
-
-//       let record = await prisma.usageRecord.findUnique({
-//         where: {
-//           licenseId_feature_period_periodStart: {
-//             licenseId: license.id,
-//             feature,
-//             period: limit.period,
-//             periodStart: start,
-//           },
-//         },
-//       });
-
-//       if (!record) {
-//         record = await prisma.usageRecord.create({
-//           data: {
-//             licenseId: license.id,
-//             feature,
-//             period: limit.period,
-//             periodStart: start,
-//             periodEnd: end,
-//           },
-//         });
-//       }
-
-//       // ✅ UNLIMITED PLAN (-1)
-//       if (limit.maxAllowed === -1) {
-//         await prisma.usageRecord.update({
-//           where: { id: record.id },
-//           data: {
-//             currentUsage: { increment: 1 },
-//           },
-//         });
-
-//         // Never block
-//         continue;
-//       }
-
-//       // ✅ LIMITED PLAN
-//       const updated = await prisma.usageRecord.updateMany({
-//         where: {
-//           id: record.id,
-//           currentUsage: { lt: limit.maxAllowed },
-//         },
-//         data: {
-//           currentUsage: { increment: 1 },
-//         },
-//       });
-
-//       if (updated.count === 0) {
-//         return res.status(200).json({
-//           status: "success",
-//           code: "LIMIT_EXCEEDED",
-//           message: `${feature} ${limit.period.toLowerCase()} Limit Exceeded`,
-//           metadata: {
-//             feature,
-//             period: limit.period,
-//             maxAllowed: limit.maxAllowed,
-//             currentUsage: record.currentUsage,
-//             licenseId: license.id,
-//             planId: license.planId,
-//           },
-//         });
-//       }
-//     }
-
-//     // 4️⃣ AI routes marker
-//     if (usesAI) {
-//       req.aiLimitCheckPassed = true;
-//       req.aiLimitMeta = {
-//         licenseId: license.id,
-//         feature,
-//         limits,
-//       };
-//     }
-
-//     next();
-//   } catch (err) {
-//     console.error("Limit middleware error:", err);
-//     return res.status(200).json({
-//       status: "success",
-//       code: "LIMIT_ENFORCEMENT_FAILED",
-//       message: "Unable to enforce feature limits",
-//       metadata: { error: err.message },
-//     });
-//   }
-// };
-
 export const featureLimitMiddleware = async (req, res, next) => {
   try {
     if (!req.user?.organizationId) return next();
 
     const route = FEATURE_MAP.find((r) => r.match(req.path, req.method));
+    console.log("route in feature Middleware", route);
     if (!route) return next();
 
     const { id: userId, organizationId } = req.user;
@@ -205,8 +69,8 @@ export const featureLimitMiddleware = async (req, res, next) => {
     });
 
     if (!member?.license || !member.license.isActive) {
-      return res.status(200).json({
-        status: "success",
+      return res.status(403).json({
+        status: "error",
         code: "NO_ACTIVE_LICENSE",
         message: "No Active License Found",
         metadata: { organizationId, feature },
@@ -215,9 +79,12 @@ export const featureLimitMiddleware = async (req, res, next) => {
 
     const license = member.license;
 
-    if (license.validUntil < new Date()) {
-      return res.status(200).json({
-        status: "success",
+    // 1️⃣ Check expiry ONLY for non-BASIC plans
+    const isBasicPlan = license.planTier === "BASIC";
+
+    if (!isBasicPlan && license.validUntil < new Date()) {
+      return res.status(403).json({
+        status: "error",
         code: "LICENSE_EXPIRED",
         message: "License Has Expired",
         metadata: {
@@ -270,8 +137,8 @@ export const featureLimitMiddleware = async (req, res, next) => {
           limit.maxAllowed !== -1 &&
           record.currentUsage >= limit.maxAllowed
         ) {
-          return res.status(200).json({
-            status: "success",
+          return res.status(403).json({
+            status: "error",
             code: "LIMIT_EXCEEDED",
             message: `${feature} ${limit.period.toLowerCase()} Limit Exceeded`,
             metadata: {
@@ -314,8 +181,8 @@ export const featureLimitMiddleware = async (req, res, next) => {
       });
 
       if (updated.count === 0) {
-        return res.status(200).json({
-          status: "success",
+        return res.status(403).json({
+          status: "error",
           code: "LIMIT_EXCEEDED",
           message: `${feature} ${limit.period.toLowerCase()} Limit Exceeded`,
           metadata: {
@@ -345,8 +212,8 @@ export const featureLimitMiddleware = async (req, res, next) => {
     next();
   } catch (err) {
     console.error("Limit middleware error:", err);
-    return res.status(200).json({
-      status: "success",
+    return res.status(500).json({
+      status: "error",
       code: "LIMIT_ENFORCEMENT_FAILED",
       message: "Unable to enforce feature limits",
       metadata: { error: err.message },

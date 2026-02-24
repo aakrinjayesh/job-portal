@@ -154,24 +154,51 @@ const ApplyBenchJob = ({ jobId }) => {
       candidateProfileIds: selectedRowKeys,
     };
 
+    let hide;
+
     try {
-      // ✅ Show loading message immediately
-      const hide = messageApi.loading({
+      hide = messageApi.loading({
         content: "Applying selected candidates...",
-        duration: 0, // keep until manually closed
+        duration: 0,
       });
 
       const res = await ApplyBenchCandidate(payload);
 
-      hide(); // remove loading message
+      hide?.();
 
-      messageApi.success({
-        content: `${selectedRowKeys.length} candidate(s) applied successfully`,
-        duration: 3,
-      });
+      const { status, code, message, metadata } = res || {};
 
-      setSelectedRowKeys([]);
+      // 🔴 1️⃣ Feature Limit Exceeded (200 but logical failure)
+      if (code === "LIMIT_EXCEEDED") {
+        const { feature, period, maxAllowed, currentUsage } = metadata || {};
+
+        messageApi.warning({
+          content: `${feature} ${period?.toLowerCase()} limit exceeded. 
+                      Usage: ${currentUsage}/${maxAllowed}`,
+          duration: 5,
+        });
+
+        return;
+      }
+
+      // 🟢 2️⃣ Successful Apply
+      if (status === "success") {
+        messageApi.success({
+          content:
+            message ||
+            `${selectedRowKeys.length} candidate(s) applied successfully`,
+          duration: 3,
+        });
+
+        setSelectedRowKeys([]);
+        return;
+      }
+
+      // 🟡 3️⃣ Fallback safety
+      messageApi.error(message || "Unexpected response from server");
     } catch (err) {
+      hide?.();
+
       messageApi.error(
         err?.response?.data?.message || "❌ Failed to apply candidates",
       );

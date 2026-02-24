@@ -22,6 +22,7 @@ const CreatePassword = () => {
   const stateEmail = location?.state?.email;
   const stateRole = location?.state?.role;
   const stateType = location?.state?.type;
+  const redirectPath = location?.state?.redirect;
 
   // 🔹 Invite flow (fallback)
   const query = new URLSearchParams(location.search);
@@ -70,7 +71,7 @@ const CreatePassword = () => {
 
       if (res.status === "success") {
         messageApi.success("Password set successfully!");
-        navigate("/login", { state: { role } });
+        navigate("/login", { state: { role, redirect: redirectPath } });
       } else {
         messageApi.error(res.message || "Failed to set password");
       }
@@ -157,7 +158,12 @@ const CreatePassword = () => {
 
               <Text style={{ display: "block", marginTop: 16 }}>
                 Already have an account?{" "}
-                <Button type="link" onClick={() => navigate("/login")}>
+                <Button
+                  type="link"
+                  onClick={() =>
+                    navigate("/login", { state: { redirect: redirectPath } })
+                  }
+                >
                   Login
                 </Button>
               </Text>
