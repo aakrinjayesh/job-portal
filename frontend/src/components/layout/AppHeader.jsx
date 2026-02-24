@@ -12,12 +12,12 @@ const AppHeader = () => {
         />
       </div>
 
-      {/* <div style={styles.menu}>
-        <span>Products</span>
+      <div style={styles.menu}>
+        {/* <span>Products</span> */}
         <span>Features</span>
         <span>Pricing</span>
-        <span>Support</span>
-      </div> */}
+        {/* <span>Support</span> */}
+      </div>
 
       {/* <Button type="primary" style={{ borderRadius: 8 }}>
         Start free trial
@@ -42,8 +42,8 @@ const styles = {
   },
 
   logo: {
-     width: 140,     // 🔹 increase width here
-    // height: "50",
+     width: 188,     // 🔹 increase width here
+    height: "135px",
     cursor: "pointer",
   },
   menu: {

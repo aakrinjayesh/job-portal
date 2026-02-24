@@ -787,7 +787,7 @@ const RecruiterJobList = () => {
     { title: "Other Details" },
   ];
 
-  const MAX_VISIBLE_TAGS = 3;
+  const MAX_VISIBLE_TAGS = 2;
 
   // ✅ Close Job handler
   const handleCloseJob = async (jobId) => {
@@ -990,13 +990,13 @@ const RecruiterJobList = () => {
                     style={{
                       borderRadius: 12,
                       background: "#fff",
-                      padding: 16,
+                      // padding: 16,
                       cursor: "pointer",
                       border: "1px solid #EEEEEE",
-                      height: 320, // ✅ UNIFORM HEIGHT
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
+                      height: 235, // ✅ UNIFORM HEIGHT
+                      // display: "flex",
+                      // flexDirection: "column",
+                      // justifyContent: "space-between",
                     }}
                   >
                     {/* 🔹 TOP SECTION */}
@@ -1005,9 +1005,9 @@ const RecruiterJobList = () => {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "flex-start",
-                        gap: 16,
+                        // gap: 16,
                         flexWrap: "wrap",
-                        minHeight: 90,
+                        // minHeight: 30,
                       }}
                     >
                       <div style={{ display: "flex", gap: 12 }}>
@@ -1163,17 +1163,19 @@ const RecruiterJobList = () => {
                     </div>
 
                     {/* 🔹 JOB META */}
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        flexWrap: "wrap",
-                        color: "#666",
-                        fontSize: 13,
-                        maxHeight: 42,
-                        overflow: "hidden",
-                      }}
-                    >
+                  <div
+                style={{
+                  display: "flex",
+                  gap: 2,
+                  // flexWrap: "wrap",
+                  color: "#666",
+                  fontSize: 13,
+                  //  maxHeight: 42,
+                  overflow: "hidden",
+                  // padding: "0 px",
+                  // marginTop: 10,
+                }}
+              >
                       <span>
                         <EnvironmentOutlined /> {job.jobType} ({job.location})
                       </span>
@@ -2234,8 +2236,8 @@ const RecruiterJobList = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-start",
-              gap: 64,
-              marginBottom: 32,
+              gap: 30,
+              // marginBottom: 5,
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

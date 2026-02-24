@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import html2pdf from "html2pdf.js";
 import { useRef } from "react";
 import ResumeTemplate from "../Bench/ResumeTemplate";
+import { LuBookmark, LuBookmarkCheck } from "react-icons/lu";
+import { SaveCandidate, UnsaveCandidate } from "../../api/api";
 
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
@@ -46,6 +48,7 @@ const CandidateDetails = () => {
   // 🔹 Review state (per candidate)
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // const [reviewsByCandidate, setReviewsByCandidate] = useState({});
   const [tempReview, setTempReview] = useState("");
@@ -76,7 +79,8 @@ const CandidateDetails = () => {
         const res = await getCandidateDetails(id);
 
         if (res.status === "success") {
-          setCandidate(res.candidate);
+           setCandidate(res.candidate);
+  setSaved(res.candidate?.isSaved || false); // 👈 important
         }
       } catch (err) {
         message.error("Failed to load candidate details");
@@ -92,6 +96,36 @@ const CandidateDetails = () => {
 
     if (id) fetchCandidate();
   }, [id]);
+
+  const handleSaveToggle = async (e) => {
+  e.stopPropagation();
+
+  if (!candidate?.id) return;
+
+  const willBeSaved = !saved;
+  setSaved(willBeSaved);
+
+  try {
+    if (willBeSaved) {
+      const resp = await SaveCandidate({
+        candidateProfileId: candidate.id,
+      });
+
+      if (resp?.status !== "success") throw new Error();
+      messageApi.success("Candidate saved!");
+    } else {
+      const resp = await UnsaveCandidate({
+        candidateProfileId: candidate.id,
+      });
+
+      if (resp?.status !== "success") throw new Error();
+      messageApi.success("Candidate removed!");
+    }
+  } catch (error) {
+    console.error("Save error:", error);
+    setSaved(!willBeSaved); // rollback
+  }
+};
 
   useEffect(() => {
     if (!loadingCandidate) return;
@@ -437,6 +471,20 @@ const CandidateDetails = () => {
                         }
                       />
                     </Tooltip>
+
+                    <Tooltip title={saved ? "Saved Candidate" : "Save Candidate"}>
+  <Button
+    type="text"
+    onClick={handleSaveToggle}
+    icon={
+      saved ? (
+        <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 20 }} />
+      ) : (
+        <LuBookmark style={{ fontSize: 20 }} />
+      )
+    }
+  />
+</Tooltip>
                   </Space>
                 </Row>
               </div>

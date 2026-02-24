@@ -20,7 +20,7 @@ import {
 import FilterSection from "./FilterSection";
 import AddSkillInput from "./AddSkillInput";
 import SearchWithTextArea from "../../../company/components/Bench/SearchWithTextArea";
-import { AiJobFilter, AiCandidateFilter } from "../../api/api";
+import { AiJobFilter, AiCandidateFilter,GetLocations } from "../../api/api";
 
 const { Text } = Typography;
 
@@ -77,6 +77,29 @@ const FiltersPanel = ({
   const [clouds, setClouds] = useState([]);
   const [experienceError, setExperienceError] = useState("");
   const [candidateType, setCandidateType] = useState([]);
+  const [locationOptions, setLocationOptions] = useState([]);
+
+  useEffect(() => {
+  const fetchLocations = async () => {
+    try {
+      const res = await GetLocations();
+      console.log("LOCATION API RESPONSE 👉", res);  
+
+      // adjust depending on backend response structure
+      const formatted = res.data?.map((loc) => ({
+        label: loc.name || loc.location,   // 👈 adjust field name
+        value: loc.name || loc.location,
+        count: loc.count || 0,
+      }));
+
+      setLocationOptions(formatted || []);
+    } catch (error) {
+      console.error("Failed to fetch locations:", error);
+    }
+  };
+
+  fetchLocations();
+}, []);
 
   /* 🔽 collapse states */
   const [open, setOpen] = useState({
@@ -91,14 +114,7 @@ const FiltersPanel = ({
 
   const toggle = (key) => setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const locationOptions = [
-    { label: "Bangalore", count: 4543 },
-    { label: "Hyderabad", count: 2662 },
-    { label: "Delhi / NCR", count: 2203 },
-    { label: "Pune", count: 1918 },
-    { label: "Mumbai", count: 1512 },
-    { label: "Chennai", count: 1343 },
-  ];
+  
 
   const employeeTypeOptions = [
     { label: "Full Time" },
