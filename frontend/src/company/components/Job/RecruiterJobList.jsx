@@ -48,7 +48,7 @@ import {
   DollarOutlined,
   ClockCircleOutlined,
   UserOutlined,
-  LineChartOutlined
+  LineChartOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import { CreateJob, UpdateJob, PostedJobsList, CloseJob } from "../../api/api";
@@ -624,8 +624,8 @@ const RecruiterJobList = () => {
       }
 
       // 🟢 SUCCESS
-      // const extracted = response?.extracted || {};
-      const extracted = response?.extracted?.data || {};
+      const extracted = response?.extracted || {};
+      // const extracted = response?.extracted?.data || {};
 
       form.setFieldsValue({
         role: extracted.role || "",
@@ -1164,19 +1164,19 @@ const RecruiterJobList = () => {
                     </div>
 
                     {/* 🔹 JOB META */}
-                  <div
-                style={{
-                  display: "flex",
-                  gap: 2,
-                  // flexWrap: "wrap",
-                  color: "#666",
-                  fontSize: 13,
-                  //  maxHeight: 42,
-                  overflow: "hidden",
-                  // padding: "0 px",
-                  // marginTop: 10,
-                }}
-              >
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 2,
+                        // flexWrap: "wrap",
+                        color: "#666",
+                        fontSize: 13,
+                        //  maxHeight: 42,
+                        overflow: "hidden",
+                        // padding: "0 px",
+                        // marginTop: 10,
+                      }}
+                    >
                       <span>
                         <EnvironmentOutlined /> {job.jobType} ({job.location})
                       </span>
@@ -1195,14 +1195,16 @@ const RecruiterJobList = () => {
                       </span>
                       <Divider type="vertical" />
 
-                      <span>  {job.experienceLevel && (
-                  <>
-                  
-                    <span>
-                      <LineChartOutlined /> {job.experienceLevel}
-                    </span>
-                  </>
-                )}</span>
+                      <span>
+                        {" "}
+                        {job.experienceLevel && (
+                          <>
+                            <span>
+                              <LineChartOutlined /> {job.experienceLevel}
+                            </span>
+                          </>
+                        )}
+                      </span>
                     </div>
 
                     {/* 🔹 SKILLS + CLOUDS */}

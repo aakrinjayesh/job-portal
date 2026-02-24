@@ -18,7 +18,7 @@ import {
   LogoutOutlined,
   ArrowLeftOutlined,
   BellOutlined,
-  DownOutlined,
+  // DownOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -47,14 +47,33 @@ const MainLayout = ({ children }) => {
     );
   });
 
+  // useEffect(() => {
+  //   const updatedUser = JSON.parse(localStorage.getItem("user")) || {
+  //     name: "Guest",
+  //     role: "Candidate",
+  //   };
+
+  //   setUser(updatedUser);
+  // }, [location.pathname]);
   useEffect(() => {
-    const updatedUser = JSON.parse(localStorage.getItem("user")) || {
-      name: "Guest",
-      role: "Candidate",
+    const loadUser = () => {
+      const storedUser = JSON.parse(localStorage.getItem("user")) || {
+        name: "Guest",
+        role: "Candidate",
+      };
+
+      setUser(storedUser);
     };
 
-    setUser(updatedUser);
-  }, [location.pathname]);
+    loadUser();
+
+    // 🔥 this updates header + sidebar instantly after profile update
+    window.addEventListener("storage", loadUser);
+
+    return () => {
+      window.removeEventListener("storage", loadUser);
+    };
+  }, []);
 
   /* 🔗 Menu → Route mapping */
   const menuRoutes = {
@@ -156,7 +175,10 @@ const MainLayout = ({ children }) => {
             alignItems: "center",
           }}
         >
-          <Avatar size={40} icon={<UserOutlined />} />
+          {/* <Avatar size={40} icon={<UserOutlined />} /> */}
+          <Avatar size={40} src={user?.profilePicture || undefined}>
+            {!user?.profilePicture && user?.name?.slice(0, 2)?.toUpperCase()}
+          </Avatar>
 
           {!collapsed && (
             <div>
@@ -282,7 +304,7 @@ const MainLayout = ({ children }) => {
             <div style={{ lineHeight: 1.2 }}>
               <Space size={4}>
                 <Text strong>Hi, {user.name}</Text>
-                <DownOutlined style={{ fontSize: 12 }} />
+                {/* <DownOutlined style={{ fontSize: 12 }} /> */}
               </Space>
               <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
                 {user.role}
