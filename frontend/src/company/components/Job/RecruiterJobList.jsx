@@ -48,6 +48,7 @@ import {
   DollarOutlined,
   ClockCircleOutlined,
   UserOutlined,
+  LineChartOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 import { CreateJob, UpdateJob, PostedJobsList, CloseJob } from "../../api/api";
@@ -1194,7 +1195,14 @@ const RecruiterJobList = () => {
                       </span>
                       <Divider type="vertical" />
 
-                      <span>{job.experienceLevel ?? "Not Specified"}</span>
+                      <span>  {job.experienceLevel && (
+                  <>
+                  
+                    <span>
+                      <LineChartOutlined /> {job.experienceLevel}
+                    </span>
+                  </>
+                )}</span>
                     </div>
 
                     {/* 🔹 SKILLS + CLOUDS */}
