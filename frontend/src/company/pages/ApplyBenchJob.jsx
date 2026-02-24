@@ -214,11 +214,19 @@ const ApplyBenchJob = ({ jobId }) => {
       setLoading(true);
       try {
         const res = await GetVendorCandidates();
-        const active = res?.data?.filter(
-          (x) => x.status?.toLowerCase() === "active",
+        // const active = res?.data?.filter(
+        //   (x) => x.status?.toLowerCase() === "active",
+        // );
+        const active = (res?.data || []).filter(
+          (x) => x.status === null || x.status?.toLowerCase() === "active",
         );
 
+        setCandidates(active);
+
+        // setCandidates(active || []);
+        // setCandidates(res?.data || []);
         setCandidates(active || []);
+        // console.log("Full Data:", res?.data);
       } catch (err) {
         message.error("Failed to load candidates");
       } finally {

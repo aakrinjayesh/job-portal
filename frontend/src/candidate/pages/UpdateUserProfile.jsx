@@ -367,7 +367,8 @@ const UpdateUserProfile = ({
     try {
       const response = await UploadPdf(uploadFormData);
       // const extracted = response?.extracted || {};
-      const extracted = response?.extracted?.data || {};
+      // const extracted = response?.extracted?.data || {};
+      const extracted = response?.extracted || {};
 
       console.log("ectracted", extracted);
 

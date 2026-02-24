@@ -244,8 +244,9 @@ const uploadProfilePicture = async (req, res) => {
     }
 
     // 🔥 Upload file object (not just buffer)
-    // const uploadedFile = await uploadToCloudinary(req.file);
-    const uploadedFile = await uploadToCloudinary(req.file.buffer);
+    const uploadedFile = await uploadToCloudinary(req.file);
+    // const uploadedFile = await uploadToCloudinary(req.file.buffer);
+    // const uploadedFile = await uploadToCloudinary(req.file.path);
 
     if (!uploadedFile) {
       return res.status(500).json({

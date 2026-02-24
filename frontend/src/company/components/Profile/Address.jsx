@@ -51,15 +51,18 @@ const Address = ({ form, editable }) => {
           <Form.Item
             label="Building Number"
             name="doorNumber"
-            rules={[{ required: editable },
+            rules={[
+              // { required: editable },
               {
-  pattern: /^[A-Za-z0-9]+([/-]?[A-Za-z0-9]+)*$/,
-  message:
-    "Building number can contain letters, numbers, slash (/) or hyphen (-)",
-},
-{ min: 1, message: "Building number is required" },
-{ max: 10, message: "Building number cannot exceed 10 characters" },
-
+                pattern: /^[A-Za-z0-9]+([/-]?[A-Za-z0-9]+)*$/,
+                message:
+                  "Building number can contain letters, numbers, slash (/) or hyphen (-)",
+              },
+              { min: 1, message: "Building number is required" },
+              {
+                max: 10,
+                message: "Building number cannot exceed 10 characters",
+              },
             ]}
           >
             <Input disabled={!editable} />
@@ -70,15 +73,15 @@ const Address = ({ form, editable }) => {
           <Form.Item
             label="Street"
             name="street"
-            rules={[{ required: editable },
-             {
-  pattern: /^[A-Z][A-Za-z0-9 ./-]*$/,
-  message:
-    "Street name must start with a capital letter and contain only letters, numbers, spaces, . / -",
-},
-{ min: 3, message: "Street name must be at least 3 characters" },
-{ max: 50, message: "Street name cannot exceed 50 characters" },
-
+            rules={[
+              // { required: editable },
+              {
+                pattern: /^[A-Z][A-Za-z0-9 ./-]*$/,
+                message:
+                  "Street name must start with a capital letter and contain only letters, numbers, spaces, . / -",
+              },
+              { min: 3, message: "Street name must be at least 3 characters" },
+              { max: 50, message: "Street name cannot exceed 50 characters" },
             ]}
           >
             <Input disabled={!editable} />
@@ -88,16 +91,20 @@ const Address = ({ form, editable }) => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item label="City" name="city" rules={[{ required: editable },
-             {
-  pattern: /^[A-Z][A-Za-z.-]*(?:\s[A-Za-z.-]+)*$/,
-  message:
-    "City name must start with a capital letter and contain only letters, spaces, dots, or hyphens",
-},
-{ min: 2, message: "City name must be at least 2 characters" },
-{ max: 40, message: "City name cannot exceed 40 characters" },
-
-          ]}>
+          <Form.Item
+            label="City"
+            name="city"
+            rules={[
+              // { required: editable },
+              {
+                pattern: /^[A-Z][A-Za-z.-]*(?:\s[A-Za-z.-]+)*$/,
+                message:
+                  "City name must start with a capital letter and contain only letters, spaces, dots, or hyphens",
+              },
+              { min: 2, message: "City name must be at least 2 characters" },
+              { max: 40, message: "City name cannot exceed 40 characters" },
+            ]}
+          >
             <Input disabled={!editable} />
           </Form.Item>
         </Col>
@@ -107,7 +114,7 @@ const Address = ({ form, editable }) => {
             label="Pin Code"
             name="pinCode"
             rules={[
-              { required: editable },
+              // { required: editable },
               { pattern: /^[0-9]{6}$/, message: "Invalid pin code" },
             ]}
           >
@@ -121,7 +128,7 @@ const Address = ({ form, editable }) => {
           <Form.Item
             label="Country"
             name="country"
-            rules={[{ required: editable }]}
+            // rules={[{ required: editable }]}
           >
             <Select
               disabled={!editable}
@@ -141,7 +148,7 @@ const Address = ({ form, editable }) => {
           <Form.Item
             label="State"
             name="state"
-            rules={[{ required: editable }]}
+            // rules={[{ required: editable }]}
           >
             <Select
               disabled={!editable || states.length === 0}
