@@ -75,7 +75,7 @@ const getOtpEmailTemplate = ({ otp, name }) => `
 
           <tr>
             <td style="background:#2196F3; color:#ffffff; padding:20px; text-align:center;">
-              <h2 style="margin:0;">QuickHireSF</h2>
+              <h2 style="margin:0;">ForceHead</h2>
             </td>
           </tr>
 
@@ -84,7 +84,7 @@ const getOtpEmailTemplate = ({ otp, name }) => `
               <p style="font-size:16px;">Hi <strong>${name || "there"}</strong>,</p>
 
               <p style="font-size:14px;">
-                Welcome to <strong>QuickHireSF</strong>.  
+                Welcome to <strong>ForceHead</strong>.  
                 Use the verification code below:
               </p>
 
@@ -106,13 +106,13 @@ const getOtpEmailTemplate = ({ otp, name }) => `
                 Please do not share it with anyone.
               </p>
 
-              <p>— <strong>QuickHireSF Team</strong></p>
+              <p>— <strong>ForceHead Team</strong></p>
             </td>
           </tr>
 
           <tr>
             <td style="background:#f9fafb; padding:12px; text-align:center; font-size:12px; color:#9ca3af;">
-              © ${new Date().getFullYear()} QuickHireSF
+              © ${new Date().getFullYear()} ForceHead
             </td>
           </tr>
 

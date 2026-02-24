@@ -62,6 +62,67 @@ const ChatItem = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
+
+        {/* Dropdown Menu */}
+<div onClick={(e) => e.stopPropagation()}>
+  <Dropdown
+    trigger={["click"]}
+    menu={{
+      items: chat.isGroupChat
+        ? [
+            {
+              key: "info",
+              label: "Group Info",
+              icon: <InfoCircleOutlined />,
+            },
+          ]
+        : [
+            {
+              key: "delete",
+              label: (
+                <Popconfirm
+                  title="Delete chat?"
+                  description="This will permanently delete this conversation"
+                  onConfirm={deleteChat}
+                  okText="Delete"
+                  cancelText="Cancel"
+                  okButtonProps={{ danger: true }}
+                >
+                  Delete Chat
+                </Popconfirm>
+              ),
+              icon: <DeleteOutlined />,
+              danger: true,
+            },
+          ],
+      onClick: ({ key }) => {
+        if (key === "info") setOpenGroupInfo(true);
+      },
+    }}
+  >
+    <div
+      style={{
+        width: 28,
+        height: 28,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        background: "rgba(0,0,0,0.05)",
+        cursor: "pointer",
+        opacity: isHovered || isActive ? 1 : 0.7,
+        transition: "opacity 0.2s",
+      }}
+    >
+      <MoreOutlined
+        style={{
+          color: "#667781",
+          fontSize: 18,
+        }}
+      />
+    </div>
+  </Dropdown>
+</div>
         {/* Avatar */}
         <Avatar
           size={52}
@@ -179,7 +240,7 @@ const ChatItem = ({
         </div>
 
         {/* Dropdown Menu */}
-        <div
+        {/* <div
           style={{
             position: "absolute",
             top: 12,
@@ -244,7 +305,7 @@ const ChatItem = ({
               />
             </div>
           </Dropdown>
-        </div>
+        </div> */}
       </div>
     </>
   );

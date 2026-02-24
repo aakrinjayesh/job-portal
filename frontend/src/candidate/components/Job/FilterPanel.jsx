@@ -80,9 +80,9 @@ const FiltersPanel = ({
 
   /* 🔽 collapse states */
   const [open, setOpen] = useState({
-    experience: true,
-    location: true,
-    candidateType: true,
+    experience: false,
+    location: false,
+    candidateType: false,
     jobType: false,
     employment: false,
     skills: false,
