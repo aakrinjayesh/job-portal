@@ -1,6 +1,17 @@
-import prisma from "../config/prisma";
+import prisma from "../config/prisma.js";
 
-export const getJobSEOMeta = async (req, res) => {
+function mapEmploymentType(type) {
+  const map = {
+    FullTime: "FULL_TIME",
+    PartTime: "PART_TIME",
+    Contract: "CONTRACTOR",
+    Internship: "INTERN",
+    Freelancer: "OTHER",
+  };
+  return map[type] || "OTHER";
+}
+
+const getJobSEOMeta = async (req, res) => {
   try {
     const { jobId } = req.params;
 
@@ -16,7 +27,7 @@ export const getJobSEOMeta = async (req, res) => {
         experienceLevel: true,
         skills: true,
         companyName: true,
-        companyLogo: true,
+        // companyLogo: true,
         status: true,
         isDeleted: true,
         createdAt: true,
@@ -44,7 +55,7 @@ export const getJobSEOMeta = async (req, res) => {
         ? rawDescription.slice(0, 152) + "..."
         : rawDescription;
 
-    const canonicalUrl = `https://www.forcehead.com/job/${job.id}`;
+    const canonicalUrl = `${process.env.FRONTEND_URL}/job/${job.id}`;
 
     // Google Jobs structured data (JobPosting schema)
     const structuredData = {
@@ -58,7 +69,8 @@ export const getJobSEOMeta = async (req, res) => {
       hiringOrganization: {
         "@type": "Organization",
         name: job.companyName || "Company on ForceHead",
-        logo: job.companyLogo || "https://www.forcehead.com/forceheadlogo.svg",
+        logo:
+          job.companyLogo || `${process.env.FRONTEND_URL}/forceheadlogo.svg`,
       },
       jobLocation: {
         "@type": "Place",
@@ -91,7 +103,7 @@ export const getJobSEOMeta = async (req, res) => {
         description,
         canonicalUrl,
         ogImage:
-          job.companyLogo || "https://www.forcehead.com/forceheadlogo.svg",
+          job.companyLogo || `${process.env.FRONTEND_URL}/forceheadlogo.svg`,
         structuredData: cleanStructuredData,
       },
     });
@@ -105,13 +117,5 @@ export const getJobSEOMeta = async (req, res) => {
 };
 
 // Map your Prisma enum to schema.org values
-function mapEmploymentType(type) {
-  const map = {
-    FullTime: "FULL_TIME",
-    PartTime: "PART_TIME",
-    Contract: "CONTRACTOR",
-    Internship: "INTERN",
-    Freelancer: "OTHER",
-  };
-  return map[type] || "OTHER";
-}
+
+export { getJobSEOMeta };

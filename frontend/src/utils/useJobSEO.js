@@ -6,7 +6,7 @@ export const useJobSEO = (jobId) => {
   useEffect(() => {
     if (!jobId) return;
 
-    fetch(`${process.env.BACKEND_URL}/api/seo/job/${jobId}`)
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/seo/job/${jobId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.status === "success") setSeo(data.seo);
