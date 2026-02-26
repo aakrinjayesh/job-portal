@@ -30,6 +30,7 @@ const { Title, Text, Paragraph } = Typography;
 const JobDetails = ({ mode }) => {
   const { id } = useParams();
   const seo = useJobSEO(id);
+  console.log("seo data", seo);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
