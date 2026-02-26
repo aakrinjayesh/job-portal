@@ -15,7 +15,8 @@ const genAI = new Groq({
   apiKey: process.env["GROQ_API_KEY"], // This is the default and can be omitted
 });
 
-const modelName = "llama-3.1-8b-instant";
+const modelName = process.env.GROQ_MODEL;
+console.log("modelName", modelName);
 
 export const extractAIText = async (text, role, extra = {}) => {
   console.log("inside llm logic | role:", role);
