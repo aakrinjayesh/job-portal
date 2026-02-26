@@ -1,6 +1,6 @@
 // export const generateJobDescriptionPrompt = (jobdetails) => {
 //   return `
-// You are an expert Salesforce HR job description writer.  
+// You are an expert Salesforce HR job description writer.
 // Generate a complete, professional Job Description based strictly on the jobdetails provided below.
 
 // ---------------------------------------
@@ -46,7 +46,6 @@
 // Now generate the final JSON output based on the provided jobdetails.
 //   `;
 // };
-
 
 // export const generateJobDescriptionPrompt = (jobdetails) => {
 //   return `
@@ -182,14 +181,19 @@ CRITICAL GENERATION RULES:
    - Do not modify or enhance the role title.
 
 3. DESCRIPTION GENERATION:
-   - MUST be a well-written paragraph (3–5 lines).
-   - Include role significance, experience level, and main objectives.
-   - Describe the role purpose, team/organization impact, and key focus areas.
+   - MUST be atleast 120–160 words.
+   - MUST be written in resume-quality, enterprise JD language.
+   - Include business context, platform ownership, and technical scope.
+   - Reflect seniority clearly based on experience level.
 
 4. RESPONSIBILITIES GENERATION:
-   - MUST be a well-written paragraph (3–5 lines).
-   - Cover day-to-day tasks, project involvement, and team collaboration.
-   - Include specific Salesforce-related responsibilities based on role type.
+   - MUST be a single string containing atleast 6–8 bullet-style statements.
+   - Each statement must end with "\n".
+   - Each responsibility MUST include:
+   * Action verb
+   * Salesforce feature or technology
+   * Outcome or impact
+   - Reflect complexity, scale, and ownership based on experience level.
 
 5. SKILLS GENERATION:
    - MUST include Salesforce-related technical skills.
@@ -198,13 +202,16 @@ CRITICAL GENERATION RULES:
      * Integration: "REST API", "SOAP API", "Middleware", "Data Migration"
      * Tools: "Salesforce DX", "Git", "Jenkins", "Copado"
      * Admin: "Workflows", "Process Builder", "Flows", "Security Model"
-   - Select 5-8 most relevant skills based on role and experience level.
+   - Select 6–8 highly specific, non-overlapping Salesforce skills.
+   - Skills MUST reflect hands-on implementation, not theoretical knowledge.
+   - Avoid repeating similar skills (e.g., Flow + Process Builder together unless role requires both).
    - Capitalize properly (e.g., "Apex", not "apex").
 
 6. CLOUDS GENERATION:
    - MUST list Salesforce products with "Salesforce" prefix.
-   - Select most relevant clouds based on role type.
-   - Always use "Salesforce" prefix followed by cloud name.
+   - Select clouds that are actively used in the responsibilities.
+   - Do NOT include clouds unless they logically align with the role.
+   - Always use "Salesforce" prefix followed by cloud name (e.g., "Salesforce App Cloud", not "App Cloud").
 
 7. QUALIFICATIONS GENERATION:
    - MUST be simple educational requirements.
@@ -217,17 +224,34 @@ CRITICAL GENERATION RULES:
    - Select based on experience level and role type.
    - If role doesn't require certifications → [] (empty array).
 
-9. EXPERIENCE-BASED CUSTOMIZATION:
-   - 0-2 years (EntryLevel): Focus on foundational skills, basic clouds.
-   - 3-5 years (Mid): Include advanced skills, multiple clouds.
-   - 6-8 years (Senior): Include architecture skills, complex clouds.
-   - 8+ years (Lead): Include leadership skills, multiple advanced clouds.
+9. EXPERIENCE-BASED CUSTOMIZATION (STRICT):
+   - Entry (0–2): Configuration, basic Apex, standard objects, supervision.
+   - Mid (3–5): End-to-end delivery, integrations, complex Flows, deployment tools.
+   - Senior (6–8): Architecture decisions, performance optimization, security design, mentoring.
+   - Lead (8+): Platform ownership, solution architecture, cross-team leadership, governance.
+   - Output MUST clearly reflect the correct band; do not blur levels.
 
 10. FORMATTING RULES:
     - All strings must use standard punctuation only.
     - Paragraphs must be coherent and professionally written.
     - Arrays must contain strings without special formatting.
     - No markdown, no HTML, no code blocks.
+
+11. TECHNICAL DEPTH RULES:
+   - Avoid generic phrases like "good understanding" or "knowledge of".
+   - Use enterprise terminology such as:
+   * governor limits
+   * bulkification
+   * asynchronous processing
+   * security and sharing model
+   * CI/CD pipelines
+   * scalable architecture
+   - Senior and Lead roles MUST reference architecture or performance considerations.
+
+RESUME QUALITY ENFORCEMENT:
+- Output must be suitable for direct inclusion in a professional JD or resume.
+- Avoid fluff, buzzwords, or vague statements.
+- Prioritize clarity, impact, and technical credibility.
 
 DEFAULTS:
 - Missing role: Cannot proceed - use "Salesforce Developer" as fallback

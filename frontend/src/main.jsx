@@ -5,15 +5,18 @@ import App from "./App.jsx";
 import { SocketProvider } from "../src/chat/context/SocketContext.jsx";
 import { AuthProvider } from "../src/chat/context/AuthContext.jsx";
 import { BrowserRouter } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <SocketProvider>
-          <App />
-        </SocketProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  </StrictMode>
+    <HelmetProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <SocketProvider>
+            <App />
+          </SocketProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </HelmetProvider>
+  </StrictMode>,
 );

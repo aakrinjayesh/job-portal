@@ -571,11 +571,15 @@ const RecruiterJobList = () => {
       setCurrentStep(0);
     } catch (error) {
       console.error("Error saving job:", error);
-      // messageApi.error("Failed to save job:" + error.response.data.message);
-      messageApi.error(
-        error?.response?.data?.message?.message || "Failed to save job",
-      );
-      messageApi.error(error?.response?.data?.message || "Failed to save job");
+
+      const backendMessage = error?.response?.data?.message;
+
+      const safeMessage =
+        typeof backendMessage === "string"
+          ? backendMessage
+          : backendMessage?.message || "Failed to save job";
+
+      messageApi.error(safeMessage);
 
       setPostLoading(false);
     } finally {

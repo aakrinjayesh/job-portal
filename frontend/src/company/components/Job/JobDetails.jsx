@@ -22,11 +22,14 @@ import { ShareAltOutlined, CopyOutlined } from "@ant-design/icons";
 import { Input, Space } from "antd";
 import { ApplyJob } from "../../../candidate/api/api";
 import ApplyBenchJob from "../../pages/ApplyBenchJob";
+import { Helmet } from "react-helmet-async";
+import { useJobSEO } from "../../../utils/useJobSEO";
 
 const { Title, Text, Paragraph } = Typography;
 
 const JobDetails = ({ mode }) => {
   const { id } = useParams();
+  const seo = useJobSEO(id);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -234,6 +237,29 @@ const JobDetails = ({ mode }) => {
 
   return (
     <>
+      {seo && (
+        <Helmet>
+          <title>{seo.title}</title>
+          <meta name="description" content={seo.description} />
+          <meta name="robots" content="index, follow" />
+
+          {/* Open Graph */}
+          <meta property="og:title" content={seo.title} />
+          <meta property="og:description" content={seo.description} />
+          <meta property="og:url" content={seo.canonicalUrl} />
+          <meta property="og:image" content={seo.ogImage} />
+          <meta property="og:type" content="website" />
+
+          {/* Canonical */}
+          <link rel="canonical" href={seo.canonicalUrl} />
+
+          {/* Google Jobs structured data */}
+          <script type="application/ld+json">
+            {JSON.stringify(seo.structuredData)}
+          </script>
+        </Helmet>
+      )}
+
       {contextHolder}
 
       <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>

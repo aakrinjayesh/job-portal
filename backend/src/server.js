@@ -25,6 +25,7 @@ import cookieParser from "cookie-parser";
 import BillingRoute from "./Routes/billingRoutes.js";
 import { featureLimitMiddleware } from "./Middleware/featureLimitMiddleware.js";
 import UsageRoute from "./Routes/usageRoutes.js";
+import seoRoute from "./Routes/seoRoutes.js";
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use(cookieParser());
 app.use(apiLimiter);
 app.use(authLimiter, LoginRouters);
 app.use(BillingRoute);
+app.use(seoRoute);
 app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(userRouter);
