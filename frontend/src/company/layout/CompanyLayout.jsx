@@ -33,9 +33,16 @@ const CompanyLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const user = JSON.parse(localStorage.getItem("user")) || {
-    name: "Aakrin Company",
-    role: "Company",
+  // const user = JSON.parse(localStorage.getItem("user")) || {
+  //   name: "Aakrin Company",
+  //   role: "Company",
+  // };
+  const userData = JSON.parse(localStorage.getItem("user")) || {};
+
+  const user = {
+    name: userData.name || "Aakrin Company",
+    role: userData.role || "Company",
+    profileUrl: userData.profileUrl || null,
   };
 
   /* 🔗 Menu → Route mapping */
@@ -64,74 +71,74 @@ const CompanyLayout = ({ children }) => {
     } catch (err) {
     } finally {
       localStorage.clear();
-       googleLogout();
+      googleLogout();
       navigate("/login");
     }
   };
 
- /* 🎯 ACTIVE MENU LOGIC */
-const selectedKey = useMemo(() => {
-  const path = location.pathname;
-  const highlight = location.state?.highlight;
+  /* 🎯 ACTIVE MENU LOGIC */
+  const selectedKey = useMemo(() => {
+    const path = location.pathname;
+    const highlight = location.state?.highlight;
 
-  /* 1️⃣ Most specific routes FIRST */
+    /* 1️⃣ Most specific routes FIRST */
 
-  // ✅ Find Jobs
-  if (path.startsWith("/company/job/find")) {
-    return "findjob";
-  }
+    // ✅ Find Jobs
+    if (path.startsWith("/company/job/find")) {
+      return "findjob";
+    }
 
-  // ✅ Saved Jobs
-  if (path.startsWith("/company/jobs/saved")) {
-    return "savedjobs";
-  }
+    // ✅ Saved Jobs
+    if (path.startsWith("/company/jobs/saved")) {
+      return "savedjobs";
+    }
 
-  // ✅ Find Candidate
-  if (path.startsWith("/company/candidate/find")) {
-    return "findbench";
-  }
+    // ✅ Find Candidate
+    if (path.startsWith("/company/candidate/find")) {
+      return "findbench";
+    }
 
-  // ✅ Saved Candidates
-  if (path.startsWith("/company/bench/saved")) {
-    return "savedcandidates";
-  }
+    // ✅ Saved Candidates
+    if (path.startsWith("/company/bench/saved")) {
+      return "savedcandidates";
+    }
 
-  // ✅ Bench Page
-  if (path.startsWith("/company/bench")) {
-    return "bench";
-  }
+    // ✅ Bench Page
+    if (path.startsWith("/company/bench")) {
+      return "bench";
+    }
 
-  // ✅ Candidate Details (dynamic)
-  if (path.startsWith("/company/candidate/")) {
-    if (highlight) return highlight;
-    return "jobs";
-  }
+    // ✅ Candidate Details (dynamic)
+    if (path.startsWith("/company/candidate/")) {
+      if (highlight) return highlight;
+      return "jobs";
+    }
 
-  if (path.startsWith("/company/candidate")) {
-    if (highlight) return highlight;
-    return "jobs";
-  }
+    if (path.startsWith("/company/candidate")) {
+      if (highlight) return highlight;
+      return "jobs";
+    }
 
-  // ✅ Job Details (dynamic) - FIXED
-  if (path.startsWith("/company/job/")) {
-    // If coming from Find Jobs
-    if (highlight === "findjob") return "findjob";
-    // If coming from Saved Jobs
-    if (highlight === "savedjobs") return "savedjobs";
-    // Default: coming from My Jobs
-    return "jobs";
-  }
+    // ✅ Job Details (dynamic) - FIXED
+    if (path.startsWith("/company/job/")) {
+      // If coming from Find Jobs
+      if (highlight === "findjob") return "findjob";
+      // If coming from Saved Jobs
+      if (highlight === "savedjobs") return "savedjobs";
+      // Default: coming from My Jobs
+      return "jobs";
+    }
 
-  // ✅ Direct Matches
-  if (path.startsWith("/company/my-activity")) return "myactivity";
-  if (path.startsWith("/company/chat")) return "chat";
-  if (path.startsWith("/company/profile")) return "profile";
-  if (path.startsWith("/company/pricing")) return "pricing";
-  if (path.startsWith("/company/dashboard")) return "dashboard";
-  if (path.startsWith("/company/jobs")) return "jobs";
+    // ✅ Direct Matches
+    if (path.startsWith("/company/my-activity")) return "myactivity";
+    if (path.startsWith("/company/chat")) return "chat";
+    if (path.startsWith("/company/profile")) return "profile";
+    if (path.startsWith("/company/pricing")) return "pricing";
+    if (path.startsWith("/company/dashboard")) return "dashboard";
+    if (path.startsWith("/company/jobs")) return "jobs";
 
-  return "dashboard";
-}, [location.pathname, location.state]);
+    return "dashboard";
+  }, [location.pathname, location.state]);
 
   /* 🧠 Menu Click */
   const onMenuClick = ({ key }) => {
@@ -205,8 +212,15 @@ const selectedKey = useMemo(() => {
             alignItems: "center",
           }}
         >
-          <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
+          {/* <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
             {user.name?.charAt(0)}
+          </Avatar> */}
+          <Avatar
+            size={40}
+            src={user.profileUrl}
+            style={{ backgroundColor: "#1677FF" }}
+          >
+            {!user.profileUrl && user.name?.charAt(0)}
           </Avatar>
 
           {!collapsed && (
@@ -340,7 +354,7 @@ const selectedKey = useMemo(() => {
           </Space>
 
           <Space>
-            <Avatar
+            {/* <Avatar
               size={56}
               style={{
                 background: "#F0F2F4",
@@ -349,6 +363,17 @@ const selectedKey = useMemo(() => {
               }}
             >
               {user.name?.charAt(0).toUpperCase()}
+            </Avatar> */}
+            <Avatar
+              size={56}
+              src={user.profileUrl}
+              style={{
+                background: "#F0F2F4",
+                color: "#666",
+                fontWeight: 600,
+              }}
+            >
+              {!user.profileUrl && user.name?.charAt(0).toUpperCase()}
             </Avatar>
 
             <div style={{ lineHeight: 1.2 }}>

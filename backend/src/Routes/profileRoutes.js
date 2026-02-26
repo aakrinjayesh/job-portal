@@ -41,12 +41,12 @@ const upload = multer({
 //candidates routes
 
 // user to upload pdf in profile page
-// userRouter.post(
-//   "/upload",
-//   authenticateToken,
-//   upload.single("file"),
-//   UploadResume
-// );
+userRouter.post(
+  "/upload",
+  authenticateToken,
+  upload.single("file"),
+  UploadResume,
+);
 
 // user profile details
 userRouter.post(

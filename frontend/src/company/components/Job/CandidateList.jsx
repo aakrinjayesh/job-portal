@@ -11,6 +11,7 @@ import {
   MarkCandidateReviewed,
   UpdateVendorCandidateStatus,
   MarkCandidateBookmark,
+  SaveCandidate,
 } from "../../api/api";
 
 const CandidateList = () => {
@@ -291,9 +292,20 @@ const CandidateList = () => {
                 }
 
                 try {
+                  // if (finalStatus === "BookMark") {
+                  //   await MarkCandidateBookmark({
+                  //     jobApplicationId: record.applicationId,
+                  //   });
+                  // }
                   if (finalStatus === "BookMark") {
+                    // 1️⃣ update application status
                     await MarkCandidateBookmark({
                       jobApplicationId: record.applicationId,
+                    });
+
+                    // 2️⃣ ALSO save into SavedCandidates table
+                    await SaveCandidate({
+                      candidateProfileId: record.profile.id,
                     });
                   } else {
                     // For Shortlisted, Rejected, Pending

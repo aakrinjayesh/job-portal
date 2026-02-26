@@ -81,7 +81,8 @@ const CandidateDetails = () => {
 
         if (res.status === "success") {
           setCandidate(res.candidate);
-          setSaved(res.candidate?.isSaved || false); // 👈 important
+          // setSaved(res.candidate?.isSaved || false); // 👈 important
+          setSaved(res.candidate?.profile?.isSaved ?? false);
         }
       } catch (err) {
         message.error("Failed to load candidate details");

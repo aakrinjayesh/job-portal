@@ -366,9 +366,10 @@ const UpdateUserProfile = ({
 
     try {
       const response = await UploadPdf(uploadFormData);
-      // const extracted = response?.extracted || {};
-      // const extracted = response?.extracted?.data || {};
       const extracted = response?.extracted || {};
+      // const extracted = response?.data?.extracted || {};
+      // const extracted = response?.data?.extracted || {};
+      // const extracted = response?.extracted || {};
 
       console.log("ectracted", extracted);
 
@@ -1833,15 +1834,33 @@ const UpdateUserProfile = ({
                   key: "certifications",
                   title: "Certifications",
                   children: (
+                    // <Form.Item
+                    //   label="Certifications"
+                    //   name="certifications"
+                    //   rules={[
+                    //     {
+                    //       required: true,
+                    //       message: "Please enter certifications!",
+                    //     },
+                    //   ]}
+                    // >
                     <Form.Item
-                      label="Certifications"
+                      label={
+                        Reciviedrole
+                          ? "Certifications"
+                          : "Certifications (Optional)"
+                      }
                       name="certifications"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please enter certifications!",
-                        },
-                      ]}
+                      rules={
+                        Reciviedrole
+                          ? [
+                              {
+                                required: true,
+                                message: "Please enter certifications!",
+                              },
+                            ]
+                          : []
+                      }
                     >
                       <ReusableSelect
                         placeholder="Select or add certifications"

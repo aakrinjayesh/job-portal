@@ -47,7 +47,7 @@ JobRouters.post(
 JobRouters.get(
   "/job/:jobId",
   // validateInput(getJobDeatilsValidator),
-  // authenticateToken,
+  authenticateToken,
   getJobDetails,
 );
 

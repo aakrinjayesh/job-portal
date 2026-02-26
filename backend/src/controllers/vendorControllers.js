@@ -1780,6 +1780,49 @@ const getSavedCandidates = async (req, res) => {
   }
 };
 
+// const markCandidateBookmark = async (req, res) => {
+//   try {
+//     const userAuth = req.user;
+//     const { jobApplicationId } = req.body;
+
+//     if (userAuth.role !== "company") {
+//       return res.status(403).json({ message: "Access denied" });
+//     }
+
+//     if (!jobApplicationId) {
+//       return res.status(400).json({ message: "jobApplicationId is required" });
+//     }
+
+//     const application = await prisma.jobApplication.findUnique({
+//       where: { id: jobApplicationId },
+//       include: {
+//         job: { select: { postedById: true } },
+//       },
+//     });
+
+//     if (!application) {
+//       return res.status(404).json({ message: "Application not found" });
+//     }
+
+//     if (application.job.postedById !== userAuth.id) {
+//       return res.status(403).json({ message: "Unauthorized" });
+//     }
+
+//     await prisma.jobApplication.update({
+//       where: { id: jobApplicationId },
+//       data: { status: "BookMark" },
+//     });
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Candidate marked as Bookmark",
+//     });
+//   } catch (error) {
+//     console.error("markCandidateBookmark error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 const markCandidateBookmark = async (req, res) => {
   try {
     const userAuth = req.user;
@@ -1808,14 +1851,36 @@ const markCandidateBookmark = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
+    // 1️⃣ Update application status
     await prisma.jobApplication.update({
       where: { id: jobApplicationId },
       data: { status: "BookMark" },
     });
 
+    // 2️⃣ ALSO SAVE INTO savedCandidate TABLE
+
+    const existingSave = await prisma.savedCandidate.findFirst({
+      where: {
+        recruiterId: userAuth.id,
+        organizationId: userAuth.organizationId,
+        candidateProfileId: application.candidateProfileId,
+      },
+    });
+
+    // Prevent duplicate insert
+    if (!existingSave) {
+      await prisma.savedCandidate.create({
+        data: {
+          recruiterId: userAuth.id,
+          organizationId: userAuth.organizationId,
+          candidateProfileId: application.candidateProfileId,
+        },
+      });
+    }
+
     return res.status(200).json({
       status: "success",
-      message: "Candidate marked as Bookmark",
+      message: "Candidate bookmarked and saved successfully",
     });
   } catch (error) {
     console.error("markCandidateBookmark error:", error);
