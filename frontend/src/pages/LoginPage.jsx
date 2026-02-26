@@ -319,9 +319,7 @@ const CompanyHero = () => (
           marginBottom: 12,
         }}
       >
-        Connect with the right salesforce partners —
-        <br />
-        faster and smarter.
+        The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
       </Title>
 
       <Text
@@ -373,9 +371,7 @@ const CandidateHero = () => (
           marginBottom: 12,
         }}
       >
-        Find the right Salesforce job —
-        <br />
-        built for your career.
+       The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
       </Title>
 
       <Text
@@ -431,7 +427,7 @@ const styles = {
   vendorBadge: {
     position: "absolute",
     top: 350,
-    left: "5%",
+    right: "60%",
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
@@ -519,7 +515,7 @@ const styles = {
     marginTop: 110,
     left: "48%",
     transform: "translateX(-50%)",
-    height: 520,
+    height: 580,
     zIndex: 2,
   },
 
