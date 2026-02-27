@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { GoogleLogin, GoogleOAuthProvider, googleLogout  } from "@react-oauth/google";
+import {
+  GoogleLogin,
+  GoogleOAuthProvider,
+  googleLogout,
+} from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { GoogleAuth } from "../../candidate/api/api";
 import { useAuth } from "../../chat/context/AuthContext";
@@ -32,13 +36,13 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
         localStorage.setItem("astoken", resp?.chatmeatadata?.accessToken);
         localStorage.setItem(
           "asuser",
-          JSON.stringify(resp?.chatmeatadata?.user)
+          JSON.stringify(resp?.chatmeatadata?.user),
         );
 
         login(resp?.chatmeatadata?.user, resp?.chatmeatadata?.accessToken);
 
         // navigate("/candidate/dashboard");
-        navigate("/candidate/profile");
+        navigate("/candidate/jobs");
       }
     } catch (error) {
       console.error("Google login error:", error);
@@ -77,7 +81,7 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
           }}
           prompt="select_account"
           useOneTap={false}
-           auto_select={false}
+          auto_select={false}
         />
       )}
     </GoogleOAuthProvider>

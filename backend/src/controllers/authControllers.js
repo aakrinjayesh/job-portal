@@ -60,7 +60,7 @@ const googleAuth = async (req, res) => {
       });
     }
 
-    // 2️⃣ Validate email type (personal/business)
+    // 2️⃣ Validate email type
     if (!isValidEmail(email, type)) {
       return res.status(400).json({
         status: "error",
@@ -76,14 +76,15 @@ const googleAuth = async (req, res) => {
 
     const externalPayload = {
       email: email,
-      username: email.split("@")[0].toLocaleLowerCase(),
-      password: "Aakrin@123", // chat system only
+      username: email.split("@")[0].toLowerCase(),
+      password: "Aakrin@123", // ⚠️ move to env in production
     };
 
     let isNewUser = false;
+    let externalLoginData = null;
     let externalUserId = null;
 
-    // 4️⃣ New user → create locally & register externally
+    // 4️⃣ Create user locally if not exists
     if (!user) {
       isNewUser = true;
 
@@ -95,46 +96,23 @@ const googleAuth = async (req, res) => {
         },
       });
 
+      // 🔹 External register (OPTIONAL)
       try {
         const externalRegisterResp = await axios.post(
           `${external_backend_url}/api/v1/users/register`,
           externalPayload,
           { headers: { "Content-Type": "application/json" } },
         );
-        console.log("external api", externalRegisterResp.data);
-        externalUserId = externalRegisterResp?.data?.data?.user?._id;
 
-        console.log("externaluser id googkle", externalUserId);
+        externalUserId = externalRegisterResp?.data?.data?.user?._id || null;
 
-        if (!externalUserId) {
-          throw new Error("External register succeeded but _id missing");
-        }
-
-        // logger.info(
-        //   "✅ External register (Google)",
-        //   JSON.stringify(externalRegisterResp.data, null, 2)
-        // );
-        console.log("exteranl register google", externalRegisterResp);
+        console.log("✅ External register success:", externalUserId);
       } catch (err) {
-        const deleteUser = await prisma.users.delete({
-          where: {
-            email: email,
-          },
-        });
-        console.log("delete User", deleteUser);
-        logger.error(
-          "❌ External register failed (Google)",
-          JSON.stringify(err.message, null, 2),
-        );
-        return res.status(500).json({
-          status: "error",
-          message: "External chat registration failed",
-        });
+        console.log("⚠️ External register failed (ignored):", err.message);
       }
     }
 
-    // 5️⃣ Always external login (source of truth)
-    let externalLoginData = null;
+    // 5️⃣ External login (OPTIONAL)
     try {
       const loginResp = await axios.post(
         `${external_backend_url}/api/v1/users/login`,
@@ -142,61 +120,32 @@ const googleAuth = async (req, res) => {
         { headers: { "Content-Type": "application/json" } },
       );
 
-      externalLoginData = loginResp.data?.data;
+      externalLoginData = loginResp.data?.data || null;
 
       if (externalLoginData?.user?._id) {
         externalUserId = externalLoginData.user._id;
       }
 
-      logger.info(
-        "✅ External login (Google)",
-        JSON.stringify(loginResp.data, null, 2),
-      );
+      console.log("✅ External login success");
     } catch (err) {
-      logger.error(
-        "❌ External login failed (Google)",
-        JSON.stringify(err.message, null, 2),
-      );
-      return res.status(500).json({
-        status: "error",
-        message: "External chat login failed",
-      });
+      console.log("⚠️ External login failed (ignored):", err.message);
     }
 
-    if (!externalUserId) {
-      return res.status(500).json({
-        status: "error",
-        message: "Failed to resolve chat user id",
-      });
+    // 6️⃣ Sync chatuserid if available
+    if (externalUserId) {
+      try {
+        await prisma.users.update({
+          where: { id: user.id },
+          data: { chatuserid: externalUserId },
+        });
+
+        console.log("✅ chatuserid synced:", externalUserId);
+      } catch (err) {
+        console.log("⚠️ chatuserid sync failed:", err.message);
+      }
     }
 
-    // 6️⃣ UPSERT UserProfile (candidate only)
-    try {
-      await prisma.users.update({
-        where: { id: user.id },
-        data: { chatuserid: externalUserId },
-      });
-
-      logger.info(
-        "✅ chatuserid synced (Google)",
-        JSON.stringify(
-          { userId: user.id, chatuserid: externalUserId },
-          null,
-          2,
-        ),
-      );
-    } catch (err) {
-      logger.error(
-        "❌ Failed to upsert UserProfile.chatuserid",
-        JSON.stringify(err.message, null, 2),
-      );
-      return res.status(500).json({
-        status: "error",
-        message: "Failed to sync chat profile",
-      });
-    }
-
-    // 7️⃣ Local JWT
+    // 7️⃣ Generate Local JWT
     const localToken = generateToken(user);
 
     return res.status(200).json({
@@ -214,14 +163,18 @@ const googleAuth = async (req, res) => {
         role: user.role,
       },
 
-      chatmeatadata: {
-        user: externalLoginData.user,
-        accessToken: externalLoginData.accessToken,
-        refreshToken: externalLoginData.refreshToken,
-      },
+      // Chat metadata optional
+      chatmetadata: externalLoginData
+        ? {
+            user: externalLoginData.user,
+            accessToken: externalLoginData.accessToken,
+            refreshToken: externalLoginData.refreshToken,
+          }
+        : null,
     });
   } catch (err) {
     logger.error("Google auth error:", JSON.stringify(err.message, null, 2));
+
     return res.status(500).json({
       status: "error",
       message: err.message || "Google authentication failed",

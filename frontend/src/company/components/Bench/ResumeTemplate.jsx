@@ -884,9 +884,23 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
                         </div>
                       )}
 
-                      {proj.cloudUsed?.length > 0 && (
+                      {/* {proj.cloudUsed?.length > 0 && (
                         <div className="project-detail">
                           <strong>Clouds:</strong> {proj.cloudUsed.join(", ")}
+                        </div>
+                      )} */}
+                      {proj.cloudUsed && (
+                        <div className="project-detail">
+                          <strong>Clouds:</strong>{" "}
+                          {Array.isArray(proj.cloudUsed)
+                            ? proj.cloudUsed
+                                .map((c) =>
+                                  typeof c === "object" ? c.name : c,
+                                )
+                                .join(", ")
+                            : typeof proj.cloudUsed === "object"
+                              ? proj.cloudUsed.name
+                              : proj.cloudUsed}
                         </div>
                       )}
                     </div>
