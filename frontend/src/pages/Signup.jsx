@@ -563,11 +563,11 @@ const CandidateHero = () => (
       </Text>
     </div>
 
-    <div style={styles.vendorBadge}>
+    <div style={styles.candidateBadge}>
       🎯 <strong>₹6 – ₹50LPA</strong>
     </div>
 
-    <div style={styles.searchCard}>
+    <div style={styles.searchCandidateCard}>
       📩 <strong>Direct Recruiter Messages</strong>
     </div>
 
@@ -743,12 +743,41 @@ const styles = {
     zIndex: 2,
   },
 
+    searchCandidateCard: {
+    position: "absolute",
+    top: 450,
+    right: "40%",
+    background: "#fff",
+    fontFamily: "SF Pro",
+    fontWeight: "590",
+    padding: "10px 14px",
+    borderRadius: 14,
+    fontSize: 14,
+    zIndex: 4,
+    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+  },
+
+   candidateBadge: {
+  position: "absolute",
+  top: 350,
+  right: "40%",
+  background: "#fff",
+  padding: "8px 16px",
+  borderRadius: 20,
+  fontFamily: "SF Pro",
+  fontWeight: "590",
+  fontSize: 14,
+  zIndex: 4,
+  boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+},
+
+  
   candidateperson: {
     position: "absolute",
     marginTop: 110,
-    left: "58%",
+    left: "68%",
     transform: "translateX(-50%)",
-    height: 420,
+    height: 520,
     zIndex: 2,
   },
 
