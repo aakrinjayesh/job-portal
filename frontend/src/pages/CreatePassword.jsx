@@ -206,9 +206,7 @@ const CompanyHero = () => (
           marginBottom: 12,
         }}
       >
-        Connect with the right partners —
-        <br />
-        faster and smarter.
+      The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
       </Title>
 
       <Text
@@ -261,9 +259,7 @@ const CandidateHero = () => (
           marginBottom: 12,
         }}
       >
-        Find the right Salesforce job —
-        <br />
-        built for your career.
+       The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
       </Title>
 
       <Text
