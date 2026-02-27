@@ -207,18 +207,41 @@ const LoginPage = () => {
 
       <Row style={{ minHeight: "100vh" }}>
         {/* LEFT – LOGIN */}
-        <Col
-          xs={24}
-          md={12}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-            background: "#fff",
-          }}
-        >
-          <div style={styles.loginCard}>
+        
+      <Col
+  xs={24}
+  md={12}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    background: "#fff",
+  }}
+>
+  {/* WRAPPER */}
+  <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
+
+    {/* TITLE OUTSIDE LOGIN CARD */}
+    <div style={{ marginBottom: 20 }}>
+      <Title
+        level={3}
+        style={{
+          marginBottom: 0,
+          fontWeight: 700,
+          color: "#111",
+          lineHeight: 1.3,
+        }}
+      >
+        World’s First Salesforce-to-Salesforce Talent & Collaboration Network
+      </Title>
+    </div>
+
+    {/* LOGIN CARD */}
+    <div style={styles.loginCard}>
+          
+         
+          
             <Tabs
               centered
               activeKey={activeTab}
@@ -299,6 +322,7 @@ const LoginPage = () => {
                 </div>
               </>
             )}
+            </div>
           </div>
         </Col>
 
@@ -336,8 +360,8 @@ const CompanyHero = () => (
           marginBottom: 12,
         }}
       >
-        The World’s First Salesforce-to-Salesforce Collaboration & Talent
-        Network
+        Connect with the right partners -
+        faster and smarter.
       </Title>
 
       <Text
@@ -389,8 +413,8 @@ const CandidateHero = () => (
           marginBottom: 12,
         }}
       >
-        The World’s First Salesforce-to-Salesforce Collaboration & Talent
-        Network
+       Find the right Salesforce job -
+        built for your career.
       </Title>
 
       <Text
@@ -429,7 +453,7 @@ const CandidateHero = () => (
 const styles = {
   cloud: {
     position: "absolute",
-    bottom: 40,
+    top: 326,
     left: "50%",
     transform: "translateX(-50%)",
     width: 420,
@@ -460,7 +484,7 @@ const styles = {
   candidateBadge: {
     position: "absolute",
     top: 350,
-    right: "40%",
+    left: "20%",
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
@@ -487,7 +511,7 @@ const styles = {
   searchCandidateCard: {
     position: "absolute",
     top: 450,
-    right: "40%",
+    left: "10%",
     background: "#fff",
     fontFamily: "SF Pro",
     fontWeight: "590",
@@ -535,9 +559,9 @@ const styles = {
     fontFamily: "SF Pro",
     fontWeight: "590",
     background: "#fff",
-    padding: "14px 16px",
+    padding: "14px 14px",
     borderRadius: 16,
-    width: 220,
+    width: 180,
     zIndex: 4,
     boxShadow: "0 8px 20px rgba(0,0,0,0.14)",
   },
@@ -545,9 +569,10 @@ const styles = {
   jobType: {
     position: "absolute",
     top: 450,
-    left: "68%",
+    left: "60%",
+    width: 175,
     background: "#fff",
-    padding: "6px 14px",
+    padding: "6px 16px",
     borderRadius: 20,
     fontSize: 14,
     fontFamily: "SF Pro",
