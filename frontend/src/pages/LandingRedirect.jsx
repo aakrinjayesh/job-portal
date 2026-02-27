@@ -15,7 +15,7 @@ const LandingRedirect = () => {
   }
 
   if (role === "candidate") {
-    return <Navigate to="/candidate/jobs" replace />;
+    return <Navigate to="/candidate/profile" replace />;
   }
 
   // fallback safety

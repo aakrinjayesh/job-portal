@@ -739,7 +739,7 @@ const styles = {
     marginTop: 110,
     left: "48%",
     transform: "translateX(-50%)",
-    height: 420,
+    height: 600,
     zIndex: 2,
   },
 

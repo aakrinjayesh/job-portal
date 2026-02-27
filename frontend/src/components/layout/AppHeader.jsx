@@ -14,8 +14,8 @@ const AppHeader = () => {
 
       <div style={styles.menu}>
         {/* <span>Products</span> */}
-        <span>Features</span>
-        <span>Pricing</span>
+        {/* <span>Features</span>
+        <span>Pricing</span> */}
         {/* <span>Support</span> */}
       </div>
 

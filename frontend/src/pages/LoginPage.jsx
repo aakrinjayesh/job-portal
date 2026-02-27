@@ -161,7 +161,7 @@ const LoginPage = () => {
         } else {
           navigate(
             res?.user?.role === "candidate"
-              ? "/candidate/jobs"
+              ? "/candidate/profile"
               : "/company/jobs",
           );
         }

@@ -257,6 +257,7 @@ const MainLayout = ({ children }) => {
         >
           {/* Left */}
           <Space size={16}>
+             {selectedKey !== "profile" && (
             <Button
               icon={<ArrowLeftOutlined />}
               onClick={() => navigate(-1)}
@@ -269,6 +270,8 @@ const MainLayout = ({ children }) => {
             >
               Back
             </Button>
+             )}
+
 
             <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
 
