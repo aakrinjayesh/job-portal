@@ -55,8 +55,7 @@ export const extractAIText = async (text, role, extra = {}) => {
         model: modelName,
         messages: [{ role: "system", content: prompt }],
         temperature: 0.1,
-        max_tokens: 40000,
-        response_format: { type: "json_object" },
+        max_tokens: parseInt(process.env.GROQ_MAX_TOKENS),
       });
 
       // 🔥 Check if output was cut due to token limit
