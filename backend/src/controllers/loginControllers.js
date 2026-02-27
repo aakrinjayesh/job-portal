@@ -891,6 +891,15 @@ const login = async (req, res) => {
     }
 
     // 3️⃣ Validate password
+    if (!user.password) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "This account does not support password login. Please use Google Sign-In.",
+      });
+    }
+
+    // 3️⃣ Validate password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
