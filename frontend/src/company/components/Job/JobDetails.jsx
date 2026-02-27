@@ -390,6 +390,10 @@ const JobDetails = ({ mode }) => {
               <Text strong>Job Type</Text>
               <div>{job.jobType}</div>
             </div>
+            <div>
+              <Text strong>Experience Level</Text>
+              <div>{job.experienceLevel}</div>
+            </div>
           </div>
 
           <Divider />

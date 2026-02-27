@@ -98,6 +98,8 @@ const createVendorCandidate = async (req, res) => {
         profilePicture: data.profilePicture,
         // chatuserid: user.chatuserid,
         chatuserid: userAuth.chatuserid,
+        // status: data.status || "ACTIVE",
+        status: data.status || "active",
       },
     });
 
@@ -256,6 +258,7 @@ const updateCandidateStatus = async (req, res) => {
        ====================================================== */
     if (Array.isArray(candidateIds) && candidateIds.length > 0) {
       const allowedCandidateStatuses = ["active", "inactive"];
+      // const allowedCandidateStatuses = ["ACTIVE", "INACTIVE"];
 
       if (!allowedCandidateStatuses.includes(status)) {
         return res.status(400).json({
@@ -420,6 +423,15 @@ const getAllCandidates = async (req, res) => {
 
     // Step 1: Fetch ALL candidates
     const allCandidates = await prisma.userProfile.findMany({
+      where: {
+        OR: [
+          { status: "active" }, // only active candidates
+          { status: null }, // optional: allow old records
+        ],
+      },
+      // where: {
+      //   status: "ACTIVE",
+      // },
       orderBy: { createdAt: "desc" },
       include: {
         vendor: {

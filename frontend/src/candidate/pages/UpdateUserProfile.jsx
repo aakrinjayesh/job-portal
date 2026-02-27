@@ -78,6 +78,7 @@ const UpdateUserProfile = ({
   const [experienceList, setExperienceList] = useState([]);
 
   const [isCandidate, setIsCandidate] = useState(false);
+  const [isActive, setIsActive] = useState(true);
 
   const role = localStorage.getItem("role");
   const isCompany = role === "company";
@@ -257,6 +258,10 @@ const UpdateUserProfile = ({
         const user = res?.user;
 
         setIsCandidate(!!user.userId);
+        // setIsActive(user?.status === "ACTIVE");
+        if (role === "candidate") {
+          setIsActive(user?.status ? user.status === "ACTIVE" : true);
+        }
 
         // Extract skills from skillsJson
         const skillsJson = user?.skillsJson || [];
@@ -666,6 +671,10 @@ const UpdateUserProfile = ({
         education: educationList,
         rateCardPerHour: values.rateCardPerHour || {},
         isContactDetails: showContact,
+        // status: isActive ? "ACTIVE" : "INACTIVE",
+        ...(role === "candidate" && !Reciviedrole
+          ? { status: isActive ? "ACTIVE" : "INACTIVE" }
+          : {}),
       };
 
       // ⭐⭐⭐ ADD THIS ⭐⭐⭐
@@ -825,7 +834,7 @@ const UpdateUserProfile = ({
             </Button>
           </Upload>
 
-          {isCandidate && (
+          {/* {isCandidate && (
             <Button
               type="primary"
               size="large"
@@ -834,6 +843,28 @@ const UpdateUserProfile = ({
             >
               Download Resume
             </Button>
+          )} */}
+          {role === "candidate" && !Reciviedrole && (
+            <>
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleDownloadResume}
+                style={{ marginLeft: 12 }}
+              >
+                Download Resume
+              </Button>
+
+              <Button
+                size="large"
+                style={{ marginLeft: 12 }}
+                type={isActive ? "primary" : "default"}
+                danger={!isActive}
+                onClick={() => setIsActive((prev) => !prev)}
+              >
+                {isActive ? "Active" : "Inactive"}
+              </Button>
+            </>
           )}
 
           {/* INNER CARD START */}

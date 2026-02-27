@@ -30,51 +30,58 @@ function FindBench() {
       controllerRef.current.abort();
     }
 
-  controllerRef.current = new AbortController();
+    controllerRef.current = new AbortController();
 
-  if (pageNum === 1) {
-    setInitialLoading(true);
-    setLoading(true);
-    setProgress(10);
-  } else {
-    setLoading(true);
-  }
-
-  try {
-    const res = await GetAllVendorCandidates(
-      pageNum,
-      10,
-      filters,
-      controllerRef.current.signal
-    );
-
-    const newList = res?.candidates || [];
-
-    setBench((prev) =>
-      pageNum === 1 ? newList : [...prev, ...newList]
-    );
-
-    setTotalCount(res.totalCount || 0);
-    setHasMore(pageNum < res.totalPages);
-
-  } catch (error) {
-    if (error.code !== "ERR_CANCELED") {
-      message.error("Failed to load bench candidates");
-    }
-  } finally {
     if (pageNum === 1) {
-      setProgress(100);
-
-      setTimeout(() => {
-        setInitialLoading(false);
-        setLoading(false);
-        setProgress(0);
-      }, 300);
+      setInitialLoading(true);
+      setLoading(true);
+      setProgress(10);
     } else {
-      setLoading(false);
+      setLoading(true);
     }
-  }
-}, []);
+
+    try {
+      const res = await GetAllVendorCandidates(
+        pageNum,
+        10,
+        filters,
+        controllerRef.current.signal,
+      );
+
+      const newList = res?.candidates || [];
+
+      setBench((prev) => (pageNum === 1 ? newList : [...prev, ...newList]));
+      // const newList = res?.candidates || [];
+
+      // // ✅ FILTER ONLY ACTIVE CANDIDATES
+      // const activeCandidates = newList.filter(
+      //   (candidate) => candidate.status === "active",
+      // );
+
+      // setBench((prev) =>
+      //   pageNum === 1 ? activeCandidates : [...prev, ...activeCandidates],
+      // );
+
+      setTotalCount(res.totalCount || 0);
+      setHasMore(pageNum < res.totalPages);
+    } catch (error) {
+      if (error.code !== "ERR_CANCELED") {
+        message.error("Failed to load bench candidates");
+      }
+    } finally {
+      if (pageNum === 1) {
+        setProgress(100);
+
+        setTimeout(() => {
+          setInitialLoading(false);
+          setLoading(false);
+          setProgress(0);
+        }, 300);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   // Cleanup on route change
   useEffect(() => {
@@ -87,11 +94,10 @@ function FindBench() {
   }, [location.pathname]);
 
   // Initial load
- useEffect(() => {
-  setPage(1);
-  fetchBench(1, currentFilters);
-}, [currentFilters]);
-
+  useEffect(() => {
+    setPage(1);
+    fetchBench(1, currentFilters);
+  }, [currentFilters]);
 
   // ===============================
   // INFINITE SCROLL OBSERVER
@@ -109,7 +115,7 @@ function FindBench() {
 
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore],
   );
 
   // Fetch next page when page changes
@@ -120,17 +126,16 @@ function FindBench() {
   }, [page]);
 
   useEffect(() => {
-  if (initialLoading || (loading && page === 1)) {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
-    }, 400);
+    if (initialLoading || (loading && page === 1)) {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
+      }, 400);
 
-    return () => clearInterval(interval);
-  } else {
-    setProgress(0);
-  }
-}, [initialLoading, loading, page]);
-
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [initialLoading, loading, page]);
 
   // ✅ Handle filter changes - reset to page 1 and fetch from server
   const handleFiltersChange = (filters) => {
@@ -212,40 +217,39 @@ function FindBench() {
             bodyStyle={{ padding: "16px 24px" }}
           >
             {/* ✅ Show spinner on initial load or filter change (page 1 loading) */}
-           {initialLoading || (loading && page === 1) ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      minHeight: "400px",
-    }}
-  >
-    <Progress
-      type="circle"
-      percent={progress}
-      width={90}
-      strokeColor={{
-        "0%": "#4F63F6",
-        "100%": "#7C8CFF",
-      }}
-      trailColor="#E6E8FF"
-      showInfo={false}
-    />
-    <div
-      style={{
-        marginTop: 16,
-        color: "#555",
-        fontSize: 14,
-        fontWeight: 500,
-      }}
-    >
-      Finding best bench candidates for you…
-    </div>
-  </div>
-) : (
-
+            {initialLoading || (loading && page === 1) ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minHeight: "400px",
+                }}
+              >
+                <Progress
+                  type="circle"
+                  percent={progress}
+                  width={90}
+                  strokeColor={{
+                    "0%": "#4F63F6",
+                    "100%": "#7C8CFF",
+                  }}
+                  trailColor="#E6E8FF"
+                  showInfo={false}
+                />
+                <div
+                  style={{
+                    marginTop: 16,
+                    color: "#555",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Finding best bench candidates for you…
+                </div>
+              </div>
+            ) : (
               <>
                 {/* Show total count */}
                 {totalCount > 0 && (
@@ -262,16 +266,15 @@ function FindBench() {
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}
-               {loading && (
-  <Progress
-    percent={progress}
-    size="small"
-    status="active"
-    showInfo
-    style={{ marginBottom: 16 }}
-  />
-)}
-
+                {loading && (
+                  <Progress
+                    percent={progress}
+                    size="small"
+                    status="active"
+                    showInfo
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
 
                 {!hasMore && !loading && bench.length > 0 && (
                   <p

@@ -122,6 +122,7 @@ const updateProfiledetails = async (req, res) => {
       trailheadUrl = null,
       title,
       summary = null,
+      status,
     } = req.body;
 
     const upserted = await prisma.userProfile.upsert({
@@ -151,6 +152,7 @@ const updateProfiledetails = async (req, res) => {
         currentLocation,
         title,
         summary,
+        ...(user.role === "candidate" ? { status: status ?? "ACTIVE" } : {}),
       },
       create: {
         userId: user.id,
@@ -179,6 +181,7 @@ const updateProfiledetails = async (req, res) => {
         title,
         summary,
         chatuserid: user.chatuserid,
+        ...(user.role === "candidate" ? { status: status ?? "ACTIVE" } : {}),
       },
     });
 

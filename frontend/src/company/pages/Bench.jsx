@@ -1426,6 +1426,7 @@ const Bench = () => {
               <Button
                 disabled={selectedRowKeys.length === 0}
                 onClick={() => updateStatus("inactive")}
+                // onClick={() => updateStatus("INACTIVE")}
                 style={{
                   height: 35,
                   borderRadius: 100,
@@ -1444,6 +1445,7 @@ const Bench = () => {
               <Button
                 disabled={selectedRowKeys.length === 0}
                 onClick={() => updateStatus("active")}
+                // onClick={() => updateStatus("ACTIVE")}
                 style={{
                   height: 40,
                   borderRadius: 100,

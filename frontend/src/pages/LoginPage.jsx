@@ -13,7 +13,7 @@ import {
   Grid,
 } from "antd";
 import GoogleAuthButton from "../components/Login/GoogleAuthButton";
-import { login as LoginApi } from "../candidate/api/api";
+import { login as LoginApi, GetUserProfile } from "../candidate/api/api";
 import { useAuth } from "../chat/context/AuthContext";
 
 import personImg from "../assets/companyperson.png";
@@ -136,9 +136,26 @@ const LoginPage = () => {
       });
 
       if (res.status === "success") {
+        // localStorage.setItem("token", res?.token);
+        // localStorage.setItem("role", res?.user?.role);
+        // localStorage.setItem("user", JSON.stringify(res?.user));
         localStorage.setItem("token", res?.token);
         localStorage.setItem("role", res?.user?.role);
-        localStorage.setItem("user", JSON.stringify(res?.user));
+
+        if (res?.user?.role === "candidate") {
+          // 🔥 Fetch full candidate profile (contains profilePicture)
+          const profileRes = await GetUserProfile();
+
+          if (profileRes?.status === "success") {
+            localStorage.setItem("user", JSON.stringify(profileRes.user));
+          } else {
+            localStorage.setItem("user", JSON.stringify(res?.user));
+          }
+        } else {
+          // company login (no change)
+          localStorage.setItem("user", JSON.stringify(res?.user));
+        }
+        window.dispatchEvent(new Event("storage"));
         localStorage.setItem("astoken", res?.chatmeatadata?.accessToken);
         localStorage.setItem(
           "asuser",
@@ -319,7 +336,8 @@ const CompanyHero = () => (
           marginBottom: 12,
         }}
       >
-        The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
+        The World’s First Salesforce-to-Salesforce Collaboration & Talent
+        Network
       </Title>
 
       <Text
@@ -371,7 +389,8 @@ const CandidateHero = () => (
           marginBottom: 12,
         }}
       >
-       The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
+        The World’s First Salesforce-to-Salesforce Collaboration & Talent
+        Network
       </Title>
 
       <Text
@@ -439,18 +458,18 @@ const styles = {
   },
 
   candidateBadge: {
-  position: "absolute",
-  top: 350,
-  right: "40%",
-  background: "#fff",
-  padding: "8px 16px",
-  borderRadius: 20,
-  fontFamily: "SF Pro",
-  fontWeight: "590",
-  fontSize: 14,
-  zIndex: 4,
-  boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-},
+    position: "absolute",
+    top: 350,
+    right: "40%",
+    background: "#fff",
+    padding: "8px 16px",
+    borderRadius: 20,
+    fontFamily: "SF Pro",
+    fontWeight: "590",
+    fontSize: 14,
+    zIndex: 4,
+    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+  },
   searchCard: {
     position: "absolute",
     top: 450,
@@ -465,7 +484,7 @@ const styles = {
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
-   searchCandidateCard: {
+  searchCandidateCard: {
     position: "absolute",
     top: 450,
     right: "40%",

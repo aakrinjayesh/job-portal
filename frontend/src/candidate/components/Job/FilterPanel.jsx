@@ -8,7 +8,7 @@ import {
   Button,
   Tooltip,
   Collapse,
-  Form
+  Form,
 } from "antd";
 import {
   CaretDownOutlined,
@@ -20,7 +20,7 @@ import {
 import FilterSection from "./FilterSection";
 import AddSkillInput from "./AddSkillInput";
 import SearchWithTextArea from "../../../company/components/Bench/SearchWithTextArea";
-import { AiJobFilter, AiCandidateFilter,GetLocations } from "../../api/api";
+import { AiJobFilter, AiCandidateFilter, GetLocations } from "../../api/api";
 
 const { Text } = Typography;
 
@@ -80,26 +80,26 @@ const FiltersPanel = ({
   const [locationOptions, setLocationOptions] = useState([]);
 
   useEffect(() => {
-  const fetchLocations = async () => {
-    try {
-      const res = await GetLocations();
-      console.log("LOCATION API RESPONSE 👉", res);  
+    const fetchLocations = async () => {
+      try {
+        const res = await GetLocations();
+        console.log("LOCATION API RESPONSE 👉", res);
 
-      // adjust depending on backend response structure
-      const formatted = res.data?.map((loc) => ({
-        label: loc.name || loc.location,   // 👈 adjust field name
-        value: loc.name || loc.location,
-        count: loc.count || 0,
-      }));
+        // adjust depending on backend response structure
+        const formatted = res.data?.map((loc) => ({
+          label: loc.name || loc.location, // 👈 adjust field name
+          value: loc.name || loc.location,
+          count: loc.count || 0,
+        }));
 
-      setLocationOptions(formatted || []);
-    } catch (error) {
-      console.error("Failed to fetch locations:", error);
-    }
-  };
+        setLocationOptions(formatted || []);
+      } catch (error) {
+        console.error("Failed to fetch locations:", error);
+      }
+    };
 
-  fetchLocations();
-}, []);
+    fetchLocations();
+  }, []);
 
   /* 🔽 collapse states */
   const [open, setOpen] = useState({
@@ -114,11 +114,9 @@ const FiltersPanel = ({
 
   const toggle = (key) => setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  
-
   const employeeTypeOptions = [
-    { label: "Full Time" },
-    { label: "Part Time" },
+    { label: "FullTime" },
+    { label: "PartTime" },
     { label: "Contract" },
     { label: "Internship" },
     { label: "Freelance" },
@@ -230,35 +228,34 @@ const FiltersPanel = ({
   };
 
   const resetFilters = () => {
-  setExperience(0);
-  setSelectedLocations([]);
-  setSelectedJobTypes([]);
-  setSelectedEmploymentTypes([]);
-  setSkills([]);
-  setClouds([]);
-  setCandidateType([]);
-  setExperienceError("");
+    setExperience(0);
+    setSelectedLocations([]);
+    setSelectedJobTypes([]);
+    setSelectedEmploymentTypes([]);
+    setSkills([]);
+    setClouds([]);
+    setCandidateType([]);
+    setExperienceError("");
 
-  // 🔁 notify parent immediately
-  onFiltersChange?.({
-    experience: null,
-    location: [],
-    jobType: [],
-    employmentType: [],
-    skills: [],
-    clouds: [],
-    candidateType: [],
-  });
-};
-
+    // 🔁 notify parent immediately
+    onFiltersChange?.({
+      experience: null,
+      location: [],
+      jobType: [],
+      employmentType: [],
+      skills: [],
+      clouds: [],
+      candidateType: [],
+    });
+  };
 
   /* 🔁 Emit filters */
   useEffect(() => {
     onFiltersChange?.({
       experience:
-   experience === 0 || experience === 30 || experience === ""
-  ? null
-   : experience,
+        experience === 0 || experience === 30 || experience === ""
+          ? null
+          : experience,
       location: selectedLocations,
       jobType: selectedJobTypes,
       employmentType: selectedEmploymentTypes,
@@ -290,50 +287,46 @@ const FiltersPanel = ({
               formatter: (val) => (val === 30 ? "Any" : `${val} yrs`),
             }}
             styles={{
-    track: { backgroundColor: "#0c8cf5" },   // 🖤 dark filled part
-    rail: { backgroundColor: "#d9d9d9" },    // light background
-    handle: {
-      borderColor: "#1f1f1f",
-      backgroundColor: "#1f1f1f",
-    },
-  }}
+              track: { backgroundColor: "#0c8cf5" }, // 🖤 dark filled part
+              rail: { backgroundColor: "#d9d9d9" }, // light background
+              handle: {
+                borderColor: "#1f1f1f",
+                backgroundColor: "#1f1f1f",
+              },
+            }}
             onChange={setExperience}
           />
- <Form.Item
-  validateStatus={experienceError ? "error" : ""}
-  help={experienceError}
->
-  <Input
-    value={experience}
-    placeholder="e.g. 5"
-    inputMode="numeric"
-    maxLength={2}
-    style={{ width: "100%" }}
+          <Form.Item
+            validateStatus={experienceError ? "error" : ""}
+            help={experienceError}
+          >
+            <Input
+              value={experience}
+              placeholder="e.g. 5"
+              inputMode="numeric"
+              maxLength={2}
+              style={{ width: "100%" }}
+              onChange={(e) => {
+                const value = e.target.value;
 
-    onChange={(e) => {
-      const value = e.target.value;
+                // ❌ non-numeric
+                if (!/^\d*$/.test(value)) {
+                  setExperienceError("Only numbers are allowed");
+                  return;
+                }
 
-      // ❌ non-numeric
-      if (!/^\d*$/.test(value)) {
-        setExperienceError("Only numbers are allowed");
-        return;
-      }
+                // ❌ more than 2 digits
+                if (value.length > 2) {
+                  setExperienceError("Maximum 2 digits allowed");
+                  return;
+                }
 
-      // ❌ more than 2 digits
-      if (value.length > 2) {
-        setExperienceError("Maximum 2 digits allowed");
-        return;
-      }
-
-      // ✅ valid
-      setExperienceError("");
-      setExperience(value === "" ? "" : Number(value));
-    }}
-  />
-</Form.Item>
-
-
-
+                // ✅ valid
+                setExperienceError("");
+                setExperience(value === "" ? "" : Number(value));
+              }}
+            />
+          </Form.Item>
         </>
       ),
     },
@@ -471,16 +464,15 @@ const FiltersPanel = ({
       >
         <Text strong>All Filters</Text>
         <Text
-  type="link"
-  onClick={() => {
-    resetFilters();
-    handleClearFilters?.();
-  }}
-  style={{ cursor: "pointer", fontSize: 13 }}
->
-  Clear All
-</Text>
-
+          type="link"
+          onClick={() => {
+            resetFilters();
+            handleClearFilters?.();
+          }}
+          style={{ cursor: "pointer", fontSize: 13 }}
+        >
+          Clear All
+        </Text>
       </div>
 
       <Divider style={{ margin: "12px 0" }} />
