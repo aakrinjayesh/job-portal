@@ -492,8 +492,14 @@ const UpdateUserProfile = ({
 
       messageAPI.success("Resume details extracted successfully!");
     } catch (error) {
-      console.error(error);
-      messageAPI.error("Upload failed. Try again.");
+      const { status, data } = error?.response || {};
+      console.log("status", status);
+      console.log("data", data);
+      if (data?.message) {
+        messageAPI.error(data.message, 5);
+      } else {
+        messageAPI.error("Failed to extract using manually method", 5);
+      }
     } finally {
       setLoading(false);
     }

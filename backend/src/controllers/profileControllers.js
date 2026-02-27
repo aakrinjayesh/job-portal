@@ -54,7 +54,8 @@ const UploadResume = async (req, res) => {
 
     if (!extractedText || extractedText.trim().length === 0) {
       return res.status(400).json({
-        error: "Unable to extract text from the uploaded file",
+        status: "error",
+        message: "Unable to extract text from the uploaded file",
       });
     }
 
