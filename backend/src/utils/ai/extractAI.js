@@ -51,11 +51,23 @@ export const extractAIText = async (text, role, extra = {}) => {
     // Call Gemini
     let result;
     try {
+      // result = await genAI.chat.completions.create({
+      //   model: modelName,
+      //   messages: [{ role: "system", content: prompt }],
+      //   temperature: 0.1,
+      // });
       result = await genAI.chat.completions.create({
         model: modelName,
         messages: [{ role: "system", content: prompt }],
         temperature: 0.1,
+        max_tokens: 40000, // ⚠️ DO NOT use 10000 unless model supports it
+        response_format: { type: "json_object" },
       });
+
+      // 🔥 Check if output was cut due to token limit
+      if (result?.choices?.[0]?.finish_reason === "length") {
+        throw new Error("LLM output truncated due to token limit");
+      }
     } catch (err) {
       console.error("❌ LLM API Error:", err.message);
 
