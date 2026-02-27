@@ -67,9 +67,16 @@ export const extractAIText = async (text, role, extra = {}) => {
 
       // Send Failure Email
       await sendEmail({
-        to: "vsaijayesh94@gmail.com",
+        to: process.env.EMAIL_LLM || "vsaijayesh94@gmail.com",
         subject: "⚠️ LLM FAILURE – Gemini API Error",
-        text: `Error calling LLM:\n${err.message}\n\nRole: ${role}\n\n prompt data: ${extra}`,
+        text: `Error calling LLM:
+          ${err.message}
+
+          Role: ${role}
+
+          Prompt data:
+          ${JSON.stringify(extra, null, 2)}
+          `,
       });
 
       throw err;

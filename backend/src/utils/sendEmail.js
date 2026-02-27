@@ -7,8 +7,8 @@ const sendEmail = async (options) => {
     port: process.env.EMAIL_PORT,
     secure: process.env.EMAIL_SECURE,
     auth: {
-      user: process.env.SENDEREMAIL,
-      pass: process.env.SENDERPASS,
+      user: process.env.EMAIL_SENDEREMAIL,
+      pass: process.env.EMAIL_SENDERPASS,
     },
   });
 
@@ -24,7 +24,7 @@ const sendEmail = async (options) => {
 
   try {
     const info = await transporter.sendMail({
-      from: `"ForceHead" <${process.env.SENDEREMAIL}>`,
+      from: `"ForceHead" <${process.env.EMAIL_SENDEREMAIL}>`,
       ...options,
     });
 
