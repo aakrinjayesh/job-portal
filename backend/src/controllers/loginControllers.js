@@ -840,6 +840,20 @@ const setPassword = async (req, res) => {
       return updatedUser;
     });
 
+    /* ✅ SEND EMAIL HERE */
+try {
+  await sendEmail({
+    to: email,
+    subject: "Welcome to ForceHead",
+    html: getWelcomePasswordEmailTemplate({
+      name: result.name,
+      role: result.role,
+    }),
+  });
+} catch (err) {
+  console.warn("Email failed:", err.message);
+}
+
     /* ─────────────────────────────
        6️⃣ SUCCESS RESPONSE
     ───────────────────────────── */
@@ -1499,6 +1513,83 @@ const logoutAll = async (req, res) => {
     });
   }
 };
+
+const getWelcomePasswordEmailTemplate = ({ name, role }) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Welcome to ForceHead</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table width="420" cellpadding="0" cellspacing="0"
+          style="background:#ffffff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#2196F3; color:#ffffff; padding:20px; text-align:center;">
+              <h2 style="margin:0;">ForceHead</h2>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:30px; color:#333;">
+
+              <p style="font-size:16px;">
+                Hi <strong>${name || "there"}</strong>,
+              </p>
+
+              <p style="font-size:14px;">
+                🎉 Welcome to <strong>ForceHead</strong>!
+              </p>
+
+              <p style="font-size:14px;">
+                Your password has been created successfully and your account is now ready to use.
+              </p>
+
+              <div style="text-align:center; margin:30px 0;">
+                <span style="
+                  font-size:16px;
+                  font-weight:bold;
+                  background:#f1f5f9;
+                  padding:12px 20px;
+                  border-radius:6px;
+                  display:inline-block;">
+                  Role: ${role || "User"}
+                </span>
+              </div>
+
+              <p style="font-size:14px;">
+                You can now securely login and start using ForceHead.
+              </p>
+
+              <p style="font-size:13px; color:#6b7280;">
+                If you did not create this password, please contact support immediately.
+              </p>
+
+              <p>— <strong>ForceHead Team</strong></p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f9fafb; padding:12px; text-align:center; font-size:12px; color:#9ca3af;">
+              © ${new Date().getFullYear()} ForceHead. All rights reserved.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
 
 export {
   userOtpGenerate,
