@@ -675,7 +675,7 @@ const CandidateDetails = () => {
 
               <Collapse
                 bordered={false}
-                defaultActiveKey={[]}
+                defaultActiveKey={["skills"]}
                 items={[
                   {
                     key: "skills",
@@ -777,7 +777,7 @@ const CandidateDetails = () => {
 
               <Collapse
                 bordered={false}
-                defaultActiveKey={[]}
+                defaultActiveKey={["clouds"]}
                 items={[
                   {
                     key: "clouds",
@@ -892,7 +892,7 @@ const CandidateDetails = () => {
 
               <Collapse
                 bordered={false}
-                defaultActiveKey={[]}
+                defaultActiveKey={["education"]}
                 items={[
                   {
                     key: "education",
@@ -977,8 +977,8 @@ const CandidateDetails = () => {
               <Divider />
 
               <Collapse
-                bordered={false}
-                defaultActiveKey={[]} // ✅ CLOSED by default
+                bordered={true}
+                defaultActiveKey={["work"]} // ✅ CLOSED by default
                 items={[
                   {
                     key: "work",
@@ -1061,8 +1061,8 @@ const CandidateDetails = () => {
               <Divider />
 
               <Collapse
-                bordered={false}
-                defaultActiveKey={[]}
+                bordered={true}
+                defaultActiveKey={["certifications"]}
                 items={[
                   {
                     key: "certifications",
