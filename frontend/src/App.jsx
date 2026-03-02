@@ -39,6 +39,9 @@ import PublicJobRedirect from "./pages/PublicJobRedirect";
 import LimitExceededAlert from "./components/alert/LimitExceededAlert";
 import { subscribeToLimit, unsubscribeFromLimit } from "./utils/limitEventBus";
 import { useState } from "react";
+import HomePage from "./pages/HomePage";
+import VendorMarketplacePage from "./pages/VendorMarketplacePage";
+import SalesforceBenchPage from "./pages/SalesforceBenchPage";
 
 function App() {
   const location = useLocation();
@@ -89,12 +92,20 @@ function App() {
       <Routes>
         {/* Public routes */}
         {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
-        <Route path="/" element={<LandingRedirect />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/createpassword" element={<CreatePassword />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route
+          path="/salesforce-vendor-marketplace"
+          element={<VendorMarketplacePage />}
+        />
+        <Route
+          path="/salesforce-bench-resources"
+          element={<SalesforceBenchPage />}
+        />
         <Route
           path="/job/:id"
           element={

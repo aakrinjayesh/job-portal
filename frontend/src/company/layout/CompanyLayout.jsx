@@ -24,6 +24,7 @@ import {
 } from "@ant-design/icons";
 import { logout } from "../../candidate/api/api";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 const { Sider, Header, Content } = Layout;
 const { Text, Title } = Typography;
@@ -187,227 +188,236 @@ const CompanyLayout = ({ children }) => {
   };
 
   return (
-    <Layout hasSider>
-      {/* SIDEBAR */}
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        trigger={null} // 👈 removes collapse icon below logout
-        width={240}
-        style={{
-          background: "#011026",
-          height: "100vh",
-          position: "sticky",
-          top: 0,
-          borderRight: "none",
-        }}
-      >
-        {/* 🧑 Company Info */}
-        <div
+    <>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <Layout hasSider>
+        {/* SIDEBAR */}
+        <Sider
+          collapsible
+          collapsed={collapsed}
+          onCollapse={setCollapsed}
+          trigger={null} // 👈 removes collapse icon below logout
+          width={240}
           style={{
-            display: "flex",
-            gap: 12,
-            padding: 24,
-            alignItems: "center",
+            background: "#011026",
+            height: "100vh",
+            position: "sticky",
+            top: 0,
+            borderRight: "none",
           }}
         >
-          {/* <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
-            {user.name?.charAt(0)}
-          </Avatar> */}
-          <Avatar
-            size={40}
-            src={user.profileUrl}
-            style={{ backgroundColor: "#1677FF" }}
+          {/* 🧑 Company Info */}
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              padding: 24,
+              alignItems: "center",
+            }}
           >
-            {!user.profileUrl && user.name?.charAt(0)}
-          </Avatar>
+            {/* <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
+              {user.name?.charAt(0)}
+            </Avatar> */}
+            <Avatar
+              size={40}
+              src={user.profileUrl}
+              style={{ backgroundColor: "#1677FF" }}
+            >
+              {!user.profileUrl && user.name?.charAt(0)}
+            </Avatar>
 
-          {!collapsed && (
-            <div>
-              <Text style={{ color: "#fff", fontWeight: 600 }}>
-                {user.name}
-              </Text>
-              <br />
-              <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
-                {user.role}
-              </Text>
-            </div>
-          )}
-        </div>
+            {!collapsed && (
+              <div>
+                <Text style={{ color: "#fff", fontWeight: 600 }}>
+                  {user.name}
+                </Text>
+                <br />
+                <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
+                  {user.role}
+                </Text>
+              </div>
+            )}
+          </div>
 
-        {/* 📌 Main Menu */}
+          {/* 📌 Main Menu */}
 
-        <ConfigProvider
-          theme={{
-            components: {
-              Menu: {
-                darkItemBg: "transparent",
-                darkItemHoverBg: "#1677FF",
-                darkItemSelectedBg: "#1677FF",
-                darkItemSelectedColor: "#fff",
+          <ConfigProvider
+            theme={{
+              components: {
+                Menu: {
+                  darkItemBg: "transparent",
+                  darkItemHoverBg: "#1677FF",
+                  darkItemSelectedBg: "#1677FF",
+                  darkItemSelectedColor: "#fff",
+                },
               },
-            },
-          }}
-        >
+            }}
+          >
+            <Menu
+              mode="inline"
+              theme="dark"
+              selectedKeys={[selectedKey]}
+              onClick={onMenuClick}
+              style={{ background: "transparent", border: "none" }}
+              items={[
+                // {
+                //   key: "dashboard",
+                //   icon: <DashboardOutlined />,
+                //   label: "Dashboard",
+                // },
+                { key: "jobs", icon: <FileTextOutlined />, label: "My Jobs" },
+                {
+                  key: "myactivity",
+                  icon: <AppstoreOutlined />,
+                  label: "My Activity",
+                },
+                {
+                  key: "findjob",
+                  icon: <SearchOutlined />,
+                  label: "Find Jobs",
+                },
+                { key: "savedjobs", icon: <SaveFilled />, label: "Saved Jobs" },
+                { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
+                {
+                  key: "findbench",
+                  icon: <SearchOutlined />,
+                  label: "Find Candidate",
+                },
+                {
+                  key: "savedcandidates",
+                  icon: <SaveFilled />,
+                  label: "Saved Candidates",
+                },
+                { key: "chat", icon: <MessageOutlined />, label: "Chat" },
+              ]}
+            />{" "}
+          </ConfigProvider>
+
+          <div
+            style={{
+              height: 1,
+              background: "#E0E0E0",
+              margin: "16px 0",
+              opacity: 0.3,
+            }}
+          />
+
           <Menu
             mode="inline"
-            theme="dark"
             selectedKeys={[selectedKey]}
+            theme="dark"
             onClick={onMenuClick}
             style={{ background: "transparent", border: "none" }}
             items={[
-              // {
-              //   key: "dashboard",
-              //   icon: <DashboardOutlined />,
-              //   label: "Dashboard",
-              // },
-              { key: "jobs", icon: <FileTextOutlined />, label: "My Jobs" },
-              {
-                key: "myactivity",
-                icon: <AppstoreOutlined />,
-                label: "My Activity",
-              },
-              { key: "findjob", icon: <SearchOutlined />, label: "Find Jobs" },
-              { key: "savedjobs", icon: <SaveFilled />, label: "Saved Jobs" },
-              { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
-              {
-                key: "findbench",
-                icon: <SearchOutlined />,
-                label: "Find Candidate",
-              },
-              {
-                key: "savedcandidates",
-                icon: <SaveFilled />,
-                label: "Saved Candidates",
-              },
-              { key: "chat", icon: <MessageOutlined />, label: "Chat" },
+              { key: "profile", icon: <UserOutlined />, label: "Profile" },
+              { key: "pricing", icon: <UserOutlined />, label: "Pricing" },
+              { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
             ]}
-          />{" "}
-        </ConfigProvider>
+          />
+        </Sider>
 
-        <div
-          style={{
-            height: 1,
-            background: "#E0E0E0",
-            margin: "16px 0",
-            opacity: 0.3,
-          }}
-        />
+        {/* MAIN */}
+        <Layout>
+          <Header
+            style={{
+              background: "#fff",
+              padding: "0 24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              height: 80,
+              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            }}
+          >
+            <Space size={16}>
+              {selectedKey !== "dashboard" && (
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  onClick={() => navigate(-1)}
+                  style={{
+                    borderRadius: 20,
+                    background: "#F8F8F8",
+                    border: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  Back
+                </Button>
+              )}
 
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          theme="dark"
-          onClick={onMenuClick}
-          style={{ background: "transparent", border: "none" }}
-          items={[
-            { key: "profile", icon: <UserOutlined />, label: "Profile" },
-            { key: "pricing", icon: <UserOutlined />, label: "Pricing" },
-            { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
-          ]}
-        />
-      </Sider>
+              <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
 
-      {/* MAIN */}
-      <Layout>
-        <Header
-          style={{
-            background: "#fff",
-            padding: "0 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: 80,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-          }}
-        >
-          <Space size={16}>
-            {selectedKey !== "dashboard" && (
-              <Button
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate(-1)}
+              <div>
+                <Breadcrumb
+                // items={[
+                //   { title: "Dashboard" },
+                //   { title: pageTitle },
+                // ]}
+                />
+                <Title level={4} style={{ margin: 0 }}>
+                  {getPageTitle()}
+                </Title>
+              </div>
+            </Space>
+
+            <Space>
+              {/* <Avatar
+                size={56}
                 style={{
-                  borderRadius: 20,
-                  background: "#F8F8F8",
-                  border: "none",
-                  fontWeight: 500,
+                  background: "#F0F2F4",
+                  color: "#666",
+                  fontWeight: 600,
                 }}
               >
-                Back
-              </Button>
-            )}
+                {user.name?.charAt(0).toUpperCase()}
+              </Avatar> */}
+              <Avatar
+                size={56}
+                src={user.profileUrl}
+                style={{
+                  background: "#F0F2F4",
+                  color: "#666",
+                  fontWeight: 600,
+                }}
+              >
+                {!user.profileUrl && user.name?.charAt(0).toUpperCase()}
+              </Avatar>
 
-            <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
+              <div style={{ lineHeight: 1.2 }}>
+                <Space size={4}>
+                  <Text strong style={{ margin: 0 }}>
+                    Hi, {user.name}
+                  </Text>
+                </Space>
 
-            <div>
-              <Breadcrumb
-              // items={[
-              //   { title: "Dashboard" },
-              //   { title: pageTitle },
-              // ]}
-              />
-              <Title level={4} style={{ margin: 0 }}>
-                {getPageTitle()}
-              </Title>
-            </div>
-          </Space>
-
-          <Space>
-            {/* <Avatar
-              size={56}
-              style={{
-                background: "#F0F2F4",
-                color: "#666",
-                fontWeight: 600,
-              }}
-            >
-              {user.name?.charAt(0).toUpperCase()}
-            </Avatar> */}
-            <Avatar
-              size={56}
-              src={user.profileUrl}
-              style={{
-                background: "#F0F2F4",
-                color: "#666",
-                fontWeight: 600,
-              }}
-            >
-              {!user.profileUrl && user.name?.charAt(0).toUpperCase()}
-            </Avatar>
-
-            <div style={{ lineHeight: 1.2 }}>
-              <Space size={4}>
-                <Text strong style={{ margin: 0 }}>
-                  Hi, {user.name}
+                <Text
+                  type="secondary"
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
+                >
+                  {user.role}
                 </Text>
-              </Space>
+              </div>
+            </Space>
+          </Header>
 
-              <Text
-                type="secondary"
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  marginTop: 2,
-                }}
-              >
-                {user.role}
-              </Text>
-            </div>
-          </Space>
-        </Header>
-
-        <Content
-          style={{
-            padding: 16,
-            background: "#f5f6fa",
-            minHeight: "calc(100vh - 80px)",
-          }}
-        >
-          {children}
-        </Content>
+          <Content
+            style={{
+              padding: 16,
+              background: "#f5f6fa",
+              minHeight: "calc(100vh - 80px)",
+            }}
+          >
+            {children}
+          </Content>
+        </Layout>
       </Layout>
-    </Layout>
+    </>
   );
 };
 

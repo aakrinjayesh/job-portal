@@ -28,7 +28,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const role = location?.state?.role || "candidate";
-  const redirectPath = location.state.redirect;
+  const redirectPath = location?.state?.redirect;
 
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
@@ -193,33 +193,32 @@ const Signup = () => {
       <Row style={{ minHeight: "100vh" }}>
         {/* LEFT SIDE – SIGNUP FORM */}
         <Col
-  xs={24}
-  md={12}
-  style={{
-    display: "flex",
-    flexDirection: "column",   // 🔹 Important
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    background: "#fff",
-  }}
->
-  {/* Logo OUTSIDE the card */}
-  <div style={styles.logoWrapper}>
-    <img
-      src={logo}
-      alt="ForceHead"
-      style={styles.logo}
-      onClick={() => navigate("/")}
-    />
-  </div>
+          xs={24}
+          md={12}
+          style={{
+            display: "flex",
+            flexDirection: "column", // 🔹 Important
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            background: "#fff",
+          }}
+        >
+          {/* Logo OUTSIDE the card */}
+          <div style={styles.logoWrapper}>
+            <img
+              src={logo}
+              alt="ForceHead"
+              style={styles.logo}
+              onClick={() => navigate("/")}
+            />
+          </div>
 
-  {/* Form Card */}
-  <div style={styles.loginCard}>
-
-  <Title level={3} style={{ marginBottom: 8, textAlign: "center" }}>
-    {role === "company" ? "Company Signup" : "Candidate Signup"}
-  </Title>
+          {/* Form Card */}
+          <div style={styles.loginCard}>
+            <Title level={3} style={{ marginBottom: 8, textAlign: "center" }}>
+              {role === "company" ? "Company Signup" : "Candidate Signup"}
+            </Title>
 
             <Form
               form={form}
@@ -503,7 +502,7 @@ const CompanyHero = () => (
           marginBottom: 12,
         }}
       >
-         The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
+        The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
       </Title>
 
       <Text
@@ -556,8 +555,7 @@ const CandidateHero = () => (
           marginBottom: 12,
         }}
       >
-         Find the right Salesforce job -
-        built for your career.
+        Find the right Salesforce job - built for your career.
       </Title>
 
       <Text
@@ -781,19 +779,19 @@ const styles = {
     background: "#fff",
   },
 
-   logoWrapper: {
-      display: "flex",
-  justifyContent: "center",   
-  alignItems: "center",       
-  marginBottom: 24,           
-  width: "100%",
-    },
-  
-    logo: {
-       width: 188,     // 🔹 increase width here
-      height: "135px",
-      cursor: "pointer",
-    },
+  logoWrapper: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+    width: "100%",
+  },
+
+  logo: {
+    width: 188, // 🔹 increase width here
+    height: "135px",
+    cursor: "pointer",
+  },
 };
 
 export default Signup;

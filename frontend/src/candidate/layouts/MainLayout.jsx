@@ -22,6 +22,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 const { Sider, Header, Content } = Layout;
 const { Text, Title } = Typography;
@@ -152,139 +153,142 @@ const MainLayout = ({ children }) => {
   const pageTitle = pageTitleMap[selectedKey] || "Find Jobs";
 
   return (
-    <Layout hasSider>
-      {/* 🧭 Sidebar */}
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        width={260}
-        style={{
-          background: "#011026",
-          height: "100vh",
-          position: "sticky",
-          top: 0,
-        }}
-      >
-        {/* 👤 User Info */}
-        <div
+    <>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <Layout hasSider>
+        {/* 🧭 Sidebar */}
+        <Sider
+          collapsible
+          collapsed={collapsed}
+          onCollapse={setCollapsed}
+          width={260}
           style={{
-            display: "flex",
-            gap: 12,
-            padding: 24,
-            alignItems: "center",
+            background: "#011026",
+            height: "100vh",
+            position: "sticky",
+            top: 0,
           }}
         >
-          {/* <Avatar size={40} icon={<UserOutlined />} /> */}
-          <Avatar size={40} src={user?.profilePicture || undefined}>
-            {!user?.profilePicture && user?.name?.slice(0, 2)?.toUpperCase()}
-          </Avatar>
+          {/* 👤 User Info */}
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              padding: 24,
+              alignItems: "center",
+            }}
+          >
+            {/* <Avatar size={40} icon={<UserOutlined />} /> */}
+            <Avatar size={40} src={user?.profilePicture || undefined}>
+              {!user?.profilePicture && user?.name?.slice(0, 2)?.toUpperCase()}
+            </Avatar>
 
-          {!collapsed && (
-            <div>
-              <Text style={{ color: "#fff", fontWeight: 600 }}>
-                {user.name}
-              </Text>
-              <br />
-              <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
-                {user.role}
-              </Text>
-            </div>
-          )}
-        </div>
+            {!collapsed && (
+              <div>
+                <Text style={{ color: "#fff", fontWeight: 600 }}>
+                  {user.name}
+                </Text>
+                <br />
+                <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
+                  {user.role}
+                </Text>
+              </div>
+            )}
+          </div>
 
-        {/* 📌 Main Menu */}
-        <Menu
-          mode="inline"
-          theme="dark"
-          selectedKeys={[selectedKey]}
-          onClick={onMenuClick}
-          style={{ background: "transparent", border: "none" }}
-          items={[
-            { key: "jobs", icon: <SearchOutlined />, label: "Find Jobs" },
-            {
-              key: "savedjobs",
-              icon: <SaveFilled />,
-              label: "Saved Jobs",
-            },
-            {
-              key: "appliedjobs",
-              icon: <FileTextOutlined />,
-              label: "Applied Jobs",
-            },
-            { key: "chat", icon: <WhatsAppOutlined />, label: "Chat" },
-          ]}
-        />
+          {/* 📌 Main Menu */}
+          <Menu
+            mode="inline"
+            theme="dark"
+            selectedKeys={[selectedKey]}
+            onClick={onMenuClick}
+            style={{ background: "transparent", border: "none" }}
+            items={[
+              { key: "jobs", icon: <SearchOutlined />, label: "Find Jobs" },
+              {
+                key: "savedjobs",
+                icon: <SaveFilled />,
+                label: "Saved Jobs",
+              },
+              {
+                key: "appliedjobs",
+                icon: <FileTextOutlined />,
+                label: "Applied Jobs",
+              },
+              { key: "chat", icon: <WhatsAppOutlined />, label: "Chat" },
+            ]}
+          />
 
-        {/* Divider */}
-        <div
-          style={{
-            height: 1,
-            background: "#E0E0E0",
-            margin: "16px 0",
-            opacity: 0.3,
-          }}
-        />
+          {/* Divider */}
+          <div
+            style={{
+              height: 1,
+              background: "#E0E0E0",
+              margin: "16px 0",
+              opacity: 0.3,
+            }}
+          />
 
-        {/* ⚙️ Bottom Menu */}
-        <Menu
-          mode="inline"
-          theme="dark"
-          selectedKeys={[selectedKey]}
-          onClick={onMenuClick}
-          style={{ background: "transparent", border: "none" }}
-          items={[
-            // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
-            { key: "profile", icon: <UserOutlined />, label: "Profile" },
-            { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
-          ]}
-        />
-      </Sider>
+          {/* ⚙️ Bottom Menu */}
+          <Menu
+            mode="inline"
+            theme="dark"
+            selectedKeys={[selectedKey]}
+            onClick={onMenuClick}
+            style={{ background: "transparent", border: "none" }}
+            items={[
+              // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+              { key: "profile", icon: <UserOutlined />, label: "Profile" },
+              { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
+            ]}
+          />
+        </Sider>
 
-      {/* 📄 Main Layout */}
-      <Layout>
-        {/* 🔝 Header */}
-        <Header
-          style={{
-            background: "#fff",
-            padding: "0 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: 80,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-          }}
-        >
-          {/* Left */}
-          <Space size={16}>
-             {selectedKey !== "profile" && (
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(-1)}
-              style={{
-                borderRadius: 20,
-                background: "#F8F8F8",
-                border: "none",
-                fontWeight: 500,
-              }}
-            >
-              Back
-            </Button>
-             )}
+        {/* 📄 Main Layout */}
+        <Layout>
+          {/* 🔝 Header */}
+          <Header
+            style={{
+              background: "#fff",
+              padding: "0 24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              height: 80,
+              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            }}
+          >
+            {/* Left */}
+            <Space size={16}>
+              {selectedKey !== "profile" && (
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  onClick={() => navigate(-1)}
+                  style={{
+                    borderRadius: 20,
+                    background: "#F8F8F8",
+                    border: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  Back
+                </Button>
+              )}
 
+              <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
 
-            <div style={{ width: 1, height: 48, background: "#F0F0F0" }} />
+              <div>
+                <Breadcrumb />
+                <Title level={4} style={{ margin: 0 }}>
+                  {pageTitle}
+                </Title>
+              </div>
+            </Space>
 
-            <div>
-              <Breadcrumb />
-              <Title level={4} style={{ margin: 0 }}>
-                {pageTitle}
-              </Title>
-            </div>
-          </Space>
-
-          {/* Right */}
-          {/* <Space size={24}>
+            {/* Right */}
+            {/* <Space size={24}>
             <Button
               shape="circle"
               icon={<BellOutlined />}
@@ -296,50 +300,55 @@ const MainLayout = ({ children }) => {
               }}
             /> */}
 
-          <Space>
-            {/* <Avatar size={56}>
+            <Space>
+              {/* <Avatar size={56}>
                 {user.name?.slice(0, 2).toUpperCase()}
               </Avatar> */}
-            <Avatar size={56} src={user?.profilePicture || undefined}>
-              {!user?.profilePicture && user?.name?.slice(0, 2)?.toUpperCase()}
-            </Avatar>
+              <Avatar size={56} src={user?.profilePicture || undefined}>
+                {!user?.profilePicture &&
+                  user?.name?.slice(0, 2)?.toUpperCase()}
+              </Avatar>
 
-            <div style={{ lineHeight: 1.2 }}>
-              <Space size={4}>
-                <Text strong>Hi, {user.name}</Text>
-                {/* <DownOutlined style={{ fontSize: 12 }} /> */}
-              </Space>
-              <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
-                {user.role}
-              </Text>
-            </div>
-          </Space>
-          {/* </Space> */}
-        </Header>
+              <div style={{ lineHeight: 1.2 }}>
+                <Space size={4}>
+                  <Text strong>Hi, {user.name}</Text>
+                  {/* <DownOutlined style={{ fontSize: 12 }} /> */}
+                </Space>
+                <Text
+                  type="secondary"
+                  style={{ display: "block", fontSize: 12 }}
+                >
+                  {user.role}
+                </Text>
+              </div>
+            </Space>
+            {/* </Space> */}
+          </Header>
 
-        {/* 🧾 Content */}
-        <Content
-          style={{
-            padding: 16,
-            background: "#f5f6fa",
-            minHeight: "calc(100vh - 80px)",
-          }}
+          {/* 🧾 Content */}
+          <Content
+            style={{
+              padding: 16,
+              background: "#f5f6fa",
+              minHeight: "calc(100vh - 80px)",
+            }}
+          >
+            {children}
+          </Content>
+        </Layout>
+
+        {/* 🔐 Login Modal */}
+        <Modal
+          open={showLoginModal}
+          title="Login Required"
+          onCancel={() => setShowLoginModal(false)}
+          okText="Go to Login"
+          onOk={() => navigate("/login")}
         >
-          {children}
-        </Content>
+          <p>Please login to use this feature.</p>
+        </Modal>
       </Layout>
-
-      {/* 🔐 Login Modal */}
-      <Modal
-        open={showLoginModal}
-        title="Login Required"
-        onCancel={() => setShowLoginModal(false)}
-        okText="Go to Login"
-        onOk={() => navigate("/login")}
-      >
-        <p>Please login to use this feature.</p>
-      </Modal>
-    </Layout>
+    </>
   );
 };
 

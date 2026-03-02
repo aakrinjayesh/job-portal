@@ -35,8 +35,14 @@ const { Title, Text, Paragraph } = Typography;
 const GST_RATE = 0.18;
 
 const FEATURE_LABELS = {
-  JOB_POST_CREATION: "Job Posts",
-  CANDIDATE_DETAILS_VIEW: "Candidate Views",
+  APPLY_BENCH_TO_JOB: "Apply Bench",
+  CANDIDATE_PROFILE_VIEWS: "Candidate Views",
+  JOB_POST_CREATION: "Job Creation",
+  RESUME_EXTRACTION: "Resume Extract",
+  JD_EXTRACTION: "Job Extract",
+  AI_FIT_SCORE: "Fit Score",
+  FIND_CANDIDATE_SEARCH: "Candidate Search",
+  FIND_JOB_SEARCH: "Job Search",
   JOB_APPLICATIONS: "Applications",
   AI_TOKENS_TOTAL: "AI Tokens",
   TEAM_MEMBERS: "Team Members",
