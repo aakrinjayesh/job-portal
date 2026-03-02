@@ -16,11 +16,12 @@ import GoogleAuthButton from "../components/Login/GoogleAuthButton";
 import { login as LoginApi, GetUserProfile } from "../candidate/api/api";
 import { useAuth } from "../chat/context/AuthContext";
 
-import personImg from "../assets/companyperson.png";
+import personImg from "../assets/companyperson.webp";
+import logo from "../assets/forceheadlogo.png";
 import salaryImg from "../assets/salary.png";
 import jobroleImg from "../assets/jobrole.png";
 import groupImg from "../assets/Group.png";
-import andrewImg from "../assets/person_candidate_design.png";
+import andrewImg from "../assets/person_candidate_design.webp";
 import presoImg from "../assets/preso.png";
 import ridoriaImg from "../assets/ridoria.png";
 import alterboneImg from "../assets/alterbone.png";
@@ -31,6 +32,8 @@ import AppHeader from "../components/layout/AppHeader";
 import AppFooter from "../components/layout/AppFooter";
 
 const { Title, Text } = Typography;
+const { useBreakpoint } = Grid;
+  
 
 /* ================= EMAIL HELPERS (module scope) ================= */
 const personalDomains = [
@@ -199,11 +202,12 @@ const LoginPage = () => {
       setSubmitting(false);
     }
   };
+  
 
   return (
     <>
       {contextHolder}
-      <AppHeader />
+      {/* <AppHeader /> */}
 
       <Row style={{ minHeight: "100vh" }}>
         {/* LEFT – LOGIN */}
@@ -223,19 +227,13 @@ const LoginPage = () => {
   <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
 
     {/* TITLE OUTSIDE LOGIN CARD */}
-    <div style={{ marginBottom: 20 }}>
-      <Title
-        level={3}
-        style={{
-          marginBottom: 0,
-          fontWeight: 700,
-          color: "#111",
-          lineHeight: 1.3,
-        }}
-      >
-        World’s First Salesforce-to-Salesforce Talent & Collaboration Network
-      </Title>
-    </div>
+    <div style={styles.logoWrapper}>
+           <img
+             src={logo}
+             alt="ForceHead"
+             style={styles.logo}
+           />
+         </div>
 
     {/* LOGIN CARD */}
     <div style={styles.loginCard}>
@@ -276,43 +274,46 @@ const LoginPage = () => {
             />
 
             {/* LINKS ROW */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                justifyContent: isMobile ? "center" : "space-between",
-                alignItems: "center",
-                marginTop: 12,
-                gap: isMobile ? 6 : 0,
-                textAlign: isMobile ? "center" : "left",
-              }}
-            >
-              <Button
-                type="link"
-                style={{ padding: 0 }}
-                onClick={() =>
-                  navigate("/forgotpassword", { state: { role: activeTab } })
-                }
-              >
-                Forgot password?
-              </Button>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 14,
+    fontSize: 14,
+    // flexWrap: "nowrap",   // ✅ FORCE ONE LINE
+    whiteSpace: "nowrap",
 
-              <Text>
-                Don't have a registered email?{" "}
-                <Button
-                  type="link"
-                  style={{ padding: 0 }}
-                  onClick={() =>
-                    navigate("/signup", {
-                      state: { role: activeTab, redirect: redirectPath },
-                    })
-                  }
-                >
-                  Create account
-                </Button>
-              </Text>
-            </div>
+    // ✅ responsive behavior
+    flexWrap: screens.xs ? "wrap" : "nowrap",
+    textAlign: "center",
+  }}
+>
+  <Button
+    type="link"
+    style={{ padding: 0, height: "auto", fontSize: 14 }}
+    onClick={() =>
+      navigate("/forgotpassword", { state: { role: activeTab } })
+    }
+  >
+    Forgot password?
+  </Button>
 
+  <Text>Don't have a registered email?</Text>
+
+  <Button
+    type="link"
+    style={{ padding: 0, height: "auto", fontSize: 14 }}
+    onClick={() =>
+      navigate("/signup", {
+        state: { role: activeTab, redirect: redirectPath },
+      })
+    }
+  >
+    Create account
+  </Button>
+</div>
             {/* GOOGLE AUTH – ONLY FOR CANDIDATE */}
             {activeTab === "candidate" && (
               <>
@@ -355,13 +356,12 @@ const CompanyHero = () => (
         level={2}
         style={{
           color: "#fff",
-          fontSize: 22,
+          fontSize: 28,
           fontWeight: 700,
           marginBottom: 12,
         }}
       >
-        Connect with the right partners -
-        faster and smarter.
+       The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
       </Title>
 
       <Text
@@ -408,7 +408,7 @@ const CandidateHero = () => (
         level={2}
         style={{
           color: "#fff",
-          fontSize: 22,
+          fontSize: 28,
           fontWeight: 700,
           marginBottom: 12,
         }}
@@ -469,7 +469,7 @@ const styles = {
 
   vendorBadge: {
     position: "absolute",
-    top: 350,
+    top: 380,
     right: "60%",
     background: "#fff",
     padding: "8px 16px",
@@ -496,7 +496,7 @@ const styles = {
   },
   searchCard: {
     position: "absolute",
-    top: 450,
+    top: 480,
     left: "5%",
     background: "#fff",
     fontFamily: "SF Pro",
@@ -524,7 +524,7 @@ const styles = {
 
   vendorCard: {
     position: "absolute",
-    top: 350,
+    top: 380,
     left: "60%",
     fontSize: 14,
     fontFamily: "SF Pro",
@@ -539,7 +539,7 @@ const styles = {
 
   vendorType: {
     position: "absolute",
-    top: 450,
+    top: 480,
     left: "68%",
     background: "#fff",
     padding: "6px 14px",
@@ -608,6 +608,21 @@ const styles = {
     boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
     background: "#fff",
   },
+
+   logoWrapper: {
+      display: "flex",
+  justifyContent: "center",   
+  alignItems: "center",       
+  marginBottom: 24,           
+  width: "100%",
+    },
+  
+    logo: {
+       width: 188,     // 🔹 increase width here
+      height: "135px",
+      cursor: "pointer",
+    },
 };
+
 
 export default LoginPage;

@@ -3,9 +3,10 @@ import { Form, Input, Button, Typography, message, Row, Col } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SetPassword, ResetPasswords } from "../candidate/api/api";
 import cloudImage from "../assets/Fill-1.png";
-import personImg from "../assets/companyperson.png";
+import logo from "../assets/forceheadlogo.png";
+import personImg from "../assets/companyperson.webp";
 import jobroleImg from "../assets/jobrole.png";
-import andrewImg from "../assets/person_candidate_design.png";
+import andrewImg from "../assets/person_candidate_design.webp";
 import AppHeader from "../components/layout/AppHeader";
 import AppFooter from "../components/layout/AppFooter";
 
@@ -85,7 +86,7 @@ const CreatePassword = () => {
   return (
     <>
       {contextHolder}
-      <AppHeader />
+      {/* <AppHeader /> */}
 
       {/* ================= BODY ================= */}
       <Row style={{ minHeight: "100vh" }}>
@@ -94,13 +95,22 @@ const CreatePassword = () => {
           xs={24}
           md={12}
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-            background: "#fff",
-          }}
+    display: "flex",
+    flexDirection: "column",   // 🔹 Important
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    background: "#fff",
+  }}
         >
+          <div style={styles.logoWrapper}>
+              <img
+                src={logo}
+                alt="ForceHead"
+                style={styles.logo}
+                onClick={() => navigate("/")}
+              />
+            </div>
           <div style={styles.loginCard}>
             <Title level={3}>Create Password</Title>
             <Text type="secondary">Secure your account to continue</Text>
@@ -201,12 +211,12 @@ const CompanyHero = () => (
         level={2}
         style={{
           color: "#fff",
-          fontSize: 22,
+          fontSize: 28,
           fontWeight: 700,
           marginBottom: 12,
         }}
       >
-      The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
+       The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
       </Title>
 
       <Text
@@ -254,12 +264,13 @@ const CandidateHero = () => (
         level={2}
         style={{
           color: "#fff",
-          fontSize: 22,
+          fontSize: 28,
           fontWeight: 700,
           marginBottom: 12,
         }}
       >
-       The World’s First Salesforce-to-Salesforce Collaboration & Talent Network
+        Find the right Salesforce job -
+        built for your career.
       </Title>
 
       <Text
@@ -325,7 +336,7 @@ const styles = {
 
   cloud: {
     position: "absolute",
-    bottom: 40,
+    top: 326,
     left: "50%",
     transform: "translateX(-50%)",
     width: 420,
@@ -336,22 +347,13 @@ const styles = {
   heroText: {
     position: "relative",
     zIndex: 5,
-    // maxWidth: 420,
-    marginTop: -40, // ⬆ moves text upward
-  },
-
-  badges: { marginTop: 30, display: "flex", gap: 12, flexWrap: "wrap" },
-  badge: {
-    background: "#fff",
-    padding: "8px 16px",
-    borderRadius: 20,
-    fontWeight: 500,
+    marginTop: -40,
   },
 
   vendorBadge: {
     position: "absolute",
-    top: 350,
-    left: "5%",
+    top: 380,
+    right: "60%",
     background: "#fff",
     padding: "8px 16px",
     borderRadius: 20,
@@ -362,24 +364,22 @@ const styles = {
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
-  
   candidateBadge: {
-  position: "absolute",
-  top: 350,
-  right: "40%",
-  background: "#fff",
-  padding: "8px 16px",
-  borderRadius: 20,
-  fontFamily: "SF Pro",
-  fontWeight: "590",
-  fontSize: 14,
-  zIndex: 4,
-  boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-},
-
+    position: "absolute",
+    top: 350,
+    left: "20%",
+    background: "#fff",
+    padding: "8px 16px",
+    borderRadius: 20,
+    fontFamily: "SF Pro",
+    fontWeight: "590",
+    fontSize: 14,
+    zIndex: 4,
+    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+  },
   searchCard: {
     position: "absolute",
-    top: 450,
+    top: 480,
     left: "5%",
     background: "#fff",
     fontFamily: "SF Pro",
@@ -391,11 +391,10 @@ const styles = {
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
-  
-   searchCandidateCard: {
+  searchCandidateCard: {
     position: "absolute",
     top: 450,
-    right: "40%",
+    left: "10%",
     background: "#fff",
     fontFamily: "SF Pro",
     fontWeight: "590",
@@ -408,7 +407,7 @@ const styles = {
 
   vendorCard: {
     position: "absolute",
-    top: 350,
+    top: 380,
     left: "60%",
     fontSize: 14,
     fontFamily: "SF Pro",
@@ -423,7 +422,7 @@ const styles = {
 
   vendorType: {
     position: "absolute",
-    top: 450,
+    top: 480,
     left: "68%",
     background: "#fff",
     padding: "6px 14px",
@@ -443,9 +442,9 @@ const styles = {
     fontFamily: "SF Pro",
     fontWeight: "590",
     background: "#fff",
-    padding: "14px 16px",
+    padding: "14px 14px",
     borderRadius: 16,
-    width: 220,
+    width: 180,
     zIndex: 4,
     boxShadow: "0 8px 20px rgba(0,0,0,0.14)",
   },
@@ -453,9 +452,10 @@ const styles = {
   jobType: {
     position: "absolute",
     top: 450,
-    left: "68%",
+    left: "60%",
+    width: 175,
     background: "#fff",
-    padding: "6px 14px",
+    padding: "6px 16px",
     borderRadius: 20,
     fontSize: 14,
     fontFamily: "SF Pro",
@@ -464,27 +464,15 @@ const styles = {
     boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
   },
 
-  nameTag: {
-    position: "absolute",
-    bottom: 90,
-    right: 260,
-    background: "#fff",
-    padding: "6px 14px",
-    borderRadius: 20,
-    fontSize: 13,
-    fontWeight: 600,
-    zIndex: 3,
-  },
   person: {
     position: "absolute",
     marginTop: 110,
     left: "48%",
     transform: "translateX(-50%)",
-    height: 420,
+    height: 580,
     zIndex: 2,
   },
 
- 
   candidateperson: {
     position: "absolute",
     marginTop: 110,
@@ -495,7 +483,7 @@ const styles = {
   },
 
   loginCard: {
-    width: 400,
+    maxWidth: 480,
     margin: "0 auto",
     padding: "32px",
     border: "1px solid #e5e7eb",
@@ -504,60 +492,18 @@ const styles = {
     background: "#fff",
   },
 
-  footer: {
-    height: 60,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#fff",
-    borderTop: "1px solid #eee",
-  },
-
-  footerWrapper: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-    //marginTop: 40,   // ❗ REMOVE negative margin
-    paddingBottom: 40,
-  },
-
-  footerCard: {
-    background: "#fff",
-    padding: "24px 40px",
-    borderRadius: 16,
-    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-    textAlign: "center",
-    maxWidth: 900,
-    width: "90%",
-  },
-
-  footerText: {
-    fontSize: 14,
-    fontWeight: 500,
-    marginBottom: 20,
-  },
-
-  footerLogos: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 24,
-    flexWrap: "wrap",
-  },
-
-  // logoBox: {
-  //   background: "#fff",
-  //   border: "1px solid #eee",
-  //   borderRadius: 12,
-  //   padding: "8px 16px",
-  //   display: "flex",
-  //   alignItems: "center",
-  //   justifyContent: "center",
-  // },
-
-  logoBoxImg: {
-    height: 24,
-  },
+   logoWrapper: {
+      display: "flex",
+  justifyContent: "center",   
+  alignItems: "center",       
+  marginBottom: 24,           
+  width: "100%",
+    },
+  
+    logo: {
+       width: 188,     // 🔹 increase width here
+      height: "135px",
+      cursor: "pointer",
+    },
 };
-
 export default CreatePassword;
