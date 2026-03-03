@@ -116,6 +116,73 @@ const getJobSEOMeta = async (req, res) => {
   }
 };
 
-// Map your Prisma enum to schema.org values
+const sitemap = async (req, res) => {
+  try {
+    const baseUrl = process.env.FRONTEND_URL;
 
-export { getJobSEOMeta };
+    // ✅ Fetch only public jobs
+    const jobs = await prisma.job.findMany({
+      where: {
+        isDeleted: false,
+        status: "Open", // adjust based on your schema
+      },
+      select: {
+        id: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    // Static pages
+    const staticUrls = `
+      <url>
+        <loc>${baseUrl}/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+      </url>
+
+      <url>
+        <loc>${baseUrl}/terms-and-conditions</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+      </url>
+
+      <url>
+        <loc>${baseUrl}/contact</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+      </url>
+    `;
+
+    // Dynamic job URLs
+    const jobUrls = jobs
+      .map((job) => {
+        return `
+          <url>
+            <loc>${baseUrl}/job/${job.id}</loc>
+            <lastmod>${job.updatedAt.toISOString()}</lastmod>
+            <changefreq>daily</changefreq>
+            <priority>0.8</priority>
+          </url>
+        `;
+      })
+      .join("");
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+      <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        ${staticUrls}
+        ${jobUrls}
+      </urlset>
+    `;
+
+    res.header("Content-Type", "application/xml");
+    res.status(200).send(xml);
+  } catch (error) {
+    console.error("Sitemap generation error:", error);
+    res.status(500).send("Error generating sitemap");
+  }
+};
+
+export { getJobSEOMeta, sitemap };

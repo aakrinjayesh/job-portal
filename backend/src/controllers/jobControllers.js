@@ -119,7 +119,7 @@ const userApplyJob = async (req, res) => {
 
       if (recruiterLicense && recruiterLicense.isActive) {
         limitConfigs = recruiterLicense.plan.limits.filter(
-          (l) => l.feature === "FIT_SCORE_ANALYSES",
+          (l) => l.feature === "AI_FIT_SCORE",
         );
 
         aiAllowed = true;
@@ -142,7 +142,7 @@ const userApplyJob = async (req, res) => {
             where: {
               licenseId_feature_period_periodStart: {
                 licenseId: recruiterLicense.id,
-                feature: "FIT_SCORE_ANALYSES",
+                feature: "AI_FIT_SCORE",
                 period: limit.period,
                 periodStart,
               },
@@ -285,7 +285,7 @@ const userApplyJob = async (req, res) => {
             where: {
               licenseId_feature_period_periodStart: {
                 licenseId: recruiterLicense.id,
-                feature: "FIT_SCORE_ANALYSES",
+                feature: "AI_FIT_SCORE",
                 period: limit.period,
                 periodStart,
               },
@@ -295,7 +295,7 @@ const userApplyJob = async (req, res) => {
             },
             create: {
               licenseId: recruiterLicense.id,
-              feature: "FIT_SCORE_ANALYSES",
+              feature: "AI_FIT_SCORE",
               period: limit.period,
               currentUsage: 1,
               periodStart,
@@ -313,7 +313,7 @@ const userApplyJob = async (req, res) => {
             inputTokens: tokenUsage?.prompt || 0,
             outputTokens: tokenUsage?.completion || 0,
             totalTokens: tokenUsage?.total || 0,
-            featureUsed: "FIT_SCORE_ANALYSES",
+            featureUsed: "AI_FIT_SCORE",
           },
         });
       }

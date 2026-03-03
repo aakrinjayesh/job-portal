@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /company/
+Disallow: /candidate/
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://forcehead.com/sitemap.xml

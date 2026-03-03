@@ -1155,7 +1155,7 @@ const vendorApplyCandidate = async (req, res) => {
 
       if (recruiterLicense && recruiterLicense.isActive) {
         limitConfigs = recruiterLicense.plan.limits.filter(
-          (l) => l.feature === "FIT_SCORE_ANALYSES",
+          (l) => l.feature === "AI_FIT_SCORE",
         );
 
         aiAllowed = true;
@@ -1178,7 +1178,7 @@ const vendorApplyCandidate = async (req, res) => {
             where: {
               licenseId_feature_period_periodStart: {
                 licenseId: recruiterLicense.id,
-                feature: "FIT_SCORE_ANALYSES",
+                feature: "AI_FIT_SCORE",
                 period: limit.period,
                 periodStart,
               },
@@ -1478,7 +1478,7 @@ const processInBackground = async ({
               where: {
                 licenseId_feature_period_periodStart: {
                   licenseId: recruiterLicense.id,
-                  feature: "FIT_SCORE_ANALYSES",
+                  feature: "AI_FIT_SCORE",
                   period: lim.period,
                   periodStart,
                 },
@@ -1488,7 +1488,7 @@ const processInBackground = async ({
               },
               create: {
                 licenseId: recruiterLicense.id,
-                feature: "FIT_SCORE_ANALYSES",
+                feature: "AI_FIT_SCORE",
                 period: lim.period,
                 currentUsage: 1,
                 periodStart,
@@ -1505,7 +1505,7 @@ const processInBackground = async ({
               inputTokens: tokenUsage?.prompt || 0,
               outputTokens: tokenUsage?.completion || 0,
               totalTokens: tokenUsage?.total || 0,
-              featureUsed: "FIT_SCORE_ANALYSES",
+              featureUsed: "AI_FIT_SCORE",
             },
           });
         });
