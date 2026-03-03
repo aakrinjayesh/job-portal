@@ -63,22 +63,58 @@ export const extractAIText = async (text, role, extra = {}) => {
         throw new Error("LLM output truncated due to token limit");
       }
     } catch (err) {
-      console.error("❌ LLM API Error:", err.message);
+      console.error("❌ LLM API Error:", err);
 
-      // Send Failure Email
+      const finishReason = result?.choices?.[0]?.finish_reason;
+      const usage = result?.usage;
+
+      const debugPayload = {
+        errorMessage: err.message,
+        stack: err.stack,
+        role,
+        model: modelName,
+        maxTokens: process.env.GROQ_MAX_TOKENS,
+        temperature: 0.1,
+        finishReason,
+        tokenUsage: usage,
+        promptLengthChars: prompt?.length,
+        promptPreview: prompt?.substring(0, 1000), // first 1000 chars only
+        extraData: extra,
+      };
+
       await sendEmail({
         to: process.env.EMAIL_LLM || "vsaijayesh94@gmail.com",
-        subject: "⚠️ LLM FAILURE – Gemini API Error",
-        text: `Error calling LLM:
+        subject: `⚠️ LLM FAILURE – ${role}`,
+        text: `
+          🚨 LLM ERROR DETECTED
+
+          Error Message:
           ${err.message}
 
-          Role: ${role}
+          Finish Reason:
+          ${finishReason}
 
-          Prompt data:
+          Model Info:
+          Model: ${modelName}
+          Max Tokens: ${process.env.GROQ_MAX_TOKENS}
+          Temperature: 0.1
+
+          Token Usage:
+          ${JSON.stringify(usage, null, 2)}
+
+          Prompt Stats:
+          Length (chars): ${prompt?.length}
+
+          Prompt Preview (First 1000 chars):
+          ${prompt?.substring(0, 1000)}
+
+          Extra Payload:
           ${JSON.stringify(extra, null, 2)}
+
+          Stack Trace:
+          ${err.stack}
           `,
       });
-
       throw err;
     }
 
@@ -107,9 +143,29 @@ export const extractAIText = async (text, role, extra = {}) => {
 
       // Send Failure Email
       await sendEmail({
-        to: "vsaijayesh94@gmail.com",
-        subject: "⚠️ LLM FAILURE – Invalid JSON Output",
-        text: `LLM returned invalid JSON.\n\nError: ${err.message}\n\nLLM Raw Output:\n${rawText}`,
+        to: process.env.EMAIL_LLM || "vsaijayesh94@gmail.com",
+        subject: `⚠️ LLM INVALID JSON – ${role}`,
+        text: `
+          ❌ JSON PARSE FAILED
+
+          Error:
+          ${err.message}
+
+          Model: ${modelName}
+          Max Tokens: ${process.env.GROQ_MAX_TOKENS}
+
+          Finish Reason:
+          ${result?.choices?.[0]?.finish_reason}
+
+          Token Usage:
+          ${JSON.stringify(tokenUsage, null, 2)}
+
+          Raw LLM Output:
+          ${rawText}
+
+          Prompt Preview:
+          ${prompt?.substring(0, 1000)}
+          `,
       });
 
       return null; // or handle gracefully
@@ -119,9 +175,35 @@ export const extractAIText = async (text, role, extra = {}) => {
 
     // Send Failure Email
     await sendEmail({
-      to: "vsaijayesh94@gmail.com",
-      subject: "⚠️ LLM FAILURE – Unexpected Error",
-      text: `Unexpected error in extractResumeSections:\n${error.message}`,
+      to: process.env.EMAIL_LLM || "vsaijayesh94@gmail.com",
+      subject: `⚠️ LLM UNEXPECTED ERROR – ${role}`,
+      text: `
+        🚨 UNEXPECTED ERROR IN extractAIText()
+
+        Time: ${new Date().toISOString()}
+        Environment: ${process.env.NODE_ENV}
+
+        Error Message:
+        ${error.message}
+
+        Stack Trace:
+        ${error.stack}
+
+        Role:
+        ${role}
+
+        Model:
+        ${modelName}
+
+        Max Tokens:
+        ${process.env.GROQ_MAX_TOKENS}
+
+        Prompt Length (chars):
+        ${prompt?.length || "N/A"}
+
+        Extra Payload:
+        ${JSON.stringify(extra, null, 2)}
+        `,
     });
 
     return null;

@@ -1548,9 +1548,9 @@ const HomePage = () => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
     if (token && role === "company")
-      navigate("/company/dashboard", { replace: true });
+      navigate("/company/jobs", { replace: true });
     if (token && role === "candidate")
-      navigate("/candidate/dashboard", { replace: true });
+      navigate("/candidate/jobs", { replace: true });
 
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll);
