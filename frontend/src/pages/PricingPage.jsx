@@ -63,7 +63,8 @@ export default function PricingPage() {
   console.log("redirect to pricing", redirectUrl);
 
   const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
   const [quantities, setQuantities] = useState({});
@@ -165,7 +166,8 @@ export default function PricingPage() {
     }
 
     try {
-      setLoading(true);
+      // setLoading(true);
+      setLoadingPlan(plan.tier);
 
       const quantity = quantities[plan.tier];
 
@@ -208,7 +210,8 @@ export default function PricingPage() {
       console.error(err);
       messageApi.error("Payment failed. Please try again.");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
@@ -411,7 +414,8 @@ export default function PricingPage() {
                         type={popular ? "primary" : "default"}
                         block
                         size="large"
-                        loading={loading}
+                        // loading={loading}
+                        loading={loadingPlan === plan.tier}
                         style={{ marginTop: 24 }}
                         onClick={() => handlePurchase(plan)}
                       >

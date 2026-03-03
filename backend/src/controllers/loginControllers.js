@@ -48,10 +48,11 @@ const userOtpGenerate = async (req, res) => {
       message: "OTP sent to email",
     });
   } catch (err) {
-    logger.error(
-      "Error in userOtpGenerate:",
-      JSON.stringify(err.message, null, 2),
-    );
+    console.log("error:", err);
+    // console.error(
+    //   "Error in userOtpGenerate:",
+    //   JSON.stringify(err.message, null, 2),
+    // );
     return res.status(500).json({
       status: "error",
       message: err.message || "Something went wrong",
@@ -841,18 +842,18 @@ const setPassword = async (req, res) => {
     });
 
     /* ✅ SEND EMAIL HERE */
-try {
-  await sendEmail({
-    to: email,
-    subject: "Welcome to ForceHead",
-    html: getWelcomePasswordEmailTemplate({
-      name: result.name,
-      role: result.role,
-    }),
-  });
-} catch (err) {
-  console.warn("Email failed:", err.message);
-}
+    try {
+      await sendEmail({
+        to: email,
+        subject: "Welcome to ForceHead",
+        html: getWelcomePasswordEmailTemplate({
+          name: result.name,
+          role: result.role,
+        }),
+      });
+    } catch (err) {
+      console.warn("Email failed:", err.message);
+    }
 
     /* ─────────────────────────────
        6️⃣ SUCCESS RESPONSE

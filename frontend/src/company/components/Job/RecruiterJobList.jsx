@@ -99,6 +99,7 @@ const RecruiterJobList = () => {
   const controllerRef = useRef(null);
 
   const [isSalaryRange, setIsSalaryRange] = useState(false);
+  const [isExperienceRange, setIsExperienceRange] = useState(false);
 
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -231,12 +232,28 @@ const RecruiterJobList = () => {
       setIsSalaryRange(false); // toggle UI to single salary mode
     }
 
-    const experienceValue = job.experience
-      ? {
-          number: Number(job.experience.number),
-          type: job.experience.type,
-        }
-      : undefined;
+    // const experienceValue = job.experience
+    //   ? {
+    //       number: Number(job.experience.number),
+    //       type: job.experience.type,
+    //     }
+    //   : undefined;
+    let experienceValue = undefined;
+
+    if (job.experience?.min && job.experience?.max) {
+      setIsExperienceRange(true);
+      experienceValue = {
+        min: Number(job.experience.min),
+        max: Number(job.experience.max),
+        type: job.experience.type,
+      };
+    } else {
+      setIsExperienceRange(false);
+      experienceValue = {
+        number: Number(job.experience?.number),
+        type: job.experience?.type,
+      };
+    }
 
     const locationArray =
       typeof job.location === "string"
@@ -391,6 +408,8 @@ const RecruiterJobList = () => {
         ["tenure", "number"],
         ["tenure", "type"],
         ["experience", "number"],
+        ["experience", "min"],
+        ["experience", "max"],
         ["experience", "type"],
         "experienceLevel",
         "jobType",
@@ -418,14 +437,28 @@ const RecruiterJobList = () => {
       const values = await form.validateFields(allFields);
       setPostLoading(true);
 
-      let finalSalary = "";
+      // let finalSalary = "";
+
+      // if (!isSalaryRange) {
+      //   finalSalary = String(cleanNumber(values.salary)); // convert to string
+      // } else {
+      //   const min = cleanNumber(values.salary.min);
+      //   const max = cleanNumber(values.salary.max);
+      //   finalSalary = `${min}-${max}`; // string format
+      // }
+      let finalSalary = "Not Disclosed";
 
       if (!isSalaryRange) {
-        finalSalary = String(cleanNumber(values.salary)); // convert to string
+        if (values.salary) {
+          finalSalary = String(cleanNumber(values.salary));
+        }
       } else {
-        const min = cleanNumber(values.salary.min);
-        const max = cleanNumber(values.salary.max);
-        finalSalary = `${min}-${max}`; // string format
+        const min = values?.salary?.min;
+        const max = values?.salary?.max;
+
+        if (min && max) {
+          finalSalary = `${cleanNumber(min)}-${cleanNumber(max)}`;
+        }
       }
       let finalTenure = null;
 
@@ -448,6 +481,20 @@ const RecruiterJobList = () => {
           return;
         }
       }
+      let finalExperience = null;
+
+      if (!isExperienceRange) {
+        finalExperience = {
+          number: String(values.experience.number),
+          type: values.experience.type,
+        };
+      } else {
+        finalExperience = {
+          min: String(values.experience.min),
+          max: String(values.experience.max),
+          type: values.experience.type,
+        };
+      }
 
       let payload = {
         role: values.role,
@@ -469,10 +516,12 @@ const RecruiterJobList = () => {
         //         number: null,
         //         type: null,
         //       },
-        experience: {
-          number: String(values.experience.number),
-          type: values.experience.type,
-        },
+        // experience: {
+        //   number: String(values.experience.number),
+        //   type: values.experience.type,
+        // },
+
+        experience: finalExperience,
 
         experienceLevel: values.experienceLevel,
         // tenure: values.tenure,
@@ -806,6 +855,21 @@ const RecruiterJobList = () => {
     } catch (error) {
       messageApi.error(error?.response?.data?.message || "Failed to close job");
     }
+  };
+  const experienceValidator = (_, value) => {
+    if (!value) return Promise.resolve();
+
+    // Only 1–2 digits before decimal
+    // Optional decimal with 1–2 digits
+    if (!/^\d{1,2}(\.\d{1,2})?$/.test(value)) {
+      return Promise.reject(
+        new Error(
+          "Enter up to 2 digits with optional 2 decimal places (e.g. 12 or 12.12)",
+        ),
+      );
+    }
+
+    return Promise.resolve();
   };
 
   return (
@@ -1186,7 +1250,11 @@ const RecruiterJobList = () => {
                       </span>
                       <Divider type="vertical" />
                       <span>
-                        <DollarOutlined /> {job.salary} PA
+                        {/* <DollarOutlined /> {job.salary} PA */}
+                        <DollarOutlined />
+                        {job.salary === "Not Disclosed"
+                          ? "Not Disclosed"
+                          : `${job.salary} PA`}
                       </span>
                       <Divider type="vertical" />
                       <span>
@@ -1194,8 +1262,12 @@ const RecruiterJobList = () => {
                       </span>
                       <Divider type="vertical" />
                       <span>
-                        <UserOutlined /> {job.experience?.number}{" "}
-                        {job.experience?.type}
+                        {/* <UserOutlined /> {job.experience?.number}{" "}
+                        {job.experience?.type} */}
+                        <UserOutlined />
+                        {job.experience?.min && job.experience?.max
+                          ? `${job.experience.min}-${job.experience.max} ${job.experience.type}`
+                          : `${job.experience?.number} ${job.experience?.type}`}
                       </span>
                       <Divider type="vertical" />
 
@@ -1678,9 +1750,9 @@ const RecruiterJobList = () => {
                     </Form.Item>
                   )}
 
-                  <Form.Item label="Experience">
+                  {/* <Form.Item label="Experience">
                     {" "}
-                    {/* no name, no rules here */}
+                    
                     <Space.Compact style={{ width: "100%" }}>
                       <Form.Item
                         name={["experience", "number"]}
@@ -1717,7 +1789,170 @@ const RecruiterJobList = () => {
                         />
                       </Form.Item>
                     </Space.Compact>
-                  </Form.Item>
+                  </Form.Item> */}
+                  <Checkbox
+                    checked={isExperienceRange}
+                    // onChange={(e) => {
+                    //   setIsExperienceRange(e.target.checked);
+                    //   form.setFieldsValue({ experience: null });
+                    // }}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setIsExperienceRange(checked);
+
+                      if (checked) {
+                        // switching to range
+                        form.setFieldsValue({
+                          experience: {
+                            min: undefined,
+                            max: undefined,
+                            type: "year", // ✅ default year
+                          },
+                        });
+                      } else {
+                        // switching to single
+                        form.setFieldsValue({
+                          experience: {
+                            number: undefined,
+                            type: "year", // ✅ default year
+                          },
+                        });
+                      }
+                    }}
+                  >
+                    Use Experience Range
+                  </Checkbox>
+
+                  {!isExperienceRange ? (
+                    <Form.Item label="Experience">
+                      <Space.Compact style={{ width: "100%" }}>
+                        {/* <Form.Item
+                          name={["experience", "number"]}
+                          noStyle
+                          rules={[
+                            {
+                              required: true,
+                              message: "Experience is required",
+                            },
+                          ]}
+                        >
+                          <Input
+                            type="number"
+                            min={0}
+                            placeholder="e.g 3"
+                            style={{ width: "70%" }}
+                          />
+                        </Form.Item> */}
+                        <Form.Item
+                          name={["experience", "number"]}
+                          noStyle
+                          rules={[
+                            {
+                              required: true,
+                              message: "Experience is required",
+                            },
+                            { validator: experienceValidator },
+                          ]}
+                        >
+                          <Input
+                            placeholder="e.g 3 or 5.5"
+                            inputMode="decimal"
+                            maxLength={5}
+                            style={{ width: "70%" }}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          name={["experience", "type"]}
+                          noStyle
+                          rules={[{ required: true, message: "Select unit" }]}
+                        >
+                          <Select
+                            style={{ width: "30%" }}
+                            options={Experienceoptions}
+                          />
+                        </Form.Item>
+                      </Space.Compact>
+                    </Form.Item>
+                  ) : (
+                    <Form.Item label="Experience Range">
+                      <Space.Compact style={{ width: "100%" }}>
+                        <Form.Item
+                          name={["experience", "min"]}
+                          noStyle
+                          // rules={[{ required: true, message: "Min required" }]}
+                          rules={[
+                            { required: true, message: "Min required" },
+                            { validator: experienceValidator },
+                          ]}
+                        >
+                          {/* <Input
+                            type="number"
+                            min={0}
+                            placeholder="Min"
+                            style={{ width: "35%" }}
+                          /> */}
+                          <Input
+                            placeholder="Min"
+                            inputMode="decimal"
+                            maxLength={5}
+                            style={{ width: "35%" }}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          name={["experience", "max"]}
+                          noStyle
+                          rules={[
+                            { required: true, message: "Max required" },
+                            { validator: experienceValidator },
+                            ({ getFieldValue }) => ({
+                              validator(_, value) {
+                                const min = getFieldValue([
+                                  "experience",
+                                  "min",
+                                ]);
+                                if (
+                                  min &&
+                                  value &&
+                                  Number(value) < Number(min)
+                                ) {
+                                  return Promise.reject(
+                                    "Max must be greater than Min",
+                                  );
+                                }
+                                return Promise.resolve();
+                              },
+                            }),
+                          ]}
+                        >
+                          {/* <Input
+                            type="number"
+                            min={0}
+                            placeholder="Max"
+                            style={{ width: "35%" }}
+                          /> */}
+                          <Input
+                            placeholder="Max"
+                            inputMode="decimal"
+                            maxLength={5}
+                            style={{ width: "35%" }}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          name={["experience", "type"]}
+                          noStyle
+                          rules={[{ required: true, message: "Select unit" }]}
+                        >
+                          <Select
+                            style={{ width: "30%" }}
+                            options={Experienceoptions}
+                          />
+                        </Form.Item>
+                      </Space.Compact>
+                    </Form.Item>
+                  )}
 
                   <Form.Item
                     name="experienceLevel"
@@ -1864,7 +2099,7 @@ const RecruiterJobList = () => {
                       name="salary"
                       label="Salary Per Annum"
                       rules={[
-                        { required: true, message: "Salary is required" },
+                        // { required: true, message: "Salary is required" },
                         {
                           validator: (_, value) => {
                             if (
@@ -1917,7 +2152,7 @@ const RecruiterJobList = () => {
                           name={["salary", "min"]}
                           noStyle
                           rules={[
-                            { required: true, message: "Min salary required" },
+                            // { required: true, message: "Min salary required" },
                             {
                               validator: (_, value) => {
                                 if (
@@ -1969,7 +2204,7 @@ const RecruiterJobList = () => {
                           name={["salary", "max"]}
                           noStyle
                           rules={[
-                            { required: true, message: "Max salary required" },
+                            // { required: true, message: "Max salary required" },
                             {
                               validator: (_, value) => {
                                 if (
@@ -2040,20 +2275,6 @@ const RecruiterJobList = () => {
 
               {currentStep === 3 && (
                 <>
-                  {/* <Form.Item
-                    name="companyName"
-                    label="Company Name"
-                    rules={[
-                      { required: true },
-                      {
-                        pattern: /^[A-Za-z0-9 .,()\-&]+$/,
-                        message:
-                          "Only letters, numbers, spaces, and . , & - ( ) are allowed",
-                      },
-                    ]}
-                  >
-                    <Input placeholder="Company Name" />
-                  </Form.Item> */}
                   <Form.Item
                     name="companyName"
                     label="Company Name"

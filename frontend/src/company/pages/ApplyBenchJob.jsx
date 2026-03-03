@@ -186,7 +186,10 @@ const ApplyBenchJob = ({ jobId }) => {
         messageApi.success({
           content:
             message ||
-            `${selectedRowKeys.length} candidate(s) applied successfully`,
+            // `${selectedRowKeys.length} candidate(s) applied successfully`,
+            `${selectedRowKeys.length} candidate${
+              selectedRowKeys.length > 1 ? "s" : ""
+            } applied successfully`,
           duration: 3,
         });
 

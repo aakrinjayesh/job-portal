@@ -108,10 +108,24 @@ const postJobValidator = z.object({
     // "Freelance",
     "Freelancer",
   ]),
-  experience: z.object({
-    number: z.string(),
-    type: z.enum(["year", "month"]),
-  }),
+  // experience: z.object({
+  //   number: z.string(),
+  //   type: z.enum(["year", "month"]),
+  // }),
+  experience: z.union([
+    // Single experience
+    z.object({
+      number: z.string(),
+      type: z.enum(["year", "month"]),
+    }),
+
+    // Range experience
+    z.object({
+      min: z.string(),
+      max: z.string(),
+      type: z.enum(["year", "month"]),
+    }),
+  ]),
   experienceLevel: z
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"])
     .optional(),
@@ -169,10 +183,24 @@ const editJobValidator = z.object({
     // "Freelance",
     "Freelancer",
   ]),
-  experience: z.object({
-    number: z.string(),
-    type: z.enum(["year", "month"]),
-  }),
+  // experience: z.object({
+  //   number: z.string(),
+  //   type: z.enum(["year", "month"]),
+  // }),
+  experience: z.union([
+    // Single experience
+    z.object({
+      number: z.string(),
+      type: z.enum(["year", "month"]),
+    }),
+
+    // Range experience
+    z.object({
+      min: z.string(),
+      max: z.string(),
+      type: z.enum(["year", "month"]),
+    }),
+  ]),
   experienceLevel: z
     .enum(["Internship", "EntryLevel", "Mid", "Senior", "Lead"])
     .optional(),

@@ -1310,7 +1310,10 @@ const vendorApplyCandidate = async (req, res) => {
     ───────────────────────────── */
     res.status(201).json({
       status: "success",
-      message: "Vendor applications processed successfully",
+      // message: "Vendor applications processed successfully",
+      message: `Vendor application${
+        appliedCandidates.length > 1 ? "s" : ""
+      } processed successfully`,
       appliedCount: appliedCandidates.length,
       skippedAlreadyApplied: skippedCandidates.length,
       aiProcessEnabled: aiAllowed,

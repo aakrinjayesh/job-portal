@@ -268,7 +268,7 @@ const PersonalProfile = () => {
             {/* ===== NAME ===== */}
             <Row gutter={24}>
               <Col span={12}>
-                <Form.Item
+                {/* <Form.Item
                   label="First Name"
                   name="firstName"
                   rules={[
@@ -283,11 +283,26 @@ const PersonalProfile = () => {
                   ]}
                 >
                   <Input disabled={!editable} placeholder="Enter first name" />
+                </Form.Item> */}
+                <Form.Item
+                  label="First Name"
+                  name="firstName"
+                  rules={[
+                    { required: true, message: "First name is required" },
+                    {
+                      pattern: /^[^0-9]+$/,
+                      message: "Numbers are not allowed",
+                    },
+                    { min: 2, message: "Minimum 2 characters required" },
+                    { max: 30, message: "Maximum 30 characters allowed" },
+                  ]}
+                >
+                  <Input disabled={!editable} placeholder="Enter first name" />
                 </Form.Item>
               </Col>
 
               <Col span={12}>
-                <Form.Item
+                {/* <Form.Item
                   label="Last Name"
                   name="lastName"
                   rules={[
@@ -299,6 +314,21 @@ const PersonalProfile = () => {
                     },
                     { min: 2 },
                     { max: 30 },
+                  ]}
+                >
+                  <Input disabled={!editable} placeholder="Enter last name" />
+                </Form.Item> */}
+                <Form.Item
+                  label="Last Name"
+                  name="lastName"
+                  rules={[
+                    { required: true, message: "Last name is required" },
+                    {
+                      pattern: /^[^0-9]+$/,
+                      message: "Numbers are not allowed",
+                    },
+                    { min: 2, message: "Minimum 2 characters required" },
+                    { max: 30, message: "Maximum 30 characters allowed" },
                   ]}
                 >
                   <Input disabled={!editable} placeholder="Enter last name" />

@@ -425,8 +425,83 @@ const JobDetails = ({ mode }) => {
 
           <Divider />
 
+          {/* <Text strong>Roles & Responsibilities</Text>
+          
+          <ul style={{ paddingLeft: 20, marginTop: 12 }}>
+            {job.responsibilities
+              ?.split(/\n+/) // split by line breaks
+              .filter((line) => line.trim() !== "")
+              .map((line, index) => (
+                <li key={index} style={{ marginBottom: 8 }}>
+                  {line.replace(/^-/, "").trim()}
+                </li>
+              ))}
+          </ul> */}
           <Text strong>Roles & Responsibilities</Text>
-          <Paragraph>{job.responsibilities}</Paragraph>
+
+          {(() => {
+            const lines = job.responsibilities
+              ?.split(/\n+/)
+              .filter((line) => line.trim() !== "");
+
+            if (!lines || lines.length === 0) return null;
+
+            const firstLine = lines[0].trim();
+
+            const isNumbered = /^\d+\./.test(firstLine);
+            const isDash = /^-/.test(firstLine);
+            const isBullet = /^•/.test(firstLine);
+
+            // NUMBERED LIST
+            if (isNumbered) {
+              return (
+                <ol style={{ paddingLeft: 20, marginTop: 12 }}>
+                  {lines.map((line, index) => (
+                    <li key={index} style={{ marginBottom: 8 }}>
+                      {line.replace(/^\d+\.\s*/, "").trim()}
+                    </li>
+                  ))}
+                </ol>
+              );
+            }
+
+            // DASH LIST
+            if (isDash) {
+              return (
+                <ul style={{ paddingLeft: 20, marginTop: 12 }}>
+                  {lines.map((line, index) => (
+                    <li key={index} style={{ marginBottom: 8 }}>
+                      {line.replace(/^-+\s*/, "").trim()}
+                    </li>
+                  ))}
+                </ul>
+              );
+            }
+
+            // BULLET LIST
+            if (isBullet) {
+              return (
+                <ul style={{ paddingLeft: 20, marginTop: 12 }}>
+                  {lines.map((line, index) => (
+                    <li key={index} style={{ marginBottom: 8 }}>
+                      {line.replace(/^•+\s*/, "").trim()}
+                    </li>
+                  ))}
+                </ul>
+              );
+            }
+
+            // DEFAULT → PARAGRAPH
+            return (
+              <div style={{ marginTop: 12 }}>
+                {lines.map((line, index) => (
+                  <div key={index} style={{ marginBottom: 8 }}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           <Divider />
 

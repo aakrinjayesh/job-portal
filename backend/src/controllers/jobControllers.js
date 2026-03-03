@@ -1201,6 +1201,9 @@ const getJobList = async (req, res) => {
     const allJobs = await prisma.job.findMany({
       where: {
         isDeleted: false,
+        status: "Open", // 🔥 add this
+        // 🚨 THIS LINE IS IMPORTANT
+        ...(role === "company" ? { postedById: { not: userId } } : {}),
       },
       orderBy: { createdAt: "desc" },
       include: {

@@ -64,9 +64,10 @@ const ExperienceCard = ({
         form.setFieldsValue({
           dateRange: [dayjs(exp.startDate), dayjs(exp.endDate)],
           payrollCompanyName: exp.payrollCompanyName,
-          role: exp.role,
+          // role: exp.role,
 
           projects: exp.projects.map((p) => ({
+            role: p.role,
             projectName: p.projectName,
             cloudUsed: p.cloudUsed,
             skillsUsed: p.skillsUsed,
@@ -120,9 +121,10 @@ const ExperienceCard = ({
         startDate: start,
         endDate: end,
         payrollCompanyName: payrollCompanyName || "",
-        role: role || "",
+        // role: role || "",
 
         projects: (projects || []).map((p) => ({
+          role: p.role || "",
           projectName: p.projectName || "",
           cloudUsed: p.cloudUsed || "",
           skillsUsed: p.skillsUsed || [],
@@ -234,9 +236,9 @@ const ExperienceCard = ({
                           <Text strong>Company:</Text>{" "}
                           {item.payrollCompanyName || "-"}
                         </div>
-                        <div>
+                        {/* <div>
                           <Text strong>Role:</Text> {item.role || "-"}
-                        </div>
+                        </div> */}
                       </div>
                     </>
                   }
@@ -253,6 +255,9 @@ const ExperienceCard = ({
                             <div>
                               <Text strong>Project:</Text>{" "}
                               {p.projectName || "-"}
+                            </div>
+                            <div>
+                              <Text strong>Role:</Text> {p.role || "-"}
                             </div>
                             {p.cloudUsed && (
                               <div>
@@ -335,7 +340,7 @@ const ExperienceCard = ({
                     validator: (_, value) => {
                       if (!isCurrent && (!value || value.length !== 2)) {
                         return Promise.reject(
-                          "Please select start and end month"
+                          "Please select start and end month",
                         );
                       }
                       if (isCurrent && (!value || value.length < 1)) {
@@ -449,7 +454,7 @@ const ExperienceCard = ({
                       </Col>
 
                       <Col span={12}>
-                        <Form.Item
+                        {/* <Form.Item
                           name="role"
                           label="Role"
                           rules={[
@@ -457,6 +462,25 @@ const ExperienceCard = ({
                             {
                               pattern: /^[A-Za-z0-9 ]+$/,
                               message: "Only letters, numbers, are allowed!",
+                            },
+                          ]}
+                        >
+                          <ReusableSelect
+                            placeholder="Select Role"
+                            fetchFunction={GetRole}
+                            addFunction={PostRole}
+                            single={true}
+                          />
+                        </Form.Item> */}
+                        <Form.Item
+                          {...restField}
+                          name={[name, "role"]} // ✅ THIS IS THE FIX
+                          label="Role"
+                          rules={[
+                            { required: true, message: "Enter role" },
+                            {
+                              pattern: /^[A-Za-z0-9 ]+$/,
+                              message: "Only letters and numbers are allowed!",
                             },
                           ]}
                         >
@@ -486,28 +510,29 @@ const ExperienceCard = ({
                       </Col>
 
                       <Col span={12}>
-                       <Form.Item
-  {...restField}
-  name={[name, "skillsUsed"]}
-  label="Skills Used"
-  rules={[
-    {
-      validator: (_, value) => {
-        if (!value || value.length === 0) {
-          return Promise.reject("Add at least one skill");
-        }
-        return Promise.resolve();
-      },
-    },
-  ]}
->
-               
-  <ReusableSelect
-    placeholder="Select or add Skills"
-    fetchFunction={GetSkills}
-    addFunction={PostSkills}
-    single={false}
-  />
+                        <Form.Item
+                          {...restField}
+                          name={[name, "skillsUsed"]}
+                          label="Skills Used"
+                          rules={[
+                            {
+                              validator: (_, value) => {
+                                if (!value || value.length === 0) {
+                                  return Promise.reject(
+                                    "Add at least one skill",
+                                  );
+                                }
+                                return Promise.resolve();
+                              },
+                            },
+                          ]}
+                        >
+                          <ReusableSelect
+                            placeholder="Select or add Skills"
+                            fetchFunction={GetSkills}
+                            addFunction={PostSkills}
+                            single={false}
+                          />
                         </Form.Item>
                       </Col>
                     </Row>
