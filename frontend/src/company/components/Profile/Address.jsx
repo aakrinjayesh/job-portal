@@ -48,7 +48,7 @@ const Address = ({ form, editable }) => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item
+          {/* <Form.Item
             label="Building Number"
             name="doorNumber"
             rules={[
@@ -65,6 +65,9 @@ const Address = ({ form, editable }) => {
               },
             ]}
           >
+            <Input disabled={!editable} />
+          </Form.Item> */}
+          <Form.Item label="Building Number" name="doorNumber">
             <Input disabled={!editable} />
           </Form.Item>
         </Col>

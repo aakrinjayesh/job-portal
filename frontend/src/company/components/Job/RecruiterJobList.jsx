@@ -45,7 +45,7 @@ import {
   FileTextOutlined,
   DeleteOutlined,
   OpenAIOutlined,
-  DollarOutlined,
+  // DollarOutlined,
   ClockCircleOutlined,
   UserOutlined,
   LineChartOutlined,
@@ -1249,12 +1249,17 @@ const RecruiterJobList = () => {
                         <EnvironmentOutlined /> {job.jobType} ({job.location})
                       </span>
                       <Divider type="vertical" />
-                      <span>
-                        {/* <DollarOutlined /> {job.salary} PA */}
+                      {/* <span>
+                        
                         <DollarOutlined />
                         {job.salary === "Not Disclosed"
                           ? "Not Disclosed"
                           : `${job.salary} PA`}
+                      </span> */}
+                      <span>
+                        {job.salary === "Not Disclosed"
+                          ? "Not Disclosed"
+                          : `₹ ${Number(job.salary).toLocaleString("en-IN")} LPA`}
                       </span>
                       <Divider type="vertical" />
                       <span>
@@ -1618,12 +1623,12 @@ const RecruiterJobList = () => {
                   <Form.Item
                     name="responsibilities"
                     label="Roles & Responsibilities"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Roles & Responsibilities are required",
-                      }, // optional
-                    ]}
+                    // rules={[
+                    //   {
+                    //     required: true,
+                    //     message: "Roles & Responsibilities are required",
+                    //   }, // optional
+                    // ]}
                   >
                     <TextArea
                       rows={3}

@@ -182,16 +182,52 @@ const ApplyBenchJob = ({ jobId }) => {
       }
 
       // 🟢 2️⃣ Successful Apply
+      // if (status === "success") {
+      //   messageApi.success({
+      //     content:
+      //       message ||
+      //       // `${selectedRowKeys.length} candidate(s) applied successfully`,
+      //       `${selectedRowKeys.length} candidate${
+      //         selectedRowKeys.length > 1 ? "s" : ""
+      //       } applied successfully`,
+      //     duration: 3,
+      //   });
+
+      //   setSelectedRowKeys([]);
+      //   return;
+      // }
+      // 🟢 2️⃣ Successful Apply
       if (status === "success") {
-        messageApi.success({
-          content:
-            message ||
-            // `${selectedRowKeys.length} candidate(s) applied successfully`,
-            `${selectedRowKeys.length} candidate${
-              selectedRowKeys.length > 1 ? "s" : ""
-            } applied successfully`,
-          duration: 3,
-        });
+        const applied = res?.appliedCandidates || [];
+        const skipped = res?.skippedCandidates || [];
+
+        // ❌ ALL were already applied — nothing new
+        if (applied.length === 0 && skipped.length > 0) {
+          const names = skipped.map((c) => c.candidateName).join(", ");
+          messageApi.error({
+            content: `Already applied for this job: ${names}`,
+            duration: 5,
+          });
+          setSelectedRowKeys([]);
+          return;
+        }
+
+        // ✅ New candidates applied successfully
+        if (applied.length > 0) {
+          messageApi.success({
+            content: `${applied.length} candidate${applied.length > 1 ? "s" : ""} applied successfully`,
+            duration: 3,
+          });
+        }
+
+        // ⚠️ Some were duplicates (mixed case)
+        if (skipped.length > 0) {
+          const names = skipped.map((c) => c.candidateName).join(", ");
+          messageApi.warning({
+            content: `Already applied — skipped: ${names}`,
+            duration: 5,
+          });
+        }
 
         setSelectedRowKeys([]);
         return;

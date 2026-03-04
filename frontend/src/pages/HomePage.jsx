@@ -20,7 +20,7 @@ import {
   BankOutlined,
   UserOutlined,
   FireOutlined,
-  ApartmentOutlined,
+  // ApartmentOutlined,
   SolutionOutlined,
   TeamOutlined,
   SafetyCertificateOutlined,
@@ -1339,7 +1339,7 @@ const MENU_ITEMS = [
   {
     key: "findcand",
     icon: <TeamOutlined />,
-    label: "Find Candidate",
+    label: "Find Bench Candidate",
     title: "Find Candidate",
   },
   {
@@ -1682,9 +1682,18 @@ const HomePage = () => {
         {/* ── NAV (matches your Header style exactly) ── */}
         <nav className={`fh-nav${scrolled ? " scrolled" : ""}`}>
           <div className="fh-logo" onClick={() => navigate("/")}>
-            <div className="fh-logo-icon">
-              <ApartmentOutlined />
+            {/* <div className="fh-logo-icon"><ApartmentOutlined /></div> */}
+            <div
+              className="fh-logo-icon"
+              style={{ background: "transparent", padding: 0 }}
+            >
+              <img
+                src="/vite.svg"
+                alt="ForceHead"
+                style={{ width: 40, height: 40, borderRadius: 10 }}
+              />
             </div>
+
             <div>
               <div className="fh-logo-text">ForceHead</div>
               <div className="fh-logo-sub">Salesforce Vendor Marketplace</div>
@@ -2395,11 +2404,27 @@ const HomePage = () => {
         {/* ── FOOTER ── */}
         <footer className="fh-footer">
           <Space align="center">
-            <div
+            {/* <div
               className="fh-logo-icon"
               style={{ width: 32, height: 32, borderRadius: 8, fontSize: 14 }}
             >
               <ApartmentOutlined />
+            </div> */}
+            <div
+              className="fh-logo-icon"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: "transparent",
+                padding: 0,
+              }}
+            >
+              <img
+                src="/vite.svg"
+                alt="ForceHead"
+                style={{ width: 32, height: 32, borderRadius: 8 }}
+              />
             </div>
             <Text style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
               ForceHead

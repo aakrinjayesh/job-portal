@@ -372,7 +372,11 @@ const JobDetails = ({ mode }) => {
             <div>
               <Text strong>Experience Required</Text>
               <div>
-                {job.experience?.number} {job.experience?.type}
+                {job.experience?.min && job.experience?.max
+                  ? `${job.experience.min} - ${job.experience.max} ${job.experience.type}s`
+                  : job.experience?.number
+                    ? `${job.experience.number} ${job.experience.type}s`
+                    : "Not specified"}
               </div>
             </div>
 
@@ -418,6 +422,24 @@ const JobDetails = ({ mode }) => {
             ))}
           </div>
 
+          <Divider />
+
+          {/* CERTIFICATES */}
+          <Divider />
+
+          {/* CERTIFICATIONS */}
+          <Text strong>Certifications:</Text>
+          <div style={{ marginTop: 8 }}>
+            {job.certifications && job.certifications.length > 0 ? (
+              job.certifications.map((cert, i) => (
+                <Tag key={i} color="gold">
+                  {cert}
+                </Tag>
+              ))
+            ) : (
+              <Text type="secondary">No certifications required</Text>
+            )}
+          </div>
           <Divider />
 
           <Text strong>Description</Text>

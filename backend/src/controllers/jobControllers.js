@@ -375,9 +375,7 @@ const userApplyJob = async (req, res) => {
                   <p style="margin: 10px 0;"><strong>Candidate Name:</strong> ${
                     user.name
                   }</p>
-                  <p style="margin: 10px 0;"><strong>Candidate Email:</strong> ${
-                    user.email
-                  }</p>
+                 
                   <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
                     "en-US",
                     { year: "numeric", month: "long", day: "numeric" },
@@ -418,6 +416,22 @@ const userApplyJob = async (req, res) => {
                 `
                     : ""
                 }
+                 <div style="text-align: center; margin: 30px 0;">
+  <a href="${process.env.FRONTEND_URL}/company/candidate/${user.id}"
+     style="
+        display: inline-block;
+        padding: 14px 28px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 8px;
+        font-size: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+     ">
+     👁️ View Full Application Details
+  </a>
+</div>
 
                 <p style="color: #666; font-size: 14px; margin-top: 30px;">
                   📎 Please find the detailed resume attached to this email.
@@ -452,43 +466,162 @@ const userApplyJob = async (req, res) => {
       await sendEmail({
         to: user.email,
         subject: `Application Submitted - ${job.role} at ${job.companyName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #2196F3 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-              <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
-            </div>
-            
-            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-              <p style="color: #333; font-size: 16px;">Hi ${user.name},</p>
-              
-              <p style="color: #666;">Your application has been successfully submitted for the following position:</p>
-              
-              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 10px 0;"><strong>Position:</strong> ${
-                  job.role
-                }</p>
-                <p style="margin: 10px 0;"><strong>Company:</strong> ${
-                  job.companyName
-                }</p>
-                <p style="margin: 10px 0;"><strong>Location:</strong> ${
-                  job.location || "Not specified"
-                }</p>
-                <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
-                  "en-US",
-                  { year: "numeric", month: "long", day: "numeric" },
-                )}</p>
-              </div>
+        // html: `
+        //   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        //     <div style="background: linear-gradient(135deg, #2196F3 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
+        //       <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
+        //     </div>
 
-              <p style="color: #666;">The employer will review your application and get back to you if your profile matches their requirements.</p>
-              
-              <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
-              
-              <p style="color: #999; font-size: 14px; margin-top: 30px;">
-                <em>This is an automated confirmation from the Job Portal.</em>
-              </p>
-            </div>
-          </div>
-        `,
+        //     <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+        //       <p style="color: #333; font-size: 16px;">Hi ${user.name},</p>
+
+        //       <p style="color: #666;">Your application has been successfully submitted for the following position:</p>
+
+        //       <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        //         <p style="margin: 10px 0;"><strong>Position:</strong> ${
+        //           job.role
+        //         }</p>
+        //         <p style="margin: 10px 0;"><strong>Company:</strong> ${
+        //           job.companyName
+        //         }</p>
+        //         <p style="margin: 10px 0;"><strong>Location:</strong> ${
+        //           job.location || "Not specified"
+        //         }</p>
+        //         <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
+        //           "en-US",
+        //           { year: "numeric", month: "long", day: "numeric" },
+        //         )}</p>
+        //       </div>
+
+        //       <p style="color: #666;">The employer will review your application and get back to you if your profile matches their requirements.</p>
+
+        //       <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
+
+        //       <p style="color: #999; font-size: 14px; margin-top: 30px;">
+        //         <em>This is an automated confirmation from the Job Portal.</em>
+        //       </p>
+        //     </div>
+        //   </div>
+        // `,
+        html: `
+  <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, #2196F3 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
+      <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
+    </div>
+    
+    <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+      <p style="color: #333; font-size: 16px;">Hi ${user.name},</p>
+      
+      <p style="color: #666;">
+        Your application has been successfully submitted for the following position:
+      </p>
+      
+      <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Position:</strong> ${job.role}</p>
+        <p><strong>Company:</strong> ${job.companyName}</p>
+        <p><strong>Location:</strong> ${job.location || "Not specified"}</p>
+        <p><strong>Employment Type:</strong> ${job.employmentType || "N/A"}</p>
+        <p><strong>Experience Required:</strong> ${job.experience || "N/A"}</p>
+        <p><strong>Experience Level:</strong> ${job.experienceLevel || "N/A"}</p>
+        <p><strong>Salary:</strong> ${
+          job.salary ? `₹${job.salary}` : "Not disclosed"
+        }</p>
+        <p><strong>Job Type:</strong> ${job.jobType || "N/A"}</p>
+        <p><strong>Application Deadline:</strong> ${
+          job.applicationDeadline
+            ? new Date(job.applicationDeadline).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "Not specified"
+        }</p>
+        <p><strong>Application Date:</strong> ${new Date().toLocaleDateString(
+          "en-US",
+          { year: "numeric", month: "long", day: "numeric" },
+        )}</p>
+      </div>
+
+      ${
+        job.skills && job.skills.length
+          ? `
+      <div style="margin-bottom: 20px;">
+        <h3 style="color:#2196F3; margin-bottom:5px;">Required Skills</h3>
+        <p style="color:#555;">${job.skills.join(", ")}</p>
+      </div>
+      `
+          : ""
+      }
+
+      ${
+        job.clouds && job.clouds.length
+          ? `
+      <div style="margin-bottom: 20px;">
+        <h3 style="color:#2196F3; margin-bottom:5px;">Required Clouds</h3>
+        <p style="color:#555;">${job.clouds.join(", ")}</p>
+      </div>
+      `
+          : ""
+      }
+
+      ${
+        job.responsibilities && job.responsibilities.length
+          ? `
+      <div style="margin-bottom: 20px;">
+        <h3 style="color:#2196F3; margin-bottom:5px;">Key Responsibilities</h3>
+        <ul style="color:#555; padding-left:18px;">
+          ${job.responsibilities
+            .map((r) => `<li style="margin-bottom:6px;">${r}</li>`)
+            .join("")}
+        </ul>
+      </div>
+      `
+          : ""
+      }
+
+      ${
+        job.qualifications && job.qualifications.length
+          ? `
+      <div style="margin-bottom: 20px;">
+        <h3 style="color:#2196F3; margin-bottom:5px;">Qualifications</h3>
+        <ul style="color:#555; padding-left:18px;">
+          ${job.qualifications
+            .map((q) => `<li style="margin-bottom:6px;">${q}</li>`)
+            .join("")}
+        </ul>
+      </div>
+      `
+          : ""
+      }
+
+      <div style="text-align:center; margin: 30px 0;">
+        <a href="${process.env.FRONTEND_URL}/job-details/${job.id}"
+           style="
+              display:inline-block;
+              padding:12px 26px;
+              background:#2196F3;
+              color:#fff;
+              text-decoration:none;
+              font-weight:bold;
+              border-radius:8px;
+              font-size:14px;
+           ">
+           🔎 View Job Details
+        </a>
+      </div>
+
+      <p style="color: #666;">
+        The employer will review your application and contact you if your profile matches their requirements.
+      </p>
+      
+      <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
+      
+      <p style="color: #999; font-size: 14px; margin-top: 30px;">
+        <em>This is an automated confirmation from the Job Portal.</em>
+      </p>
+    </div>
+  </div>
+`,
       });
     } catch (emailError) {
       logger.error(

@@ -615,15 +615,15 @@ const CandidateDetails = () => {
 
                         {/* ROW 3 */}
                         <div style={{ display: "flex", gap: 28 }}>
-                          {/* <InfoItem
+                          <InfoItem
                             label="Expected CTC"
                             value={
                               profile.expectedCTC
                                 ? `${profile.expectedCTC} LPA`
                                 : "-"
                             }
-                          /> */}
-                          {!profile.isVendor && (
+                          />
+                          {/* {!profile.isVendor && (
                             <InfoItem
                               label="Expected CTC"
                               value={
@@ -632,7 +632,7 @@ const CandidateDetails = () => {
                                   : "-"
                               }
                             />
-                          )}
+                          )} */}
                           <InfoItem
                             label="Rate Card"
                             value={
