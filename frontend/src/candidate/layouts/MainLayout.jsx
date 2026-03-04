@@ -17,6 +17,7 @@ import {
   SettingOutlined,
   LogoutOutlined,
   ArrowLeftOutlined,
+  ContactsOutlined,
   BellOutlined,
   // DownOutlined,
   UserOutlined,
@@ -84,6 +85,7 @@ const MainLayout = ({ children }) => {
     chat: ["/candidate/chat"],
     settings: ["/candidate/settings"],
     profile: ["/candidate/profile"],
+    contact: ["/contact"]
   };
 
   /* 🎯 Active menu */
@@ -114,6 +116,7 @@ const MainLayout = ({ children }) => {
       "chat",
       "settings",
       "profile",
+      "contactsupport"
     ];
 
     const token = localStorage.getItem("token");
@@ -134,6 +137,11 @@ const MainLayout = ({ children }) => {
       return;
     }
 
+     if (key === "contact") {
+    window.open("/contact", "_blank");
+    return;
+  }
+
     const route = menuRoutes[key];
     if (route && route.length) {
       navigate(route[0]); // always navigate to first route
@@ -148,6 +156,7 @@ const MainLayout = ({ children }) => {
     chat: "Chats",
     settings: "Settings",
     profile: "Profile",
+    contactsupport: "Contact & Support"
   };
 
   const pageTitle = pageTitleMap[selectedKey] || "Find Jobs";
@@ -241,6 +250,11 @@ const MainLayout = ({ children }) => {
             items={[
               // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
               { key: "profile", icon: <UserOutlined />, label: "Profile" },
+               {
+        key: "contact",
+        icon: <ContactsOutlined />,
+        label: "Contact & Support",
+      },
               { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
             ]}
           />

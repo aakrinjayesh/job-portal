@@ -505,3 +505,18 @@ export async function CheckUserExist(payload) {
     throw error;
   }
 }
+
+
+export async function GetContactSupport(payload) {
+  try {
+      const response = await axiosInstance.post(
+        `/support/create`,
+        payload,
+        { headers: { "Content-Type": "application/json" } },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error in GetContactSupport:", error);
+      throw error;
+    }
+}

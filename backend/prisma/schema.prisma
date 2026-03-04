@@ -582,6 +582,17 @@ model Activity {
   @@index([category])
 }
 
+model SupportMessage {
+  id          String   @id @default(uuid())
+  fullName    String
+  email       String
+  phoneNumber String
+  role        String?
+  subject     String
+  message     String
+  createdAt   DateTime @default(now())
+}
+
 model ActivityNote {
   id String @id @default(uuid())
 

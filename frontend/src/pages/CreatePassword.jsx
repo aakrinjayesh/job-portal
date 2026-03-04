@@ -315,7 +315,6 @@ const styles = {
     background: "#fff",
     borderBottom: "1px solid #eee",
   },
-  logo: { fontWeight: 600, fontSize: 18 },
   menu: { display: "flex", gap: 24, color: "#555" },
 
   container: {

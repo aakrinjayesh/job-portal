@@ -16,6 +16,7 @@ import {
   Switch,
   Collapse,
   Avatar,
+  Modal
 } from "antd";
 
 import {
@@ -85,6 +86,7 @@ const UpdateUserProfile = ({
   console.log("role", role);
 
   const isEditMode = Boolean(editRecord && editRecord.id);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
 
   const componentRef = useRef();
   // useEffect(() => {
@@ -862,14 +864,14 @@ const UpdateUserProfile = ({
               </Button>
 
               <Button
-                size="large"
-                style={{ marginLeft: 12 }}
-                type={isActive ? "primary" : "default"}
-                danger={!isActive}
-                onClick={() => setIsActive((prev) => !prev)}
-              >
-                {isActive ? "Active" : "Inactive"}
-              </Button>
+      size="large"
+      style={{ marginLeft: 12 }}
+      type={isActive ? "primary" : "default"}
+      danger={!isActive}
+      onClick={() => setStatusModalVisible(true)}  // ← open modal instead
+    >
+      {isActive ? "Active" : "Inactive"}
+    </Button>
             </>
           )}
 
@@ -1279,6 +1281,99 @@ const UpdateUserProfile = ({
                               />
                             </Form.Item>
                           </Col>
+                          <Modal
+  open={statusModalVisible}
+  onCancel={() => setStatusModalVisible(false)}
+  footer={null}
+  centered
+  width={420}
+>
+  <div style={{ textAlign: "center", padding: "12px 0 8px" }}>
+
+    {/* Icon */}
+    {/* <div style={{
+      width: 64, height: 64,
+      borderRadius: "50%",
+      background: isActive ? "#fff7e6" : "#f6ffed",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      margin: "0 auto 16px",
+      fontSize: 28,
+      border: isActive ? "2px solid #ffa940" : "2px solid #52c41a"
+    }}>
+      {isActive ? "⚠️" : "✅"}
+    </div> */}
+
+    {/* Title */}
+    <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>
+      {isActive ? "Set yourself as Inactive?" : "Set yourself as Active?"}
+    </div>
+
+    {/* Description */}
+    <div style={{
+      fontSize: 14,
+      color: "#64748b",
+      lineHeight: 1.7,
+      background: isActive ? "#fff7e6" : "#f6ffed",
+      border: isActive ? "1px solid #ffd591" : "1px solid #b7eb8f",
+      borderRadius: 10,
+      padding: "12px 16px",
+      marginBottom: 24,
+      textAlign: "left"
+    }}>
+      {isActive ? (
+        <>
+          <strong style={{ color: "#d46b08" }}>Warning:</strong> If you set your status to{" "}
+          <strong>Inactive</strong>, you will:
+          <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+            <li>No longer appear in recruiter searches</li>
+            <li>Not receive new job recommendations</li>
+            <li>Need to manually reactivate your profile</li>
+          </ul>
+        </>
+      ) : (
+        <>
+          <strong style={{ color: "#389e0d" }}>✅ Good news:</strong> Setting yourself as{" "}
+          <strong>Active</strong> means:
+          <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+            <li>Recruiters can discover your profile</li>
+            <li>You'll receive job recommendations</li>
+            <li>You can apply to open positions</li>
+          </ul>
+        </>
+      )}
+    </div>
+
+    {/* Buttons */}
+    <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+      <Button
+        size="large"
+        style={{ minWidth: 120 }}
+        onClick={() => setStatusModalVisible(false)}
+      >
+        Cancel
+      </Button>
+      <Button
+        size="large"
+        type={isActive ? "primary" : "primary"}
+        danger={isActive}
+        style={{ minWidth: 120 }}
+        onClick={() => {
+          setIsActive((prev) => !prev);
+          setStatusModalVisible(false);
+          message.success(
+            isActive
+              ? "Your profile is now Inactive"
+              : "Your profile is now Active"
+          );
+        }}
+      >
+        {isActive ? "Yes, Set Inactive" : "Yes, Set Active"}
+      </Button>
+    </div>
+
+  </div>
+</Modal>
+                          
                         </>
                       ) : (
                         <Col xs={24} sm={12}>

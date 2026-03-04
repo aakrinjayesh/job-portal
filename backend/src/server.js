@@ -26,6 +26,7 @@ import BillingRoute from "./Routes/billingRoutes.js";
 import { featureLimitMiddleware } from "./Middleware/featureLimitMiddleware.js";
 import UsageRoute from "./Routes/usageRoutes.js";
 import seoRoute from "./Routes/seoRoutes.js";
+import SupportRoutes from "./Routes/supportRoutes.js";
 
 dotenv.config();
 
@@ -51,9 +52,11 @@ app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(userRouter);
 app.use(CommonRouters);
+app.use(SupportRoutes);
 app.use("/verification", VerificationRoutes);
 app.use(UsageRoute);
 app.use(JobRouters);
+// app.use("/api/support", SupportRoutes);
 app.use("/vendor", VendorRoutes);
 app.use(authenticateToken, featureLimitMiddleware, CVRouters);
 app.use("/api/todos", todoRoutes);

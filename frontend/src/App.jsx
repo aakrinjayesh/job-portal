@@ -20,6 +20,7 @@ import SavedJobs from "./candidate/pages/SavedJobs";
 import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
 import CreatePassword from "./pages/CreatePassword";
+import ContactSupport from "./pages/ContactSupport";
 import ChatPage from "./chat/pages/chat";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import CompanySavedJobs from "./company/pages/CompanySavedJobs";
@@ -42,6 +43,7 @@ import { useState } from "react";
 import HomePage from "./pages/HomePage";
 import VendorMarketplacePage from "./pages/VendorMarketplacePage";
 import SalesforceBenchPage from "./pages/SalesforceBenchPage";
+// import AppliedCandidatesByJob from "./company/pages/AppliedCandidatesByJob";
 
 function App() {
   const location = useLocation();
@@ -98,6 +100,7 @@ function App() {
         <Route path="/createpassword" element={<CreatePassword />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+         <Route path="/contact" element={<ContactSupport />} />
         <Route
           path="/salesforce-vendor-marketplace"
           element={<VendorMarketplacePage />}
@@ -210,6 +213,15 @@ function App() {
             </CompanyLayout>
           }
         />
+
+        {/* <Route
+          path="/company/appliedcandidatesbyjob"
+          element={
+            <CompanyLayout>
+              <AppliedCandidatesByJob />
+            </CompanyLayout>
+          }
+        /> */}
 
         <Route
           path="/company/my-activity"
