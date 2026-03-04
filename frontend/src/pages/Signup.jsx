@@ -35,7 +35,6 @@ const Signup = () => {
   const [generateLoading, setGenerateLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [isFormReady, setIsFormReady] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
 
   /* ================= TIMER ================= */
@@ -86,48 +85,6 @@ const Signup = () => {
       setSubmitLoading(false);
     }
   };
-
-  /* ================= SEND / RESEND OTP ================= */
-  // const handleGenerateOtp = async () => {
-  //   const email = form.getFieldValue("email");
-  //   const fname = form.getFieldValue("fname");
-  //   const lname = form.getFieldValue("lname");
-
-  //   if (!fname || !lname || !email) {
-  //     messageApi.warning("Please fill all required fields");
-  //     return;
-  //   }
-
-  //   try {
-  //     setGenerateLoading(true);
-
-  //     const check = await CheckUserExist({ email });
-  //     if (check.status === "success") {
-  //       messageApi.warning("User already registered. Please login.");
-  //       return;
-  //     }
-
-  //     const res = await GenerateOtp({
-  //       email,
-  //       role,
-  //       name: `${fname} ${lname}`,
-  //     });
-
-  //     if (res.status === "success") {
-  //       messageApi.success("OTP sent to your email");
-  //        setOtpSent(true);
-  //       setTimer(60);
-  //     } else {
-  //       messageApi.error(res.message || "Failed to send OTP");
-  //     }
-  //   } catch (e) {
-  //     messageApi.error(
-  //       "Failed to send OTP: " + (e.response?.data?.message || e.message)
-  //     );
-  //   } finally {
-  //     setGenerateLoading(false);
-  //   }
-  // };
 
   const handleGenerateOtp = async () => {
     const email = form.getFieldValue("email");
@@ -220,17 +177,7 @@ const Signup = () => {
               {role === "company" ? "Company Signup" : "Candidate Signup"}
             </Title>
 
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              onValuesChange={(changedValues) => {
-                const f = form.getFieldValue("fname");
-                const l = form.getFieldValue("lname");
-                const e = form.getFieldValue("email");
-                setIsFormReady(!!(f && l && e));
-              }}
-            >
+            <Form form={form} layout="vertical" onFinish={onFinish}>
               <Form.Item
                 name="fname"
                 dependencies={["lname", "email"]}
@@ -370,16 +317,38 @@ const Signup = () => {
 
               {/* SEND OTP (only first time) */}
               {!otpSent && (
-                <Button
-                  type="primary"
-                  block
-                  size="large"
-                  loading={generateLoading}
-                  onClick={handleGenerateOtp}
-                  disabled={!isFormReady}
-                >
-                  Send OTP
-                </Button>
+                <Form.Item shouldUpdate>
+                  {() => {
+                    const hasErrors = form
+                      .getFieldsError(["fname", "lname", "email"])
+                      .some(({ errors }) => errors.length);
+
+                    const values = form.getFieldsValue([
+                      "fname",
+                      "lname",
+                      "email",
+                      "agree",
+                    ]);
+                    const isFilled =
+                      values.fname &&
+                      values.lname &&
+                      values.email &&
+                      values.agree;
+
+                    return (
+                      <Button
+                        type="primary"
+                        block
+                        size="large"
+                        loading={generateLoading}
+                        onClick={handleGenerateOtp}
+                        disabled={!isFilled || hasErrors}
+                      >
+                        Send OTP
+                      </Button>
+                    );
+                  }}
+                </Form.Item>
               )}
 
               {/* TIMER TEXT */}

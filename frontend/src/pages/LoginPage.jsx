@@ -33,7 +33,6 @@ import AppFooter from "../components/layout/AppFooter";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
-  
 
 /* ================= EMAIL HELPERS (module scope) ================= */
 const personalDomains = [
@@ -110,7 +109,7 @@ const LoginForm = ({ role, onFinish, submitting, form }) => {
 
 /* ================= MAIN LOGIN PAGE ================= */
 const LoginPage = () => {
-  const [activeTab, setActiveTab] = useState("company");
+  const [activeTab, setActiveTab] = useState("candidate");
   const [messageApi, contextHolder] = message.useMessage();
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -202,7 +201,6 @@ const LoginPage = () => {
       setSubmitting(false);
     }
   };
-  
 
   return (
     <>
@@ -211,118 +209,110 @@ const LoginPage = () => {
 
       <Row style={{ minHeight: "100vh" }}>
         {/* LEFT – LOGIN */}
-        
-      <Col
-  xs={24}
-  md={12}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    background: "#fff",
-  }}
->
-  {/* WRAPPER */}
-  <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
 
-    {/* TITLE OUTSIDE LOGIN CARD */}
-    <div style={styles.logoWrapper}>
-           <img
-             src={logo}
-             alt="ForceHead"
-             style={styles.logo}
-           />
-         </div>
+        <Col
+          xs={24}
+          md={12}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            background: "#fff",
+          }}
+        >
+          {/* WRAPPER */}
+          <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
+            {/* TITLE OUTSIDE LOGIN CARD */}
+            <div style={styles.logoWrapper}>
+              <img src={logo} alt="ForceHead" style={styles.logo} />
+            </div>
 
-    {/* LOGIN CARD */}
-    <div style={styles.loginCard}>
-          
-         
-          
-            <Tabs
-              centered
-              activeKey={activeTab}
-              onChange={setActiveTab}
-              className="auth-tabs"
-              items={[
-                {
-                  key: "candidate",
-                  label: "Candidate",
-                  children: (
-                    <LoginForm
-                      form={candidateForm}
-                      role="candidate"
-                      onFinish={onFinish}
-                      submitting={submitting}
-                    />
-                  ),
-                },
-                {
-                  key: "company",
-                  label: "Company",
-                  children: (
-                    <LoginForm
-                      role="company"
-                      form={companyForm}
-                      onFinish={onFinish}
-                      submitting={submitting}
-                    />
-                  ),
-                },
-              ]}
-            />
+            {/* LOGIN CARD */}
+            <div style={styles.loginCard}>
+              <Tabs
+                centered
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                className="auth-tabs"
+                items={[
+                  {
+                    key: "candidate",
+                    label: "Candidate",
+                    children: (
+                      <LoginForm
+                        form={candidateForm}
+                        role="candidate"
+                        onFinish={onFinish}
+                        submitting={submitting}
+                      />
+                    ),
+                  },
+                  {
+                    key: "company",
+                    label: "Company",
+                    children: (
+                      <LoginForm
+                        role="company"
+                        form={companyForm}
+                        onFinish={onFinish}
+                        submitting={submitting}
+                      />
+                    ),
+                  },
+                ]}
+              />
 
-            {/* LINKS ROW */}
-<div
-  style={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 14,
-    fontSize: 14,
-    // flexWrap: "nowrap",   // ✅ FORCE ONE LINE
-    whiteSpace: "nowrap",
+              {/* LINKS ROW */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 14,
+                  fontSize: 14,
+                  // flexWrap: "nowrap",   // ✅ FORCE ONE LINE
+                  whiteSpace: "nowrap",
 
-    // ✅ responsive behavior
-    flexWrap: screens.xs ? "wrap" : "nowrap",
-    textAlign: "center",
-  }}
->
-  <Button
-    type="link"
-    style={{ padding: 0, height: "auto", fontSize: 14 }}
-    onClick={() =>
-      navigate("/forgotpassword", { state: { role: activeTab } })
-    }
-  >
-    Forgot password?
-  </Button>
+                  // ✅ responsive behavior
+                  flexWrap: screens.xs ? "wrap" : "nowrap",
+                  textAlign: "center",
+                }}
+              >
+                <Button
+                  type="link"
+                  style={{ padding: 0, height: "auto", fontSize: 14 }}
+                  onClick={() =>
+                    navigate("/forgotpassword", { state: { role: activeTab } })
+                  }
+                >
+                  Forgot password?
+                </Button>
 
-  <Text>Don't have a registered email?</Text>
+                <Text>Don't have a registered email?</Text>
 
-  <Button
-    type="link"
-    style={{ padding: 0, height: "auto", fontSize: 14 }}
-    onClick={() =>
-      navigate("/signup", {
-        state: { role: activeTab, redirect: redirectPath },
-      })
-    }
-  >
-    Create account
-  </Button>
-</div>
-            {/* GOOGLE AUTH – ONLY FOR CANDIDATE */}
-            {activeTab === "candidate" && (
-              <>
-                <Divider style={{ margin: "16px 0" }}>OR</Divider>
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <GoogleAuthButton userType="candidate" />
-                </div>
-              </>
-            )}
+                <Button
+                  type="link"
+                  style={{ padding: 0, height: "auto", fontSize: 14 }}
+                  onClick={() =>
+                    navigate("/signup", {
+                      state: { role: activeTab, redirect: redirectPath },
+                    })
+                  }
+                >
+                  Create account
+                </Button>
+              </div>
+              {/* GOOGLE AUTH – ONLY FOR CANDIDATE */}
+              {activeTab === "candidate" && (
+                <>
+                  <Divider style={{ margin: "16px 0" }}>OR</Divider>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <GoogleAuthButton userType="candidate" />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </Col>
@@ -361,7 +351,7 @@ const CompanyHero = () => (
           marginBottom: 12,
         }}
       >
-       The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
+        The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
       </Title>
 
       <Text
@@ -413,8 +403,7 @@ const CandidateHero = () => (
           marginBottom: 12,
         }}
       >
-       Find the right Salesforce job -
-        built for your career.
+        Find the right Salesforce job - built for your career.
       </Title>
 
       <Text
@@ -609,20 +598,19 @@ const styles = {
     background: "#fff",
   },
 
-   logoWrapper: {
-      display: "flex",
-  justifyContent: "center",   
-  alignItems: "center",       
-  marginBottom: 24,           
-  width: "100%",
-    },
-  
-    logo: {
-       width: 188,     // 🔹 increase width here
-      height: "135px",
-      cursor: "pointer",
-    },
-};
+  logoWrapper: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+    width: "100%",
+  },
 
+  logo: {
+    width: 188, // 🔹 increase width here
+    height: "135px",
+    cursor: "pointer",
+  },
+};
 
 export default LoginPage;
