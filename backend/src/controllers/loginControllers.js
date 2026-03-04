@@ -18,7 +18,8 @@ console.log("external_url", external_backend_url);
  */
 const userOtpGenerate = async (req, res) => {
   try {
-    const { email, role, name } = req.body;
+    const { email: em, role, name } = req.body;
+    const email = em.toLowerCase().trim();
     let user = await prisma.users.findFirst({ where: { email } });
 
     // If user not found, create it
@@ -132,8 +133,8 @@ const getOtpEmailTemplate = ({ otp, name }) => `
  */
 const userOtpValidator = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    logger.info("🔍 Validating OTP for:", email);
+    const { email: em, otp } = req.body;
+    const email = em.toLowerCase().trim();
 
     const user = await prisma.users.findUnique({
       where: { email },
@@ -164,13 +165,11 @@ const userOtpValidator = async (req, res) => {
 
       return res.status(401).json({
         status: "error",
-        message: "Invalid OTP. User has been deleted.",
+        message: "Invalid OTP. Please Request New OTP",
       });
     }
 
-    logger.success(
-      `✅ OTP is correct (Generated: ${savedOtp}, Received: ${otp})`,
-    );
+    console.log(`✅ OTP is correct (Generated: ${savedOtp}, Received: ${otp})`);
     otpStore.delete(email);
 
     return res.status(200).json({
@@ -625,7 +624,9 @@ const userOtpValidator = async (req, res) => {
 // };
 
 const setPassword = async (req, res) => {
-  const { email, password, role, token } = req.body;
+  const { email: em, password, role, token } = req.body;
+
+  const email = em.toLowerCase().trim();
 
   if (!email || !password || !role) {
     return res.status(400).json({
@@ -658,7 +659,7 @@ const setPassword = async (req, res) => {
           message: "Invite has expired",
         });
 
-      if (invite.email !== email)
+      if (invite.email.toLowerCase() !== email)
         return res.status(400).json({
           status: "error",
           message: "Invite data mismatch",
@@ -881,7 +882,9 @@ const setPassword = async (req, res) => {
 const login = async (req, res) => {
   logger.info("📨 login route called", { body: req.body });
   try {
-    const { email, password, role } = req.body;
+    const { email: em, password, role } = req.body;
+
+    const email = em.toLowerCase().trim();
 
     // 1️⃣ Validate input
     if (!email || !password || !role) {
@@ -1076,7 +1079,9 @@ const forgotPassword = async (req, res) => {
     JSON.stringify({ body: req.body }, null, 2),
   );
   try {
-    const { email, role } = req.body;
+    const { email: em, role } = req.body;
+
+    const email = em.toLowerCase().trim();
 
     if (!email || !role) {
       return res
@@ -1129,7 +1134,9 @@ const resetPassword = async (req, res) => {
   logger.info("📨 resetPassword called", { body: req.body });
 
   try {
-    const { email, password } = req.body;
+    const { email: em, password } = req.body;
+
+    const email = em.toLowerCase().trim();
 
     const user = await prisma.users.findUnique({ where: { email } });
 
@@ -1199,7 +1206,9 @@ const resetPassword = async (req, res) => {
 
 const checkUserExists = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email: em } = req.body;
+
+    const email = em.toLowerCase().trim();
 
     if (!email) {
       return res.status(400).json({
