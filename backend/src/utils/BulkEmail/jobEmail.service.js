@@ -207,11 +207,11 @@ export const queueJobEmails = async ({
   }
 
   // 🔹 Send individually to candidates
-  for (const email of candidateEmails) {
-    await sendEmail({
-      to: email,
-      subject: `New Job Opportunity: ${job.role}`,
-      html: emailHtml,
-    });
-  }
+  // for (const email of candidateEmails) {
+  //   await sendEmail({
+  //     to: email,
+  //     subject: `New Job Opportunity: ${job.role}`,
+  //     html: emailHtml,
+  //   });
+  // }
 };
