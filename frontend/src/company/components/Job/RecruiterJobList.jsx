@@ -872,6 +872,25 @@ const RecruiterJobList = () => {
     return Promise.resolve();
   };
 
+  const formatSalary = (salary) => {
+  if (!salary && salary !== 0) return "Not Disclosed";
+  const str = String(salary).trim();
+  if (/lpa/i.test(str)) return str;
+  const rangeMatch = str.match(/^(\d[\d,]*)\s*[-–]\s*(\d[\d,]*)$/);
+  if (rangeMatch) {
+    const min = Number(rangeMatch[1].replace(/,/g, ""));
+    const max = Number(rangeMatch[2].replace(/,/g, ""));
+    if (!isNaN(min) && !isNaN(max) && max > 0) {
+      return `${(min / 100000).toFixed(1)} - ${(max / 100000).toFixed(1)} LPA`;
+    }
+  }
+  const single = Number(str.replace(/,/g, ""));
+  if (!isNaN(single) && single > 0) {
+    return `${(single / 100000).toFixed(1)} LPA`;
+  }
+  return "Not Disclosed";
+};
+
   return (
     <>
       <div
@@ -1171,9 +1190,7 @@ const RecruiterJobList = () => {
 
                           <div style={{ fontSize: 12, color: "#A3A3A3" }}>
                             Posted{" "}
-                            {job?.updatedAt
-                              ? dayjs(job.updatedAt).fromNow()
-                              : "Recently"}
+                          {job?.createdAt ? dayjs(job.createdAt).fromNow() : "Recently"}
                           </div>
                         </div>
                       </div>
@@ -1256,11 +1273,7 @@ const RecruiterJobList = () => {
                           ? "Not Disclosed"
                           : `${job.salary} PA`}
                       </span> */}
-                      <span>
-                        {job.salary === "Not Disclosed"
-                          ? "Not Disclosed"
-                          : `₹ ${Number(job.salary).toLocaleString("en-IN")} LPA`}
-                      </span>
+                    <span>₹ {formatSalary(job.salary)}</span>
                       <Divider type="vertical" />
                       <span>
                         <ClockCircleOutlined /> {job.employmentType}
