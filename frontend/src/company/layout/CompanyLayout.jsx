@@ -20,6 +20,7 @@ import {
   MessageOutlined,
   LogoutOutlined,
   ArrowLeftOutlined,
+  ContactsOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { logout } from "../../candidate/api/api";
@@ -52,12 +53,14 @@ const CompanyLayout = ({ children }) => {
     myactivity: ["/company/my-activity"],
     findjob: ["/company/job/find"],
     savedjobs: ["/company/jobs/saved"],
+    appliedcandidatesbyjob: ["/company/appliedcandidatesbyjob"],
     bench: ["/company/bench"],
     findbench: ["/company/candidate/find"],
     savedcandidates: ["/company/bench/saved"],
     chat: ["/company/chat"],
     profile: ["/company/profile"],
     pricing: ["/company/pricing"],
+    contact: ["/contact"],
     jobs: [
       "/company/jobs",
       // "/company/job",
@@ -147,6 +150,10 @@ const CompanyLayout = ({ children }) => {
       handleLogout();
       return;
     }
+    if (key === "contact") {
+    window.open("/contact", "_blank");
+    return;
+  }
 
     const route = menuRoutes[key];
     if (route && route.length) {
@@ -169,6 +176,8 @@ const CompanyLayout = ({ children }) => {
     }
 
     if (path.startsWith("/company/candidates")) return "View Candidates";
+    
+    if (path.startsWith("/contact")) return "";
 
     const pageTitleMap = {
       dashboard: "Dashboard",
@@ -176,6 +185,7 @@ const CompanyLayout = ({ children }) => {
       myactivity: "My Activity",
       findjob: "Find Jobs",
       savedjobs: "Saved Jobs",
+      appliedcandidatesbyjob: "Applied Jobs",
       bench: "My Bench",
       findbench: "Find Candidate",
       savedcandidates: "Saved Candidates",
@@ -261,61 +271,81 @@ const CompanyLayout = ({ children }) => {
               selectedKeys={[selectedKey]}
               onClick={onMenuClick}
               style={{ background: "transparent", border: "none" }}
-              items={[
-                // {
-                //   key: "dashboard",
-                //   icon: <DashboardOutlined />,
-                //   label: "Dashboard",
-                // },
-                { key: "jobs", icon: <FileTextOutlined />, label: "My Jobs" },
-                {
+            items={[
+  {
+    key: "jobs-group",
+    icon: <FileTextOutlined />,
+    label: "Jobs",
+    children: [
+      {
+        key: "jobs",
+        label: "My Jobs",
+      },
+      {
+        key: "findjob",
+        label: "Find Jobs",
+      },
+      {
+        key: "savedjobs",
+        label: "Saved Jobs",
+      },
+      //  { key: "appliedcandidatesbyjob", label: "Applied Jobs"},
+    ],
+  },
+   {
                   key: "myactivity",
                   icon: <AppstoreOutlined />,
                   label: "My Activity",
                 },
-                {
-                  key: "findjob",
-                  icon: <SearchOutlined />,
-                  label: "Find Jobs",
-                },
-                { key: "savedjobs", icon: <SaveFilled />, label: "Saved Jobs" },
-                { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
-                {
-                  key: "findbench",
-                  icon: <SearchOutlined />,
-                  label: "Find Candidate",
-                },
-                {
-                  key: "savedcandidates",
-                  icon: <SaveFilled />,
-                  label: "Saved Candidates",
-                },
-                { key: "chat", icon: <MessageOutlined />, label: "Chat" },
-              ]}
+
+  { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
+  {
+    key: "candidates-group",
+    icon: <TeamOutlined />,
+    label: "Candidates",
+    children: [
+      {
+        key: "findbench",
+        label: "Find Candidates",
+      },
+      {
+        key: "savedcandidates",
+        label: "Saved Candidates",
+      },
+    ],
+  },
+   { key: "chat", icon: <MessageOutlined />, label: "Chat" },
+
+  {
+    key: "profile-group",
+    icon: <UserOutlined />,
+    label: "Profile",
+    children: [
+      {
+        key: "profile",
+        label: "Profile",
+      },
+      {
+        key: "pricing",
+        label: "Pricing",
+      },
+    ],
+  },
+  {
+        key: "contact",
+        icon: <ContactsOutlined />,
+        label: "Contact & Support",
+      },
+  {
+        key: "logout",
+        icon: <LogoutOutlined />,
+        label: "Logout",
+      },
+]}
             />{" "}
           </ConfigProvider>
 
-          <div
-            style={{
-              height: 1,
-              background: "#E0E0E0",
-              margin: "16px 0",
-              opacity: 0.3,
-            }}
-          />
-
-          <Menu
-            mode="inline"
-            selectedKeys={[selectedKey]}
-            theme="dark"
-            onClick={onMenuClick}
-            style={{ background: "transparent", border: "none" }}
-            items={[
-              { key: "profile", icon: <UserOutlined />, label: "Profile" },
-              { key: "pricing", icon: <UserOutlined />, label: "Pricing" },
-              { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
-            ]}
-          />
+     
         </Sider>
 
         {/* MAIN */}
