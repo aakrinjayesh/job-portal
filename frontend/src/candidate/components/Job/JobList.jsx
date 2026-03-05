@@ -347,6 +347,25 @@ const JobList = ({
     );
   };
 
+   const formatSalary = (salary) => {
+  if (!salary && salary !== 0) return "Not Disclosed";
+  const str = String(salary).trim();
+  if (/lpa/i.test(str)) return str;
+  const rangeMatch = str.match(/^(\d[\d,]*)\s*[-–]\s*(\d[\d,]*)$/);
+  if (rangeMatch) {
+    const min = Number(rangeMatch[1].replace(/,/g, ""));
+    const max = Number(rangeMatch[2].replace(/,/g, ""));
+    if (!isNaN(min) && !isNaN(max) && max > 0) {
+      return `${(min / 100000).toFixed(1)} - ${(max / 100000).toFixed(1)} LPA`;
+    }
+  }
+  const single = Number(str.replace(/,/g, ""));
+  if (!isNaN(single) && single > 0) {
+    return `${(single / 100000).toFixed(1)} LPA`;
+  }
+  return "Not Disclosed";
+};
+
   return (
     <Row gutter={[16, 16]}>
       {contextHolder}
@@ -569,7 +588,7 @@ const JobList = ({
                   {job.experience?.type} */}
                 </span>
                 <Divider type="vertical" />
-                <span>₹ {job.salary} LPA</span>
+                  <span>₹ {formatSalary(job.salary)}</span>
                 <Divider type="vertical" />
                 <span>
                   <ClockCircleOutlined /> {job.employmentType}
