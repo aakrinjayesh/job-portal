@@ -1800,7 +1800,7 @@ const RecruiterJobList = () => {
                   >
                     <ReusableSelect
                       single={false}
-                      placeholder="Select up to 50 Clouds"
+                      placeholder="Select up to 50 Skills"
                       fetchFunction={GetSkills}
                       addFunction={PostSkills}
                     />
