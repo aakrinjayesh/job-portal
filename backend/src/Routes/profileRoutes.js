@@ -10,6 +10,7 @@ import {
   getCountriesWithStates,
   updateUserProfileDetails,
   getCompanyProfileDetails,
+  toggleCandidateStatus,
 } from "../controllers/profileControllers.js";
 
 import multer from "multer";
@@ -73,5 +74,10 @@ userRouter.get("/profile/details", authenticateToken, getCompanyProfileDetails);
 userRouter.post("/profile/update", authenticateToken, updateUserProfileDetails);
 
 userRouter.get("/countries", authenticateToken, getCountriesWithStates);
+userRouter.patch(
+  "/profile/toggle-status",
+  authenticateToken,
+  toggleCandidateStatus,
+);
 
 export default userRouter;

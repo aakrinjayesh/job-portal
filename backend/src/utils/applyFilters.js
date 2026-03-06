@@ -1,4 +1,3 @@
-
 const levenshtein = (a, b) => {
   if (!a || !b) return Infinity;
 
@@ -89,8 +88,7 @@ const normalizeFilters = (filters) => {
   };
 };
 
-const normalizeCity = (city) =>
-  city?.toLowerCase().replace(/\s+/g, "").trim();
+const normalizeCity = (city) => city?.toLowerCase().replace(/\s+/g, "").trim();
 
 const cityAliases = {
   bangalore: "bengaluru",
@@ -99,17 +97,14 @@ const cityAliases = {
   delhi: "newdelhi",
 };
 
-
-
 // ---------------- MAIN FILTER FUNCTION ----------------
 const applyFilters = (jobs, filters) => {
-  filters = normalizeFilters(filters);   // 🔥 IMPORTANT FIX
+  filters = normalizeFilters(filters); // 🔥 IMPORTANT FIX
 
   const scoredJobs = [];
 
   for (const job of jobs) {
     let score = 0;
-
 
     // ---------- EXPERIENCE ----------
     if (filters.experience !== null && filters.experience !== undefined) {
@@ -127,19 +122,18 @@ const applyFilters = (jobs, filters) => {
         continue;
       }
 
-  score += 1;
-}
-
+      score += 1;
+    }
 
     // ---------- SKILLS ----------
     if (filters.skills?.length) {
-      const jobSkills = (job.skills || []).map(s => s.toLowerCase());
+      const jobSkills = (job.skills || []).map((s) => s.toLowerCase());
 
       let skillScore = 0;
 
       for (const fs of filters.skills) {
         const best = Math.max(
-          ...jobSkills.map(js => smartMatchScore(js, fs))
+          ...jobSkills.map((js) => smartMatchScore(js, fs)),
         );
         if (best === 0) continue;
         skillScore += best;
@@ -149,26 +143,48 @@ const applyFilters = (jobs, filters) => {
       score += skillScore;
     }
 
+    // ---------- CLOUDS ----------
+    // if (filters.clouds?.length) {
+    //   const jobClouds = (job.clouds || []).map(c => c.toLowerCase());
 
+    //   let cloudScore = 0;
+
+    //   for (const fc of filters.clouds) {
+    //     const best = Math.max(
+    //       ...jobClouds.map(jc => fuzzyMatchScore(jc, fc))
+    //     );
+
+    //     if (best === 0) continue;
+    //     cloudScore += best;
+    //   }
+
+    //   if (cloudScore === 0) continue;
+    //   score += cloudScore;
+    // }
     // ---------- CLOUDS ----------
     if (filters.clouds?.length) {
-      const jobClouds = (job.clouds || []).map(c => c.toLowerCase());
+      const jobClouds = (job.clouds || []).map((c) => c.toLowerCase().trim());
 
-      let cloudScore = 0;
+      let allMatched = true;
 
       for (const fc of filters.clouds) {
-        const best = Math.max(
-          ...jobClouds.map(jc => fuzzyMatchScore(jc, fc))
-        );
+        const fcNorm = fc.toLowerCase().trim();
 
-        if (best === 0) continue;
-        cloudScore += best;
+        const matched = jobClouds.some((jc) => {
+          if (jc === fcNorm) return true; // exact match
+          if (jc.includes(fcNorm) || fcNorm.includes(jc)) return true; // one contains other
+          return false;
+        });
+
+        if (!matched) {
+          allMatched = false;
+          break;
+        }
       }
 
-      if (cloudScore === 0) continue;
-      score += cloudScore;
+      if (!allMatched) continue;
+      score += 1;
     }
-
 
     // ---------- SALARY (FIXED) ----------
     if (filters.salary?.length) {
@@ -197,52 +213,47 @@ const applyFilters = (jobs, filters) => {
       score += 0.5;
     }
 
-
     // ---------- LOCATION ----------
     if (filters.location?.length) {
       const jobLocation = job.location || "";
 
       const best = Math.max(
-        ...filters.location.map(loc => fuzzyMatchScore(jobLocation, loc))
+        ...filters.location.map((loc) => fuzzyMatchScore(jobLocation, loc)),
       );
 
       if (best === 0) continue;
       score += best;
     }
 
-
     // ---------- JOB TYPE ----------
     if (filters.jobType?.length) {
       const jobType = job.jobType?.toLowerCase() || "";
 
-      if (!filters.jobType.some(jt => jobType.includes(jt.toLowerCase())))
+      if (!filters.jobType.some((jt) => jobType.includes(jt.toLowerCase())))
         continue;
 
       score += 0.5;
     }
-
 
     // ---------- EMPLOYMENT TYPE ----------
     if (filters.employmentType?.length) {
       const emp = job.employmentType?.toLowerCase() || "";
 
-      if (!filters.employmentType.some(et => emp.includes(et.toLowerCase())))
+      if (!filters.employmentType.some((et) => emp.includes(et.toLowerCase())))
         continue;
 
       score += 0.5;
     }
 
-
     // ---------- CANDIDATE TYPE ----------
     if (filters.candidateType?.length && job.candidateType) {
       const type = job.candidateType.toLowerCase();
 
-      if (!filters.candidateType.some(ct => type.includes(ct.toLowerCase())))
+      if (!filters.candidateType.some((ct) => type.includes(ct.toLowerCase())))
         continue;
 
       score += 0.3;
     }
-
 
     scoredJobs.push({ ...job, _score: score });
   }
@@ -250,8 +261,6 @@ const applyFilters = (jobs, filters) => {
   // Return sorted ranking
   return scoredJobs.sort((a, b) => b._score - a._score);
 };
-
-
 
 /**
  * Apply filters to candidates in-memory
@@ -263,7 +272,7 @@ const applyCandidateFilters = (candidates, filters) => {
   for (const candidate of candidates) {
     let score = 0;
 
-       // ---------------- EXPERIENCE ----------------
+    // ---------------- EXPERIENCE ----------------
     if (
       filters.experience &&
       filters.experience !== "Any" &&
@@ -273,7 +282,8 @@ const applyCandidateFilters = (candidates, filters) => {
       const totalExp = parseFloat(candidate.totalExperience);
 
       // ✅ Exact year match — only 2.0 to 2.9 passes when user enters 2
-      if (isNaN(totalExp) || Math.floor(totalExp) !== Math.floor(enteredExp)) continue;
+      if (isNaN(totalExp) || Math.floor(totalExp) !== Math.floor(enteredExp))
+        continue;
 
       score += 1;
     }
@@ -331,9 +341,9 @@ const applyCandidateFilters = (candidates, filters) => {
         ...filters.location.map((loc) =>
           locations.length
             ? Math.max(...locations.map((cl) => fuzzyMatchScore(cl, loc)))
-            : 0
+            : 0,
         ),
-        0
+        0,
       );
 
       if (best === 0) continue;
@@ -351,9 +361,7 @@ const applyCandidateFilters = (candidates, filters) => {
     // ---------------- EMPLOYMENT TYPE ----------------
     if (filters.employmentType?.length) {
       const emp = candidate.employmentType?.toLowerCase() || "";
-      if (
-        !filters.employmentType.some((et) => emp.includes(et.toLowerCase()))
-      )
+      if (!filters.employmentType.some((et) => emp.includes(et.toLowerCase())))
         continue;
       score += 0.5;
     }
@@ -375,4 +383,3 @@ const applyCandidateFilters = (candidates, filters) => {
 };
 
 export { applyFilters, applyCandidateFilters };
-

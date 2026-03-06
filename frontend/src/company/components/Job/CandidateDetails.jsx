@@ -646,7 +646,7 @@ const CandidateDetails = () => {
                             value={profile.linkedInUrl}
                           /> */}
                           <InfoItem
-                            label="Joining Period (in days)"
+                            label="Joining Period"
                             value={profile.joiningPeriod}
                           />
                         </div>

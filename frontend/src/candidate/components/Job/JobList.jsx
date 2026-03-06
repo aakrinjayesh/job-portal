@@ -118,7 +118,31 @@ const JobList = ({
       } else {
         const resp = await UnSaveJob({ jobId });
         if (resp?.status !== "success") throw new Error();
-        messageApi.success("Job removed!");
+        // messageApi.success("Job removed!");
+        messageApi.open({
+          content: (
+            <span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "#ff4d4f",
+                  color: "#fff",
+                  fontSize: 10,
+                  marginRight: 8,
+                }}
+              >
+                ✕
+              </span>
+              Job removed!
+            </span>
+          ),
+          duration: 3,
+        });
         if (type === "save" && onUnsave) {
           onUnsave(jobId);
         }
@@ -347,24 +371,24 @@ const JobList = ({
     );
   };
 
-   const formatSalary = (salary) => {
-  if (!salary && salary !== 0) return "Not Disclosed";
-  const str = String(salary).trim();
-  if (/lpa/i.test(str)) return str;
-  const rangeMatch = str.match(/^(\d[\d,]*)\s*[-–]\s*(\d[\d,]*)$/);
-  if (rangeMatch) {
-    const min = Number(rangeMatch[1].replace(/,/g, ""));
-    const max = Number(rangeMatch[2].replace(/,/g, ""));
-    if (!isNaN(min) && !isNaN(max) && max > 0) {
-      return `${(min / 100000).toFixed(1)} - ${(max / 100000).toFixed(1)} LPA`;
+  const formatSalary = (salary) => {
+    if (!salary && salary !== 0) return "Not Disclosed";
+    const str = String(salary).trim();
+    if (/lpa/i.test(str)) return str;
+    const rangeMatch = str.match(/^(\d[\d,]*)\s*[-–]\s*(\d[\d,]*)$/);
+    if (rangeMatch) {
+      const min = Number(rangeMatch[1].replace(/,/g, ""));
+      const max = Number(rangeMatch[2].replace(/,/g, ""));
+      if (!isNaN(min) && !isNaN(max) && max > 0) {
+        return `${(min / 100000).toFixed(1)} - ${(max / 100000).toFixed(1)} LPA`;
+      }
     }
-  }
-  const single = Number(str.replace(/,/g, ""));
-  if (!isNaN(single) && single > 0) {
-    return `${(single / 100000).toFixed(1)} LPA`;
-  }
-  return "Not Disclosed";
-};
+    const single = Number(str.replace(/,/g, ""));
+    if (!isNaN(single) && single > 0) {
+      return `${(single / 100000).toFixed(1)} LPA`;
+    }
+    return "Not Disclosed";
+  };
 
   return (
     <Row gutter={[16, 16]}>
@@ -584,26 +608,28 @@ const JobList = ({
               >
                 <span>
                   <EnvironmentOutlined /> {job.location}
-                  {/* <UserOutlined /> {job.experience?.number}{" "}
-                  {job.experience?.type} */}
                 </span>
                 <Divider type="vertical" />
-                  <span>₹ {formatSalary(job.salary)}</span>
+                <span>₹ {formatSalary(job.salary)}</span>
                 <Divider type="vertical" />
                 <span>
                   <ClockCircleOutlined /> {job.employmentType}
                 </span>
                 <Divider type="vertical" />
-                {/* <span>{job.experienceLevel ?? "Not Specified"}</span> */}
-                <UserOutlined /> {job.experience?.number} {job.experience?.type}
-                {job.experienceLevel && (
-                  <>
-                    <Divider type="vertical" />
-                    <span>
-                      <LineChartOutlined /> {job.experienceLevel}
-                    </span>
-                  </>
-                )}
+
+                <span>
+                  <UserOutlined />{" "}
+                  {job.experience?.number
+                    ? `${job.experience.number} ${job.experience.type}`
+                    : job.experience?.min && job.experience?.max
+                      ? `${job.experience.min}-${job.experience.max} ${job.experience.type}`
+                      : "Not Specified"}
+                </span>
+
+                <Divider type="vertical" />
+                <span>
+                  <LineChartOutlined /> {job.experienceLevel ?? "Not Specified"}
+                </span>
               </div>
 
               {/* SKILLS + CLOUDS */}

@@ -1655,7 +1655,7 @@ const getWelcomePasswordEmailTemplate = ({ name, role }) => `
                   padding:12px 24px;
                   border-radius:8px;
                   display:inline-block;">
-                  Role: ${role || "User"}
+                  Role: ${role === "vendor" ? "Company" : role || "User"}
                 </span>
               </div>
 
@@ -1677,7 +1677,7 @@ const getWelcomePasswordEmailTemplate = ({ name, role }) => `
 
                 <ul style="padding-left:18px; font-size:14px; line-height:1.8; color:#374151;">
                   <li><strong>AI Smart Matching</strong> – Instantly match projects with ideal Salesforce experts.</li>
-                  <li><strong>Salesforce B2B Connect</strong> – AI-driven partner recommendations.</li>
+                 <li><strong>Salesforce B2B Connect</strong> – Instantly connect with verified Salesforce vendors and bench resources.</li>
                   <li><strong>Resume & Skill Intelligence</strong> – Automated skill extraction and profiling.</li>
                 </ul>
               </div>

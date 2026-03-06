@@ -447,6 +447,50 @@ const getCountriesWithStates = async (req, res) => {
     });
   }
 };
+const toggleCandidateStatus = async (req, res) => {
+  try {
+    logger.info("toggleCandidateStatus API hit");
+
+    const { id } = req.user;
+
+    if (!id) {
+      return res.status(400).json({ message: "User ID missing in token" });
+    }
+
+    const existingProfile = await prisma.userProfile.findUnique({
+      where: { userId: id },
+    });
+
+    if (!existingProfile) {
+      return res.status(404).json({
+        status: "error",
+        message: "User profile not found",
+      });
+    }
+
+    const newStatus =
+      existingProfile.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
+    const updated = await prisma.userProfile.update({
+      where: { userId: id },
+      data: { status: newStatus },
+    });
+
+    logger.info(`Status toggled to ${newStatus} for userId: ${id}`);
+
+    return res.status(200).json({
+      status: "success",
+      newStatus: updated.status,
+      message: `Profile is now ${newStatus}`,
+    });
+  } catch (error) {
+    logger.error("Error toggling candidate status:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
 
 // // // Save or Update Address (Upsert) for User Profile
 // //  const saveOrUpdateAddress = async (req, res) => {
@@ -564,4 +608,5 @@ export {
   getCountriesWithStates,
   uploadProfilePicture,
   getCompanyProfileDetails,
+  toggleCandidateStatus,
 };

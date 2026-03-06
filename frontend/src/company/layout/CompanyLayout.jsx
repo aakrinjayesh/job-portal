@@ -75,6 +75,7 @@ const CompanyLayout = ({ children }) => {
     } catch (err) {
     } finally {
       localStorage.clear();
+      sessionStorage.removeItem("companyPopupClosed");
       googleLogout();
       navigate("/login");
     }
@@ -151,9 +152,9 @@ const CompanyLayout = ({ children }) => {
       return;
     }
     if (key === "contact") {
-    window.open("/contact", "_blank");
-    return;
-  }
+      window.open("/contact", "_blank");
+      return;
+    }
 
     const route = menuRoutes[key];
     if (route && route.length) {
@@ -176,7 +177,7 @@ const CompanyLayout = ({ children }) => {
     }
 
     if (path.startsWith("/company/candidates")) return "View Candidates";
-    
+
     if (path.startsWith("/contact")) return "";
 
     const pageTitleMap = {
@@ -271,81 +272,79 @@ const CompanyLayout = ({ children }) => {
               selectedKeys={[selectedKey]}
               onClick={onMenuClick}
               style={{ background: "transparent", border: "none" }}
-            items={[
-  {
-    key: "jobs-group",
-    icon: <FileTextOutlined />,
-    label: "Jobs",
-    children: [
-      {
-        key: "jobs",
-        label: "My Jobs",
-      },
-      {
-        key: "findjob",
-        label: "Find Jobs",
-      },
-      {
-        key: "savedjobs",
-        label: "Saved Jobs",
-      },
-      //  { key: "appliedcandidatesbyjob", label: "Applied Jobs"},
-    ],
-  },
-   {
+              items={[
+                {
+                  key: "jobs-group",
+                  icon: <FileTextOutlined />,
+                  label: "Jobs",
+                  children: [
+                    {
+                      key: "jobs",
+                      label: "My Jobs",
+                    },
+                    {
+                      key: "findjob",
+                      label: "Find Jobs",
+                    },
+                    {
+                      key: "savedjobs",
+                      label: "Saved Jobs",
+                    },
+                    //  { key: "appliedcandidatesbyjob", label: "Applied Jobs"},
+                  ],
+                },
+                {
                   key: "myactivity",
                   icon: <AppstoreOutlined />,
                   label: "My Activity",
                 },
 
-  { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
-  {
-    key: "candidates-group",
-    icon: <TeamOutlined />,
-    label: "Candidates",
-    children: [
-      {
-        key: "findbench",
-        label: "Find Candidates",
-      },
-      {
-        key: "savedcandidates",
-        label: "Saved Candidates",
-      },
-    ],
-  },
-   { key: "chat", icon: <MessageOutlined />, label: "Chat" },
+                { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
+                {
+                  key: "candidates-group",
+                  icon: <TeamOutlined />,
+                  label: "Candidates",
+                  children: [
+                    {
+                      key: "findbench",
+                      label: "Find Candidates",
+                    },
+                    {
+                      key: "savedcandidates",
+                      label: "Saved Candidates",
+                    },
+                  ],
+                },
+                { key: "chat", icon: <MessageOutlined />, label: "Chat" },
 
-  {
-    key: "profile-group",
-    icon: <UserOutlined />,
-    label: "Profile",
-    children: [
-      {
-        key: "profile",
-        label: "Profile",
-      },
-      {
-        key: "pricing",
-        label: "Pricing",
-      },
-    ],
-  },
-  {
-        key: "contact",
-        icon: <ContactsOutlined />,
-        label: "Contact & Support",
-      },
-  {
-        key: "logout",
-        icon: <LogoutOutlined />,
-        label: "Logout",
-      },
-]}
+                {
+                  key: "profile-group",
+                  icon: <UserOutlined />,
+                  label: "Profile",
+                  children: [
+                    {
+                      key: "profile",
+                      label: "Profile",
+                    },
+                    {
+                      key: "pricing",
+                      label: "Pricing",
+                    },
+                  ],
+                },
+                {
+                  key: "contact",
+                  icon: <ContactsOutlined />,
+                  label: "Contact & Support",
+                },
+                {
+                  key: "logout",
+                  icon: <LogoutOutlined />,
+                  label: "Logout",
+                },
+              ]}
             />{" "}
           </ConfigProvider>
-
-     
         </Sider>
 
         {/* MAIN */}

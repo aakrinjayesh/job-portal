@@ -109,9 +109,37 @@ const JobDetails = ({ mode }) => {
         : await UnSaveJob({ jobId: job.id });
 
       if (resp?.status !== "success") throw new Error();
-      messageApi.success(
-        willBeSaved ? "Job saved successfully!" : "Job removed!",
-      );
+      // messageApi.success(
+      //   willBeSaved ? "Job saved successfully!" : "Job removed!",
+      // );
+      if (willBeSaved) {
+        messageApi.success("Job saved successfully!");
+      } else {
+        messageApi.open({
+          content: (
+            <span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "#ff4d4f",
+                  color: "#fff",
+                  fontSize: 10,
+                  marginRight: 8,
+                }}
+              >
+                ✕
+              </span>
+              Job removed!
+            </span>
+          ),
+          duration: 3,
+        });
+      }
     } catch {
       setJob((prev) => ({ ...prev, isSaved: !willBeSaved }));
       messageApi.error("Something went wrong!");

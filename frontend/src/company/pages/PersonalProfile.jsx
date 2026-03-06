@@ -87,6 +87,7 @@ const PersonalProfile = () => {
             phoneNumber,
             email,
             companyName,
+            gstNumber,
             address,
             profileUrl,
           } = res.data;
@@ -98,6 +99,7 @@ const PersonalProfile = () => {
             email,
             // companyProfileUrl: profileUrl,
             company: companyName,
+            gstNumber: gstNumber || "",
             doorNumber: address?.doorNumber || "",
             street: address?.street || "",
             city: address?.city || "",
@@ -164,6 +166,7 @@ const PersonalProfile = () => {
         name: `${values.firstName} ${values.lastName}`.trim(),
         phoneNumber: values.phoneNumber,
         companyName: values.company,
+        gstNumber: values.gstNumber,
         profileUrl: profileImageUrl,
         address: {
           doorNumber: values.doorNumber,
@@ -268,22 +271,6 @@ const PersonalProfile = () => {
             {/* ===== NAME ===== */}
             <Row gutter={24}>
               <Col span={12}>
-                {/* <Form.Item
-                  label="First Name"
-                  name="firstName"
-                  rules={[
-                    { required: true },
-                    {
-                      pattern: /^[A-Z][a-z]+([ '-][A-Z][a-z]+)*$/,
-                      message:
-                        "First name must start with a capital letter and contain only letters",
-                    },
-                    { min: 2 },
-                    { max: 30 },
-                  ]}
-                >
-                  <Input disabled={!editable} placeholder="Enter first name" />
-                </Form.Item> */}
                 <Form.Item
                   label="First Name"
                   name="firstName"
@@ -302,22 +289,6 @@ const PersonalProfile = () => {
               </Col>
 
               <Col span={12}>
-                {/* <Form.Item
-                  label="Last Name"
-                  name="lastName"
-                  rules={[
-                    { required: true },
-                    {
-                      pattern: /^[A-Z][a-z]+([ '-][A-Z][a-z]+)*$/,
-                      message:
-                        "Last name must start with a capital letter and contain only letters",
-                    },
-                    { min: 2 },
-                    { max: 30 },
-                  ]}
-                >
-                  <Input disabled={!editable} placeholder="Enter last name" />
-                </Form.Item> */}
                 <Form.Item
                   label="Last Name"
                   name="lastName"
@@ -345,7 +316,7 @@ const PersonalProfile = () => {
                       Phone Number
                       {!isPhoneVerified ? (
                         <Tooltip title="Not verified">
-                          <CloseCircleOutlined style={{ color: "red" }} />
+                          {/* <CloseCircleOutlined style={{ color: "red" }} /> */}
                         </Tooltip>
                       ) : (
                         <CheckCircleOutlined style={{ color: "green" }} />
@@ -362,7 +333,7 @@ const PersonalProfile = () => {
                 </Form.Item>
               </Col>
 
-              <Col span={12}>
+              {/* <Col span={12}>
                 {!isVerifying && !isPhoneVerified && (
                   <Button
                     type="primary"
@@ -415,7 +386,7 @@ const PersonalProfile = () => {
                     )}
                   </Space>
                 )}
-              </Col>
+              </Col> */}
             </Row>
 
             {/* ===== EMAIL + COMPANY ===== */}
@@ -442,6 +413,28 @@ const PersonalProfile = () => {
               )}
             </Row>
 
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="GST Number"
+                  name="gstNumber"
+                  rules={[
+                    {
+                      pattern:
+                        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/,
+                      message: "Enter valid GST number",
+                    },
+                  ]}
+                >
+                  <Input
+                    disabled={!editable}
+                    placeholder="Enter GST number"
+                    maxLength={15}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
             {/* <Row gutter={24}>
               <Col span={12}>
                 <Form.Item label="Company Logo" name="companyLogo">
@@ -454,28 +447,6 @@ const PersonalProfile = () => {
             </Row> */}
             <Form.Item label="Company Logo" name="companyProfileUrl">
               <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                {/* <Upload
-                  showUploadList={false}
-                  beforeUpload={(file) => {
-                    setLogoFile(file);
-                    setPreviewUrl(URL.createObjectURL(file));
-                    return false; // prevent auto upload
-                  }}
-                  accept="image/*"
-                  disabled={!editable}
-                >
-                  <div style={{ cursor: editable ? "pointer" : "default" }}>
-                    <Avatar
-                      size={100}
-                      src={previewUrl}
-                      style={{
-                        border: "2px solid #E6E8FF",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                      }}
-                    />
-                  </div>
-                </Upload> */}
-
                 <Upload
                   beforeUpload={handleUpload}
                   accept="image/jpeg,image/png,image/jpg"

@@ -517,3 +517,13 @@ export async function GetContactSupport(payload) {
     throw error;
   }
 }
+
+export async function ToggleCandidateStatus() {
+  try {
+    const response = await axiosInstance.patch("/profile/toggle-status");
+    return response.data;
+  } catch (error) {
+    console.error("Error in ToggleCandidateStatus:", error);
+    throw error;
+  }
+}

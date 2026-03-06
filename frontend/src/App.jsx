@@ -39,16 +39,19 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import PublicJobRedirect from "./pages/PublicJobRedirect";
 import LimitExceededAlert from "./components/alert/LimitExceededAlert";
 import { subscribeToLimit, unsubscribeFromLimit } from "./utils/limitEventBus";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import HomePage from "./pages/HomePage";
 import VendorMarketplacePage from "./pages/VendorMarketplacePage";
 import SalesforceBenchPage from "./pages/SalesforceBenchPage";
+import CompanyProfilePopup from "./components/alert/CompanyProfilePopup";
 // import AppliedCandidatesByJob from "./company/pages/AppliedCandidatesByJob";
 
 function App() {
   const location = useLocation();
   const [limitOpen, setLimitOpen] = useState(false);
   const [limitData, setLimitData] = useState(null);
+  const [showCompanyPopup, setShowCompanyPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
 
   useEffect(() => {
     if (location.pathname === "/login") return;
@@ -79,6 +82,33 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const checkPopup = () => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user) return;
+
+      if (location.pathname !== "/company/jobs") return;
+
+      const popupClosed = sessionStorage.getItem("companyPopupClosed");
+      if (popupClosed) return;
+
+      if (user.role === "company") {
+        if (!user.companyName && !user.phoneNumber) {
+          setPopupMessage("Please enter company name and phone number.");
+          setShowCompanyPopup(true);
+        } else if (!user.companyName) {
+          setPopupMessage("Please enter company name.");
+          setShowCompanyPopup(true);
+        } else if (!user.phoneNumber) {
+          setPopupMessage("Please enter phone number.");
+          setShowCompanyPopup(true);
+        }
+      }
+    };
+
+    checkPopup();
+  }, [location.pathname]);
+
   return (
     <ConfigProvider
       theme={{
@@ -100,7 +130,7 @@ function App() {
         <Route path="/createpassword" element={<CreatePassword />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-         <Route path="/contact" element={<ContactSupport />} />
+        <Route path="/contact" element={<ContactSupport />} />
         <Route
           path="/salesforce-vendor-marketplace"
           element={<VendorMarketplacePage />}
@@ -354,6 +384,23 @@ function App() {
         open={limitOpen}
         onClose={() => setLimitOpen(false)}
         message={limitData?.message}
+      />
+      {/* <CompanyProfilePopup
+        open={showCompanyPopup}
+        message={popupMessage}
+        // onClose={() => setShowCompanyPopup(false)}
+        onClose={() => {
+          popupCheckedRef.current = true;
+          setShowCompanyPopup(false);
+        }}
+      /> */}
+      <CompanyProfilePopup
+        open={showCompanyPopup}
+        message={popupMessage}
+        onClose={() => {
+          sessionStorage.setItem("companyPopupClosed", "true");
+          setShowCompanyPopup(false);
+        }}
       />
     </ConfigProvider>
   );

@@ -16,7 +16,7 @@ import {
   Switch,
   Collapse,
   Avatar,
-  Modal
+  Modal,
 } from "antd";
 
 import {
@@ -39,6 +39,7 @@ import {
   PostRole,
   PostClouds,
   uploadProfilePicture,
+  ToggleCandidateStatus,
 } from "../api/api";
 import GenerateResume from "../components/UserProfile/GenerateResume";
 import ReusableSelect from "../components/UserProfile/ReusableSelect";
@@ -80,6 +81,7 @@ const UpdateUserProfile = ({
 
   const [isCandidate, setIsCandidate] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
 
   const role = localStorage.getItem("role");
   const isCompany = role === "company";
@@ -348,6 +350,7 @@ const UpdateUserProfile = ({
           primaryClouds: primClouds,
           secondaryClouds: secClouds,
         });
+        setIsProfileLoaded(true);
       }
     } catch (error) {
       console.error("Error fetching profile data:", error);
@@ -493,6 +496,7 @@ const UpdateUserProfile = ({
       });
 
       messageAPI.success("Resume details extracted successfully!");
+      setIsProfileLoaded(true);
     } catch (error) {
       const { status, data } = error?.response || {};
       console.log("status", status);
@@ -842,16 +846,6 @@ const UpdateUserProfile = ({
             </Button>
           </Upload>
 
-          {/* {isCandidate && (
-            <Button
-              type="primary"
-              size="large"
-              onClick={handleDownloadResume}
-              style={{ marginLeft: 12 }}
-            >
-              Download Resume
-            </Button>
-          )} */}
           {role === "candidate" && !Reciviedrole && (
             <>
               <Button
@@ -859,19 +853,20 @@ const UpdateUserProfile = ({
                 size="large"
                 onClick={handleDownloadResume}
                 style={{ marginLeft: 12 }}
+                disabled={!isProfileLoaded}
               >
                 Download Resume
               </Button>
 
               <Button
-      size="large"
-      style={{ marginLeft: 12 }}
-      type={isActive ? "primary" : "default"}
-      danger={!isActive}
-      onClick={() => setStatusModalVisible(true)}  // ← open modal instead
-    >
-      {isActive ? "Active" : "Inactive"}
-    </Button>
+                size="large"
+                style={{ marginLeft: 12 }}
+                type={isActive ? "primary" : "default"}
+                danger={!isActive}
+                onClick={() => setStatusModalVisible(true)} // ← open modal instead
+              >
+                {isActive ? "Active" : "Inactive"}
+              </Button>
             </>
           )}
 
@@ -997,56 +992,6 @@ const UpdateUserProfile = ({
 
                       <Col xs={24} sm={12} md={12}>
                         {/* <Form.Item
-                          label="Phone Number"
-                          name="phoneNumber"
-                          rules={[
-                            {
-                              validator: (_, value) => {
-                                if (!value) return Promise.resolve();
-
-                                if (!/^\d+$/.test(value)) {
-                                  return Promise.reject(
-                                    new Error("Only numbers are allowed")
-                                  );
-                                }
-
-                                if (
-                                  value.length === 10 ||
-                                  value.length === 12
-                                ) {
-                                  return Promise.resolve();
-                                }
-
-                                return Promise.reject(
-                                  new Error(
-                                    "Indian phone number must be 10 or 12 digits"
-                                  )
-                                );
-                              },
-                            },
-                          ]}
-                        >
-                          <Input
-                            addonBefore={
-                              <Select defaultValue="+91">
-                                <Select.Option value="+91">
-                                  🇮🇳 +91
-                                </Select.Option>
-                              </Select>
-                            }
-                            placeholder="Enter 10 or 12 digit Indian phone number"
-                            maxLength={12}
-                            onKeyPress={(e) => {
-                              if (!/[0-9]/.test(e.key)) {
-                                e.preventDefault();
-                              }
-                            }}
-                          />
-                        </Form.Item> */}
-                        {/* <Form.Item
-                          label="Phone Number"
-                          name="phoneNumber" */}
-                        <Form.Item
                           label={
                             isCompany ? "POC Phone Number" : "Phone Number"
                           }
@@ -1059,13 +1004,88 @@ const UpdateUserProfile = ({
                           ]}
                         >
                           <Input placeholder="Enter phone number" />
+                        </Form.Item> */}
+                        <Form.Item
+                          label={
+                            isCompany ? "POC Phone Number" : "Phone Number"
+                          }
+                          name="phoneNumber"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter phone number",
+                            },
+                            {
+                              validator: (_, value) => {
+                                if (!value) return Promise.resolve();
+
+                                // Allow format: optional +countrycode, optional space, then digits
+                                // e.g: +91 9963713116 or 9963713116 or +919963713116
+                                if (!/^\+?\d*\s?\d+$/.test(value)) {
+                                  return Promise.reject(
+                                    new Error(
+                                      "Invalid format. Use format like +91 9963713116",
+                                    ),
+                                  );
+                                }
+
+                                // Count only digits (exclude + and space)
+                                const digitsOnly = value.replace(/[\+\s]/g, "");
+                                if (digitsOnly.length > 13) {
+                                  return Promise.reject(
+                                    new Error(
+                                      "Phone number must not exceed 13 digits",
+                                    ),
+                                  );
+                                }
+
+                                return Promise.resolve();
+                              },
+                            },
+                          ]}
+                        >
+                          <Input
+                            placeholder="+91 9963713116"
+                            maxLength={17} // +XX space + 13 digits
+                            onKeyPress={(e) => {
+                              const currentValue = e.target.value;
+
+                              // Allow '+' only as first character
+                              if (e.key === "+") {
+                                if (currentValue.length !== 0) {
+                                  e.preventDefault();
+                                }
+                                return;
+                              }
+
+                              // Allow only one space (after country code)
+                              if (e.key === " ") {
+                                if (
+                                  currentValue.includes(" ") ||
+                                  currentValue.length === 0
+                                ) {
+                                  e.preventDefault(); // block if space already exists or value is empty
+                                }
+                                return;
+                              }
+
+                              // Block non-numeric keys
+                              if (!/[0-9]/.test(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onPaste={(e) => {
+                              const pasted = e.clipboardData.getData("Text");
+                              // Allow paste only if matches valid phone format
+                              if (!/^\+?\d*\s?\d+$/.test(pasted)) {
+                                e.preventDefault();
+                              }
+                            }}
+                          />
                         </Form.Item>
                       </Col>
 
                       <Col xs={24} sm={12} md={12}>
-                        {/* <Form.Item
-                          label="Email"
-                          name="email" */}
                         <Form.Item
                           label={isCompany ? "POC Email" : "Email"}
                           name="email"
@@ -1127,7 +1147,7 @@ const UpdateUserProfile = ({
                             },
                           ]}
                         >
-                          <Input placeholder="e.g., user@aakrin.com" />
+                          <Input />
                         </Form.Item>
                       </Col>
 
@@ -1282,16 +1302,20 @@ const UpdateUserProfile = ({
                             </Form.Item>
                           </Col>
                           <Modal
-  open={statusModalVisible}
-  onCancel={() => setStatusModalVisible(false)}
-  footer={null}
-  centered
-  width={420}
->
-  <div style={{ textAlign: "center", padding: "12px 0 8px" }}>
-
-    {/* Icon */}
-    {/* <div style={{
+                            open={statusModalVisible}
+                            onCancel={() => setStatusModalVisible(false)}
+                            footer={null}
+                            centered
+                            width={420}
+                          >
+                            <div
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 0 8px",
+                              }}
+                            >
+                              {/* Icon */}
+                              {/* <div style={{
       width: 64, height: 64,
       borderRadius: "50%",
       background: isActive ? "#fff7e6" : "#f6ffed",
@@ -1303,77 +1327,142 @@ const UpdateUserProfile = ({
       {isActive ? "⚠️" : "✅"}
     </div> */}
 
-    {/* Title */}
-    <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>
-      {isActive ? "Set yourself as Inactive?" : "Set yourself as Active?"}
-    </div>
+                              {/* Title */}
+                              <div
+                                style={{
+                                  fontSize: 18,
+                                  fontWeight: 700,
+                                  color: "#0f172a",
+                                  marginBottom: 8,
+                                }}
+                              >
+                                {isActive
+                                  ? "Set yourself as Inactive?"
+                                  : "Set yourself as Active?"}
+                              </div>
 
-    {/* Description */}
-    <div style={{
-      fontSize: 14,
-      color: "#64748b",
-      lineHeight: 1.7,
-      background: isActive ? "#fff7e6" : "#f6ffed",
-      border: isActive ? "1px solid #ffd591" : "1px solid #b7eb8f",
-      borderRadius: 10,
-      padding: "12px 16px",
-      marginBottom: 24,
-      textAlign: "left"
-    }}>
-      {isActive ? (
-        <>
-          <strong style={{ color: "#d46b08" }}>Warning:</strong> If you set your status to{" "}
-          <strong>Inactive</strong>, you will:
-          <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
-            <li>No longer appear in recruiter searches</li>
-            <li>Not receive new job recommendations</li>
-            <li>Need to manually reactivate your profile</li>
-          </ul>
-        </>
-      ) : (
-        <>
-          <strong style={{ color: "#389e0d" }}>✅ Good news:</strong> Setting yourself as{" "}
-          <strong>Active</strong> means:
-          <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
-            <li>Recruiters can discover your profile</li>
-            <li>You'll receive job recommendations</li>
-            <li>You can apply to open positions</li>
-          </ul>
-        </>
-      )}
-    </div>
+                              {/* Description */}
+                              <div
+                                style={{
+                                  fontSize: 14,
+                                  color: "#64748b",
+                                  lineHeight: 1.7,
+                                  background: isActive ? "#fff7e6" : "#f6ffed",
+                                  border: isActive
+                                    ? "1px solid #ffd591"
+                                    : "1px solid #b7eb8f",
+                                  borderRadius: 10,
+                                  padding: "12px 16px",
+                                  marginBottom: 24,
+                                  textAlign: "left",
+                                }}
+                              >
+                                {isActive ? (
+                                  <>
+                                    <strong style={{ color: "#d46b08" }}>
+                                      Warning:
+                                    </strong>{" "}
+                                    If you set your status to{" "}
+                                    <strong>Inactive</strong>, you will:
+                                    <ul
+                                      style={{
+                                        marginTop: 8,
+                                        marginBottom: 0,
+                                        paddingLeft: 20,
+                                      }}
+                                    >
+                                      <li>
+                                        No longer appear in recruiter searches
+                                      </li>
+                                      <li>
+                                        Not receive new job recommendations
+                                      </li>
+                                      <li>
+                                        Need to manually reactivate your profile
+                                      </li>
+                                    </ul>
+                                  </>
+                                ) : (
+                                  <>
+                                    <strong style={{ color: "#389e0d" }}>
+                                      ✅ Good news:
+                                    </strong>{" "}
+                                    Setting yourself as <strong>Active</strong>{" "}
+                                    means:
+                                    <ul
+                                      style={{
+                                        marginTop: 8,
+                                        marginBottom: 0,
+                                        paddingLeft: 20,
+                                      }}
+                                    >
+                                      <li>
+                                        Recruiters can discover your profile
+                                      </li>
+                                      <li>
+                                        You'll receive job recommendations
+                                      </li>
+                                      <li>You can apply to open positions</li>
+                                    </ul>
+                                  </>
+                                )}
+                              </div>
 
-    {/* Buttons */}
-    <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-      <Button
-        size="large"
-        style={{ minWidth: 120 }}
-        onClick={() => setStatusModalVisible(false)}
-      >
-        Cancel
-      </Button>
-      <Button
-        size="large"
-        type={isActive ? "primary" : "primary"}
-        danger={isActive}
-        style={{ minWidth: 120 }}
-        onClick={() => {
-          setIsActive((prev) => !prev);
-          setStatusModalVisible(false);
-          message.success(
-            isActive
-              ? "Your profile is now Inactive"
-              : "Your profile is now Active"
-          );
-        }}
-      >
-        {isActive ? "Yes, Set Inactive" : "Yes, Set Active"}
-      </Button>
-    </div>
-
-  </div>
-</Modal>
-                          
+                              {/* Buttons */}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 12,
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <Button
+                                  size="large"
+                                  style={{ minWidth: 120 }}
+                                  onClick={() => setStatusModalVisible(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="large"
+                                  type={isActive ? "primary" : "primary"}
+                                  danger={isActive}
+                                  style={{ minWidth: 120 }}
+                                  // onClick={() => {
+                                  //   setIsActive((prev) => !prev);
+                                  //   setStatusModalVisible(false);
+                                  //   message.success(
+                                  //     isActive
+                                  //       ? "Your profile is now Inactive"
+                                  //       : "Your profile is now Active",
+                                  //   );
+                                  // }}
+                                  onClick={async () => {
+                                    try {
+                                      const res = await ToggleCandidateStatus();
+                                      if (res?.status === "success") {
+                                        setIsActive(res.newStatus === "ACTIVE");
+                                        setStatusModalVisible(false);
+                                        message.success(
+                                          `Your profile is now ${res.newStatus}`,
+                                        );
+                                      } else {
+                                        message.error(
+                                          "Failed to update status",
+                                        );
+                                      }
+                                    } catch (err) {
+                                      message.error("Something went wrong");
+                                    }
+                                  }}
+                                >
+                                  {isActive
+                                    ? "Yes, Set Inactive"
+                                    : "Yes, Set Active"}
+                                </Button>
+                              </div>
+                            </div>
+                          </Modal>
                         </>
                       ) : (
                         <Col xs={24} sm={12}>
@@ -1715,9 +1804,9 @@ const UpdateUserProfile = ({
                           name="portfolioLink"
                           rules={[
                             {
-                              pattern:
-                                /^https:\/\/([a-zA-Z0-9-]+)\.(dev|me|io|site|portfolio|com)(\/(portfolio|projects|work|about)\/?)?$/,
-                              message: "Enter a valid portfolio link ",
+                              pattern: /^https:\/\/.+$/,
+                              message:
+                                "Portfolio link must start with https://",
                             },
                           ]}
                         >
@@ -1977,11 +2066,7 @@ const UpdateUserProfile = ({
                     //   ]}
                     // >
                     <Form.Item
-                      label={
-                        Reciviedrole
-                          ? "Certifications"
-                          : "Certifications (Optional)"
-                      }
+                      label={Reciviedrole ? "Certifications" : "Certifications"}
                       name="certifications"
                       rules={
                         Reciviedrole

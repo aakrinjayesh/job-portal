@@ -18,6 +18,7 @@ import {
   EnvironmentOutlined,
   FileTextOutlined,
   ClockCircleOutlined,
+  LineChartOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -259,6 +260,11 @@ const AppliedJobsList = ({ applications, lastJobRef }) => {
                       <span>
                         <UserOutlined /> {job.experience.number}{" "}
                         {job.experience.type}
+                      </span>
+                    )}
+                    {job?.experienceLevel && (
+                      <span>
+                        <LineChartOutlined /> {job.experienceLevel}
                       </span>
                     )}
                   </Space>

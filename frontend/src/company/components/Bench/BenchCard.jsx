@@ -33,6 +33,8 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
   const [savedCandidateIds, setSavedCandidateIds] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const [sortedCandidates, setSortedCandidates] = useState([]);
+  const DEFAULT_AVATAR =
+    "https://cdn-icons-png.flaticon.com/512/9505/9505872.png";
 
   const stopCardClick = (e) => {
     e.stopPropagation();
@@ -85,7 +87,31 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
       } else {
         const resp = await UnsaveCandidate({ candidateProfileId: candidateId });
         if (resp?.status !== "success") throw new Error();
-        messageApi.success("Candidate removed!");
+        // messageApi.success("Candidate removed!");
+        messageApi.open({
+          content: (
+            <span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "#ff4d4f",
+                  color: "#fff",
+                  fontSize: 10,
+                  marginRight: 8,
+                }}
+              >
+                ✕
+              </span>
+              Candidate removed!
+            </span>
+          ),
+          duration: 3,
+        });
       }
     } catch (error) {
       console.error("Save error:", error);
@@ -165,7 +191,8 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
       {/* ===== HEADER ===== */}
       <Row justify="space-between" align="middle">
         <Space>
-          <Avatar size={44} src={candidate?.profilePicture} />
+          {/* <Avatar size={44} src={candidate?.profilePicture} /> */}
+          <Avatar size={44} src={candidate?.profilePicture || DEFAULT_AVATAR} />
           <div>
             <Typography.Text strong>
               {candidate?.name || "Unknown Candidate"}
@@ -225,11 +252,18 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
           <Typography.Text>{candidate?.joiningPeriod || "-"}</Typography.Text>
         </Col>
 
-        <Col span={6}>
+        {/* <Col span={6}>
           <Typography.Text strong>Budget</Typography.Text>
           <br />
           <Typography.Text>{rate || "-"}</Typography.Text>
-        </Col>
+        </Col> */}
+        {candidate?.isVendor && (
+          <Col span={6}>
+            <Typography.Text strong>Budget</Typography.Text>
+            <br />
+            <Typography.Text>{rate || "-"}</Typography.Text>
+          </Col>
+        )}
       </Row>
 
       {/* ===== CLOUDS & SKILLS ===== */}
