@@ -85,7 +85,7 @@ const MainLayout = ({ children }) => {
     chat: ["/candidate/chat"],
     settings: ["/candidate/settings"],
     profile: ["/candidate/profile"],
-    contact: ["/contact"]
+    contact: ["/contact"],
   };
 
   /* 🎯 Active menu */
@@ -116,7 +116,7 @@ const MainLayout = ({ children }) => {
       "chat",
       "settings",
       "profile",
-      "contactsupport"
+      "contactsupport",
     ];
 
     const token = localStorage.getItem("token");
@@ -137,10 +137,10 @@ const MainLayout = ({ children }) => {
       return;
     }
 
-     if (key === "contact") {
-    window.open("/contact", "_blank");
-    return;
-  }
+    if (key === "contact") {
+      window.open("/contact", "_blank");
+      return;
+    }
 
     const route = menuRoutes[key];
     if (route && route.length) {
@@ -156,7 +156,7 @@ const MainLayout = ({ children }) => {
     chat: "Chats",
     settings: "Settings",
     profile: "Profile",
-    contactsupport: "Contact & Support"
+    contactsupport: "Contact & Support",
   };
 
   const pageTitle = pageTitleMap[selectedKey] || "Find Jobs";
@@ -190,8 +190,8 @@ const MainLayout = ({ children }) => {
             }}
           >
             {/* <Avatar size={40} icon={<UserOutlined />} /> */}
-            <Avatar size={40} src={user?.profilePicture || undefined}>
-              {!user?.profilePicture && user?.name?.slice(0, 2)?.toUpperCase()}
+            <Avatar size={40} src={user?.profileUrl || undefined}>
+              {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
             </Avatar>
 
             {!collapsed && (
@@ -250,11 +250,11 @@ const MainLayout = ({ children }) => {
             items={[
               // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
               { key: "profile", icon: <UserOutlined />, label: "Profile" },
-               {
-        key: "contact",
-        icon: <ContactsOutlined />,
-        label: "Contact & Support",
-      },
+              {
+                key: "contact",
+                icon: <ContactsOutlined />,
+                label: "Contact & Support",
+              },
               { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
             ]}
           />
@@ -318,9 +318,8 @@ const MainLayout = ({ children }) => {
               {/* <Avatar size={56}>
                 {user.name?.slice(0, 2).toUpperCase()}
               </Avatar> */}
-              <Avatar size={56} src={user?.profilePicture || undefined}>
-                {!user?.profilePicture &&
-                  user?.name?.slice(0, 2)?.toUpperCase()}
+              <Avatar size={56} src={user?.profileUrl || undefined}>
+                {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
               </Avatar>
 
               <div style={{ lineHeight: 1.2 }}>

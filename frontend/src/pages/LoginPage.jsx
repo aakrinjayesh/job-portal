@@ -145,13 +145,21 @@ const LoginPage = () => {
         localStorage.setItem("role", res?.user?.role);
 
         if (res?.user?.role === "candidate") {
-          // 🔥 Fetch full candidate profile (contains profilePicture)
+          const loginUser = res?.user;
+
+          // 🔥 Fetch full candidate profile
           const profileRes = await GetUserProfile();
 
           if (profileRes?.status === "success") {
-            localStorage.setItem("user", JSON.stringify(profileRes.user));
-          } else {
-            localStorage.setItem("user", JSON.stringify(res?.user));
+            const profile = profileRes.user;
+
+            const userData = {
+              ...loginUser,
+              profileUrl:
+                profile?.profilePicture || loginUser?.profileUrl || null,
+            };
+
+            localStorage.setItem("user", JSON.stringify(userData));
           }
         } else {
           // company login (no change)
