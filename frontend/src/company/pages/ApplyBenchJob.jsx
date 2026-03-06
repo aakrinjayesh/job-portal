@@ -1,25 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Table, Spin, message, Button } from "antd";
-import { GetVendorCandidates } from "../api/api";
-import { ApplyBenchCandidate } from "../api/api";
+import { GetVendorCandidates, ApplyBenchCandidate } from "../api/api";
 import TableDesign from "./TableDesign";
+import { Tag } from "antd";
+import useScreeningQuestions from "../../utils/Usescreeningquestions";
+import ScreeningQuestionsModal from "../components/Job/ScreeningQuestionsModal";
 
-import { Tag, Tooltip } from "antd";
+// ── Tag helpers ────────────────────────────────────────────────────────────────
 
 const renderGreenTags = (items = [], max = 3) => {
   if (!items.length) return "-";
-
   const visible = items.slice(0, max);
   const extra = items.length - max;
-
   return (
     <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 6,
-        maxWidth: "100%",
-      }}
+      style={{ display: "flex", flexWrap: "wrap", gap: 6, maxWidth: "100%" }}
     >
       {visible.map((item, idx) => (
         <Tag
@@ -28,7 +23,7 @@ const renderGreenTags = (items = [], max = 3) => {
             background: "#FBEBFF",
             borderRadius: 100,
             border: "1px solid #800080",
-            whiteSpace: "nowrap", // ✅ prevent wrap
+            whiteSpace: "nowrap",
             maxWidth: 100,
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -37,14 +32,13 @@ const renderGreenTags = (items = [], max = 3) => {
           {item}
         </Tag>
       ))}
-
       {extra > 0 && (
         <Tag
           style={{
             background: "transparent",
             borderRadius: 100,
             color: "#1976d2",
-            whiteSpace: "nowrap", // ✅ prevent wrap
+            whiteSpace: "nowrap",
             cursor: "pointer",
             maxWidth: 100,
             overflow: "hidden",
@@ -60,18 +54,11 @@ const renderGreenTags = (items = [], max = 3) => {
 
 const renderPinkTags = (items = [], max = 3) => {
   if (!items.length) return "-";
-
   const visible = items.slice(0, max);
   const extra = items.length - max;
-
   return (
     <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 6,
-        maxWidth: "100%",
-      }}
+      style={{ display: "flex", flexWrap: "wrap", gap: 6, maxWidth: "100%" }}
     >
       {visible.map((item, idx) => (
         <Tag
@@ -86,7 +73,6 @@ const renderPinkTags = (items = [], max = 3) => {
           {item}
         </Tag>
       ))}
-
       {extra > 0 && (
         <Tag
           style={{
@@ -104,58 +90,42 @@ const renderPinkTags = (items = [], max = 3) => {
   );
 };
 
-const renderTagsWithMore = (items = [], max = 3) => {
-  if (!items.length) return "-";
+// ── Component ──────────────────────────────────────────────────────────────────
 
-  const visible = items.slice(0, max);
-  const extraCount = items.length - max;
-
-  return (
-    <>
-      {visible.map((item, idx) => (
-        <Tag key={idx} color="blue" style={{ marginBottom: 4 }}>
-          {item}
-        </Tag>
-      ))}
-
-      {extraCount > 0 && (
-        <Tooltip title={items.join(", ")}>
-          <Tag color="default">+{extraCount} more</Tag>
-        </Tooltip>
-      )}
-    </>
-  );
-};
-
-const ApplyBenchJob = ({ jobId }) => {
+const ApplyBenchJob = ({ jobId, hasQuestions }) => {
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
-  const [messageApi, contextHolder] = message.useMessage();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [applyLoading, setApplyLoading] = useState(false);
+
+  // ── Shared screening hook ──────────────────────────────────────────────────
+  // NOTE: jobId must be defined when this component mounts.
+  // Previously hasQuestions was checked but jobId was never passed to
+  // GetJobQuestions — that was the bug causing the modal not to appear.
+  const screening = useScreeningQuestions(jobId);
+  const { messageApi, contextHolder } = screening;
+  // ──────────────────────────────────────────────────────────────────────────
 
   const rowSelection = {
     selectedRowKeys,
     onChange: (newSelectedRowKeys, selectedRow) => {
-      console.log("ids selected", newSelectedRowKeys);
+      // console.log("ids selected", newSelectedRowKeys);
       setSelectedRowKeys(newSelectedRowKeys);
     },
     preserveSelectedRowKeys: true,
   };
 
-  // ------------------- APPLY BUTTON FUNCTION -------------------
-  const handleApply = async () => {
-    if (selectedRowKeys.length === 0) {
-      messageApi.warning("Please select at least one candidate");
-      return;
-    }
+  // ── Core submit ────────────────────────────────────────────────────────────
+  const submitApplication = async (answers) => {
+    setApplyLoading(true);
 
     const payload = {
       jobId,
       candidateProfileIds: selectedRowKeys,
+      answers,
     };
 
     let hide;
-
     try {
       hide = messageApi.loading({
         content: "Applying selected candidates...",
@@ -163,45 +133,25 @@ const ApplyBenchJob = ({ jobId }) => {
       });
 
       const res = await ApplyBenchCandidate(payload);
-
       hide?.();
 
-      const { status, code, message, metadata } = res || {};
+      const { status, code, message: msg, metadata } = res || {};
 
-      // 🔴 1️⃣ Feature Limit Exceeded (200 but logical failure)
       if (code === "LIMIT_EXCEEDED") {
         const { feature, period, maxAllowed, currentUsage } = metadata || {};
-
         messageApi.warning({
-          content: `${feature} ${period?.toLowerCase()} limit exceeded. 
-                      Usage: ${currentUsage}/${maxAllowed}`,
+          content: `${feature} ${period?.toLowerCase()} limit exceeded. Usage: ${currentUsage}/${maxAllowed}`,
           duration: 5,
         });
-
         return;
       }
 
-      // 🟢 2️⃣ Successful Apply
-      // if (status === "success") {
-      //   messageApi.success({
-      //     content:
-      //       message ||
-      //       // `${selectedRowKeys.length} candidate(s) applied successfully`,
-      //       `${selectedRowKeys.length} candidate${
-      //         selectedRowKeys.length > 1 ? "s" : ""
-      //       } applied successfully`,
-      //     duration: 3,
-      //   });
-
-      //   setSelectedRowKeys([]);
-      //   return;
-      // }
-      // 🟢 2️⃣ Successful Apply
       if (status === "success") {
         const applied = res?.appliedCandidates || [];
         const skipped = res?.skippedCandidates || [];
 
-        // ❌ ALL were already applied — nothing new
+        screening.closeModal(false);
+
         if (applied.length === 0 && skipped.length > 0) {
           const names = skipped.map((c) => c.candidateName).join(", ");
           messageApi.error({
@@ -212,7 +162,6 @@ const ApplyBenchJob = ({ jobId }) => {
           return;
         }
 
-        // ✅ New candidates applied successfully
         if (applied.length > 0) {
           messageApi.success({
             content: `${applied.length} candidate${applied.length > 1 ? "s" : ""} applied successfully`,
@@ -220,7 +169,6 @@ const ApplyBenchJob = ({ jobId }) => {
           });
         }
 
-        // ⚠️ Some were duplicates (mixed case)
         if (skipped.length > 0) {
           const names = skipped.map((c) => c.candidateName).join(", ");
           messageApi.warning({
@@ -233,30 +181,61 @@ const ApplyBenchJob = ({ jobId }) => {
         return;
       }
 
-      // 🟡 3️⃣ Fallback safety
-      messageApi.error(message || "Unexpected response from server");
+      messageApi.error(msg || "Unexpected response from server");
     } catch (err) {
       hide?.();
-
       messageApi.error(
-        err?.response?.data?.message || "❌ Failed to apply candidates",
+        err?.response?.data?.message || "Failed to apply candidates",
       );
+    } finally {
+      setApplyLoading(false);
     }
   };
 
+  // ── "Apply With Selected Bench" click ─────────────────────────────────────
+  const handleApplyClick = async () => {
+    if (selectedRowKeys.length === 0) {
+      messageApi.warning("Please select at least one candidate");
+      return;
+    }
+    await screening.initiateApply(hasQuestions, submitApplication);
+  };
+
+  // ── Modal OK: validate → build answers → submit ────────────────────────────
+  const handleScreeningSubmit = async () => {
+    const answers = screening.buildAnswers();
+    if (answers === null) return; // validation failed
+    await submitApplication(answers);
+  };
+
+  // ── Load candidates ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await GetVendorCandidates();
+        const active = (res?.data || []).filter(
+          (x) => x.status === null || x.status?.toLowerCase() === "active",
+        );
+        setCandidates(active || []);
+      } catch {
+        messageApi.error("Failed to load candidates");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
   const columns = [
     { title: "Name", dataIndex: "name", width: 180 },
-
     {
       title: "Clouds",
       key: "clouds",
       width: 260,
-      render: (_, r) => {
-        const clouds = r.primaryClouds.map((s) => s.name) || [];
-        return renderPinkTags(clouds, 3);
-      },
+      render: (_, r) =>
+        renderPinkTags(r.primaryClouds.map((s) => s.name) || [], 3),
     },
-
     {
       title: "Skills",
       key: "skills",
@@ -269,41 +248,14 @@ const ApplyBenchJob = ({ jobId }) => {
         return renderGreenTags(skills, 3);
       },
     },
-
     { title: "Location", dataIndex: "currentLocation", width: 180 },
     { title: "Experience", dataIndex: "totalExperience", width: 140 },
   ];
 
-  // ------------------- FETCH CANDIDATES -------------------
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await GetVendorCandidates();
-        // const active = res?.data?.filter(
-        //   (x) => x.status?.toLowerCase() === "active",
-        // );
-        const active = (res?.data || []).filter(
-          (x) => x.status === null || x.status?.toLowerCase() === "active",
-        );
-
-        setCandidates(active);
-
-        // setCandidates(active || []);
-        // setCandidates(res?.data || []);
-        setCandidates(active || []);
-        // console.log("Full Data:", res?.data);
-      } catch (err) {
-        message.error("Failed to load candidates");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
   return (
     <Spin spinning={loading}>
+      {contextHolder}
+
       <div
         style={{
           display: "flex",
@@ -315,8 +267,7 @@ const ApplyBenchJob = ({ jobId }) => {
         <h3 style={{ margin: 0 }}>Candidate List</h3>
         <div>
           <Button
-            // onClick={handleApply}
-            disabled={true}
+            disabled
             style={{
               background: "#E6F0FF",
               color: "#1D4ED8",
@@ -332,11 +283,10 @@ const ApplyBenchJob = ({ jobId }) => {
             AI Eligibility Check
           </Button>
 
-          {contextHolder}
-
           <Button
-            onClick={handleApply}
-            disabled={!selectedRowKeys.length}
+            onClick={handleApplyClick}
+            loading={applyLoading || screening.questionsLoading}
+            disabled={!selectedRowKeys.length || screening.questionsLoading}
             style={{
               background: "#E6F0FF",
               color: "#1D4ED8",
@@ -363,10 +313,18 @@ const ApplyBenchJob = ({ jobId }) => {
         scroll={{ y: 400 }}
         emptyText="No bench candidates available"
         pagination={{
-          pageSize: 5, // ✅ Number of candidates per page
-          showSizeChanger: true, // Optional: allow user to change page size
-          pageSizeOptions: ["5", "10", "20"], // Optional page size options
+          pageSize: 5,
+          showSizeChanger: true,
+          pageSizeOptions: ["5", "10", "20"],
         }}
+      />
+
+      {/* SCREENING QUESTIONS MODAL — shared component, no duplication */}
+      <ScreeningQuestionsModal
+        {...screening}
+        applyLoading={applyLoading}
+        onSubmit={handleScreeningSubmit}
+        selectedCount={selectedRowKeys.length}
       />
     </Spin>
   );

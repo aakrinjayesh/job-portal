@@ -32,7 +32,6 @@ const CandidateList = () => {
   const [progress, setProgress] = useState(0);
   const [generatingMap, setGeneratingMap] = useState({});
 
-  // ✅ NEW STATE FOR GROUP CHAT
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [selectedCandidates, setSelectedCandidates] = useState([]);
   const [statusMap, setStatusMap] = useState({});
@@ -43,6 +42,10 @@ const CandidateList = () => {
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [activityCandidate, setActivityCandidate] = useState(null);
   const [activityTab, setActivityTab] = useState("NOTE");
+
+  // 🆕 SCREENING ANSWERS MODAL STATE
+  const [answersModalOpen, setAnswersModalOpen] = useState(false);
+  const [answersCandidate, setAnswersCandidate] = useState(null);
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -61,32 +64,15 @@ const CandidateList = () => {
         const response = await GetCandidateList(payload);
 
         clearInterval(interval);
-
         setProgress(100);
 
         setTimeout(() => {
           setLoading(false);
         }, 400);
 
-        // if (response?.data && response.data.length > 0) {
-        //   const map = {};
-        //   response.data.forEach((c) => {
-        //     if (c.status === "Rejected") {
-        //       map[c.applicationId] = "Rejected";
-        //     } else if (c.status === "BookMark") {
-        //       map[c.applicationId] = "BookMark";
-        //     } else {
-        //       map[c.applicationId] = "Not Updated";
-        //     }
-        //   });
-
-        //   setStatusMap(map);
-        //   setCandidates(response.data);
-        //   setTotal(response.total || response.data.length);
         if (response?.data && response.data.length > 0) {
           const map = {};
           response.data.forEach((c) => {
-            // map[c.applicationId] = c.status || "Not Updated";
             map[c.applicationId] = c.status || "Pending";
           });
 
@@ -116,7 +102,6 @@ const CandidateList = () => {
         if (response?.data && response.data.length > 0) {
           const map = {};
           response.data.forEach((c) => {
-            // map[c.applicationId] = c.status || "Not Updated";
             map[c.applicationId] = c.status || "Pending";
           });
 
@@ -141,39 +126,30 @@ const CandidateList = () => {
   const filteredCandidates = candidates
     .filter((c) => {
       const vendorId = c?.profile?.vendorId;
-
       if (candidateType === "ALL") return true;
       if (candidateType === "NORMAL") return vendorId == null;
       if (candidateType === "VENDOR") return vendorId != null;
-
       return true;
     })
-
     .filter((c) => {
       if (!searchText.trim()) return true;
 
       const q = searchText.toLowerCase();
-
       const name = c?.name?.toLowerCase() || "";
       const title = c?.profile?.title?.toLowerCase() || "";
       const email = c?.email?.toLowerCase() || "";
       const phone = c?.profile?.phoneNumber?.toLowerCase() || "";
-      const location = c?.profile?.currentLocation?.toLowerCase() || "";
-      // const fitScore = c?.matchScore?.toString() || "";
+      const loc = c?.profile?.currentLocation?.toLowerCase() || "";
       const fitScore =
         c?.matchScore !== undefined && c?.matchScore !== null
           ? `${c.matchScore}%`
           : "";
-
       const keyMatchSkills =
         c?.aiAnalysis?.key_match_skills?.join(" ").toLowerCase() || "";
-
       const keyGapSkills =
         c?.aiAnalysis?.key_gap_skills?.join(" ").toLowerCase() || "";
-
       const keyMatchClouds =
         c?.aiAnalysis?.key_match_clouds?.join(" ").toLowerCase() || "";
-
       const keyGapClouds =
         c?.aiAnalysis?.key_gap_clouds?.join(" ").toLowerCase() || "";
 
@@ -182,7 +158,7 @@ const CandidateList = () => {
         title.includes(q) ||
         email.includes(q) ||
         phone.includes(q) ||
-        location.includes(q) ||
+        loc.includes(q) ||
         fitScore.includes(q) ||
         keyMatchSkills.includes(q) ||
         keyGapSkills.includes(q) ||
@@ -190,25 +166,18 @@ const CandidateList = () => {
         keyGapClouds.includes(q)
       );
     })
-
     .sort((a, b) => {
       if (!searchText.trim()) return 0;
-
       const aName = a?.name?.toLowerCase() || "";
       const bName = b?.name?.toLowerCase() || "";
-
       const q = searchText.toLowerCase();
-
       const aMatch = aName.includes(q);
       const bMatch = bName.includes(q);
-
-      // 👇 matches come to top
       if (aMatch && !bMatch) return -1;
       if (!aMatch && bMatch) return 1;
       return 0;
     });
 
-  // ✅ ROW SELECTION (CHECKBOX)
   const rowSelection = {
     selectedRowKeys,
     onChange: (keys, rows) => {
@@ -217,7 +186,6 @@ const CandidateList = () => {
     },
   };
 
-  // ✅ write this at the TOP of the file (below imports)
   const chipStyle = {
     padding: "6px 8px",
     borderRadius: 4,
@@ -233,22 +201,13 @@ const CandidateList = () => {
 
   const STATUS_FLAG_MAP = {
     Pending: { label: "Pending", color: "#bfbfbf" },
-    // Reviewed: { label: "Reviewed", color: "#1890ff" },
     Shortlisted: { label: "Shortlisted", color: "#52c41a" },
     Rejected: { label: "Rejected", color: "#f5222d" },
-    BookMark: { label: "BookMark", color: "#faad14" }, // gold
-    // Clear: { label: "Clear", color: "#ff16ecff" },
+    BookMark: { label: "BookMark", color: "#faad14" },
   };
 
-  const MANUAL_STATUS_OPTIONS = [
-    // "Pending",
-    "Shortlisted",
-    "Rejected",
-    "BookMark",
-    // "Clear",
-  ];
+  const MANUAL_STATUS_OPTIONS = ["Shortlisted", "Rejected", "BookMark"];
 
-  // Triangle flag (same as Figma)
   const PennantFlag = ({ color = DEFAULT_FLAG_COLOR }) => (
     <div
       style={{
@@ -262,9 +221,7 @@ const CandidateList = () => {
   );
 
   const FlagDropdown = ({ record }) => {
-    // const currentStatus = record.status || "Pending";
     const currentStatus = statusMap[record.applicationId] || "Pending";
-    // const currentStatus = statusMap[record.applicationId] || "Not Updated";
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -286,29 +243,19 @@ const CandidateList = () => {
               }}
               onClick={async () => {
                 let finalStatus = status;
-
                 if (status === "Clear") {
-                  finalStatus = "Pending"; // ✅ convert clear to pending
+                  finalStatus = "Pending";
                 }
 
                 try {
-                  // if (finalStatus === "BookMark") {
-                  //   await MarkCandidateBookmark({
-                  //     jobApplicationId: record.applicationId,
-                  //   });
-                  // }
                   if (finalStatus === "BookMark") {
-                    // 1️⃣ update application status
                     await MarkCandidateBookmark({
                       jobApplicationId: record.applicationId,
                     });
-
-                    // 2️⃣ ALSO save into SavedCandidates table
                     await SaveCandidate({
                       candidateProfileId: record.profile.id,
                     });
                   } else {
-                    // For Shortlisted, Rejected, Pending
                     await UpdateVendorCandidateStatus({
                       jobApplicationId: record.applicationId,
                       status: finalStatus,
@@ -324,16 +271,13 @@ const CandidateList = () => {
                 }
               }}
             >
-              {/* ✅ KEEP ORIGINAL FLAG COLOR ALWAYS */}
               <PennantFlag color={STATUS_FLAG_MAP[status].color} />
-
               <span style={{ fontSize: 13 }}>
                 {STATUS_FLAG_MAP[status].label}
               </span>
             </div>
           );
         })}
-        {/* ✅ CLEAR BUTTON */}
         <div
           onClick={async () => {
             try {
@@ -341,7 +285,6 @@ const CandidateList = () => {
                 jobApplicationId: record.applicationId,
                 status: "Pending",
               });
-
               setStatusMap((prev) => ({
                 ...prev,
                 [record.applicationId]: "Pending",
@@ -364,25 +307,13 @@ const CandidateList = () => {
     );
   };
 
-  const FLAG_FILTER_STATUSES = [
-    // "Pending",
-    // "Reviewed",
-    "Shortlisted",
-    "Rejected",
-    "BookMark",
-  ];
+  const FLAG_FILTER_STATUSES = ["Shortlisted", "Rejected", "BookMark"];
 
-  // ✅ Generate Fit Score (Per-row loading + prevent double click + instant update)
   const generateFitScore = async (record) => {
-    console.log("record generateFitscore", record);
     try {
-      // 🔒 Prevent double clicks
       if (generatingMap[record.applicationId]) return;
 
-      setGeneratingMap((prev) => ({
-        ...prev,
-        [record.applicationId]: true,
-      }));
+      setGeneratingMap((prev) => ({ ...prev, [record.applicationId]: true }));
 
       messageAPI.loading({
         content: "Generating AI Fit Score...",
@@ -393,7 +324,7 @@ const CandidateList = () => {
         jobApplicationId: record.applicationId,
         jobId: jobId,
         candidateProfileId: record.profile.id,
-        force: false, // backend handles existing reuse
+        force: false,
       };
 
       const response = await CVEligibility(payload);
@@ -404,7 +335,6 @@ const CandidateList = () => {
           key: `fitScore-${record.applicationId}`,
         });
 
-        // ✅ Instant table update
         setCandidates((prev) =>
           prev.map((c) =>
             c.applicationId === record.applicationId
@@ -423,10 +353,7 @@ const CandidateList = () => {
         key: `fitScore-${record.applicationId}`,
       });
     } finally {
-      setGeneratingMap((prev) => ({
-        ...prev,
-        [record.applicationId]: false,
-      }));
+      setGeneratingMap((prev) => ({ ...prev, [record.applicationId]: false }));
     }
   };
 
@@ -438,8 +365,6 @@ const CandidateList = () => {
       width: 60,
       fixed: "left",
       align: "center",
-
-      // ✅ ADD THIS (custom flag UI)
       filterDropdown: ({
         setSelectedKeys,
         selectedKeys,
@@ -449,13 +374,12 @@ const CandidateList = () => {
         <div style={{ padding: 8, minWidth: 160 }}>
           {FLAG_FILTER_STATUSES.map((status) => {
             const isActive = selectedKeys[0] === status;
-
             return (
               <div
                 key={status}
                 onClick={() => {
-                  setSelectedKeys([status]); // single select
-                  confirm(); // apply instantly
+                  setSelectedKeys([status]);
+                  confirm();
                 }}
                 style={{
                   display: "flex",
@@ -473,7 +397,6 @@ const CandidateList = () => {
               </div>
             );
           })}
-
           <div
             onClick={() => {
               clearFilters();
@@ -491,22 +414,13 @@ const CandidateList = () => {
           </div>
         </div>
       ),
-
-      // ✅ KEEP THIS (filter logic)
       onFilter: (value, record) => {
         const currentStatus = statusMap[record.applicationId] || "Pending";
-        // const currentStatus = statusMap[record.applicationId] || "Not Updated";
-
         return currentStatus === value;
       },
-
-      // ✅ KEEP THIS (row flag UI)
       render: (_, record) => {
         const currentStatus = statusMap[record.applicationId] || "Pending";
-        // const currentStatus = statusMap[record.applicationId] || "Not Updated";
-
         const flagMeta = STATUS_FLAG_MAP[currentStatus];
-
         return (
           <Popover
             trigger="click"
@@ -533,13 +447,11 @@ const CandidateList = () => {
         <span
           onClick={async (e) => {
             e.stopPropagation();
-
             try {
               await MarkCandidateReviewed({
                 jobApplicationId: record.applicationId,
               });
             } catch {}
-
             setCandidates((prev) =>
               prev.map((c) =>
                 c.applicationId === record.applicationId
@@ -547,7 +459,6 @@ const CandidateList = () => {
                   : c,
               ),
             );
-
             navigate(`/company/candidate/${record.profile.id}`, {
               state: {
                 candidate: { ...record, status: "Reviewed" },
@@ -595,7 +506,7 @@ const CandidateList = () => {
         return (
           <span
             style={{
-              padding: "6px 16px", // ✅ SAME AS FIGMA
+              padding: "6px 16px",
               borderRadius: "8px",
               fontWeight: 500,
               fontSize: "13px",
@@ -619,12 +530,9 @@ const CandidateList = () => {
       key: "keyMatchSkills",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_match_skills || [];
+        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
 
-        if (!list.length) {
-          return <Tag style={chipStyle}>NA</Tag>;
-        }
-
-        const visibleSkills = list.slice(0, 2); // 👈 show first 2
+        const visibleSkills = list.slice(0, 2);
         const remainingCount = list.length - 2;
 
         return (
@@ -634,22 +542,16 @@ const CandidateList = () => {
                 {skill}
               </Tag>
             ))}
-
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff", // Ant Design link blue
+                  color: "#1677ff",
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  // textDecoration: "underline",
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // optional: modal / tooltip later
-                  console.log("All match skills:", list);
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 +{remainingCount} more
               </span>
@@ -664,10 +566,7 @@ const CandidateList = () => {
       key: "keyGapSkills",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_gap_skills || [];
-
-        if (!list.length) {
-          return <Tag style={chipStyle}>NA</Tag>;
-        }
+        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
 
         const visibleSkills = list.slice(0, 2);
         const remainingCount = list.length - 2;
@@ -679,22 +578,16 @@ const CandidateList = () => {
                 {skill}
               </Tag>
             ))}
-
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff", // AntD link blue
+                  color: "#1677ff",
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  // textDecoration: "underline",
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // OPTIONAL: later you can open modal / tooltip here
-                  console.log("All gap skills:", list);
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 +more
               </span>
@@ -709,12 +602,9 @@ const CandidateList = () => {
       key: "keyMatchClouds",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_match_clouds || [];
+        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
 
-        if (!list.length) {
-          return <Tag style={chipStyle}>NA</Tag>;
-        }
-
-        const visibleClouds = list.slice(0, 2); // 👈 same count as others
+        const visibleClouds = list.slice(0, 2);
         const remainingCount = list.length - 2;
 
         return (
@@ -724,22 +614,16 @@ const CandidateList = () => {
                 {cloud}
               </Tag>
             ))}
-
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff", // AntD link blue
+                  color: "#1677ff",
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  // textDecoration: "underline",
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // later: open modal / tooltip if needed
-                  console.log("All match clouds:", list);
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 +{remainingCount} more
               </span>
@@ -754,13 +638,8 @@ const CandidateList = () => {
       key: "keyGapClouds",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_gap_clouds || [];
+        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
 
-        // If no data
-        if (!list.length) {
-          return <Tag style={chipStyle}>NA</Tag>;
-        }
-
-        // Show only first 2
         const visibleClouds = list.slice(0, 2);
         const remainingCount = list.length - 2;
 
@@ -771,22 +650,16 @@ const CandidateList = () => {
                 {cloud}
               </Tag>
             ))}
-
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff", // Ant Design blue
+                  color: "#1677ff",
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
-                  // textDecoration: "underline",
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // optional: open modal / tooltip later
-                  console.log("All gap clouds:", list);
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 +{remainingCount} more
               </span>
@@ -796,39 +669,10 @@ const CandidateList = () => {
       },
     },
 
-    // {
-    //   title: "Email",
-    //   key: "email",
-    //   render: (_, record) => {
-    //     const displayEmail =
-    //       record?.isVendor && record?.vendor?.email
-    //         ? record.vendor.email
-    //         : record.email;
-
-    //     return displayEmail || "N/A";
-    //   },
-    //   sorter: (a, b) => {
-    //     const emailA =
-    //       a?.isVendor && a?.vendor?.email ? a.vendor.email : a.email || "";
-    //     const emailB =
-    //       b?.isVendor && b?.vendor?.email ? b.vendor.email : b.email || "";
-
-    //     return emailA.localeCompare(emailB);
-    //   },
-    // },
-
-    // {
-    //   title: "Phone Number",
-    //   dataIndex: ["profile", "phoneNumber"],
-    //   key: "phone",
-    //   render: (phone) => phone || "N/A",
-    // },
-
     {
       title: "Status",
       key: "status",
       render: (_, record) => {
-        // const currentStatus = statusMap[record.applicationId] || "Not Updated";
         const currentStatus = statusMap[record.applicationId] || "Pending";
         return currentStatus;
       },
@@ -840,6 +684,7 @@ const CandidateList = () => {
       key: "appliedAt",
       render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
     },
+
     {
       title: "Location",
       dataIndex: ["profile", "currentLocation"],
@@ -854,24 +699,15 @@ const CandidateList = () => {
       align: "center",
       render: (_, record) => {
         const openActivityOnly = async (type) => {
-          // try {
-          //   await MarkCandidateReviewed({
-          //     jobApplicationId: record.applicationId,
-          //   });
-          // } catch {}
-
-          // setCandidates((prev) =>
-          //   prev.map((c) =>
-          //     c.applicationId === record.applicationId
-          //       ? { ...c, status: "Reviewed" }
-          //       : c
-          //   )
-          // );
-
-          // ✅ OPEN MODAL INSTEAD
           setActivityCandidate(record);
-          setActivityTab(type); // "NOTE" or "TODO"
+          setActivityTab(type);
           setActivityModalOpen(true);
+        };
+
+        // 🆕 OPEN SCREENING ANSWERS MODAL
+        const openAnswers = () => {
+          setAnswersCandidate(record);
+          setAnswersModalOpen(true);
         };
 
         return (
@@ -880,7 +716,7 @@ const CandidateList = () => {
             placement="left"
             content={
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {/* 🤖 Generate Fit Score */}
+                {/* Generate Fit Score */}
                 <div
                   style={{
                     cursor: generatingMap[record.applicationId]
@@ -897,9 +733,7 @@ const CandidateList = () => {
                 >
                   {generatingMap[record.applicationId]
                     ? "⏳ Generating..."
-                    : record.matchScore
-                      ? "🔄 Regenerate Fit Score"
-                      : "🤖 Generate Fit Score"}
+                    : "🤖 Generate Fit Score"}
                 </div>
 
                 <div
@@ -915,6 +749,16 @@ const CandidateList = () => {
                 >
                   ✅ Todo
                 </div>
+
+                {/* 🆕 SCREENING ANSWERS — only show if answers exist */}
+                {record?.screeningAnswers?.length > 0 && (
+                  <div
+                    style={{ cursor: "pointer", padding: "6px 10px" }}
+                    onClick={openAnswers}
+                  >
+                    📋 Screening Answers
+                  </div>
+                )}
               </div>
             }
           >
@@ -932,7 +776,7 @@ const CandidateList = () => {
     <div style={{ padding: 0 }}>
       {contextHolder}
 
-      {/* ================= FIGMA HEADER CARD ================= */}
+      {/* HEADER CARD */}
       <div
         style={{
           width: "100%",
@@ -946,135 +790,61 @@ const CandidateList = () => {
           marginBottom: 12,
         }}
       >
-        {/* LEFT SIDE – TOGGLES */}
+        {/* LEFT — TOGGLES */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* ALL */}
-          <div
-            onClick={() => setCandidateType("ALL")}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              outline:
-                candidateType === "ALL"
-                  ? "1px solid #3F41D1"
-                  : "1px solid #A3A3A3",
-              background: candidateType === "ALL" ? "#EBEBFA" : "#FFFFFF",
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ padding: "4px 12px" }}>
-              <span
+          {["ALL", "NORMAL", "VENDOR"].map((type) => {
+            const labels = {
+              ALL: `All (${candidates.length})`,
+              NORMAL: `Normal Candidates (${candidates.filter((c) => c?.profile?.vendorId == null).length})`,
+              VENDOR: `Bench Candidates (${candidates.filter((c) => c?.profile?.vendorId != null).length})`,
+            };
+            return (
+              <div
+                key={type}
+                onClick={() => setCandidateType(type)}
                 style={{
-                  color: candidateType === "ALL" ? "#3F41D1" : "#666666",
-                  fontSize: 13,
-                  fontWeight: candidateType === "ALL" ? 500 : 400,
+                  height: 32,
+                  borderRadius: 6,
+                  outline:
+                    candidateType === type
+                      ? "1px solid #3F41D1"
+                      : "1px solid #A3A3A3",
+                  background: candidateType === type ? "#EBEBFA" : "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
                 }}
               >
-                All ({candidates.length})
-              </span>
-            </div>
-          </div>
-
-          {/* NORMAL */}
-          <div
-            onClick={() => setCandidateType("NORMAL")}
-            style={{
-              height: 32,
-
-              borderRadius: 6,
-              outline:
-                candidateType === "NORMAL"
-                  ? "1px solid #3F41D1"
-                  : "1px solid #A3A3A3",
-              background: candidateType === "NORMAL" ? "#EBEBFA" : "#FFFFFF",
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ padding: "4px 12px" }}>
-              <span
-                style={{
-                  color: candidateType === "NORMAL" ? "#3F41D1" : "#666666",
-                  fontSize: 13,
-                  fontWeight: candidateType === "NORMAL" ? 500 : 400,
-                }}
-              >
-                Normal Candidates (
-                {candidates.filter((c) => c?.profile?.vendorId == null).length})
-              </span>
-            </div>
-          </div>
-
-          {/* VENDOR */}
-          <div
-            onClick={() => setCandidateType("VENDOR")}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              outline:
-                candidateType === "VENDOR"
-                  ? "1px solid #3F41D1"
-                  : "1px solid #A3A3A3",
-              background: candidateType === "VENDOR" ? "#EBEBFA" : "#FFFFFF",
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ padding: "4px 12px" }}>
-              <span
-                style={{
-                  color: candidateType === "VENDOR" ? "#3F41D1" : "#666666",
-                  fontSize: 13,
-                  fontWeight: candidateType === "VENDOR" ? 500 : 400,
-                }}
-              >
-                Bench Candidates (
-                {candidates.filter((c) => c?.profile?.vendorId != null).length})
-              </span>
-            </div>
-          </div>
+                <div style={{ padding: "4px 12px" }}>
+                  <span
+                    style={{
+                      color: candidateType === type ? "#3F41D1" : "#666666",
+                      fontSize: 13,
+                      fontWeight: candidateType === type ? 500 : 400,
+                    }}
+                  >
+                    {labels[type]}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* RIGHT SIDE – SEARCH + CREATE GROUP */}
+        {/* RIGHT — SEARCH + CREATE GROUP */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {/* SEARCH */}
-          {/* <Input
-            placeholder="Search by name or title"
-            allowClear
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{
-              width: 200,
-              height: 36,
-              borderRadius: 20,
-              fontSize: 13,
-            }}
-          /> */}
           <Input
             placeholder="Search by name or title"
             allowClear
             value={searchText}
             onChange={(e) => {
               const value = e.target.value;
-
-              // Allow only letters, numbers and space
               const filteredValue = value.replace(/[^a-zA-Z0-9 ]/g, "");
-
               setSearchText(filteredValue);
             }}
-            style={{
-              width: 200,
-              height: 36,
-              borderRadius: 20,
-              fontSize: 13,
-            }}
+            style={{ width: 200, height: 36, borderRadius: 20, fontSize: 13 }}
           />
 
-          {/* CREATE GROUP CHAT (SAME LOGIC, FIGMA STYLE) */}
           <div
             onClick={() =>
               selectedCandidates.length === 0 ? null : setIsGroupModalOpen(true)
@@ -1119,10 +889,7 @@ const CandidateList = () => {
             type="circle"
             percent={progress}
             width={120}
-            strokeColor={{
-              "0%": "#1677FF",
-              "100%": "#52c41a",
-            }}
+            strokeColor={{ "0%": "#1677FF", "100%": "#52c41a" }}
             showInfo={false}
           />
           <div style={{ fontSize: 16, fontWeight: 500 }}>
@@ -1150,6 +917,7 @@ const CandidateList = () => {
             }}
           />
 
+          {/* GROUP CHAT MODAL (unchanged) */}
           <Modal
             title="Create Group Chat"
             open={isGroupModalOpen}
@@ -1163,7 +931,6 @@ const CandidateList = () => {
                 message.warning("Please enter a group name");
                 return;
               }
-
               const chatUserIds = selectedCandidates
                 .map((c) => c?.profile?.chatuserid)
                 .filter(Boolean);
@@ -1173,11 +940,9 @@ const CandidateList = () => {
                 return;
               }
 
-              const uniqueIds = [...new Set(chatUserIds)];
-
               navigate("/company/chat", {
                 state: {
-                  groupUserIds: uniqueIds,
+                  groupUserIds: [...new Set(chatUserIds)],
                   groupName: groupName.trim(),
                 },
               });
@@ -1194,6 +959,7 @@ const CandidateList = () => {
             />
           </Modal>
 
+          {/* ACTIVITY MODAL (unchanged) */}
           <Modal
             open={activityModalOpen}
             footer={null}
@@ -1201,13 +967,7 @@ const CandidateList = () => {
             destroyOnClose
             closable
             closeIcon={
-              <span
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: "#595959",
-                }}
-              >
+              <span style={{ fontSize: 18, fontWeight: 600, color: "#595959" }}>
                 ✕
               </span>
             }
@@ -1219,6 +979,78 @@ const CandidateList = () => {
                 jobId={jobId}
                 defaultTab={activityTab}
               />
+            )}
+          </Modal>
+
+          {/* 🆕 SCREENING ANSWERS MODAL */}
+          <Modal
+            open={answersModalOpen}
+            title={
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>
+                  📋 Screening Answers
+                </div>
+                {answersCandidate?.name && (
+                  <div
+                    style={{ fontSize: 13, color: "#6B7280", fontWeight: 400 }}
+                  >
+                    {answersCandidate.name}
+                  </div>
+                )}
+              </div>
+            }
+            footer={null}
+            width={480}
+            destroyOnClose
+            onCancel={() => {
+              setAnswersModalOpen(false);
+              setAnswersCandidate(null);
+            }}
+          >
+            {answersCandidate?.screeningAnswers?.length > 0 ? (
+              <div style={{ marginTop: 8 }}>
+                {answersCandidate.screeningAnswers.map((a, i) => (
+                  <div
+                    key={a.questionId}
+                    style={{
+                      background: "#FAFAFA",
+                      border: "1px solid #EDEDED",
+                      borderRadius: 10,
+                      padding: "14px 18px",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#6B7280",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Q{i + 1}. {a.question}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#1A1A2E",
+                      }}
+                    >
+                      {a.answer || "—"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                style={{
+                  padding: "20px 0",
+                  textAlign: "center",
+                  color: "#9CA3AF",
+                }}
+              >
+                No screening answers for this application.
+              </div>
             )}
           </Modal>
         </>

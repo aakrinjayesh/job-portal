@@ -1,4 +1,4 @@
-import axiosInstance from "../../candidate/api/axiosInstance";
+import axiosInstance from "../../candidate/api/axiosInstance.js";
 
 export async function GetJobsList(page = 1, limit = 10, filters = {}, signal) {
   try {
@@ -80,7 +80,7 @@ export async function CreateJob(payload) {
     });
     return response.data;
   } catch (error) {
-    console.error("Error in CreateJob:", error.response?.data || error);
+    console.error("Error in CreateJob:", error);
     throw error;
   }
 }
@@ -482,6 +482,16 @@ export async function SavedCandidatesList() {
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
+    throw error;
+  }
+}
+
+export async function GetJobQuestions(jobId) {
+  try {
+    const response = await axiosInstance.get(`/job/questions/${jobId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetAllTodoTemplates:", error);
     throw error;
   }
 }

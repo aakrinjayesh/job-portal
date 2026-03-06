@@ -150,11 +150,32 @@ const postJobValidator = z.object({
   applicationDeadline: z.string().optional(),
   companyLogo: z.string().nullable().optional(),
   ApplicationLimit: z.number().optional(),
+  questions: z
+    .array(
+      z.object({
+        question: z.string(),
+        type: z.string(),
+        required: z.boolean().optional(),
+        options: z.array(z.string()).optional(),
+        order: z.number().optional(),
+      }),
+    )
+    .nullable()
+    .optional(),
 });
 
 // Job application validators
 const applyJobValidator = z.object({
   jobId: z.string(),
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string().uuid(),
+        answerText: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+      }),
+    )
+    .optional()
+    .default([]),
 });
 
 const withdrawJobValidator = z.object({
@@ -226,6 +247,18 @@ const editJobValidator = z.object({
   companyLogo: z.string().nullable().optional(),
 
   ApplicationLimit: z.number().optional(),
+  questions: z
+    .array(
+      z.object({
+        question: z.string(),
+        type: z.string(),
+        required: z.boolean().optional(),
+        options: z.array(z.string()).optional(),
+        order: z.number().optional(),
+      }),
+    )
+    .nullable()
+    .optional(),
 });
 
 const deleteJobValidator = z.object({

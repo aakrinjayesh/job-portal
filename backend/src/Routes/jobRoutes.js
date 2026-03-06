@@ -16,6 +16,7 @@ import {
   userUnsaveJob,
   saveCandidateRating,
   closeJob,
+  getJobQuestions,
 } from "../controllers/jobControllers.js";
 import { validateInput } from "../Middleware/inputValidator.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -116,6 +117,7 @@ JobRouters.patch(
 );
 
 JobRouters.post("/job/applicants", authenticateToken, getApplicantsByJobId);
+JobRouters.get("/job/questions/:jobId", authenticateToken, getJobQuestions);
 
 JobRouters.post(
   "/candidate/rating",

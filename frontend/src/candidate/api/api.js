@@ -1,5 +1,5 @@
 // api.js
-import axiosInstance from "./axiosInstance";
+import axiosInstance from "./axiosInstance.js";
 
 //  login routes
 
@@ -506,17 +506,14 @@ export async function CheckUserExist(payload) {
   }
 }
 
-
 export async function GetContactSupport(payload) {
   try {
-      const response = await axiosInstance.post(
-        `/support/create`,
-        payload,
-        { headers: { "Content-Type": "application/json" } },
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error in GetContactSupport:", error);
-      throw error;
-    }
+    const response = await axiosInstance.post(`/support/create`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetContactSupport:", error);
+    throw error;
+  }
 }

@@ -54,9 +54,9 @@ const FEATURE_MAP = [
 export const featureLimitMiddleware = async (req, res, next) => {
   try {
     if (!req.user?.organizationId) return next();
-
+    console.log("path:", req.path);
     const route = FEATURE_MAP.find((r) => r.match(req.path, req.method));
-    console.log("route in feature Middleware", route);
+    console.log("route in feature Middleware matched", route);
     if (!route) return next();
 
     const { id: userId, organizationId } = req.user;

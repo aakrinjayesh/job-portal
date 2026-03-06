@@ -102,9 +102,6 @@ model Users {
   // refreshToken     String?
   isactive         Boolean?
   createdAt        DateTime         @default(now())
-  // plan             Plan             @default(FREE)
-  // aiUsedCount      Int              @default(0)
-  // aiResetAt        DateTime?
   CandidateProfile UserProfile?     @relation("CandidateUserProfile")
   VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
   savedCandidates  SavedCandidate[] @relation("RecruiterSavedCandidates")
@@ -180,7 +177,7 @@ model UserProfile {
   totalExperience              String?
   relevantSalesforceExperience String?
 
-  skillsJson      Json? // e.g. [{ name: "Apex", experience: 3, level: "primary" }]
+  skillsJson      Json?
   primaryClouds   Json?
   secondaryClouds Json?
 
@@ -188,7 +185,6 @@ model UserProfile {
   workExperience   Json?
   education        Json?
   isContactDetails Boolean?
-  // address          Address?
 
   linkedInUrl  String?
   trailheadUrl String?
@@ -273,7 +269,7 @@ model Job {
   experience          Json?
   experienceLevel     ExperienceLevel?
   location            String?
-  skills              String[] // Array of Json Skills
+  skills              String[]
   clouds              String[]
   salary              String
   companyName         String?
@@ -293,6 +289,9 @@ model Job {
 
   applications JobApplication[]
   savedBy      SavedJob[]
+
+  // ── SCREENING QUESTIONS ──
+  questions JobApplicationQuestion[]
 
   organizationId    String?
   organization      Organization?       @relation(fields: [organizationId], references: [id])
@@ -316,8 +315,8 @@ model JobApplication {
   id                 String  @id @default(uuid())
   jobId              String
   userId             String
-  candidateProfileId String? // TEMP optional
-  appliedById        String? // TEMP optional
+  candidateProfileId String?
+  appliedById        String?
 
   status    ApplicationStatus @default(Pending)
   appliedAt DateTime          @default(now())
@@ -333,6 +332,9 @@ model JobApplication {
 
   analysis ApplicationAnalysis?
 
+  // ── SCREENING ANSWERS ──
+  answers JobApplicationAnswer[]
+
   @@unique([jobId, candidateProfileId])
   @@index([userId])
   @@index([jobId])
@@ -342,16 +344,12 @@ model JobApplication {
 
 model ApplicationAnalysis {
   id               String @id @default(uuid())
-  jobApplicationId String @unique // 1:1 Relation
+  jobApplicationId String @unique
 
-  // Extracted Score for fast sorting (0 to 100)
   fitPercentage Int @default(0)
 
-  // The detailed AI response
-  // Stores: key_gaps, key_matches, scoring_breakdown, etc.
   details Json
 
-  // Track status in case AI fails or is processing
   status AnalysisStatus @default(COMPLETED)
 
   createdAt DateTime @default(now())
@@ -359,7 +357,7 @@ model ApplicationAnalysis {
 
   jobApplication JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
 
-  @@index([fitPercentage]) // Critical for sorting candidates by rank
+  @@index([fitPercentage])
 }
 
 enum AnalysisStatus {
@@ -368,6 +366,49 @@ enum AnalysisStatus {
   COMPLETED
   FAILED
 }
+
+enum QuestionType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  BOOLEAN
+  SELECT
+}
+
+model JobApplicationQuestion {
+  id       String       @id @default(uuid())
+  jobId    String
+  question String
+  type     QuestionType @default(TEXT)
+  options  String[]
+  required Boolean      @default(false)
+  order    Int          @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job     Job                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  answers JobApplicationAnswer[]
+
+  @@index([jobId])
+}
+
+model JobApplicationAnswer {
+  id            String   @id @default(uuid())
+  applicationId String
+  questionId    String
+  answerText    String?
+  createdAt     DateTime @default(now())
+
+  application JobApplication         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  question    JobApplicationQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, questionId])
+  @@index([applicationId])
+  @@index([questionId])
+}
+
+// ─────────────────────────────────────────────
 
 model SavedJob {
   id      String   @id @default(uuid())
@@ -427,7 +468,7 @@ model Course {
   userId      String
   courseType  String?
   instructor  Users    @relation(fields: [userId], references: [id])
-  classes     Class[] // renamed relation
+  classes     Class[]
   url         String?
   reviews     Review[]
 
@@ -437,13 +478,13 @@ model Course {
 model Class {
   id          String   @id @default(uuid())
   fileName    String
-  url         String // Multer uploaded file URL
-  type        String // "video", "pdf", "image"
-  title       String // Class title
-  description String? // Optional class description
-  size        Int? // File size in bytes
-  duration    Int? // Video duration in seconds
-  metaData    Json? // Optional additional metadata
+  url         String
+  type        String
+  title       String
+  description String?
+  size        Int?
+  duration    Int?
+  metaData    Json?
   createdAt   DateTime @default(now())
   courseId    String
   course      Course   @relation(fields: [courseId], references: [id])
@@ -465,7 +506,7 @@ model Review {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, courseId]) // prevents duplicate review by same user
+  @@unique([userId, courseId])
   @@index([courseId])
   @@index([userId])
 }
@@ -629,10 +670,9 @@ model ActivitySchedule {
 model SavedCandidate {
   id String @id @default(uuid())
 
-  recruiterId        String // company / recruiter user
+  recruiterId        String
   candidateProfileId String
 
-  // source             SavedCandidateSource @default(MANUAL)
   note String?
 
   createdAt DateTime @default(now())
@@ -656,8 +696,8 @@ model TaskTemplate {
 
   title     String
   order     Int
-  isDefault Boolean  @default(false) // system provided
-  isActive  Boolean  @default(true) // recruiter can disable without deleting
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -717,7 +757,7 @@ model CandidateRating {
   recruiterId        String
   candidateProfileId String
 
-  rating  Int // 1 to 5 only
+  rating  Int
   comment String?
 
   recruiter        Users       @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
@@ -741,7 +781,7 @@ model EmailLog {
   subject String?
   status  EmailStatus @default(PENDING)
 
-  provider  String? // gmail, sendgrid, ses
+  provider  String?
   messageId String?
   response  String?
   error     String?
@@ -917,16 +957,6 @@ enum PaymentStatus {
   FAILED
   REFUNDED
 }
-
-// enum LimitFeature {
-//   AI_TOKENS_TOTAL
-//   FIT_SCORE_ANALYSES
-//   JOB_POST_CREATION
-//   ACTIVE_JOB_POSTINGS
-//   CANDIDATE_DETAILS_VIEW
-//   JOB_APPLICATIONS
-//   TEAM_MEMBERS
-// }
 
 enum LimitFeature {
   APPLY_BENCH_TO_JOB

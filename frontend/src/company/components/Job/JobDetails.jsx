@@ -12,25 +12,25 @@ import {
   Button,
   Progress,
   Divider,
-  message,
   Tooltip,
   Modal,
+  Input,
 } from "antd";
 import { LuBookmark, LuBookmarkCheck } from "react-icons/lu";
 import { GetJobDetails, SaveJob, UnSaveJob } from "../../api/api";
-import { ShareAltOutlined, CopyOutlined } from "@ant-design/icons";
-import { Input, Space } from "antd";
+import { ShareAltOutlined } from "@ant-design/icons";
 import { ApplyJob } from "../../../candidate/api/api";
 import ApplyBenchJob from "../../pages/ApplyBenchJob";
 import { Helmet } from "react-helmet-async";
 import { useJobSEO } from "../../../utils/useJobSEO";
+import useScreeningQuestions from "../../../utils/Usescreeningquestions";
+import ScreeningQuestionsModal from "../Job/ScreeningQuestionsModal";
 
 const { Title, Text, Paragraph } = Typography;
 
 const JobDetails = ({ mode }) => {
   const { id } = useParams();
   const seo = useJobSEO(id);
-  console.log("seo data", seo);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -42,10 +42,8 @@ const JobDetails = ({ mode }) => {
 
   const isCandidate = mode === "candidate";
   const isCompany = mode === "company";
-  console.log("mode", mode);
 
   const [job, setJob] = useState(null);
-
   const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -57,28 +55,23 @@ const JobDetails = ({ mode }) => {
   const [shareUrl, setShareUrl] = useState("");
   const [shareMessage, setShareMessage] = useState("");
 
-  const [messageApi, contextHolder] = message.useMessage();
+  // ── Shared screening hook ──────────────────────────────────────────────────
+  const screening = useScreeningQuestions(id);
 
-  // ===============================
-  // FETCH JOB
-  // ===============================
+  // Use the hook's messageApi so there's a single message context
+  const { messageApi, contextHolder } = screening;
+  // ──────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     fetchJobDetails();
-
-    if (jobids && jobids.includes(id)) {
-      setIsApplied(true);
-    }
+    if (jobids && jobids.includes(id)) setIsApplied(true);
   }, [id]);
 
-  // ===============================
-  // PROGRESS ANIMATION (your logic)
-  // ===============================
   useEffect(() => {
     if (initialLoading || loading) {
       const interval = setInterval(() => {
         setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
       }, 400);
-
       return () => clearInterval(interval);
     } else {
       setProgress(0);
@@ -97,9 +90,6 @@ const JobDetails = ({ mode }) => {
     }
   };
 
-  // ===============================
-  // SAVE / UNSAVE
-  // ===============================
   const handleSaveToggle = async () => {
     if (!job) return;
 
@@ -111,7 +101,6 @@ const JobDetails = ({ mode }) => {
     }
 
     const willBeSaved = !job.isSaved;
-
     setJob((prev) => ({ ...prev, isSaved: willBeSaved }));
 
     try {
@@ -120,7 +109,6 @@ const JobDetails = ({ mode }) => {
         : await UnSaveJob({ jobId: job.id });
 
       if (resp?.status !== "success") throw new Error();
-
       messageApi.success(
         willBeSaved ? "Job saved successfully!" : "Job removed!",
       );
@@ -130,31 +118,19 @@ const JobDetails = ({ mode }) => {
     }
   };
 
-  // ===============================
-  // APPLY (Candidate Only)
-  // ===============================
-  const handleApply = async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setShowLoginModal(true); // modal should pass redirect
-      return;
-    }
-
+  // ── Core submit (passed to initiateApply as the "direct apply" callback) ──
+  const submitApplication = async (answers) => {
     setApplyLoading(true);
-
     try {
-      const resp = await ApplyJob({ jobId: id });
-
+      const resp = await ApplyJob({ jobId: id, answers });
       if (resp?.status === "success") {
         setIsApplied(true);
+        screening.closeModal(false); // close modal after success
         messageApi.success(resp?.message || "Successfully applied");
       }
     } catch (error) {
       const { status, data } = error?.response || {};
-      console.log("status", status);
-      console.log("data", data);
-      if (status === 404 && data?.message) {
+      if ((status === 404 || status === 400) && data?.message) {
         messageApi.error(data.message);
       } else {
         messageApi.error("Something went wrong");
@@ -164,57 +140,40 @@ const JobDetails = ({ mode }) => {
     }
   };
 
-  // ===============================
-  // LOADING SCREEN (your original)
-  // ===============================
-  if (initialLoading || loading) {
-    return (
-      <div
-        style={{
-          minHeight: "70vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Progress
-          type="circle"
-          percent={progress}
-          width={90}
-          strokeColor={{
-            "0%": "#4F63F6",
-            "100%": "#7C8CFF",
-          }}
-          trailColor="#E6E8FF"
-          showInfo={false}
-        />
-        <div style={{ marginTop: 16, fontWeight: 500 }}>
-          Loading job details…
-        </div>
-      </div>
-    );
-  }
+  // ── Triggered by "Apply Now" button ───────────────────────────────────────
+  const handleApplyClick = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setShowLoginModal(true);
+      return;
+    }
+    await screening.initiateApply(job?.hasQuestions, submitApplication);
+  };
 
-  if (!job) return <Text type="danger">Job not found</Text>;
+  // ── Modal OK handler: validate → build answers → submit ───────────────────
+  const handleScreeningSubmit = async () => {
+    const answers = screening.buildAnswers();
+    if (answers === null) return; // validation failed
+    await submitApplication(answers);
+  };
 
+  // ── Share helpers ──────────────────────────────────────────────────────────
   const handleShare = () => {
     const generatedUrl = `${window.location.origin}/job/${id}`;
-
     const customMessage = `
-    🚀 We're hiring!
+🚀 We're hiring!
 
-    💼 Role: ${job?.role}
-    🏢 Company: ${job?.companyName}
-    📍 Location: ${job?.location}
-    💰 Salary: ₹ ${job?.salary} LPA
+💼 Role: ${job?.role}
+🏢 Company: ${job?.companyName}
+📍 Location: ${job?.location}
+💰 Salary: ₹ ${job?.salary} LPA
 
-    ✨ Check out this opportunity and apply here:
-    ${generatedUrl}
-    `;
+✨ Check out this opportunity and apply here:
+${generatedUrl}
+    `.trim();
 
     setShareUrl(generatedUrl);
-    setShareMessage(customMessage.trim());
+    setShareMessage(customMessage);
     setShowShareModal(true);
   };
 
@@ -236,6 +195,35 @@ const JobDetails = ({ mode }) => {
     }
   };
 
+  // ── Loading / not-found states ─────────────────────────────────────────────
+  if (initialLoading || loading) {
+    return (
+      <div
+        style={{
+          minHeight: "70vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Progress
+          type="circle"
+          percent={progress}
+          width={90}
+          strokeColor={{ "0%": "#4F63F6", "100%": "#7C8CFF" }}
+          trailColor="#E6E8FF"
+          showInfo={false}
+        />
+        <div style={{ marginTop: 16, fontWeight: 500 }}>
+          Loading job details…
+        </div>
+      </div>
+    );
+  }
+
+  if (!job) return <Text type="danger">Job not found</Text>;
+
   return (
     <>
       {seo && (
@@ -243,18 +231,12 @@ const JobDetails = ({ mode }) => {
           <title>{seo.title}</title>
           <meta name="description" content={seo.description} />
           <meta name="robots" content="index, follow" />
-
-          {/* Open Graph */}
           <meta property="og:title" content={seo.title} />
           <meta property="og:description" content={seo.description} />
           <meta property="og:url" content={seo.canonicalUrl} />
           <meta property="og:image" content={seo.ogImage} />
           <meta property="og:type" content="website" />
-
-          {/* Canonical */}
           <link rel="canonical" href={seo.canonicalUrl} />
-
-          {/* Google Jobs structured data */}
           <script type="application/ld+json">
             {JSON.stringify(seo.structuredData)}
           </script>
@@ -273,7 +255,6 @@ const JobDetails = ({ mode }) => {
               alignItems: "center",
             }}
           >
-            {/* LEFT */}
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
               {job.companyLogo ? (
                 <img
@@ -303,7 +284,6 @@ const JobDetails = ({ mode }) => {
                   {(job.companyName || job.role || "").charAt(0).toUpperCase()}
                 </div>
               )}
-
               <div>
                 <Title level={4} style={{ marginBottom: 0 }}>
                   {job.role}
@@ -312,7 +292,6 @@ const JobDetails = ({ mode }) => {
               </div>
             </div>
 
-            {/* RIGHT */}
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               {isCompany && source === "myjobs" && (
                 <Button
@@ -322,9 +301,7 @@ const JobDetails = ({ mode }) => {
                     fontWeight: 600,
                   }}
                   onClick={() =>
-                    navigate("/company/candidates", {
-                      state: { id },
-                    })
+                    navigate("/company/candidates", { state: { id } })
                   }
                 >
                   View Candidates ({count || 0})
@@ -368,7 +345,6 @@ const JobDetails = ({ mode }) => {
               <Text strong>Employment Type</Text>
               <div>{job.employmentType}</div>
             </div>
-
             <div>
               <Text strong>Experience Required</Text>
               <div>
@@ -379,17 +355,14 @@ const JobDetails = ({ mode }) => {
                     : "Not specified"}
               </div>
             </div>
-
             <div>
               <Text strong>Salary</Text>
               <div>₹ {job.salary} LPA</div>
             </div>
-
             <div>
               <Text strong>Location</Text>
               <div>{job.location}</div>
             </div>
-
             <div>
               <Text strong>Job Type</Text>
               <div>{job.jobType}</div>
@@ -402,7 +375,6 @@ const JobDetails = ({ mode }) => {
 
           <Divider />
 
-          {/* CLOUDS */}
           <Text strong>Clouds:</Text>
           <div style={{ marginTop: 8 }}>
             {job.clouds?.map((c, i) => (
@@ -412,7 +384,6 @@ const JobDetails = ({ mode }) => {
 
           <Divider />
 
-          {/* SKILLS */}
           <Text strong>Skills:</Text>
           <div style={{ marginTop: 8 }}>
             {job.skills?.map((s, i) => (
@@ -440,6 +411,7 @@ const JobDetails = ({ mode }) => {
               <Text type="secondary">No certifications required</Text>
             )}
           </div>
+
           <Divider />
 
           <Text strong>Description</Text>
@@ -447,20 +419,7 @@ const JobDetails = ({ mode }) => {
 
           <Divider />
 
-          {/* <Text strong>Roles & Responsibilities</Text>
-          
-          <ul style={{ paddingLeft: 20, marginTop: 12 }}>
-            {job.responsibilities
-              ?.split(/\n+/) // split by line breaks
-              .filter((line) => line.trim() !== "")
-              .map((line, index) => (
-                <li key={index} style={{ marginBottom: 8 }}>
-                  {line.replace(/^-/, "").trim()}
-                </li>
-              ))}
-          </ul> */}
           <Text strong>Roles & Responsibilities</Text>
-
           {(() => {
             const lines = job.responsibilities
               ?.split(/\n+/)
@@ -469,12 +428,10 @@ const JobDetails = ({ mode }) => {
             if (!lines || lines.length === 0) return null;
 
             const firstLine = lines[0].trim();
-
             const isNumbered = /^\d+\./.test(firstLine);
             const isDash = /^-/.test(firstLine);
             const isBullet = /^•/.test(firstLine);
 
-            // NUMBERED LIST
             if (isNumbered) {
               return (
                 <ol style={{ paddingLeft: 20, marginTop: 12 }}>
@@ -486,8 +443,6 @@ const JobDetails = ({ mode }) => {
                 </ol>
               );
             }
-
-            // DASH LIST
             if (isDash) {
               return (
                 <ul style={{ paddingLeft: 20, marginTop: 12 }}>
@@ -499,8 +454,6 @@ const JobDetails = ({ mode }) => {
                 </ul>
               );
             }
-
-            // BULLET LIST
             if (isBullet) {
               return (
                 <ul style={{ paddingLeft: 20, marginTop: 12 }}>
@@ -513,7 +466,6 @@ const JobDetails = ({ mode }) => {
               );
             }
 
-            // DEFAULT → PARAGRAPH
             return (
               <div style={{ marginTop: 12 }}>
                 {lines.map((line, index) => (
@@ -527,13 +479,13 @@ const JobDetails = ({ mode }) => {
 
           <Divider />
 
-          {/* CANDIDATE APPLY */}
+          {/* CANDIDATE APPLY BUTTON */}
           {isCandidate && (
             <Button
               type="primary"
-              onClick={handleApply}
-              loading={applyLoading}
-              disabled={isApplied}
+              onClick={handleApplyClick}
+              loading={applyLoading || screening.questionsLoading}
+              disabled={isApplied || screening.questionsLoading}
               style={{ borderRadius: 8 }}
             >
               {isApplied ? "Applied" : "Apply Now"}
@@ -541,9 +493,8 @@ const JobDetails = ({ mode }) => {
           )}
         </Card>
 
-        {/* APPLY BENCH JOB (your original condition) */}
         {isCompany && source !== "myjobs" && show !== "jobdetails" && (
-          <ApplyBenchJob jobId={job?.id} />
+          <ApplyBenchJob jobId={job?.id} hasQuestions={job?.hasQuestions} />
         )}
       </div>
 
@@ -554,16 +505,13 @@ const JobDetails = ({ mode }) => {
         onCancel={() => setShowLoginModal(false)}
         okText="Go to Login"
         onOk={() =>
-          navigate("/login", {
-            state: {
-              redirect: location.pathname,
-              // role: "candidate",
-            },
-          })
+          navigate("/login", { state: { redirect: location.pathname } })
         }
       >
         <p>Please login to continue.</p>
       </Modal>
+
+      {/* SHARE MODAL */}
       <Modal
         open={showShareModal}
         title="Share This Job"
@@ -572,35 +520,22 @@ const JobDetails = ({ mode }) => {
         width={600}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {/* SECTION 1 — COPY LINK */}
           <div>
             <Text strong style={{ fontSize: 15 }}>
               🔗 Direct Job Link
             </Text>
-
-            <div
-              style={{
-                marginTop: 10,
-                display: "flex",
-                gap: 8,
-              }}
-            >
+            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
               <Input value={shareUrl} readOnly />
-
               <Button type="primary" onClick={handleCopyLink}>
                 Copy
               </Button>
             </div>
           </div>
-
           <Divider />
-
-          {/* SECTION 2 — COPY MESSAGE */}
           <div>
             <Text strong style={{ fontSize: 15 }}>
               ✨ Share with Custom Message
             </Text>
-
             <div
               style={{
                 marginTop: 10,
@@ -614,7 +549,6 @@ const JobDetails = ({ mode }) => {
             >
               {shareMessage}
             </div>
-
             <Button
               style={{ marginTop: 12 }}
               type="primary"
@@ -626,6 +560,13 @@ const JobDetails = ({ mode }) => {
           </div>
         </div>
       </Modal>
+
+      {/* SCREENING QUESTIONS MODAL — shared component, no duplication */}
+      <ScreeningQuestionsModal
+        {...screening}
+        applyLoading={applyLoading}
+        onSubmit={handleScreeningSubmit}
+      />
     </>
   );
 };

@@ -17,6 +17,7 @@ const genAI = new Groq({
 
 const modelName = process.env.GROQ_MODEL;
 console.log("modelName", modelName);
+console.log("model tokens", parseInt(process.env["GROQ_MAX_TOKENS"]));
 
 export const extractAIText = async (text, role, extra = {}) => {
   console.log("inside llm logic | role:", role);
@@ -55,7 +56,7 @@ export const extractAIText = async (text, role, extra = {}) => {
         model: modelName,
         messages: [{ role: "system", content: prompt }],
         temperature: 0.1,
-        max_tokens: parseInt(process.env.GROQ_MAX_TOKENS),
+        max_tokens: parseInt(process.env["GROQ_MAX_TOKENS"]),
       });
 
       // 🔥 Check if output was cut due to token limit
