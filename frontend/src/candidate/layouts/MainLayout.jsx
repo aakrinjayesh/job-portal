@@ -8,6 +8,7 @@ import {
   Breadcrumb,
   Space,
   Modal,
+  Drawer,             // ✅ NEW
 } from "antd";
 import {
   FileTextOutlined,
@@ -21,6 +22,7 @@ import {
   BellOutlined,
   // DownOutlined,
   UserOutlined,
+  MenuOutlined,       // ✅ NEW
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -28,9 +30,23 @@ import { Helmet } from "react-helmet-async";
 const { Sider, Header, Content } = Layout;
 const { Text, Title } = Typography;
 
+// ✅ NEW: detect mobile
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+};
+
 const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false); // ✅ NEW
+
+  const isMobile = useIsMobile(); // ✅ NEW
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,7 +101,7 @@ const MainLayout = ({ children }) => {
     chat: ["/candidate/chat"],
     settings: ["/candidate/settings"],
     profile: ["/candidate/profile"],
-    contact: ["/contact"],
+    contact: ["/contact"]
   };
 
   /* 🎯 Active menu */
@@ -110,13 +126,15 @@ const MainLayout = ({ children }) => {
 
   /* 🧠 Menu click */
   const onMenuClick = ({ key }) => {
+    if (isMobile) setMobileDrawerOpen(false); // ✅ NEW: close drawer on tap
+
     const protectedPages = [
       "savedjobs",
       "appliedjobs",
       "chat",
       "settings",
       "profile",
-      "contactsupport",
+      "contactsupport"
     ];
 
     const token = localStorage.getItem("token");
@@ -137,10 +155,10 @@ const MainLayout = ({ children }) => {
       return;
     }
 
-    if (key === "contact") {
-      window.open("/contact", "_blank");
-      return;
-    }
+     if (key === "contact") {
+    window.open("/contact", "_blank");
+    return;
+  }
 
     const route = menuRoutes[key];
     if (route && route.length) {
@@ -156,10 +174,82 @@ const MainLayout = ({ children }) => {
     chat: "Chats",
     settings: "Settings",
     profile: "Profile",
-    contactsupport: "Contact & Support",
+    contactsupport: "Contact & Support"
   };
 
   const pageTitle = pageTitleMap[selectedKey] || "Find Jobs";
+
+  // ✅ NEW: shared sidebar JSX — used in Drawer (mobile) and Sider (desktop)
+  const SidebarMenuContent = () => (
+    <>
+      {/* 👤 User Info */}
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          padding: 24,
+          alignItems: "center",
+        }}
+      >
+         <Avatar size={40} src={user?.profileUrl || undefined}>
+              {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
+        </Avatar>
+        <div>
+          <Text style={{ color: "#fff", fontWeight: 600 }}>
+            {user.name}
+          </Text>
+          <br />
+          <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
+            {user.role}
+          </Text>
+        </div>
+      </div>
+
+      {/* 📌 Main Menu */}
+      <Menu
+        mode="inline"
+        theme="dark"
+        selectedKeys={[selectedKey]}
+        onClick={onMenuClick}
+        style={{ background: "transparent", border: "none" }}
+        items={[
+          { key: "jobs", icon: <SearchOutlined />, label: "Find Jobs" },
+          { key: "savedjobs", icon: <SaveFilled />, label: "Saved Jobs" },
+          { key: "appliedjobs", icon: <FileTextOutlined />, label: "Applied Jobs" },
+          { key: "chat", icon: <WhatsAppOutlined />, label: "Chat" },
+        ]}
+      />
+
+      {/* Divider */}
+      <div
+        style={{
+          height: 1,
+          background: "#E0E0E0",
+          margin: "16px 0",
+          opacity: 0.3,
+        }}
+      />
+
+      {/* ⚙️ Bottom Menu */}
+      <Menu
+        mode="inline"
+        theme="dark"
+        selectedKeys={[selectedKey]}
+        onClick={onMenuClick}
+        style={{ background: "transparent", border: "none" }}
+        items={[
+          // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+          { key: "profile", icon: <UserOutlined />, label: "Profile" },
+          {
+            key: "contact",
+            icon: <ContactsOutlined />,
+            label: "Contact & Support",
+          },
+          { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
+        ]}
+      />
+    </>
+  );
 
   return (
     <>
@@ -169,32 +259,42 @@ const MainLayout = ({ children }) => {
       <Layout hasSider>
         {/* 🧭 Sidebar */}
         <Sider
-          collapsible
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
+          // ✅ KEY FIX: on mobile always collapsed (icon-only), on desktop use state
+          collapsed={isMobile ? true : collapsed}
+          // ✅ on desktop allow toggling; on mobile keep fixed at icon width
+          onCollapse={(val) => { if (!isMobile) setCollapsed(val); }}
+          // ✅ on desktop show collapse trigger; on mobile hide it (we use drawer instead)
+          collapsible={!isMobile}
+          trigger={isMobile ? null : undefined}
           width={260}
+          collapsedWidth={60}  // ✅ icon-only width on mobile
           style={{
             background: "#011026",
             height: "100vh",
             position: "sticky",
             top: 0,
+            overflow: "hidden",
           }}
         >
-          {/* 👤 User Info */}
+          {/* 👤 User Info — avatar only when collapsed */}
           <div
             style={{
               display: "flex",
               gap: 12,
-              padding: 24,
+              padding: isMobile ? "20px 10px" : 24,
               alignItems: "center",
+              justifyContent: isMobile ? "center" : "flex-start",
+              // ✅ on mobile tap avatar to open full drawer
+              cursor: isMobile ? "pointer" : "default",
             }}
+            onClick={() => { if (isMobile) setMobileDrawerOpen(true); }}
           >
-            {/* <Avatar size={40} icon={<UserOutlined />} /> */}
-            <Avatar size={40} src={user?.profileUrl || undefined}>
+            <Avatar size={36} src={user?.profileUrl || undefined}>
               {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
             </Avatar>
 
-            {!collapsed && (
+            {/* Only shown on desktop when not collapsed */}
+            {!isMobile && !collapsed && (
               <div>
                 <Text style={{ color: "#fff", fontWeight: 600 }}>
                   {user.name}
@@ -207,12 +307,26 @@ const MainLayout = ({ children }) => {
             )}
           </div>
 
+          {/* ✅ MOBILE: hamburger button to open drawer */}
+          {isMobile && (
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+              <Button
+                type="text"
+                icon={<MenuOutlined style={{ color: "#fff", fontSize: 16 }} />}
+                onClick={() => setMobileDrawerOpen(true)}
+                style={{ background: "transparent", border: "none", padding: 4 }}
+              />
+            </div>
+          )}
+
           {/* 📌 Main Menu */}
           <Menu
             mode="inline"
             theme="dark"
             selectedKeys={[selectedKey]}
             onClick={onMenuClick}
+            // ✅ always collapsed on mobile (icons only), respects state on desktop
+            inlineCollapsed={isMobile ? true : collapsed}
             style={{ background: "transparent", border: "none" }}
             items={[
               { key: "jobs", icon: <SearchOutlined />, label: "Find Jobs" },
@@ -246,19 +360,37 @@ const MainLayout = ({ children }) => {
             theme="dark"
             selectedKeys={[selectedKey]}
             onClick={onMenuClick}
+            inlineCollapsed={isMobile ? true : collapsed} // ✅
             style={{ background: "transparent", border: "none" }}
             items={[
               // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
               { key: "profile", icon: <UserOutlined />, label: "Profile" },
-              {
-                key: "contact",
-                icon: <ContactsOutlined />,
-                label: "Contact & Support",
-              },
+               {
+        key: "contact",
+        icon: <ContactsOutlined />,
+        label: "Contact & Support",
+      },
               { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
             ]}
           />
         </Sider>
+
+        {/* ✅ MOBILE DRAWER: slides in with full labels when hamburger tapped */}
+        {isMobile && (
+          <Drawer
+            placement="left"
+            open={mobileDrawerOpen}
+            onClose={() => setMobileDrawerOpen(false)}
+            width={260}
+            styles={{
+              body: { padding: 0, background: "#011026" },
+              header: { display: "none" },
+            }}
+            closable={false}
+          >
+            <SidebarMenuContent />
+          </Drawer>
+        )}
 
         {/* 📄 Main Layout */}
         <Layout>
@@ -287,7 +419,8 @@ const MainLayout = ({ children }) => {
                     fontWeight: 500,
                   }}
                 >
-                  Back
+                  {/* ✅ hide "Back" text on mobile to save space */}
+                  {!isMobile && "Back"}
                 </Button>
               )}
 
@@ -318,22 +451,25 @@ const MainLayout = ({ children }) => {
               {/* <Avatar size={56}>
                 {user.name?.slice(0, 2).toUpperCase()}
               </Avatar> */}
-              <Avatar size={56} src={user?.profileUrl || undefined}>
+              <Avatar size={isMobile ? 40 : 56} src={user?.profileUrl || undefined}>
                 {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
               </Avatar>
 
-              <div style={{ lineHeight: 1.2 }}>
-                <Space size={4}>
-                  <Text strong>Hi, {user.name}</Text>
-                  {/* <DownOutlined style={{ fontSize: 12 }} /> */}
-                </Space>
-                <Text
-                  type="secondary"
-                  style={{ display: "block", fontSize: 12 }}
-                >
-                  {user.role}
-                </Text>
-              </div>
+              {/* ✅ hide name/role on mobile */}
+              {!isMobile && (
+                <div style={{ lineHeight: 1.2 }}>
+                  <Space size={4}>
+                    <Text strong>Hi, {user.name}</Text>
+                    {/* <DownOutlined style={{ fontSize: 12 }} /> */}
+                  </Space>
+                  <Text
+                    type="secondary"
+                    style={{ display: "block", fontSize: 12 }}
+                  >
+                    {user.role}
+                  </Text>
+                </div>
+              )}
             </Space>
             {/* </Space> */}
           </Header>
@@ -341,7 +477,7 @@ const MainLayout = ({ children }) => {
           {/* 🧾 Content */}
           <Content
             style={{
-              padding: 16,
+              padding: isMobile ? 10 : 16,
               background: "#f5f6fa",
               minHeight: "calc(100vh - 80px)",
             }}

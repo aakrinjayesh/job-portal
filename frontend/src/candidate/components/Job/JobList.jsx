@@ -41,6 +41,54 @@ dayjs.extend(relativeTime);
 
 const { Text, Title, Paragraph } = Typography;
 
+// ✅ MOVED OUTSIDE COMPONENT — defined as module-level functions so they
+//    are never redefined on each render and are always in scope everywhere.
+
+const getMinSalary = (salary) => {
+  if (!salary && salary !== 0) return 0;
+  const str = String(salary).trim();
+  const match = str.match(/^(\d+)/);
+  return match ? Number(match[1]) : 0;
+};
+
+const formatSalary = (salary) => {
+  if (!salary && salary !== 0) return "Not Disclosed";
+
+  const str = String(salary).trim();
+
+  // Already formatted — e.g. "5.0 - 8.0 LPA"
+  if (/lpa/i.test(str)) return str;
+
+  // Range — "500000-800000" or "500000 - 800000" (hyphen or en-dash)
+  const rangeMatch = str.match(/^(\d[\d,]*)\s*[-–]\s*(\d[\d,]*)$/);
+  if (rangeMatch) {
+    const min = Number(rangeMatch[1].replace(/,/g, ""));
+    const max = Number(rangeMatch[2].replace(/,/g, ""));
+    if (!isNaN(min) && !isNaN(max) && max > 0) {
+      return `${(min / 100000).toFixed(1)} - ${(max / 100000).toFixed(1)} LPA`;
+    }
+  }
+
+  // Single numeric value — "800000"
+  const single = Number(str.replace(/,/g, ""));
+  if (!isNaN(single) && single > 0) {
+    return `${(single / 100000).toFixed(1)} LPA`;
+  }
+
+  return "Not Disclosed";
+};
+
+// ✅ detect mobile
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+};
+
 const JobList = ({
   jobs,
   lastJobRef,
@@ -51,8 +99,12 @@ const JobList = ({
   isFilterOpen,
   toggleFilter,
   hideSortAndFilter,
+  isMobile: isMobileProp, // ✅ accept from parent
 }) => {
   const navigate = useNavigate();
+  // ✅ use prop if passed, otherwise detect locally (fallback)
+  const isMobileLocal = useIsMobile();
+  const isMobile = isMobileProp !== undefined ? isMobileProp : isMobileLocal;
   const [sortedJobs, setSortedJobs] = useState(jobs);
   const [savedJobIds, setSavedJobIds] = useState(jobids || []);
 
@@ -118,31 +170,7 @@ const JobList = ({
       } else {
         const resp = await UnSaveJob({ jobId });
         if (resp?.status !== "success") throw new Error();
-        // messageApi.success("Job removed!");
-        messageApi.open({
-          content: (
-            <span>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  background: "#ff4d4f",
-                  color: "#fff",
-                  fontSize: 10,
-                  marginRight: 8,
-                }}
-              >
-                ✕
-              </span>
-              Job removed!
-            </span>
-          ),
-          duration: 3,
-        });
+        messageApi.success("Job removed!");
         if (type === "save" && onUnsave) {
           onUnsave(jobId);
         }
@@ -182,23 +210,11 @@ const JobList = ({
         break;
 
       case "salary_desc":
-        sorted.sort((a, b) => {
-          const salaryA =
-            parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
-          const salaryB =
-            parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
-          return salaryB - salaryA;
-        });
+        sorted.sort((a, b) => getMinSalary(b.salary) - getMinSalary(a.salary));
         break;
 
       case "salary_asc":
-        sorted.sort((a, b) => {
-          const salaryA =
-            parseFloat(String(a.salary).replace(/[^\d.]/g, "")) || 0;
-          const salaryB =
-            parseFloat(String(b.salary).replace(/[^\d.]/g, "")) || 0;
-          return salaryA - salaryB;
-        });
+        sorted.sort((a, b) => getMinSalary(a.salary) - getMinSalary(b.salary));
         break;
 
       default:
@@ -371,25 +387,6 @@ const JobList = ({
     );
   };
 
-  const formatSalary = (salary) => {
-    if (!salary && salary !== 0) return "Not Disclosed";
-    const str = String(salary).trim();
-    if (/lpa/i.test(str)) return str;
-    const rangeMatch = str.match(/^(\d[\d,]*)\s*[-–]\s*(\d[\d,]*)$/);
-    if (rangeMatch) {
-      const min = Number(rangeMatch[1].replace(/,/g, ""));
-      const max = Number(rangeMatch[2].replace(/,/g, ""));
-      if (!isNaN(min) && !isNaN(max) && max > 0) {
-        return `${(min / 100000).toFixed(1)} - ${(max / 100000).toFixed(1)} LPA`;
-      }
-    }
-    const single = Number(str.replace(/,/g, ""));
-    if (!isNaN(single) && single > 0) {
-      return `${(single / 100000).toFixed(1)} LPA`;
-    }
-    return "Not Disclosed";
-  };
-
   return (
     <Row gutter={[16, 16]}>
       {contextHolder}
@@ -451,8 +448,7 @@ const JobList = ({
                 borderRadius: 12,
                 background: "#fff",
                 border: "1px solid #EEEEEE",
-                // height: 320,
-                minHeight: 260,
+                minHeight: isMobile ? "auto" : 260,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
@@ -466,19 +462,19 @@ const JobList = ({
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
-                  gap: 16,
-                  flexWrap: "wrap",
-                  // minHeight: 50,
+                  gap: 8,
+                  flexWrap: "nowrap", // ✅ never wrap — prevents save icon falling to next row
                 }}
               >
-                <div style={{ display: "flex", gap: 12 }}>
+                {/* Logo */}
+                <div style={{ flexShrink: 0 }}>
                   {job.companyLogo ? (
                     <img
                       src={job.companyLogo}
                       alt="logo"
                       style={{
-                        width: 56,
-                        height: 56,
+                        width: isMobile ? 40 : 56,
+                        height: isMobile ? 40 : 56,
                         borderRadius: 8,
                         border: "1px solid #F5F5F5",
                         objectFit: "cover",
@@ -487,14 +483,14 @@ const JobList = ({
                   ) : (
                     <div
                       style={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: 12,
+                        width: isMobile ? 40 : 56,
+                        height: isMobile ? 40 : 56,
+                        borderRadius: isMobile ? 8 : 12,
                         background: "linear-gradient(135deg, #1677FF, #69B1FF)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: 22,
+                        fontSize: isMobile ? 16 : 22,
                         fontWeight: 700,
                         color: "#fff",
                       }}
@@ -504,83 +500,68 @@ const JobList = ({
                         .toUpperCase()}
                     </div>
                   )}
+                </div>
 
-                  <div style={{ maxWidth: 350 }}>
-                    {/* <div
+                {/* Job info — grows to fill available space */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Title + Closed tag */}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 4 }}>
+                    <div
                       style={{
-                        fontSize: 16,
+                        fontSize: isMobile ? 13 : 16,
                         fontWeight: 600,
                         color: "#212121",
+                        lineHeight: "20px",
+                        flex: 1,
+                        minWidth: 0,
+                        // ✅ always 2-line clamp — works on both mobile and desktop for long titles
                         display: "-webkit-box",
-                        WebkitLineClamp: 2,
+                        WebkitLineClamp: isMobile ? 2 : 1,
                         WebkitBoxOrient: "vertical",
                         overflow: "hidden",
-                        lineHeight: "20px",
                       }}
                     >
                       {job.role || job.title}
-                    </div> */}
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#212121",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                          lineHeight: "20px",
-                        }}
-                      >
-                        {job.role || job.title}
-                      </div>
-
-                      {job.status === "Closed" && <Tag color="red">Closed</Tag>}
                     </div>
 
-                    <div
-                      style={{
-                        fontSize: 14,
-                        color: "#666",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {job.companyName}
-                    </div>
+                    {job.status === "Closed" && (
+                      <Tag color="red" style={{ flexShrink: 0, marginTop: 1 }}>Closed</Tag>
+                    )}
+                  </div>
 
-                    {/* <div style={{ fontSize: 12, color: "#A3A3A3" }}>
-                      Posted{" "}
-                      {job?.updatedAt
-                        ? dayjs(job.updatedAt).fromNow()
-                        : "Recently"}
-                    </div> */}
-                    <div style={{ fontSize: 12, color: "#A3A3A3" }}>
-                      {type === "save" && job.savedAt ? (
-                        <>Saved {dayjs(job.savedAt).fromNow()}</>
-                      ) : (
-                        <>
-                          Posted{" "}
-                          {job?.updatedAt
-                            ? dayjs(job.updatedAt).fromNow()
-                            : "Recently"}
-                        </>
-                      )}
-                    </div>
+                  <div
+                    style={{
+                      fontSize: isMobile ? 12 : 14,
+                      color: "#666",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {job.companyName}
+                  </div>
+
+                  <div style={{ fontSize: 12, color: "#A3A3A3" }}>
+                    {type === "save" && job.savedAt ? (
+                      <>Saved {dayjs(job.savedAt).fromNow()}</>
+                    ) : (
+                      <>
+                        Posted{" "}
+                        {job?.updatedAt
+                          ? dayjs(job.updatedAt).fromNow()
+                          : "Recently"}
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* SAVE */}
+                {/* ✅ Save icon — always top-right, never wraps down */}
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSaveToggle(job.id);
                   }}
-                  style={{ fontSize: 22, cursor: "pointer" }}
+                  style={{ cursor: "pointer", flexShrink: 0, paddingTop: 2 }}
                 >
                   <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
                     {job?.isSaved ? (
@@ -596,44 +577,36 @@ const JobList = ({
               <div
                 style={{
                   display: "flex",
-                  gap: 10,
+                  gap: isMobile ? 6 : 10,
                   flexWrap: "wrap",
                   color: "#666",
-                  fontSize: 13,
-                  maxHeight: 42,
-                  overflow: "hidden",
-                  // padding: "0 px",
+                  fontSize: isMobile ? 12 : 13,
                   marginTop: 10,
+                  // ✅ removed maxHeight + overflow:hidden — was clipping items on mobile
                 }}
               >
-                <span>
-                  <EnvironmentOutlined /> {job.location}
-                </span>
-                <Divider type="vertical" />
+                <span><EnvironmentOutlined /> {job.location}</span>
+                <Divider type="vertical" style={{ margin: "0 2px" }} />
                 <span>₹ {formatSalary(job.salary)}</span>
-                <Divider type="vertical" />
-                <span>
-                  <ClockCircleOutlined /> {job.employmentType}
-                </span>
-                <Divider type="vertical" />
-
+                <Divider type="vertical" style={{ margin: "0 2px" }} />
+                <span><ClockCircleOutlined /> {job.employmentType}</span>
+                <Divider type="vertical" style={{ margin: "0 2px" }} />
                 <span>
                   <UserOutlined />{" "}
-                  {job.experience?.number
-                    ? `${job.experience.number} ${job.experience.type}`
-                    : job.experience?.min && job.experience?.max
-                      ? `${job.experience.min}-${job.experience.max} ${job.experience.type}`
-                      : "Not Specified"}
+                  {job.experience?.min && job.experience?.max
+                    ? `${job.experience.min}-${job.experience.max} ${job.experience.type}`
+                    : `${job.experience?.number ?? ""} ${job.experience?.type ?? ""}`}
                 </span>
-
-                <Divider type="vertical" />
-                <span>
-                  <LineChartOutlined /> {job.experienceLevel ?? "Not Specified"}
-                </span>
+                {job.experienceLevel && (
+                  <>
+                    <Divider type="vertical" style={{ margin: "0 2px" }} />
+                    <span><LineChartOutlined /> {job.experienceLevel}</span>
+                  </>
+                )}
               </div>
 
-              {/* SKILLS + CLOUDS */}
-              <div
+              {/* SKILLS + CLOUDS — hidden on mobile, shown on desktop */}
+              {!isMobile && <div
                 style={{
                   display: "flex",
                   gap: 12,
@@ -703,7 +676,7 @@ const JobList = ({
                     </div>
                   </div>
                 )}
-              </div>
+              </div>}
             </Card>
           </Col>
         );
