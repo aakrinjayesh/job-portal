@@ -5,7 +5,7 @@ import {
   googleLogout,
 } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { GoogleAuth } from "../../candidate/api/api";
+import { GetUserProfile, GoogleAuth } from "../../candidate/api/api";
 import { useAuth } from "../../chat/context/AuthContext";
 
 const GoogleAuthButton = ({ userType, messageAPI }) => {
