@@ -1057,10 +1057,12 @@ const login = async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        organizationId: member?.organizationId || null,
-        companyName: user.companyName || null,
         profileUrl: user.profileUrl || null,
-        phoneNumber: user.phoneNumber || null,
+        ...(user.role !== "candidate" && {
+          organizationId: member?.organizationId || null,
+          companyName: user.companyName || null,
+          phoneNumber: user.phoneNumber || null,
+        }),
       },
       chatmeatadata: chatMetadata, // null if external fails
     });

@@ -18,22 +18,35 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
     try {
       setIsProcessing(true);
 
-      let payload = credentialResponse;
-      payload.type = userType;
-      console.log(payload);
+      const payload = {
+        ...credentialResponse,
+        type: userType,
+      };
+
       const resp = await GoogleAuth(payload);
-      console.log("GoogleAuth response:", resp);
-      if (resp.status === "failed") {
-        messageAPI(error, resp.message);
-        // message.error(resp.message);
+
+      if (resp?.status === "failed") {
+        messageAPI.error(resp.message);
         return;
       }
-      // Store token if backend sends one
+
       if (resp?.status === "success") {
         const loginUser = resp?.user;
+
+        // ✅ Store token BEFORE API call
+        localStorage.setItem("token", resp?.token);
+        localStorage.setItem("role", resp?.user?.role || "no role");
+
+        localStorage.setItem("astoken", resp?.chatmeatadata?.accessToken);
+        localStorage.setItem(
+          "asuser",
+          JSON.stringify(resp?.chatmeatadata?.user),
+        );
+
         const profileRes = await GetUserProfile();
-        if (profileRes?.status === "success") {
-          const profile = profileRes?.user;
+
+        if (profileRes?.status === "success" && profileRes?.user) {
+          const profile = profileRes.user;
 
           const userData = {
             ...loginUser,
@@ -42,23 +55,18 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
           };
 
           localStorage.setItem("user", JSON.stringify(userData));
+        } else {
+          localStorage.setItem("user", JSON.stringify(loginUser));
         }
-        localStorage.setItem("token", resp?.token);
-        localStorage.setItem("role", resp?.user?.role || "no role");
-        localStorage.setItem("astoken", resp?.chatmeatadata?.accessToken);
-        localStorage.setItem(
-          "asuser",
-          JSON.stringify(resp?.chatmeatadata?.user),
-        );
 
-        login(resp?.chatmeatadata?.user, resp?.chatmeatadata?.accessToken);
+        if (resp?.chatmeatadata?.user && resp?.chatmeatadata?.accessToken) {
+          login(resp.chatmeatadata.user, resp.chatmeatadata.accessToken);
+        }
 
-        // navigate("/candidate/dashboard");
         navigate("/candidate/jobs");
       }
     } catch (error) {
       console.error("Google login error:", error);
-      // setIsProcessing(false);
     } finally {
       setIsProcessing(false);
     }
