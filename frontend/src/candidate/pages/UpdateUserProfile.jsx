@@ -722,7 +722,7 @@ const UpdateUserProfile = ({
           const storedUser = JSON.parse(localStorage.getItem("user")) || {};
 
           storedUser.name = values?.name || storedUser.name;
-          storedUser.profilePicture = profilePicUrl || null;
+          storedUser.profileUrl = profilePicUrl || null;
 
           localStorage.setItem("user", JSON.stringify(storedUser));
 
