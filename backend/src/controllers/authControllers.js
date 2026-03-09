@@ -160,6 +160,7 @@ const googleAuth = async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        profileUrl: user.profileUrl || null,
         role: user.role,
       },
 
