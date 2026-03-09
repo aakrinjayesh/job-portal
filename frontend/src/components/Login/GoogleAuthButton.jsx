@@ -30,9 +30,21 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
       }
       // Store token if backend sends one
       if (resp?.status === "success") {
+        const loginUser = resp?.user;
+        const profileRes = await GetUserProfile();
+        if (profileRes?.status === "success") {
+          const profile = profileRes?.user;
+
+          const userData = {
+            ...loginUser,
+            profileUrl:
+              profile?.profilePicture || loginUser?.profileUrl || null,
+          };
+
+          localStorage.setItem("user", JSON.stringify(userData));
+        }
         localStorage.setItem("token", resp?.token);
         localStorage.setItem("role", resp?.user?.role || "no role");
-        localStorage.setItem("user", JSON.stringify(resp?.user));
         localStorage.setItem("astoken", resp?.chatmeatadata?.accessToken);
         localStorage.setItem(
           "asuser",
