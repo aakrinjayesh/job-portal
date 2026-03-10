@@ -731,6 +731,7 @@ const setPassword = async (req, res) => {
         where: { email },
         data: {
           password: hashedPassword,
+          emailverified: true,
           ...(externalUserId && { chatuserid: externalUserId }),
         },
       });

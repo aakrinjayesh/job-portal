@@ -71,7 +71,9 @@ const UploadResume = async (req, res) => {
   } catch (err) {
     logger.error("Error in UploadResume:", err);
     return res.status(500).json({
-      error: "Something went wrong while uploading",
+      status: "error",
+      message: "Something went wrong while uploading",
+      metadata: err.message,
     });
   }
 };
@@ -153,7 +155,7 @@ const updateProfiledetails = async (req, res) => {
         currentLocation,
         title,
         summary,
-        ...(user.role === "candidate" ? { status: status ?? "ACTIVE" } : {}),
+        ...(user.role === "candidate" ? { status: status ?? "active" } : {}),
       },
       create: {
         userId: user.id,
@@ -182,7 +184,7 @@ const updateProfiledetails = async (req, res) => {
         title,
         summary,
         chatuserid: user.chatuserid,
-        ...(user.role === "candidate" ? { status: status ?? "ACTIVE" } : {}),
+        ...(user.role === "candidate" ? { status: status ?? "active" } : {}),
       },
     });
 
@@ -469,7 +471,7 @@ const toggleCandidateStatus = async (req, res) => {
     }
 
     const newStatus =
-      existingProfile.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+      existingProfile.status === "active" ? "inactive" : "active";
 
     const updated = await prisma.userProfile.update({
       where: { userId: id },

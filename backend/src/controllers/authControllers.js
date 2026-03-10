@@ -93,6 +93,7 @@ const googleAuth = async (req, res) => {
           name: fullName,
           email,
           role: "candidate",
+          emailverified: true,
         },
       });
 

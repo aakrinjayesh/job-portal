@@ -425,7 +425,7 @@ const getAllCandidates = async (req, res) => {
     const allCandidates = await prisma.userProfile.findMany({
       where: {
         OR: [
-          { status: "ACTIVE" }, // only active candidates
+          { status: "active" }, // only active candidates
         ],
       },
       // where: {

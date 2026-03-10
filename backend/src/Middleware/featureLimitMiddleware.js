@@ -65,7 +65,13 @@ export const featureLimitMiddleware = async (req, res, next) => {
     // 1️⃣ Get organization member + license
     const member = await prisma.organizationMember.findUnique({
       where: { userId },
-      include: { license: true },
+      include: {
+        license: {
+          include: {
+            plan: true,
+          },
+        },
+      },
     });
 
     if (!member?.license || !member.license.isActive) {
@@ -80,7 +86,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
     const license = member.license;
 
     // 1️⃣ Check expiry ONLY for non-BASIC plans
-    const isBasicPlan = license.planTier === "BASIC";
+    const isBasicPlan = license.plan.tier === "BASIC";
 
     if (!isBasicPlan && license.validUntil < new Date()) {
       return res.status(403).json({
