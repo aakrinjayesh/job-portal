@@ -52,28 +52,26 @@ const ContactSupport = () => {
   const [messageAPI, contextHolder] = message.useMessage();
 
   const onFinish = async (values) => {
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
 
-    await GetContactSupport(values); // ✅ call backend API
+      await GetContactSupport(values); // ✅ call backend API
 
-    messageAPI.success(
-      "Message sent! Our support team will get back to you soon."
-    );
+      messageAPI.success(
+        "Message sent! Our support team will get back to you soon.",
+      );
 
-    form.resetFields();
-  } catch (error) {
-    message.error(
-      error?.response?.data?.message || "Failed to send message"
-    );
-  } finally {
-    setSubmitting(false);
-  }
-};
+      form.resetFields();
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Failed to send message");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <>
-     {contextHolder}
+      {contextHolder}
       <style>{css}</style>
       {/* <AppHeader /> */}
 
@@ -113,14 +111,11 @@ const ContactSupport = () => {
       {/* ── Main Content ── */}
       <div className="cs-page-wrap">
         <Row gutter={[28, 28]} align="stretch">
-
           {/* ── LEFT PANEL ── */}
           <Col xs={24} md={9}>
             <div className="cs-info-card">
-
               {/* avatar / brand block */}
               <div className="cs-brand-block">
-               
                 <div>
                   <div className="cs-brand-name">Forcehead Support</div>
                   <div className="cs-brand-sub">Salesforce Talent Network</div>
@@ -165,11 +160,12 @@ const ContactSupport = () => {
               {/* response time badge */}
               <div className="cs-response-badge">
                 <span className="cs-response-dot" />
-                <Text style={{ fontSize: 13, color: "#16a34a", fontWeight: 600 }}>
+                <Text
+                  style={{ fontSize: 13, color: "#16a34a", fontWeight: 600 }}
+                >
                   Average response time: &lt; 4 hours
                 </Text>
               </div>
-
             </div>
           </Col>
 
@@ -177,7 +173,10 @@ const ContactSupport = () => {
           <Col xs={24} md={15}>
             <div className="cs-form-card">
               <div className="cs-form-header">
-                <Title level={3} style={{ margin: 0, fontWeight: 700, color: "#0f172a" }}>
+                <Title
+                  level={3}
+                  style={{ margin: 0, fontWeight: 700, color: "#0f172a" }}
+                >
                   Send us a message
                 </Title>
                 <Text style={{ color: "#64748b", fontSize: 14 }}>
@@ -194,7 +193,7 @@ const ContactSupport = () => {
               >
                 <Row gutter={[16, 0]}>
                   <Col xs={24} sm={12}>
-                    <Form.Item
+                    {/* <Form.Item
                       name="name"
                       label={<span className="cs-label">Full Name</span>}
                       rules={[{ required: true, message: "Please enter your name" }]}
@@ -204,6 +203,28 @@ const ContactSupport = () => {
                         placeholder="e.g. Rahul Sharma"
                         className="cs-input"
                         // prefix={<span style={{ marginRight: 6 }}>👤</span>}
+                      />
+                    </Form.Item> */}
+                    <Form.Item
+                      name="name"
+                      label={<span className="cs-label">Full Name</span>}
+                      rules={[
+                        { required: true, message: "Please enter your name" },
+                        {
+                          pattern: /^[A-Za-z. ]+$/,
+                          message:
+                            "Name can contain only letters, spaces and dots",
+                        },
+                        {
+                          max: 50,
+                          message: "Name cannot exceed 50 characters",
+                        },
+                      ]}
+                    >
+                      <Input
+                        size="large"
+                        placeholder="e.g. Rahul Sharma"
+                        className="cs-input"
                       />
                     </Form.Item>
                   </Col>
@@ -231,7 +252,9 @@ const ContactSupport = () => {
                     <Form.Item
                       name="role"
                       label={<span className="cs-label">Your Role</span>}
-                      rules={[{ required: true, message: "Please select your role" }]}
+                      rules={[
+                        { required: true, message: "Please select your role" },
+                      ]}
                     >
                       <Select
                         size="large"
@@ -246,29 +269,32 @@ const ContactSupport = () => {
                     </Form.Item>
                   </Col>
 
-                   <Col xs={24} sm={12}>
-    <Form.Item
-      name="phone"
-      label={<span className="cs-label">Phone Number</span>}
-      rules={[
-        { required: true, message: "Please enter your phone number" },
-        {
-          pattern: /^[0-9]{10}$/,
-          message: "Enter valid 10 digit phone number",
-        },
-      ]}
-    >
-      <Input
-        size="large"
-        placeholder="e.g. 9876543210"
-        className="cs-input"
-        // prefix={<span style={{ marginRight: 6 }}>📱</span>}
-        maxLength={10}
-      />
-    </Form.Item>
-  </Col>
                   <Col xs={24} sm={12}>
                     <Form.Item
+                      name="phone"
+                      label={<span className="cs-label">Phone Number</span>}
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please enter your phone number",
+                        },
+                        {
+                          pattern: /^[0-9]{10}$/,
+                          message: "Enter valid 10 digit phone number",
+                        },
+                      ]}
+                    >
+                      <Input
+                        size="large"
+                        placeholder="e.g. 9876543210"
+                        className="cs-input"
+                        // prefix={<span style={{ marginRight: 6 }}>📱</span>}
+                        maxLength={10}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12}>
+                    {/* <Form.Item
                       name="subject"
                       label={<span className="cs-label">Subject</span>}
                       // rules={[{ required: true, message: "Please enter a subject" }]}
@@ -279,6 +305,28 @@ const ContactSupport = () => {
                         className="cs-input"
                         // prefix={<span style={{ marginRight: 6 }}>📌</span>}
                       />
+                    </Form.Item> */}
+                    <Form.Item
+                      name="subject"
+                      label={<span className="cs-label">Subject</span>}
+                      rules={[
+                        {
+                          pattern:
+                            /^[A-Za-z\s!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]+$/,
+                          message:
+                            "Subject can contain letters and special characters only (numbers not allowed)",
+                        },
+                        {
+                          max: 500,
+                          message: "Subject cannot exceed 500 characters",
+                        },
+                      ]}
+                    >
+                      <Input
+                        size="large"
+                        placeholder="Brief subject line"
+                        className="cs-input"
+                      />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -286,7 +334,9 @@ const ContactSupport = () => {
                 <Form.Item
                   name="message"
                   label={<span className="cs-label">Message</span>}
-                  rules={[{ required: true, message: "Please enter your message" }]}
+                  rules={[
+                    { required: true, message: "Please enter your message" },
+                  ]}
                 >
                   <TextArea
                     rows={6}
@@ -316,12 +366,11 @@ const ContactSupport = () => {
                     color: "#94a3b8",
                   }}
                 >
-                 Your information is safe with us and will never be shared.
+                  Your information is safe with us and will never be shared.
                 </Text>
               </Form>
             </div>
           </Col>
-
         </Row>
       </div>
     </>

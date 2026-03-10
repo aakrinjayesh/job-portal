@@ -685,7 +685,7 @@ const UpdateUserProfile = ({
         isContactDetails: showContact,
         // status: isActive ? "ACTIVE" : "INACTIVE",
         ...(role === "candidate" && !Reciviedrole
-          ? { status: isActive ? "ACTIVE" : "INACTIVE" }
+          ? { status: isActive ? "active" : "inactive" }
           : {}),
       };
 
@@ -972,7 +972,7 @@ const UpdateUserProfile = ({
 
                       {/* Name, Phone, Email */}
                       <Col xs={24} sm={12} md={12}>
-                        <Form.Item
+                        {/* <Form.Item
                           label="Full Name"
                           name="name"
                           rules={[
@@ -983,6 +983,27 @@ const UpdateUserProfile = ({
                             {
                               pattern: /^[A-Za-z ]+$/,
                               message: "Only letters and spaces are allowed",
+                            },
+                          ]}
+                        >
+                          <Input placeholder="Enter full name" />
+                        </Form.Item> */}
+                        <Form.Item
+                          label="Full Name"
+                          name="name"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter full name",
+                            },
+                            {
+                              pattern: /^[A-Za-z. ]+$/,
+                              message:
+                                "Only letters, spaces and dots are allowed",
+                            },
+                            {
+                              max: 50,
+                              message: "Full name cannot exceed 50 characters",
                             },
                           ]}
                         >
@@ -1001,27 +1022,14 @@ const UpdateUserProfile = ({
                               required: true,
                               message: "Please enter phone number",
                             },
-                          ]}
-                        >
-                          <Input placeholder="Enter phone number" />
-                        </Form.Item> */}
-                        <Form.Item
-                          label={
-                            isCompany ? "POC Phone Number" : "Phone Number"
-                          }
-                          name="phoneNumber"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Please enter phone number",
-                            },
                             {
                               validator: (_, value) => {
                                 if (!value) return Promise.resolve();
 
                                 // Allow format: optional +countrycode, optional space, then digits
                                 // e.g: +91 9963713116 or 9963713116 or +919963713116
-                                if (!/^\+?\d*\s?\d+$/.test(value)) {
+                                // if (!/^\+?\d*\s?\d+$/.test(value))
+                                if (!/^[+\d\s]+$/.test(value)) {
                                   return Promise.reject(
                                     new Error(
                                       "Invalid format. Use format like +91 9963713116",
@@ -1078,6 +1086,92 @@ const UpdateUserProfile = ({
                               const pasted = e.clipboardData.getData("Text");
                               // Allow paste only if matches valid phone format
                               if (!/^\+?\d*\s?\d+$/.test(pasted)) {
+                                e.preventDefault();
+                              }
+                            }}
+                          />
+                        </Form.Item> */}
+                        <Form.Item
+                          label={
+                            isCompany ? "POC Phone Number" : "Phone Number"
+                          }
+                          name="phoneNumber"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter phone number",
+                            },
+                            {
+                              validator: (_, value) => {
+                                if (!value) return Promise.resolve();
+
+                                // Allow +, numbers, and spaces
+                                if (!/^[+\d\s]+$/.test(value)) {
+                                  return Promise.reject(
+                                    new Error(
+                                      "Only numbers, + and spaces are allowed",
+                                    ),
+                                  );
+                                }
+
+                                // Count digits only
+                                const digitsOnly = value.replace(/\D/g, "");
+                                if (digitsOnly.length > 13) {
+                                  return Promise.reject(
+                                    new Error(
+                                      "Phone number must not exceed 13 digits",
+                                    ),
+                                  );
+                                }
+
+                                return Promise.resolve();
+                              },
+                            },
+                          ]}
+                        >
+                          <Input
+                            placeholder="+91 9963713116"
+                            maxLength={17}
+                            onKeyDown={(e) => {
+                              const currentValue = e.target.value;
+
+                              // Allow '+' only as first character
+                              if (e.key === "+") {
+                                if (currentValue.length !== 0) {
+                                  e.preventDefault();
+                                }
+                                return;
+                              }
+
+                              // Allow only one space
+                              if (e.key === " ") {
+                                if (
+                                  currentValue.includes(" ") ||
+                                  currentValue.length === 0
+                                ) {
+                                  e.preventDefault();
+                                }
+                                return;
+                              }
+
+                              // Allow digits
+                              if (
+                                !/[0-9]/.test(e.key) &&
+                                ![
+                                  "Backspace",
+                                  "Delete",
+                                  "ArrowLeft",
+                                  "ArrowRight",
+                                  "Tab",
+                                ].includes(e.key)
+                              ) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onPaste={(e) => {
+                              const pasted = e.clipboardData.getData("Text");
+
+                              if (!/^[+\d\s]+$/.test(pasted)) {
                                 e.preventDefault();
                               }
                             }}

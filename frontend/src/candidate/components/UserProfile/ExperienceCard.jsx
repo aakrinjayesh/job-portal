@@ -539,15 +539,12 @@ const ExperienceCard = ({
 
                     <Row gutter={12}>
                       <Col span={12}>
-                        <Form.Item
+                        {/* <Form.Item
                           {...restField}
                           name={[name, "projectDescription"]}
                           label="Project Description"
                           rules={[
-                            // {
-                            //   // required: true,
-                            //   message: "Add project description",
-                            // },
+                           
                             {
                               pattern: /^[A-Za-z0-9 .,\/\-\(\)'%":\n]*$/,
 
@@ -562,10 +559,29 @@ const ExperienceCard = ({
                             showCount
                             placeholder="Project description (max 1000 chars)"
                           />
+                        </Form.Item> */}
+                        <Form.Item
+                          {...restField}
+                          name={[name, "projectDescription"]}
+                          label="Project Description"
+                          rules={[
+                            {
+                              max: 1000,
+                              message:
+                                "Project description cannot exceed 1000 characters",
+                            },
+                          ]}
+                        >
+                          <TextArea
+                            rows={4}
+                            maxLength={1000}
+                            showCount
+                            placeholder="Project description (max 1000 chars)"
+                          />
                         </Form.Item>
                       </Col>
                       <Col span={12}>
-                        <Form.Item
+                        {/* <Form.Item
                           {...restField}
                           name={[name, "rolesAndResponsibilities"]}
                           label="Roles & Responsibilities"
@@ -579,6 +595,24 @@ const ExperienceCard = ({
 
                               message:
                                 "Only letters, numbers, spaces and . , / - ( ) are allowed!",
+                            },
+                          ]}
+                        >
+                          <TextArea
+                            rows={4}
+                            maxLength={1000}
+                            showCount
+                            placeholder="Describe roles & responsibilities (max 1000 chars)"
+                          />
+                        </Form.Item> */}
+                        <Form.Item
+                          {...restField}
+                          name={[name, "rolesAndResponsibilities"]}
+                          label="Roles & Responsibilities"
+                          rules={[
+                            {
+                              max: 1000,
+                              message: "Maximum 1000 characters allowed",
                             },
                           ]}
                         >

@@ -245,6 +245,9 @@ const Bench = () => {
       setLoading(false);
     }
   };
+  const getSelectedCandidates = () => {
+    return candidates.filter((c) => selectedRowKeys.includes(c.id));
+  };
 
   useEffect(() => {
     fetchCandidates();
@@ -472,6 +475,44 @@ const Bench = () => {
 
   const updateStatus = async (status) => {
     try {
+      // ✅ ADD THIS BLOCK AT THE TOP
+      const selectedCandidates = candidates.filter((c) =>
+        selectedRowKeys.includes(c.id),
+      );
+      // ✅ NEW CHECK → mixed active + inactive
+      const hasActive = selectedCandidates.some((c) => c.status !== "inactive");
+      const hasInactive = selectedCandidates.some(
+        (c) => c.status === "inactive",
+      );
+
+      if (hasActive && hasInactive) {
+        messageApi.warning(
+          "You selected both active and inactive candidates. Please select the same status.",
+        );
+        return;
+      }
+
+      if (status === "active") {
+        const alreadyActive = selectedCandidates.every(
+          (c) => c.status !== "inactive",
+        );
+
+        if (alreadyActive) {
+          messageApi.warning("Selected candidates are already active.");
+          return;
+        }
+      }
+
+      if (status === "inactive") {
+        const alreadyInactive = selectedCandidates.every(
+          (c) => c.status === "inactive",
+        );
+
+        if (alreadyInactive) {
+          messageApi.warning("Selected candidates are already inactive.");
+          return;
+        }
+      }
       const payload = {
         candidateIds: selectedRowKeys,
         status,
@@ -1424,7 +1465,13 @@ const Bench = () => {
             {/* Buttons section unchanged */}
             <div style={{ display: "flex", gap: 24 }}>
               <Button
-                disabled={selectedRowKeys.length === 0}
+                // disabled={selectedRowKeys.length === 0}
+                disabled={
+                  selectedRowKeys.length === 0 ||
+                  candidates
+                    .filter((c) => selectedRowKeys.includes(c.id))
+                    .every((c) => c.status === "inactive")
+                }
                 onClick={() => updateStatus("inactive")}
                 // onClick={() => updateStatus("INACTIVE")}
                 style={{
@@ -1443,7 +1490,13 @@ const Bench = () => {
               </Button>
 
               <Button
-                disabled={selectedRowKeys.length === 0}
+                // disabled={selectedRowKeys.length === 0}
+                disabled={
+                  selectedRowKeys.length === 0 ||
+                  candidates
+                    .filter((c) => selectedRowKeys.includes(c.id))
+                    .every((c) => c.status !== "inactive")
+                }
                 onClick={() => updateStatus("active")}
                 // onClick={() => updateStatus("ACTIVE")}
                 style={{

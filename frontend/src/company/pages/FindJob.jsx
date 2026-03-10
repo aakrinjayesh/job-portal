@@ -21,7 +21,7 @@ function FindJob() {
   const location = useLocation();
 
   // ⭐ filter open / close
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const fetchJobs = useCallback(async (pageNum = 1, filters = {}) => {
     if (controllerRef.current) controllerRef.current.abort();
@@ -163,7 +163,7 @@ function FindJob() {
             />
           </Col>
         )} */}
-        <Col
+        {/* <Col
           span={6}
           style={{
             height: "100%",
@@ -176,7 +176,16 @@ function FindJob() {
             handleClearFilters={handleClearFilters}
             showCandidateType={false}
           />
-        </Col>
+        </Col> */}
+        {isFilterOpen && (
+          <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
+            <FiltersPanel
+              onFiltersChange={handleFiltersChange}
+              handleClearFilters={handleClearFilters}
+              showCandidateType={false}
+            />
+          </Col>
+        )}
 
         {/* Main Job List */}
         <Col span={isFilterOpen ? 18 : 24} style={{ height: "100%" }}>
@@ -249,7 +258,8 @@ function FindJob() {
                   type="find"
                   portal="company"
                   isFilterOpen={isFilterOpen}
-                  toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+                  // toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+                  toggleFilter={() => setIsFilterOpen((prev) => !prev)}
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}

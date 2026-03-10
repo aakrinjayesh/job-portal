@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Dropdown, Button, Tooltip } from "antd";
 import {
+  DownOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  DownOutlined,
-  LeftOutlined,
-  RightOutlined,
 } from "@ant-design/icons";
 import BenchCard from "./BenchCard";
 
@@ -45,7 +43,7 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
 
       case "exp":
         sorted.sort(
-          (a, b) => (b.totalExperience || 0) - (a.totalExperience || 0)
+          (a, b) => (b.totalExperience || 0) - (a.totalExperience || 0),
         );
         break;
 
@@ -53,7 +51,7 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
         sorted.sort(
           (a, b) =>
             (b.rateCardPerHour?.value || b.rateCardPerHour || 0) -
-            (a.rateCardPerHour?.value || a.rateCardPerHour || 0)
+            (a.rateCardPerHour?.value || a.rateCardPerHour || 0),
         );
         break;
 
@@ -90,7 +88,9 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
               type="text"
               onClick={toggleFilter}
               style={{ fontSize: 20 }}
-              icon={isFilterOpen ? <LeftOutlined /> : <RightOutlined />}
+              icon={
+                isFilterOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />
+              }
             />
           </Tooltip>
           Find Candidate
@@ -112,10 +112,10 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
                 {sortOrder === "asc"
                   ? "Posted Time (Oldest)"
                   : sortOrder === "exp"
-                  ? "Experience"
-                  : sortOrder === "rate"
-                  ? "Rate"
-                  : "Posted Time"}
+                    ? "Experience"
+                    : sortOrder === "rate"
+                      ? "Rate"
+                      : "Posted Time"}
               </span>{" "}
               <DownOutlined />
             </span>

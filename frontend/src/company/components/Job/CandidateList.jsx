@@ -46,6 +46,7 @@ const CandidateList = () => {
   // 🆕 SCREENING ANSWERS MODAL STATE
   const [answersModalOpen, setAnswersModalOpen] = useState(false);
   const [answersCandidate, setAnswersCandidate] = useState(null);
+  const [actionPopoverId, setActionPopoverId] = useState(null);
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -546,7 +547,7 @@ const CandidateList = () => {
               <span
                 style={{
                   color: "#1677ff",
-                  cursor: "pointer",
+                  // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
@@ -582,7 +583,7 @@ const CandidateList = () => {
               <span
                 style={{
                   color: "#1677ff",
-                  cursor: "pointer",
+                  // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
@@ -618,7 +619,7 @@ const CandidateList = () => {
               <span
                 style={{
                   color: "#1677ff",
-                  cursor: "pointer",
+                  // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
@@ -654,7 +655,7 @@ const CandidateList = () => {
               <span
                 style={{
                   color: "#1677ff",
-                  cursor: "pointer",
+                  // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
@@ -699,6 +700,7 @@ const CandidateList = () => {
       align: "center",
       render: (_, record) => {
         const openActivityOnly = async (type) => {
+          setActionPopoverId(null);
           setActivityCandidate(record);
           setActivityTab(type);
           setActivityModalOpen(true);
@@ -706,6 +708,7 @@ const CandidateList = () => {
 
         // 🆕 OPEN SCREENING ANSWERS MODAL
         const openAnswers = () => {
+          setActionPopoverId(null);
           setAnswersCandidate(record);
           setAnswersModalOpen(true);
         };
@@ -714,6 +717,10 @@ const CandidateList = () => {
           <Popover
             trigger="click"
             placement="left"
+            open={actionPopoverId === record.applicationId}
+            onOpenChange={(open) =>
+              setActionPopoverId(open ? record.applicationId : null)
+            }
             content={
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {/* Generate Fit Score */}
@@ -754,7 +761,11 @@ const CandidateList = () => {
                 {record?.screeningAnswers?.length > 0 && (
                   <div
                     style={{ cursor: "pointer", padding: "6px 10px" }}
-                    onClick={openAnswers}
+                    // onClick={openAnswers}
+                    onClick={(e) => {
+                      e.stopPropagation(); // prevents popover from closing
+                      openAnswers();
+                    }}
                   >
                     📋 Screening Answers
                   </div>

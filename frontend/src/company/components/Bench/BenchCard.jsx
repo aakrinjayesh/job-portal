@@ -178,6 +178,7 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
         borderRadius: 12,
         position: "relative",
         marginBottom: 20,
+        cursor: "pointer",
       }}
       bodyStyle={{ padding: 20 }}
       onClick={() =>
@@ -219,7 +220,11 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
           <Tooltip title={saved ? "Saved Candidate" : "UnSave Candidate"}>
             <Button
               type="text"
-              onClick={handleStarClick}
+              // onClick={handleStarClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStarClick(e);
+              }}
               icon={
                 saved ? (
                   <LuBookmarkCheck style={{ color: "#1677ff", fontSize: 18 }} />
@@ -271,7 +276,11 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
         <Row gutter={16} style={{ marginTop: 24 }}>
           {clouds?.length > 0 && (
             <Col span={12}>
-              <Card size="small" bordered onClick={stopCardClick}>
+              <Card
+                size="small"
+                bordered
+                //  onClick={stopCardClick}
+              >
                 <Typography.Text strong>Related Clouds</Typography.Text>
                 <div style={{ marginTop: 12 }}>
                   <TagsWithMore
@@ -289,7 +298,11 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
 
           {skills?.length > 0 && (
             <Col span={12}>
-              <Card size="small" bordered onClick={stopCardClick}>
+              <Card
+                size="small"
+                bordered
+                // onClick={stopCardClick}
+              >
                 <Typography.Text strong>Related Skills</Typography.Text>
                 <div style={{ marginTop: 12 }}>
                   <TagsWithMore

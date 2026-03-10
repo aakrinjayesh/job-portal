@@ -132,48 +132,6 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
         onFinish={handleSubmit}
         requiredMark={false} // ✅ prevents duplicate red star
       >
-        {/* ===== Subject ===== */}
-        {/* <Form.Item
-          label={
-            <span style={{ fontSize: 13, fontWeight: 590, color: "#2E2E2E" }}>
-              <span style={{ color: "#B60554" }}>*</span> Subject
-            </span>
-          }
-          required
-        >
-          <div
-            style={{
-              border: "1px solid #5C5C5C",
-              borderRadius: 8,
-              padding: "6px 8px",
-            }}
-          >
-            <Form.Item
-              name="subject"
-              noStyle
-              rules={[
-                { required: true, message: "Subject is required" },
-                {
-                  pattern: /^[A-Za-z0-9 ]+$/,
-                  message: "Only letters, numbers, and spaces are allowed",
-                },
-                {
-                  max: 30,
-                  message: "Subject cannot exceed 30 characters",
-                },
-              ]}
-            >
-              <Input
-                placeholder="Spoke"
-                bordered={false}
-                style={{ fontSize: 13 }}
-                maxLength={30}
-                showCount
-              />
-            </Form.Item>
-          </div>
-        </Form.Item> */}
-
         {/* ===== Type ===== */}
         <Form.Item
           label={
@@ -240,116 +198,58 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
           </div>
         </Form.Item>
 
-        {/* <Form.Item
-          label={
-            <span style={{ fontSize: 13, fontWeight: 590 }}>
-              <span style={{ color: "#B60554" }}>*</span> Time
-            </span>
-          }
-          required
-        >
-          <div
-            style={{
-              border: "1px solid #5C5C5C",
-              borderRadius: 8,
-              padding: "6px 8px",
-            }}
-          >
-            <Form.Item
-              name="time"
-              noStyle
-              rules={[
-                { required: true, message: "Time is required" },
-                {
-                  validator: (_, value) => {
-                    if (!value) return Promise.resolve();
-
-                    if (value.isBefore(dayjs())) {
-                      return Promise.reject(
-                        new Error("Date & time cannot be in the past"),
-                      );
-                    }
-
-                    return Promise.resolve();
-                  },
-                },
-              ]}
-            >
-              <DatePicker
-                bordered={false}
-                showTime
-                use12Hours
-                format="DD MMM YYYY, h:mm a"
-                style={{ width: "100%" }}
-                disabledDate={(current) => {
-                  return current && current < dayjs().startOf("day");
-                }}
-              />
-            </Form.Item>
-          </div>
-        </Form.Item> */}
-
         {/* ===== Description ===== */}
+
         <Form.Item
           label={
             <span style={{ fontSize: 13, fontWeight: 590, color: "#2E2E2E" }}>
               <span style={{ color: "#B60554" }}>*</span> Description
             </span>
           }
-          required
+          name="description"
+          rules={[
+            { required: true, message: "Description is required" },
+            {
+              pattern: /^[A-Za-z0-9 ,./()\[\]{}\n]+$/,
+              message:
+                "Only letters, numbers, spaces, and , . / ( ) [ ] { } are allowed",
+            },
+            {
+              validator: (_, value) => {
+                if (!value) return Promise.resolve();
+
+                const wordCount = value
+                  .trim()
+                  .split(/\s+/)
+                  .filter(Boolean).length;
+
+                if (wordCount > 1000) {
+                  return Promise.reject(
+                    new Error("Maximum 1000 words allowed"),
+                  );
+                }
+
+                return Promise.resolve();
+              },
+            },
+            {
+              max: 1000,
+              message: "Description cannot exceed 1000 characters",
+            },
+          ]}
         >
-          <div
+          <Input.TextArea
+            rows={3}
+            placeholder="Note Description"
             style={{
-              border: "1px solid #5C5C5C",
+              fontSize: 13,
               borderRadius: 8,
+              border: "1px solid #5C5C5C",
               padding: 8,
             }}
-          >
-            <Form.Item
-              name="description"
-              noStyle
-              rules={[
-                { required: true, message: "Description is required" },
-                {
-                  pattern: /^[A-Za-z0-9 ,./()\[\]{}\n]+$/,
-                  message:
-                    "Only letters, numbers, spaces, and , . / ( ) [ ] { } are allowed",
-                },
-
-                {
-                  validator: (_, value) => {
-                    if (!value) return Promise.resolve();
-
-                    const wordCount = value
-                      .trim()
-                      .split(/\s+/)
-                      .filter(Boolean).length;
-
-                    if (wordCount > 1000) {
-                      return Promise.reject(
-                        new Error("Maximum 1000 words allowed"),
-                      );
-                    }
-
-                    return Promise.resolve();
-                  },
-                },
-                {
-                  max: 1000,
-                  message: "Description cannot exceed 1000 characters",
-                },
-              ]}
-            >
-              <Input.TextArea
-                rows={3}
-                placeholder="Note Description"
-                bordered={false}
-                style={{ fontSize: 13 }}
-                maxLength={1000} // ⬅ character limit
-                showCount
-              />
-            </Form.Item>
-          </div>
+            maxLength={1000}
+            showCount
+          />
         </Form.Item>
       </Form>
     </Modal>

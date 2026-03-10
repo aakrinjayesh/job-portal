@@ -1195,7 +1195,7 @@ const RecruiterJobList = () => {
                     >
                       {job.clouds?.length > 0 && (
                         <div
-                          onClick={(e) => e.stopPropagation()}
+                          // onClick={(e) => e.stopPropagation()}
                           style={{
                             flex: 1,
                             padding: 12,
@@ -1255,7 +1255,7 @@ const RecruiterJobList = () => {
 
                       {job.skills?.length > 0 && (
                         <div
-                          onClick={(e) => e.stopPropagation()}
+                          // onClick={(e) => e.stopPropagation()}
                           style={{
                             flex: 1,
                             padding: 12,

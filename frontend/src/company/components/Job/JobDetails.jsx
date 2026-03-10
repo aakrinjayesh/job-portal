@@ -397,7 +397,7 @@ ${generatedUrl}
             </div>
             <div>
               <Text strong>Experience Level</Text>
-              <div>{job.experienceLevel}</div>
+              <div>{job.experienceLevel || "N/A"}</div>
             </div>
           </div>
 
@@ -421,7 +421,7 @@ ${generatedUrl}
             ))}
           </div>
 
-          <Divider />
+          {/* <Divider /> */}
 
           {/* CERTIFICATES */}
           <Divider />

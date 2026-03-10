@@ -22,12 +22,14 @@ import {
   BookFilled,
   BookOutlined,
   EnvironmentOutlined,
-  LeftOutlined,
+  // LeftOutlined,
   DownOutlined,
   FileTextOutlined,
   ClockCircleOutlined,
   UserOutlined,
-  RightOutlined,
+  // RightOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   LineChartOutlined,
 } from "@ant-design/icons";
 import { LuBookmark } from "react-icons/lu";
@@ -170,7 +172,31 @@ const JobList = ({
       } else {
         const resp = await UnSaveJob({ jobId });
         if (resp?.status !== "success") throw new Error();
-        messageApi.success("Job removed!");
+        // messageApi.success("Job removed!");
+        messageApi.open({
+          content: (
+            <span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "#ff4d4f",
+                  color: "#fff",
+                  fontSize: 10,
+                  marginRight: 8,
+                }}
+              >
+                ✕
+              </span>
+              Job removed!
+            </span>
+          ),
+          duration: 3,
+        });
         if (type === "save" && onUnsave) {
           onUnsave(jobId);
         }
@@ -416,7 +442,9 @@ const JobList = ({
                 type="text"
                 onClick={toggleFilter}
                 style={{ fontSize: 20 }}
-                icon={isFilterOpen ? <LeftOutlined /> : <RightOutlined />}
+                icon={
+                  isFilterOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />
+                }
               />
             </Tooltip>
 
@@ -505,7 +533,13 @@ const JobList = ({
                 {/* Job info — grows to fill available space */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {/* Title + Closed tag */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 4 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 4,
+                    }}
+                  >
                     <div
                       style={{
                         fontSize: isMobile ? 13 : 16,
@@ -525,7 +559,9 @@ const JobList = ({
                     </div>
 
                     {job.status === "Closed" && (
-                      <Tag color="red" style={{ flexShrink: 0, marginTop: 1 }}>Closed</Tag>
+                      <Tag color="red" style={{ flexShrink: 0, marginTop: 1 }}>
+                        Closed
+                      </Tag>
                     )}
                   </div>
 
@@ -585,11 +621,15 @@ const JobList = ({
                   // ✅ removed maxHeight + overflow:hidden — was clipping items on mobile
                 }}
               >
-                <span><EnvironmentOutlined /> {job.location}</span>
+                <span>
+                  <EnvironmentOutlined /> {job.location}
+                </span>
                 <Divider type="vertical" style={{ margin: "0 2px" }} />
                 <span>₹ {formatSalary(job.salary)}</span>
                 <Divider type="vertical" style={{ margin: "0 2px" }} />
-                <span><ClockCircleOutlined /> {job.employmentType}</span>
+                <span>
+                  <ClockCircleOutlined /> {job.employmentType}
+                </span>
                 <Divider type="vertical" style={{ margin: "0 2px" }} />
                 <span>
                   <UserOutlined />{" "}
@@ -600,83 +640,91 @@ const JobList = ({
                 {job.experienceLevel && (
                   <>
                     <Divider type="vertical" style={{ margin: "0 2px" }} />
-                    <span><LineChartOutlined /> {job.experienceLevel}</span>
+                    <span>
+                      <LineChartOutlined /> {job.experienceLevel}
+                    </span>
                   </>
                 )}
               </div>
 
               {/* SKILLS + CLOUDS — hidden on mobile, shown on desktop */}
-              {!isMobile && <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  flexWrap: "wrap",
-                  marginTop: 12,
-                  flexGrow: 1,
-                  overflow: "hidden",
-                }}
-              >
-                {job.clouds?.length > 0 && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      flex: 1,
-                      padding: 12,
-                      border: "1px solid #EEEEEE",
-                      borderRadius: 8,
-                      minWidth: 220,
-                      height: 120, // ✅ fixed height
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      // gap: 8,
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>
-                      Related Clouds
+              {!isMobile && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    marginTop: 12,
+                    flexGrow: 1,
+                    overflow: "hidden",
+                  }}
+                >
+                  {job.clouds?.length > 0 && (
+                    <div
+                      // onClick={(e) => e.stopPropagation()}
+                      style={{
+                        flex: 1,
+                        padding: 12,
+                        border: "1px solid #EEEEEE",
+                        borderRadius: 8,
+                        minWidth: 220,
+                        height: 120, // ✅ fixed height
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        // gap: 8,
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        Related Clouds
+                      </div>
+                      <div
+                        style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+                      >
+                        <TagsWithMore
+                          items={job.clouds}
+                          tagStyle={{
+                            background: "#E7F0FE",
+                            border: "1px solid #1677FF",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <TagsWithMore
-                        items={job.clouds}
-                        tagStyle={{
-                          background: "#E7F0FE",
-                          border: "1px solid #1677FF",
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                {job.skills?.length > 0 && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      flex: 1,
-                      padding: 12,
-                      border: "1px solid #EEEEEE",
-                      borderRadius: 8,
-                      minWidth: 220,
-                      height: 120,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>
-                      Related Skills
+                  {job.skills?.length > 0 && (
+                    <div
+                      // onClick={(e) => e.stopPropagation()}
+                      style={{
+                        flex: 1,
+                        padding: 12,
+                        border: "1px solid #EEEEEE",
+                        borderRadius: 8,
+                        minWidth: 220,
+                        height: 120,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        Related Skills
+                      </div>
+                      <div
+                        style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+                      >
+                        <TagsWithMore
+                          items={job.skills}
+                          tagStyle={{
+                            background: "#FBEBFF",
+                            border: "1px solid #800080",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <TagsWithMore
-                        items={job.skills}
-                        tagStyle={{
-                          background: "#FBEBFF",
-                          border: "1px solid #800080",
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>}
+                  )}
+                </div>
+              )}
             </Card>
           </Col>
         );

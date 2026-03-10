@@ -285,7 +285,7 @@ const OrganizationSettings = () => {
         confirmLoading={confirmLoading}
       >
         <Form form={form} onFinish={handleInvite} layout="vertical">
-          <Form.Item
+          {/* <Form.Item
             name="name"
             label="Full Name"
             rules={[
@@ -293,6 +293,23 @@ const OrganizationSettings = () => {
               {
                 pattern: /^[A-Za-z]+(?:[ .][A-Za-z]+)*$/,
                 message: "Name can contain letters, spaces and dots only",
+              },
+            ]}
+          >
+            <Input placeholder="Enter member name" />
+          </Form.Item> */}
+          <Form.Item
+            name="name"
+            label="Full Name"
+            rules={[
+              { required: true, message: "Please enter name" },
+              {
+                pattern: /^[A-Za-z. ]+$/,
+                message: "Name can contain only letters, spaces and dots",
+              },
+              {
+                max: 50,
+                message: "Name cannot exceed 50 characters",
               },
             ]}
           >

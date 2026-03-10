@@ -281,15 +281,15 @@ const ResumeTemplate = forwardRef(({ candidate }, ref) => {
           margin-top: 8px;
         }
 
-        .certification-badge {
-          padding: 5px 12px;
-          background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
-          color: #e53e3e;
-          border-radius: 12px;
-          font-size: 11px;
-          font-weight: 600;
-          border: 1px solid #fecaca;
-        }
+      .certification-badge {
+  padding: 5px 12px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e4e9ff 100%);
+  color: #5a67d8;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #c7d2fe;
+}
 
         /* ===== WORK EXPERIENCE ===== */
         .experience-section {

@@ -1038,6 +1038,7 @@ const userAllSavedJobs = async (req, res) => {
               location: true,
               salary: true,
               employmentType: true,
+              experienceLevel: true,
               experience: true,
               skills: true,
               clouds: true,

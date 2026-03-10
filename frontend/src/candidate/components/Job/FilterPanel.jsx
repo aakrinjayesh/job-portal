@@ -424,7 +424,7 @@ const FiltersPanel = ({
   return (
     <div
       style={{
-        width: 220, // ✅ reduced width
+        width: 250, // ✅ reduced width
         // height: "calc(100vh - 30px)", // ✅ smaller scroll area
         borderRight: "1px solid #eee",
         padding: 14,

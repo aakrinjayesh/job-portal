@@ -57,14 +57,19 @@ const FEATURE_ICONS = {
 const UsageDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [featureUsage, setFeatureUsage] = useState([]);
-  const [aiUsage, setAIUsage] = useState(null);
+  // const [aiUsage, setAIUsage] = useState(null);
   const [licenseInfo, setLicenseInfo] = useState(null);
 
   useEffect(() => {
-    Promise.all([getFeatureUsage(), getAIUsage(), getLicenseInfo()])
-      .then(([usageRes, aiRes, licenseRes]) => {
+    // Promise.all([getFeatureUsage(), getAIUsage(), getLicenseInfo()])
+    Promise.all([getFeatureUsage(), getLicenseInfo()])
+      // .then(([usageRes, aiRes, licenseRes]) => {
+      //   setFeatureUsage(Array.isArray(usageRes?.usage) ? usageRes.usage : []);
+      //   setAIUsage(aiRes || null);
+      //   setLicenseInfo(licenseRes || null);
+      // })
+      .then(([usageRes, licenseRes]) => {
         setFeatureUsage(Array.isArray(usageRes?.usage) ? usageRes.usage : []);
-        setAIUsage(aiRes || null);
         setLicenseInfo(licenseRes || null);
       })
       .catch(() => message.error("Failed to load usage data"))
@@ -121,7 +126,7 @@ const UsageDashboard = () => {
         </Row>
 
         {/* ================= AI SECTION ================= */}
-        {aiUsage && <AITokenSection aiUsage={aiUsage} />}
+        {/* {aiUsage && <AITokenSection aiUsage={aiUsage} />} */}
       </div>
     </div>
   );
@@ -297,46 +302,46 @@ const FeatureCard = ({ feature, periods }) => {
 /* =====================================================
    AI TOKEN SECTION
 ===================================================== */
-const AITokenSection = ({ aiUsage }) => {
-  const chartData =
-    aiUsage?.history?.slice(-10).map((h) => ({
-      time: dayjs(h.createdAt).format("DD MMM"),
-      tokens: h.totalTokens,
-    })) || [];
+// const AITokenSection = ({ aiUsage }) => {
+//   const chartData =
+//     aiUsage?.history?.slice(-10).map((h) => ({
+//       time: dayjs(h.createdAt).format("DD MMM"),
+//       tokens: h.totalTokens,
+//     })) || [];
 
-  return (
-    <>
-      <Title level={3} style={{ marginTop: 40 }}>
-        <RobotOutlined /> AI Token Usage
-      </Title>
+//   return (
+//     <>
+//       <Title level={3} style={{ marginTop: 40 }}>
+//         <RobotOutlined /> AI Token Usage
+//       </Title>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={8}>
-          <Card>
-            <Text type="secondary">Total Tokens Used</Text>
-            <div style={{ fontSize: 28, fontWeight: 600 }}>
-              {aiUsage?.totals?.totalTokens || 0}
-            </div>
-          </Card>
-        </Col>
+//       <Row gutter={[16, 16]}>
+//         <Col xs={24} md={8}>
+//           <Card>
+//             <Text type="secondary">Total Tokens Used</Text>
+//             <div style={{ fontSize: 28, fontWeight: 600 }}>
+//               {aiUsage?.totals?.totalTokens || 0}
+//             </div>
+//           </Card>
+//         </Col>
 
-        <Col xs={24}>
-          <Card title="Recent Activity">
-            {chartData.length > 0 ? (
-              <Column
-                data={chartData}
-                xField="time"
-                yField="tokens"
-                height={220}
-              />
-            ) : (
-              <Empty description="No AI activity yet" />
-            )}
-          </Card>
-        </Col>
-      </Row>
-    </>
-  );
-};
+//         <Col xs={24}>
+//           <Card title="Recent Activity">
+//             {chartData.length > 0 ? (
+//               <Column
+//                 data={chartData}
+//                 xField="time"
+//                 yField="tokens"
+//                 height={220}
+//               />
+//             ) : (
+//               <Empty description="No AI activity yet" />
+//             )}
+//           </Card>
+//         </Col>
+//       </Row>
+//     </>
+//   );
+// };
 
 export default UsageDashboard;
