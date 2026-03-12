@@ -42,13 +42,14 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (
-      (error.response?.status === 403 &&
-        error.response?.data?.code === "LIMIT_EXCEEDED") ||
-      error.response?.data?.code === "LICENSE_EXPIRED"
-    ) {
-      console.log("limit triggered");
-      triggerLimitModal(error.response.data);
+    const code = error.response?.data?.code;
+
+    if (code === "LIMIT_EXCEEDED" || code === "LICENSE_EXPIRED") {
+      triggerLimitModal({
+        type: code,
+        ...error.response.data,
+      });
+
       return Promise.reject(error);
     }
 

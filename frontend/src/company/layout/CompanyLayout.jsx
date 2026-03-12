@@ -9,6 +9,7 @@ import {
   Breadcrumb,
   Space,
   ConfigProvider,
+  Modal,
 } from "antd";
 import {
   DashboardOutlined,
@@ -32,6 +33,7 @@ const { Text, Title } = Typography;
 
 const CompanyLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,7 +44,7 @@ const CompanyLayout = ({ children }) => {
   const userData = JSON.parse(localStorage.getItem("user")) || {};
 
   const user = {
-    name: userData.name || "Aakrin Company",
+    name: userData.name || "Guest",
     role: userData.role || "Company",
     profileUrl: userData.profileUrl || null,
   };
@@ -142,15 +144,48 @@ const CompanyLayout = ({ children }) => {
     if (path.startsWith("/company/dashboard")) return "dashboard";
     if (path.startsWith("/company/jobs")) return "jobs";
 
+    // ✅ Public Company Profile (/company/:slug)
+    if (path.match(/^\/company\/[^/]+$/)) {
+      if (highlight) return highlight;
+      return "companyprofile";
+    }
+
     return "dashboard";
   }, [location.pathname, location.state]);
 
   /* 🧠 Menu Click */
   const onMenuClick = ({ key }) => {
+    const protectedPages = [
+      "dashboard",
+      "myactivity",
+      "savedjobs",
+      "appliedcandidatesbyjob",
+      "bench",
+      "findbench",
+      "savedcandidates",
+      "chat",
+      "jobs",
+    ];
+
+    const token = localStorage.getItem("token");
+
+    if (protectedPages.includes(key) && !token) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (key === "logout") {
       handleLogout();
       return;
     }
+
+    if (key === "findjob") {
+      sessionStorage.removeItem("isReturning");
+      sessionStorage.removeItem("findJobSortOrder_returning");
+      sessionStorage.removeItem("savedFilters"); // ✅ add this
+      sessionStorage.removeItem("filterOpen");
+    }
+
     if (key === "contact") {
       window.open("/contact", "_blank");
       return;
@@ -177,6 +212,8 @@ const CompanyLayout = ({ children }) => {
     }
 
     if (path.startsWith("/company/candidates")) return "View Candidates";
+
+    if (path.match(/^\/company\/[^/]+$/)) return "Company Profile";
 
     if (path.startsWith("/contact")) return "";
 
@@ -209,7 +246,7 @@ const CompanyLayout = ({ children }) => {
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
-          trigger={null} // 👈 removes collapse icon below logout
+          // trigger={null} // 👈 removes collapse icon below logout
           width={240}
           style={{
             background: "#011026",
@@ -271,6 +308,7 @@ const CompanyLayout = ({ children }) => {
               theme="dark"
               selectedKeys={[selectedKey]}
               onClick={onMenuClick}
+              defaultOpenKeys={["jobs-group"]}
               style={{ background: "transparent", border: "none" }}
               items={[
                 {
@@ -445,6 +483,17 @@ const CompanyLayout = ({ children }) => {
             {children}
           </Content>
         </Layout>
+
+        {/* 🔐 Login Modal */}
+        <Modal
+          open={showLoginModal}
+          title="Login Required"
+          onCancel={() => setShowLoginModal(false)}
+          okText="Go to Login"
+          onOk={() => navigate("/login")}
+        >
+          <p>Please login to use this feature.</p>
+        </Modal>
       </Layout>
     </>
   );

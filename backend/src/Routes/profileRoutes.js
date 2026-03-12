@@ -8,9 +8,12 @@ import {
   getUserProfileDetails,
   uploadProfilePicture,
   getCountriesWithStates,
-  updateUserProfileDetails,
   getCompanyProfileDetails,
   toggleCandidateStatus,
+  getPublicCompanyProfile,
+  updateCompanyProfile,
+  updateCompanyPersonalProfile,
+  updateCandidateStatusProfile,
 } from "../controllers/profileControllers.js";
 
 import multer from "multer";
@@ -59,6 +62,12 @@ userRouter.post(
 
 userRouter.post("/profile/details", authenticateToken, getUserProfileDetails);
 
+userRouter.post(
+  "/profile/update-candidate-domains",
+  authenticateToken,
+  updateCandidateStatusProfile,
+);
+
 // Profile Picture  save Route
 userRouter.post(
   "/profile/upload-picture",
@@ -71,7 +80,12 @@ userRouter.post(
 
 userRouter.get("/profile/details", authenticateToken, getCompanyProfileDetails);
 
-userRouter.post("/profile/update", authenticateToken, updateUserProfileDetails);
+userRouter.post(
+  "/profile/company/personal",
+  authenticateToken,
+  updateCompanyPersonalProfile,
+);
+userRouter.post("/profile/company", authenticateToken, updateCompanyProfile);
 
 userRouter.get("/countries", authenticateToken, getCountriesWithStates);
 userRouter.patch(
@@ -79,5 +93,7 @@ userRouter.patch(
   authenticateToken,
   toggleCandidateStatus,
 );
+
+userRouter.get("/public/company/:slug", getPublicCompanyProfile);
 
 export default userRouter;

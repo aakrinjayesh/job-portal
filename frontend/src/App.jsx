@@ -42,13 +42,17 @@ import { subscribeToLimit, unsubscribeFromLimit } from "./utils/limitEventBus";
 import { useState, useRef } from "react";
 import HomePage from "./pages/HomePage";
 import VendorMarketplacePage from "./pages/VendorMarketplacePage";
+import LicenseExpiredAlert from "./components/alert/LicenseExpiredAlert";
 import SalesforceBenchPage from "./pages/SalesforceBenchPage";
 import CompanyProfilePopup from "./components/alert/CompanyProfilePopup";
+import PublicCompanyProfile from "./pages/PublicCompanyProfile";
+
 // import AppliedCandidatesByJob from "./company/pages/AppliedCandidatesByJob";
 
 function App() {
   const location = useLocation();
   const [limitOpen, setLimitOpen] = useState(false);
+  const [licenseOpen, setLicenseOpen] = useState(false);
   const [limitData, setLimitData] = useState(null);
   const [showCompanyPopup, setShowCompanyPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
@@ -71,8 +75,14 @@ function App() {
 
   useEffect(() => {
     const handler = (data) => {
-      setLimitData(data);
-      setLimitOpen(true);
+      if (data.type === "LIMIT_EXCEEDED") {
+        setLimitData(data);
+        setLimitOpen(true);
+      }
+
+      if (data.type === "LICENSE_EXPIRED") {
+        setLicenseOpen(true);
+      }
     };
 
     subscribeToLimit(handler);
@@ -379,21 +389,25 @@ function App() {
             </CompanyLayout>
           }
         />
+
+        <Route
+          path="/company/:slug"
+          element={
+            <CompanyLayout>
+              <PublicCompanyProfile />
+            </CompanyLayout>
+          }
+        />
       </Routes>
       <LimitExceededAlert
         open={limitOpen}
         onClose={() => setLimitOpen(false)}
         message={limitData?.message}
       />
-      {/* <CompanyProfilePopup
-        open={showCompanyPopup}
-        message={popupMessage}
-        // onClose={() => setShowCompanyPopup(false)}
-        onClose={() => {
-          popupCheckedRef.current = true;
-          setShowCompanyPopup(false);
-        }}
-      /> */}
+      <LicenseExpiredAlert
+        open={licenseOpen}
+        onClose={() => setLicenseOpen(false)}
+      />
       <CompanyProfilePopup
         open={showCompanyPopup}
         message={popupMessage}

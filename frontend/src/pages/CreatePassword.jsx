@@ -89,28 +89,28 @@ const CreatePassword = () => {
       {/* <AppHeader /> */}
 
       {/* ================= BODY ================= */}
-      <Row style={{ minHeight: "100vh" }}>
+      <Row style={{ height: "100vh", overflow: "hidden" }}>
         {/* LEFT – CREATE PASSWORD */}
         <Col
           xs={24}
           md={12}
           style={{
-    display: "flex",
-    flexDirection: "column",   // 🔹 Important
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    background: "#fff",
-  }}
+            display: "flex",
+            flexDirection: "column", // 🔹 Important
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            background: "#fff",
+          }}
         >
           <div style={styles.logoWrapper}>
-              <img
-                src={logo}
-                alt="ForceHead"
-                style={styles.logo}
-                onClick={() => navigate("/")}
-              />
-            </div>
+            <img
+              src={logo}
+              alt="ForceHead"
+              style={styles.logo}
+              onClick={() => navigate("/")}
+            />
+          </div>
           <div style={styles.loginCard}>
             <Title level={3}>Create Password</Title>
             <Text type="secondary">Secure your account to continue</Text>
@@ -119,10 +119,11 @@ const CreatePassword = () => {
               form={form}
               layout="vertical"
               onFinish={onFinish}
-              style={{ marginTop: 24 }}
+              style={{ marginTop: 16 }}
             >
               <Form.Item
                 name="password"
+                style={{ marginBottom: 12 }}
                 rules={[
                   { required: true, message: "Enter password" },
                   {
@@ -138,6 +139,7 @@ const CreatePassword = () => {
 
               <Form.Item
                 name="confirmPassword"
+                style={{ marginBottom: 16 }}
                 dependencies={["password"]}
                 rules={[
                   { required: true, message: "Confirm password" },
@@ -166,7 +168,7 @@ const CreatePassword = () => {
                 Set Password
               </Button>
 
-              <Text style={{ display: "block", marginTop: 16 }}>
+              <Text style={{ display: "block", marginTop: 12 }}>
                 Already have an account?{" "}
                 <Button
                   type="link"
@@ -186,6 +188,7 @@ const CreatePassword = () => {
           xs={0}
           md={12}
           style={{
+            height: "100%",
             background: role === "candidate" ? "#094db9" : "#4F63F6",
             position: "relative",
             overflow: "hidden",
@@ -203,8 +206,20 @@ const CreatePassword = () => {
 
 const CompanyHero = () => (
   <>
-    <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={personImg} alt="person" style={styles.person} />
+    <img
+      src={cloudImage}
+      alt="cloud"
+      style={styles.cloud}
+      loading="lazy"
+      decoding="async"
+    />
+    <img
+      src={personImg}
+      alt="person"
+      style={styles.person}
+      loading="lazy"
+      decoding="async"
+    />
 
     <div style={styles.heroText}>
       <Title
@@ -216,7 +231,7 @@ const CompanyHero = () => (
           marginBottom: 12,
         }}
       >
-       The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
+        The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
       </Title>
 
       <Text
@@ -257,7 +272,13 @@ const CompanyHero = () => (
 const CandidateHero = () => (
   <>
     <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
+    <img
+      src={andrewImg}
+      alt="candidate"
+      style={styles.candidateperson}
+      loading="lazy"
+      decoding="async"
+    />
 
     <div style={styles.heroText}>
       <Title
@@ -269,8 +290,7 @@ const CandidateHero = () => (
           marginBottom: 12,
         }}
       >
-        Find the right Salesforce job -
-        built for your career.
+        Find the right Salesforce job - built for your career.
       </Title>
 
       <Text
@@ -491,18 +511,18 @@ const styles = {
     background: "#fff",
   },
 
-   logoWrapper: {
-      display: "flex",
-  justifyContent: "center",   
-  alignItems: "center",       
-  marginBottom: 24,           
-  width: "100%",
-    },
-  
-    logo: {
-       width: 188,     // 🔹 increase width here
-      height: "135px",
-      cursor: "pointer",
-    },
+  logoWrapper: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+    width: "100%",
+  },
+
+  logo: {
+    width: 188, // 🔹 increase width here
+    height: "135px",
+    cursor: "pointer",
+  },
 };
 export default CreatePassword;

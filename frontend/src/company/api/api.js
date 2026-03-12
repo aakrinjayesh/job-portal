@@ -386,9 +386,25 @@ export async function GetUserProfileDetails() {
   }
 }
 
-export async function UpdateUserProfileDetails(payload) {
+export async function UpdateCompanyPersonalProfile(payload) {
   try {
-    const response = await axiosInstance.post("/profile/update", payload, {
+    const response = await axiosInstance.post(
+      "/profile/company/personal",
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+}
+
+export async function UpdateCompanyProfile(payload) {
+  try {
+    const response = await axiosInstance.post("/profile/company", payload, {
       headers: { "Content-Type": "application/json" },
     });
     return response.data;
@@ -472,13 +488,16 @@ export async function UnsaveCandidate(payload) {
   }
 }
 
-export async function SavedCandidatesList() {
+export async function SavedCandidatesList(page = 1, limit = 10) {
   try {
-    const response = await axiosInstance.get(`/vendor/candidate/saved`, {
-      headers: {
-        "Content-Type": "application/json",
+    const response = await axiosInstance.get(
+      `/vendor/candidate/saved?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
     return response.data;
   } catch (error) {
     console.log("error duing appling job", error);
@@ -489,6 +508,16 @@ export async function SavedCandidatesList() {
 export async function GetJobQuestions(jobId) {
   try {
     const response = await axiosInstance.get(`/job/questions/${jobId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetAllTodoTemplates:", error);
+    throw error;
+  }
+}
+
+export async function GetPublicCompanyProfileDetails(slug) {
+  try {
+    const response = await axiosInstance.get(`/public/company/${slug}`);
     return response.data;
   } catch (error) {
     console.error("Error in GetAllTodoTemplates:", error);

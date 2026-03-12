@@ -7,6 +7,7 @@ import path from "path";
 import { logger } from "../utils/logger.js";
 import mammoth from "mammoth";
 import { uploadToCloudinary } from "../utils/Storage.js";
+import { generateSlug } from "../utils/slugify.js";
 
 // for uploading pdf and extracting all the details from it for both vendor and candidate
 
@@ -278,28 +279,44 @@ const uploadProfilePicture = async (req, res) => {
 
 const getCompanyProfileDetails = async (req, res) => {
   try {
-    logger.info("getUserProfileDetails API hit");
+    logger.info("getCompanyProfileDetails API hit");
 
     const { id } = req.user;
 
     const user = await prisma.users.findUnique({
-      where: { id }, // ✅ FIXED
+      where: { id },
       include: {
         address: true,
+        organizationMember: {
+          include: {
+            organization: {
+              include: {
+                companyProfile: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (!user) {
       logger.warn("User profile not found");
+
       return res.status(404).json({
         status: "error",
         message: "User not found",
       });
     }
 
+    const companyProfile =
+      user.organizationMember?.organization?.companyProfile || null;
+
     const [firstName = "", lastName = ""] = user.name?.split(" ") || [];
 
     const data = {
+      // ------------------------
+      // USER DETAILS
+      // ------------------------
       name: user.name,
       email: user.email || null,
       firstName,
@@ -308,6 +325,25 @@ const getCompanyProfileDetails = async (req, res) => {
       companyName: user.companyName,
       profileUrl: user.profileUrl,
       address: user.address,
+
+      // ------------------------
+      // COMPANY PROFILE DETAILS
+      // ------------------------
+      companyProfile: {
+        tagline: companyProfile?.tagline || null,
+        description: companyProfile?.description || null,
+        website: companyProfile?.website || null,
+        industry: companyProfile?.industry || null,
+        companySize: companyProfile?.companySize || null,
+        foundedYear: companyProfile?.foundedYear || null,
+        headquarters: companyProfile?.headquarters || null,
+        locations: companyProfile?.locations || [],
+        specialties: companyProfile?.specialties || [],
+        logoUrl: companyProfile?.logoUrl || null,
+        coverImage: companyProfile?.coverImage || null,
+        socialLinks: companyProfile?.socialLinks || null,
+        slug: companyProfile?.slug || null,
+      },
     };
 
     return res.status(200).json({
@@ -319,6 +355,7 @@ const getCompanyProfileDetails = async (req, res) => {
       "Error fetching profile:",
       JSON.stringify(error.message, null, 2),
     );
+
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -326,9 +363,127 @@ const getCompanyProfileDetails = async (req, res) => {
   }
 };
 
-const updateUserProfileDetails = async (req, res) => {
+const getPublicCompanyProfile = async (req, res) => {
   try {
-    logger.info("updateUserProfileDetails API hit");
+    const { slug } = req.params;
+
+    const company = await prisma.companyProfile.findUnique({
+      where: { slug },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            jobs: {
+              where: {
+                status: "Open",
+                isDeleted: false,
+              },
+              select: {
+                id: true,
+                role: true,
+                location: true,
+                employmentType: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!company) {
+      return res.status(404).json({
+        status: "error",
+        message: "Company not found",
+      });
+    }
+
+    const orgId = company.organization.id;
+
+    // ─────────────────────────────
+    // 👤 BENCH CANDIDATES
+    // ─────────────────────────────
+    const benchCandidatesRaw = await prisma.userProfile.findMany({
+      where: {
+        organizationId: orgId,
+        status: "active",
+      },
+      select: {
+        id: true,
+        name: true,
+        title: true,
+        currentLocation: true,
+        profilePicture: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    const benchCandidates = benchCandidatesRaw.map((c) => ({
+      id: c.id,
+      name: c.name,
+      role: c.title,
+      location: c.currentLocation,
+      profileUrl: c.profilePicture,
+    }));
+
+    // ─────────────────────────────
+    // 👥 ORGANIZATION MEMBERS
+    // ─────────────────────────────
+    const orgMembersRaw = await prisma.organizationMember.findMany({
+      where: {
+        organizationId: orgId,
+      },
+      select: {
+        id: true,
+        role: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profileUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const orgMembers = orgMembersRaw.map((m) => ({
+      id: m.user.id,
+      name: m.user.name,
+      email: m.user.email,
+      role: m.role,
+      permissions: m.permissions,
+      profileUrl: m.user.profileUrl,
+    }));
+
+    // ─────────────────────────────
+    // RESPONSE
+    // ─────────────────────────────
+    return res.json({
+      status: "success",
+      data: {
+        ...company,
+        organization: {
+          jobs: company.organization.jobs,
+          benchCandidates,
+          orgMembers,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Public company fetch error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateCompanyProfile = async (req, res) => {
+  try {
+    logger.info("updateCompanyProfile API hit");
 
     const { id } = req.user;
     const payload = req.body;
@@ -340,10 +495,9 @@ const updateUserProfileDetails = async (req, res) => {
       });
     }
 
-    // 1️⃣ Check user
     const user = await prisma.users.findUnique({
       where: { id },
-      include: { address: true },
+      include: { organizationMember: true },
     });
 
     if (!user) {
@@ -354,75 +508,154 @@ const updateUserProfileDetails = async (req, res) => {
       });
     }
 
+    const organizationId = user.organizationMember?.organizationId;
+
+    if (!organizationId) {
+      return res.status(403).json({
+        status: "error",
+        message: "User does not belong to an organization",
+      });
+    }
+
     const {
-      name,
-      phoneNumber,
       companyName,
-      profileUrl,
-      address, // { doorNumber, street, city, state, country, pinCode }
+      address,
+      tagline,
+      description,
+      website,
+      industry,
+      companySize,
+      foundedYear,
+      headquarters,
+      locations,
+      specialties,
+      logoUrl,
+      coverImage,
+      socialLinks,
     } = payload;
 
-    // 2️⃣ Transaction
-    const updatedUser = await prisma.$transaction(async (tx) => {
-      // 🔹 Update Users table
-      const userUpdate = await tx.users.update({
-        where: { id },
-        data: {
-          ...(name !== undefined && { name }),
-          ...(phoneNumber !== undefined && { phoneNumber }),
-          ...(companyName !== undefined && { companyName }),
-          ...(profileUrl !== undefined && { profileUrl }),
-        },
-      });
+    // Generate slug BEFORE transaction
+    const baseSlug = companyName
+      ? await generateSlug(companyName, prisma)
+      : null;
 
-      // 🔹 Update or Create Address
-      if (address) {
-        if (user.address) {
-          await tx.address.update({
-            where: { id: user.address.id },
-            data: {
-              ...(address.doorNumber !== undefined && {
-                doorNumber: address.doorNumber,
-              }),
-              ...(address.street !== undefined && { street: address.street }),
-              ...(address.city !== undefined && { city: address.city }),
-              ...(address.state !== undefined && { state: address.state }),
-              ...(address.country !== undefined && {
-                country: address.country,
-              }),
-              ...(address.pinCode !== undefined && {
-                pinCode: address.pinCode,
-              }),
-            },
-          });
-        } else {
-          await tx.address.create({
-            data: {
-              userId: id,
-              doorNumber: address.doorNumber || null,
-              street: address.street || null,
-              city: address.city || null,
-              state: address.state || null,
-              country: address.country || null,
-              pinCode: address.pinCode || null,
-            },
-          });
-        }
+    await prisma.$transaction(async (tx) => {
+      // — sync companyName back onto the users row —
+      if (companyName) {
+        await tx.users.update({
+          where: { id },
+          data: { companyName },
+        });
       }
 
-      return userUpdate;
+      // — address upsert —
+      if (address) {
+        await tx.address.upsert({
+          where: { userId: id },
+          update: {
+            doorNumber: address.doorNumber,
+            street: address.street,
+            city: address.city,
+            state: address.state,
+            country: address.country,
+            pinCode: address.pinCode,
+          },
+          create: {
+            userId: id,
+            doorNumber: address.doorNumber,
+            street: address.street,
+            city: address.city,
+            state: address.state,
+            country: address.country,
+            pinCode: address.pinCode,
+          },
+        });
+      }
+
+      // — company profile upsert —
+      const companyData = {
+        name: companyName,
+        tagline,
+        description,
+        website,
+        industry,
+        companySize,
+        foundedYear,
+        headquarters,
+        locations,
+        specialties,
+        logoUrl,
+        coverImage,
+        socialLinks,
+      };
+
+      await tx.companyProfile.upsert({
+        where: { organizationId },
+        update: companyData,
+        create: {
+          organizationId,
+          name: companyName || user.companyName || "Company",
+          slug: baseSlug,
+          ...companyData,
+        },
+      });
     });
 
     return res.status(200).json({
       status: "success",
-      message: "Profile updated successfully",
+      message: "Company profile updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating company profile:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateCompanyPersonalProfile = async (req, res) => {
+  try {
+    logger.info("updatePersonalProfile API hit");
+
+    const { id } = req.user;
+    const payload = req.body;
+
+    if (!payload || Object.keys(payload).length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Payload is missing",
+      });
+    }
+
+    const user = await prisma.users.findUnique({ where: { id } });
+
+    if (!user) {
+      logger.warn("User not found");
+      return res.status(404).json({
+        status: "error",
+        message: "User not found",
+      });
+    }
+
+    const { name, phoneNumber, profileUrl } = payload;
+
+    const updatedUser = await prisma.users.update({
+      where: { id },
+      data: {
+        name,
+        phoneNumber,
+        profileUrl,
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Personal profile updated successfully",
       data: updatedUser,
     });
   } catch (error) {
-    logger.error(
-      "Error updating user profile:",
-      JSON.stringify(error.message, null, 2),
-    );
+    console.error("Error updating personal profile:", error.message);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -494,121 +727,53 @@ const toggleCandidateStatus = async (req, res) => {
   }
 };
 
-// // // Save or Update Address (Upsert) for User Profile
-// //  const saveOrUpdateAddress = async (req, res) => {
-// //   console.log("address update start")
-// //   try {
-// //     const userId = req.user?.id;
+const updateCandidateStatusProfile = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const { hiddenDomains = [] } = req.body;
 
-// //     if (!userId) {
-// //       return res.status(400).json({
-// //         status: "error",
-// //         message: "Invalid user ID",
-// //       });
-// //     }
+    if (!userId) {
+      return res.status(400).json({
+        status: "error",
+        message: "User ID missing",
+      });
+    }
 
-// //     // Get user profile to fetch profileId
-// //     const profile = await prisma.userProfile.findUnique({
-// //       where: { userId },
-// //     });
+    const domains = hiddenDomains.map((d) => d.toLowerCase().trim());
 
-// //     if (!profile) {
-// //       return res.status(404).json({
-// //         status: "error",
-// //         message: "User profile not found",
-// //       });
-// //     }
+    const profile = await prisma.userProfile.update({
+      where: {
+        userId: userId,
+      },
+      data: {
+        hiddenDomains: domains,
+      },
+    });
 
-// //     const profileId = profile.id;
-// //     console.log(profileId);
-// //     // Dynamic frontend object (doorNo, street, countryId, stateId, pincode etc.)
-// //     const addressData = req.body;
-// //     console.log(addressData)
-// //     // Filter undefined fields
-// //     const filteredData = Object.fromEntries(
-// //       Object.entries(addressData).filter(([_, v]) => v !== undefined)
-// //     );
+    return res.status(200).json({
+      status: "success",
+      profile,
+    });
+  } catch (error) {
+    console.error("updateCandidateProfile Error:", error);
 
-// //     // If empty — reject (user clicked save without editing anything)
-// //     if (Object.keys(filteredData).length === 0) {
-// //       return res.status(400).json({
-// //         status: "error",
-// //         message: "No address fields to update",
-// //       });
-// //     }
-
-// //     // Address UPSERT
-// //     const updatedAddress = await prisma.address.upsert({
-// //       where: { profileId }, // ensure profileId is unique in Prisma schema
-// //       update: filteredData,
-// //       create: {
-// //         profileId,
-// //         ...filteredData,
-// //       },
-// //     });
-// //     console.log("Updated address object:", updatedAddress);
-// //         return res.json({
-// //           status: "success",
-// //           message: "Address saved successfully",
-// //           data: updatedAddress,
-// //         });
-// //   } catch (error) {
-// //     return res.status(500).json({
-// //       status: "error",
-// //       message: "Unable to save address",
-// //       error: error.message,
-// //     });
-// //   }
-// };
-
-// Get User Address (for logged-in user)
-// const getUserAddress = async (req, res) => {
-//   try {
-//     const userId = req.user?.id; // token is already decoded by middleware
-
-//     if (!userId) {
-//       return res.status(400).json({
-//         status: "error",
-//         message: "Invalid user ID",
-//       });
-//     }
-
-//     // Find user profile to get profileId
-//     const profile = await prisma.userProfile.findUnique({
-//       where: { userId },
-//       include: { address: true }, // include the related Address
-//     });
-
-//     if (!profile) {
-//       return res.status(404).json({
-//         status: "error",
-//         message: "User profile not found",
-//       });
-//     }
-//     console.log(profile)
-//     // Send address (may be null if not saved)
-//     return res.status(200).json({
-//       data:{
-//       status: "success",
-//       address: profile.address || null,
-//   }});
-//   } catch (error) {
-//     console.error("Error fetching user address:", error);
-//     return res.status(500).json({
-//       status: "error",
-//       message: "Could not fetch user address",
-//       error: error.message,
-//     });
-//   }
-// };
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
 
 export {
   UploadResume,
   updateProfiledetails,
-  updateUserProfileDetails,
+  updateCompanyPersonalProfile,
+  updateCompanyProfile,
   getUserProfileDetails,
   getCountriesWithStates,
   uploadProfilePicture,
+  getPublicCompanyProfile,
   getCompanyProfileDetails,
   toggleCandidateStatus,
+  updateCandidateStatusProfile,
 };

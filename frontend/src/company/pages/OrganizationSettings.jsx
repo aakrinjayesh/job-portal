@@ -5,33 +5,70 @@ import {
   Modal,
   Form,
   Input,
-  Select,
   Tag,
   Popconfirm,
   message,
   Progress,
+  Typography,
+  Space,
+  Tooltip,
+  Divider,
+  Skeleton,
 } from "antd";
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  GlobalOutlined,
+  LinkOutlined,
+  CopyOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 import {
   getOrganizationMembers,
   inviteOrganizationMember,
   removeOrganizationMember,
   revokeOrganizationInvite,
 } from "../api/api";
+import { GetUserProfileDetails } from "../api/api";
+import CompanyProfile from "./CompanyProfile"; // ← new component
 
-const { Option } = Select;
+const { Option } = Form; // not used but kept for safety
+const { Text, Link } = Typography;
 
 const OrganizationSettings = () => {
   const [members, setMembers] = useState([]);
   const [invites, setInvites] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const [isSiteModalVisible, setIsSiteModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [companySlug, setCompanySlug] = useState(null);
+  const [slugLoading, setSlugLoading] = useState(true);
   const firstLoadRef = React.useRef(true);
 
   const [form] = Form.useForm();
+
+  // ── derive public profile URL from slug ──
+  const publicProfileUrl = companySlug
+    ? `${window.location.origin}/company/${companySlug}`
+    : null;
+
+  // ── fetch slug from profile ──
+  const fetchCompanySlug = async () => {
+    setSlugLoading(true);
+    try {
+      const res = await GetUserProfileDetails();
+      if (res?.status === "success" && res.data?.companyProfile?.slug) {
+        setCompanySlug(res.data.companyProfile.slug);
+      }
+    } catch {
+      // silently ignore — slug may not exist yet
+    } finally {
+      setSlugLoading(false);
+    }
+  };
 
   // Fetch Members & Invites
   const fetchData = async () => {
@@ -63,6 +100,7 @@ const OrganizationSettings = () => {
 
   useEffect(() => {
     fetchData();
+    fetchCompanySlug();
   }, []);
 
   useEffect(() => {
@@ -90,7 +128,7 @@ const OrganizationSettings = () => {
 
       if (resp.status === "success") {
         message.success("Invite sent successfully");
-        setIsModalVisible(false);
+        setIsInviteModalVisible(false);
       }
 
       form.resetFields();
@@ -123,6 +161,45 @@ const OrganizationSettings = () => {
       message.error(error.response?.data?.message || "Failed to revoke invite");
     }
   };
+
+  const getAdminDomain = () => {
+    try {
+      const rawUser = localStorage.getItem("user");
+      if (!rawUser) return null;
+
+      const parsed = JSON.parse(rawUser);
+      const email = parsed?.email?.trim().toLowerCase();
+      if (!email || !email.includes("@")) return null;
+
+      return email.split("@")[1];
+    } catch {
+      return null;
+    }
+  };
+
+  const adminDomain = getAdminDomain();
+
+  // ── copy URL to clipboard ──
+  const handleCopyUrl = () => {
+    if (!publicProfileUrl) return;
+    navigator.clipboard
+      .writeText(publicProfileUrl)
+      .then(() => message.success("Profile URL copied to clipboard"))
+      .catch(() => message.error("Failed to copy URL"));
+  };
+
+  const tableProgressLoader = (
+    <div
+      style={{
+        padding: "50px 0",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Progress type="circle" percent={progress} status="active" size={80} />
+    </div>
+  );
 
   const memberColumns = [
     {
@@ -204,55 +281,94 @@ const OrganizationSettings = () => {
     },
   ];
 
-  const getAdminDomain = () => {
-    try {
-      const rawUser = localStorage.getItem("user");
-      if (!rawUser) return null;
-
-      const parsed = JSON.parse(rawUser);
-      const email = parsed?.email?.trim().toLowerCase();
-      if (!email || !email.includes("@")) return null;
-
-      return email.split("@")[1];
-    } catch {
-      return null;
-    }
-  };
-
-  const adminDomain = getAdminDomain();
-
-  const tableProgressLoader = (
-    <div
-      style={{
-        padding: "50px 0",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Progress type="circle" percent={progress} status="active" size={80} />
-    </div>
-  );
-
   return (
     <div style={{ padding: "24px" }}>
+      {/* ── Header row ── */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "flex-start",
           marginBottom: "20px",
+          flexWrap: "wrap",
+          gap: 12,
         }}
       >
-        <h2>Organization Settings</h2>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setIsModalVisible(true)}
-        >
-          Add Member
-        </Button>
+        <h2 style={{ margin: 0 }}>Organization Settings</h2>
+
+        <Space wrap>
+          {/* ── Company public profile URL ── */}
+          {slugLoading ? (
+            <Skeleton.Input active style={{ width: 320, height: 32, borderRadius: 8 }} />
+          ) : publicProfileUrl ? (
+            <Space
+              style={{
+                background: "#f6ffed",
+                border: "1px solid #b7eb8f",
+                borderRadius: 8,
+                padding: "6px 14px",
+              }}
+            >
+              <GlobalOutlined style={{ color: "#52c41a" }} />
+              <Text style={{ fontSize: 13 }}>Your public profile:</Text>
+              <Link
+                href={publicProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 13,
+                  maxWidth: 260,
+                  display: "inline-block",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  verticalAlign: "middle",
+                }}
+              >
+                {publicProfileUrl}
+              </Link>
+              <Tooltip title="Copy URL">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={handleCopyUrl}
+                />
+              </Tooltip>
+            </Space>
+          ) : (
+            <Text type="secondary" style={{ fontSize: 13, lineHeight: "32px" }}>
+              No public profile yet — click "Create Company Profile" to set one
+              up
+            </Text>
+          )}
+
+          {/* ── Create / Edit Site button ── */}
+          {slugLoading ? (
+            <Skeleton.Button active style={{ width: 180, borderRadius: 6 }} />
+          ) : (
+            <Button
+              type="primary"
+              icon={publicProfileUrl ? <EditOutlined /> : <GlobalOutlined />}
+              onClick={() => setIsSiteModalVisible(true)}
+            >
+              {publicProfileUrl
+                ? "Edit Company Profile"
+                : "Create Company Profile"}
+            </Button>
+          )}
+
+          {/* ── Add Member button ── */}
+          <Button
+            icon={<PlusOutlined />}
+            onClick={() => setIsInviteModalVisible(true)}
+          >
+            Add Member
+          </Button>
+        </Space>
       </div>
 
+      {/* ── Members table ── */}
       <h3>Members</h3>
       <Table
         columns={memberColumns}
@@ -265,6 +381,7 @@ const OrganizationSettings = () => {
         pagination={{ pageSize: 5 }}
       />
 
+      {/* ── Pending invites table ── */}
       {invites.length > 0 && (
         <div style={{ marginTop: "20px" }}>
           <h3>Pending Invites</h3>
@@ -277,27 +394,15 @@ const OrganizationSettings = () => {
         </div>
       )}
 
+      {/* ════════ Invite Member Modal ════════ */}
       <Modal
         title="Invite New Member"
-        open={isModalVisible}
+        open={isInviteModalVisible}
         onOk={form.submit}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => setIsInviteModalVisible(false)}
         confirmLoading={confirmLoading}
       >
         <Form form={form} onFinish={handleInvite} layout="vertical">
-          {/* <Form.Item
-            name="name"
-            label="Full Name"
-            rules={[
-              { required: true, message: "Please enter name" },
-              {
-                pattern: /^[A-Za-z]+(?:[ .][A-Za-z]+)*$/,
-                message: "Name can contain letters, spaces and dots only",
-              },
-            ]}
-          >
-            <Input placeholder="Enter member name" />
-          </Form.Item> */}
           <Form.Item
             name="name"
             label="Full Name"
@@ -358,6 +463,35 @@ const OrganizationSettings = () => {
             <Input placeholder="Enter member email" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* ════════ Create / Edit Site Modal ════════ */}
+      <Modal
+        title={
+          <Space>
+            <GlobalOutlined />
+            {publicProfileUrl ? "Edit Company Site" : "Create Company Site"}
+          </Space>
+        }
+        centered
+        open={isSiteModalVisible}
+        onCancel={() => setIsSiteModalVisible(false)}
+        footer={null} // CompanyProfile renders its own Save button
+        width={900}
+        style={{ marginLeft: 120 }}
+        styles={{
+          body: { maxHeight: "75vh", overflowY: "auto", padding: "12px 24px" },
+        }}
+        destroyOnClose
+      >
+        <CompanyProfile
+          compact
+          onSaveSuccess={() => {
+            // re-fetch slug in case it was just created
+            fetchCompanySlug();
+            setIsSiteModalVisible(false);
+          }}
+        />
       </Modal>
     </div>
   );

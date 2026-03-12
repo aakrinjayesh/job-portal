@@ -1,5 +1,6 @@
-import React from "react";
+import { useState } from "react";
 import { Tabs, Card } from "antd";
+import { useLocation } from "react-router-dom";
 import PersonalProfile from "./PersonalProfile"; // 👈 your first component code
 import Settings from "./Settings"; // 👈 org settings + activity
 import SettingsTodoManager from "./SettingsTodoManager";
@@ -7,6 +8,16 @@ import UsageDashboard from "../components/Profile/UsageDashboard";
 import OrganizationSettings from "./OrganizationSettings";
 
 const MyProfile = () => {
+  const location = useLocation();
+  const fromPopup = location.state?.fromPopup;
+  const [activeKey, setActiveKey] = useState("profile");
+
+  const handleProfileSaveSuccess = () => {
+    if (fromPopup) {
+      setActiveKey("organization");
+    }
+  };
+
   return (
     <div style={{ padding: 24, background: "#f5f7fb", minHeight: "100vh" }}>
       <Card
@@ -19,7 +30,8 @@ const MyProfile = () => {
         bodyStyle={{ padding: 0 }}
       >
         <Tabs
-          defaultActiveKey="profile"
+          activeKey={activeKey}
+          onChange={setActiveKey}
           size="large"
           tabBarStyle={{
             paddingLeft: 24,
@@ -31,7 +43,7 @@ const MyProfile = () => {
               label: "My Profile",
               children: (
                 <div style={{ padding: 24 }}>
-                  <PersonalProfile />
+                  <PersonalProfile onSaveSuccess={fromPopup ? handleProfileSaveSuccess : undefined} />
                 </div>
               ),
             },

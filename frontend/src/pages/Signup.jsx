@@ -99,20 +99,20 @@ const Signup = () => {
     try {
       setGenerateLoading(true);
 
-      // const check = await CheckUserExist({ email, role });
+      const check = await CheckUserExist({ email, role });
 
-      // if (check.status === "success") {
-      //   // Show message with existing email
-      //   if (check.existingEmail) {
-      //     messageApi.warning(
-      //       `${check.message} Existing email: ${check.existingEmail}`,
-      //       5,
-      //     );
-      //   } else {
-      //     messageApi.warning(check.message);
-      //   }
-      //   return;
-      // }
+      if (check.status === "success") {
+        // Show message with existing email
+        if (check.existingEmail) {
+          messageApi.warning(
+            `${check.message} Existing email: ${check.existingEmail}`,
+            5,
+          );
+        } else {
+          messageApi.warning(check.message);
+        }
+        return;
+      }
 
       const res = await GenerateOtp({
         email,
@@ -147,39 +147,50 @@ const Signup = () => {
       {/* <AppHeader /> */}
 
       {/* ================= BODY ================= */}
-      <Row style={{ minHeight: "100vh" }}>
+      <Row style={{ height: "100vh", overflow: "hidden" }}>
         {/* LEFT SIDE – SIGNUP FORM */}
         <Col
           xs={24}
           md={12}
           style={{
+            height: "100%",
+            overflowY: "auto",
             display: "flex",
-            flexDirection: "column", // 🔹 Important
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: 24,
+            padding: "16px 24px",
             background: "#fff",
           }}
         >
           {/* Logo OUTSIDE the card */}
-          <div style={styles.logoWrapper}>
+          <div style={{ ...styles.logoWrapper, marginBottom: 12 }}>
             <img
               src={logo}
               alt="ForceHead"
-              style={styles.logo}
+              style={{ ...styles.logo, height: "70px", width: "auto" }}
               onClick={() => navigate("/")}
             />
           </div>
 
           {/* Form Card */}
-          <div style={styles.loginCard}>
-            <Title level={3} style={{ marginBottom: 8, textAlign: "center" }}>
+          <div style={{ ...styles.loginCard, padding: "20px 24px" }}>
+            <Title
+              level={3}
+              style={{ marginBottom: 8, marginTop: "2px", textAlign: "center" }}
+            >
               {role === "company" ? "Company Signup" : "Candidate Signup"}
             </Title>
 
-            <Form form={form} layout="vertical" onFinish={onFinish}>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              size="middle"
+            >
               <Form.Item
                 name="fname"
+                style={{ marginBottom: 10 }}
                 dependencies={["lname", "email"]}
                 validateTrigger={["onBlur", "onChange"]}
                 rules={[
@@ -205,6 +216,7 @@ const Signup = () => {
 
               <Form.Item
                 name="lname"
+                style={{ marginBottom: 10 }}
                 dependencies={["fname", "email"]}
                 validateTrigger={["onBlur", "onChange"]}
                 rules={[
@@ -234,6 +246,7 @@ const Signup = () => {
 
               <Form.Item
                 name="email"
+                style={{ marginBottom: 10 }}
                 dependencies={["fname", "lname"]}
                 validateTrigger={["onBlur", "onChange"]}
                 rules={[
@@ -293,7 +306,7 @@ const Signup = () => {
                           ),
                   },
                 ]}
-                style={{ marginTop: 10 }}
+                style={{ marginBottom: 10 }}
               >
                 <Checkbox>
                   I agree to the{" "}
@@ -317,7 +330,7 @@ const Signup = () => {
 
               {/* SEND OTP (only first time) */}
               {!otpSent && (
-                <Form.Item shouldUpdate>
+                <Form.Item shouldUpdate style={{ marginBottom: 0 }}>
                   {() => {
                     const hasErrors = form
                       .getFieldsError(["fname", "lname", "email"])
@@ -343,6 +356,7 @@ const Signup = () => {
                         loading={generateLoading}
                         onClick={handleGenerateOtp}
                         disabled={!isFilled || hasErrors}
+                        style={{ marginBottom: 10 }}
                       >
                         Send OTP
                       </Button>
@@ -356,7 +370,7 @@ const Signup = () => {
                 <Text
                   style={{
                     display: "block",
-                    marginTop: 12,
+                    marginTop: 10,
                     textAlign: "center",
                     color: "#666",
                   }}
@@ -373,7 +387,7 @@ const Signup = () => {
                   size="large"
                   loading={generateLoading}
                   onClick={handleGenerateOtp}
-                  style={{ marginTop: 12 }}
+                  style={{ marginTop: 10 }}
                 >
                   Resend OTP
                 </Button>
@@ -389,7 +403,7 @@ const Signup = () => {
                   },
                 ]}
                 style={{
-                  marginTop: 16,
+                  marginBottom: 10,
                   display: "flex",
                   justifyContent: "center",
                 }}
@@ -418,9 +432,9 @@ const Signup = () => {
               </Button>
             </Form>
 
-            <Divider />
+            <Divider style={{ marginBottom: 10 }} />
 
-            <Text>
+            <Text style={{ marginTop: 0 }}>
               Already have an account?{" "}
               <Button
                 type="link"
@@ -440,6 +454,7 @@ const Signup = () => {
           xs={0}
           md={12}
           style={{
+            height: "100%",
             background: role === "candidate" ? "#094db9" : "#4F63F6",
             position: "relative",
             overflow: "hidden",
@@ -458,8 +473,8 @@ const Signup = () => {
 
 const CompanyHero = () => (
   <>
-    <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={personImg} alt="person" style={styles.person} />
+    <img src={cloudImage} alt="cloud" style={styles.cloud} loading="lazy" decoding="async" />
+    <img src={personImg} alt="person" style={styles.person} loading="lazy" decoding="async" />
 
     <div style={styles.heroText}>
       <Title
@@ -511,8 +526,8 @@ const CompanyHero = () => (
 
 const CandidateHero = () => (
   <>
-    <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
+    <img src={cloudImage} alt="cloud" style={styles.cloud} loading="lazy" decoding="async" />
+    <img src={andrewImg} alt="candidate" style={styles.candidateperson} loading="lazy" decoding="async" />
 
     <div style={styles.heroText}>
       <Title
@@ -739,7 +754,7 @@ const styles = {
 
   loginCard: {
     maxWidth: 420,
-    margin: "0 auto",
+    marginBottom: 10,
     padding: "32px",
     border: "1px solid #e5e7eb",
     borderRadius: 12,

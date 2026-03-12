@@ -25,7 +25,6 @@ import {
   TeamOutlined,
   SafetyCertificateOutlined,
   ThunderboltOutlined,
-  RocketOutlined,
   MessageOutlined,
   FileTextOutlined,
   SaveFilled,
@@ -1709,11 +1708,16 @@ const HomePage = () => {
               Login
             </Button>
             <Button
-              type="primary"
-              icon={<RocketOutlined />}
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/signup", { state: { role: "candidate" } })}
+              style={{ fontWeight: 500 }}
             >
-              Join Free
+              Candidate Signup
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => navigate("/signup", { state: { role: "company" } })}
+            >
+              Company Signup
             </Button>
           </Space>
         </nav>

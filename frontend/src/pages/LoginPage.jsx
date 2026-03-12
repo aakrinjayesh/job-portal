@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Form,
@@ -7,7 +7,6 @@ import {
   Typography,
   Divider,
   message,
-  Tabs,
   Row,
   Col,
   Grid,
@@ -107,9 +106,121 @@ const LoginForm = ({ role, onFinish, submitting, form }) => {
   );
 };
 
+/* ================= ROLE PICKER ================= */
+const RolePickerScreen = ({ onSelect, navigate }) => {
+  const [picked, setPicked] = useState(null);
+
+  const cards = [
+    {
+      role: "candidate",
+      icon: "👤",
+      title: "I'm a Candidate",
+      subtitle: "looking for Salesforce jobs",
+    },
+    {
+      role: "company",
+      icon: "🏢",
+      title: "I'm a Company",
+      subtitle: "hiring Salesforce talent",
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#fff",
+        padding: 24,
+      }}
+    >
+      <img src={logo} alt="ForceHead" style={{ width: 160, height: "auto", marginBottom: 32 }} />
+
+      <Title level={3} style={{ marginBottom: 8, textAlign: "center" }}>
+        Login to your account
+      </Title>
+      <Text type="secondary" style={{ marginBottom: 36, fontSize: 15 }}>
+        Choose how you want to continue
+      </Text>
+
+      <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap", justifyContent: "center" }}>
+        {cards.map(({ role, icon, title, subtitle }) => (
+          <div
+            key={role}
+            onClick={() => setPicked(role)}
+            style={{
+              width: 200,
+              padding: "28px 20px",
+              borderRadius: 12,
+              border: `2px solid ${picked === role ? "#1677FF" : "#E5E7EB"}`,
+              cursor: "pointer",
+              background: picked === role ? "#EFF6FF" : "#fff",
+              position: "relative",
+              transition: "all 0.15s",
+              boxShadow: picked === role ? "0 4px 12px rgba(22,119,255,0.15)" : "none",
+            }}
+          >
+            <div style={{ fontSize: 36, marginBottom: 12 }}>{icon}</div>
+            <Text strong style={{ display: "block", fontSize: 15 }}>{title}</Text>
+            <Text type="secondary" style={{ fontSize: 13 }}>{subtitle}</Text>
+            <div
+              style={{
+                position: "absolute",
+                top: 14,
+                right: 14,
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                border: `2px solid ${picked === role ? "#1677FF" : "#D1D5DB"}`,
+                background: picked === role ? "#1677FF" : "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {picked === role && (
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Button
+        type="primary"
+        size="large"
+        disabled={!picked}
+        onClick={() => onSelect(picked)}
+        style={{ width: 220, marginBottom: 16 }}
+      >
+        Continue
+      </Button>
+
+      <Text>
+        Don't have an account?{" "}
+        <Button
+          type="link"
+          style={{ padding: 0 }}
+          onClick={() => {
+            if (!picked) {
+              message.warning("Please select an account type first");
+              return;
+            }
+            navigate("/signup", { state: { role: picked } });
+          }}
+        >
+          Create Account
+        </Button>
+      </Text>
+    </div>
+  );
+};
+
 /* ================= MAIN LOGIN PAGE ================= */
 const LoginPage = () => {
-  const [activeTab, setActiveTab] = useState("candidate");
   const [messageApi, contextHolder] = message.useMessage();
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -117,16 +228,17 @@ const LoginPage = () => {
   const location = useLocation();
   const role = location?.state?.role;
   const redirectPath = location?.state?.redirect;
-  console.log("redirect", redirectPath);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const [candidateForm] = Form.useForm();
   const [companyForm] = Form.useForm();
 
-  useEffect(() => {
-    if (role) setActiveTab(role);
-  }, [role]);
+  // null = show role picker; "candidate"/"company" = show login form
+  const [selectedRole, setSelectedRole] = useState(role || null);
+
+  // keep activeTab in sync (used for hero bg colour etc.)
+  const activeTab = selectedRole || "candidate";
 
   const onFinish = async (values, role) => {
     try {
@@ -210,10 +322,13 @@ const LoginPage = () => {
     }
   };
 
+  if (!selectedRole) {
+    return <RolePickerScreen onSelect={setSelectedRole} navigate={navigate} />;
+  }
+
   return (
     <>
       {contextHolder}
-      {/* <AppHeader /> */}
 
       <Row style={{ minHeight: "100vh" }}>
         {/* LEFT – LOGIN */}
@@ -231,44 +346,32 @@ const LoginPage = () => {
         >
           {/* WRAPPER */}
           <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
-            {/* TITLE OUTSIDE LOGIN CARD */}
             <div style={styles.logoWrapper}>
               <img src={logo} alt="ForceHead" style={styles.logo} />
             </div>
 
             {/* LOGIN CARD */}
             <div style={styles.loginCard}>
-              <Tabs
-                centered
-                activeKey={activeTab}
-                onChange={setActiveTab}
-                className="auth-tabs"
-                items={[
-                  {
-                    key: "candidate",
-                    label: "Candidate",
-                    children: (
-                      <LoginForm
-                        form={candidateForm}
-                        role="candidate"
-                        onFinish={onFinish}
-                        submitting={submitting}
-                      />
-                    ),
-                  },
-                  {
-                    key: "company",
-                    label: "Company",
-                    children: (
-                      <LoginForm
-                        role="company"
-                        form={companyForm}
-                        onFinish={onFinish}
-                        submitting={submitting}
-                      />
-                    ),
-                  },
-                ]}
+              {/* Role header + change link */}
+              <div style={{ marginBottom: 20, textAlign: "center" }}>
+                <Title level={4} style={{ margin: 0 }}>
+                  {selectedRole === "candidate" ? "Candidate Login" : "Company Login"}
+                </Title>
+                <Button
+                  type="link"
+                  size="small"
+                  style={{ padding: 0, fontSize: 13 }}
+                  onClick={() => setSelectedRole(null)}
+                >
+                  ← Change
+                </Button>
+              </div>
+
+              <LoginForm
+                form={selectedRole === "candidate" ? candidateForm : companyForm}
+                role={selectedRole}
+                onFinish={onFinish}
+                submitting={submitting}
               />
 
               {/* LINKS ROW */}
@@ -346,8 +449,8 @@ const LoginPage = () => {
 /* ================= HERO COMPONENTS ================= */
 const CompanyHero = () => (
   <>
-    <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={personImg} alt="person" style={styles.person} />
+    <img src={cloudImage} alt="cloud" style={styles.cloud} loading="lazy" decoding="async" />
+    <img src={personImg} alt="person" style={styles.person} loading="lazy" decoding="async" />
 
     <div style={styles.heroText}>
       <Title
@@ -399,7 +502,7 @@ const CompanyHero = () => (
 const CandidateHero = () => (
   <>
     <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={andrewImg} alt="candidate" style={styles.candidateperson} />
+    <img src={andrewImg} alt="candidate" style={styles.candidateperson} loading="lazy" decoding="async" />
 
     <div style={styles.heroText}>
       <Title

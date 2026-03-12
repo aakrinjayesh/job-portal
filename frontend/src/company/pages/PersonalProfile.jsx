@@ -1,521 +1,241 @@
-// ======================= MyProfile Component =========================
 import React, { useEffect, useState } from "react";
-import { Upload, Avatar } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
-
 import {
   Form,
   Input,
   Button,
-  message,
-  Typography,
-  Progress,
-  Tooltip,
+  Upload,
+  Avatar,
+  Divider,
   Row,
   Col,
+  message,
+  Spin,
   Card,
-  Divider,
-  Steps,
-  Space,
+  Typography,
 } from "antd";
-import { CloseCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { UploadOutlined, UserOutlined } from "@ant-design/icons";
+
 import {
   GetUserProfileDetails,
-  UpdateUserProfileDetails,
+  UpdateCompanyPersonalProfile,
 } from "../../company/api/api";
-import Address from "../../company/components/Profile/Address";
-import { useLocation, useNavigate } from "react-router-dom";
 import { uploadProfilePicture } from "../../candidate/api/api";
 
-const { Title, Text } = Typography;
-const { Step } = Steps;
+const { Text } = Typography;
 
-const userRole = localStorage.getItem("role");
-
-const PersonalProfile = () => {
-  const [logoFile, setLogoFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+// ─── main component ───────────────────────────────────────────────────────────
+const PersonalProfile = ({ onSaveSuccess }) => {
   const [form] = Form.useForm();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const [pageLoading, setPageLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const [editable, setEditable] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
+
   const [messageApi, contextHolder] = message.useMessage();
 
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const firstLoadRef = React.useRef(true);
-
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-
-  const [timer, setTimer] = useState(60);
-  const [canResend, setCanResend] = useState(false);
-  const [fileList, setFileList] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [profileImageUrl, setProfileImageUrl] = useState(null);
-
+  // ── load profile data ──
   useEffect(() => {
-    if (initialLoading) {
-      const interval = setInterval(() => {
-        setProgress((prev) => (prev >= 90 ? 10 : prev + 10));
-      }, 400);
-
-      return () => clearInterval(interval);
-    } else {
-      setProgress(0);
-    }
-  }, [initialLoading]);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (firstLoadRef.current) {
-        setInitialLoading(true);
-      }
-
-      setLoading(true);
-
+    (async () => {
       try {
         const res = await GetUserProfileDetails();
         if (res?.status === "success" && res.data) {
-          const {
-            firstName,
-            lastName,
-            phoneNumber,
-            email,
-            companyName,
-            gstNumber,
-            address,
-            profileUrl,
-          } = res.data;
-          setProfileImageUrl(profileUrl);
+          const { firstName, lastName, phoneNumber, email, profileUrl } =
+            res.data;
+
+          setProfileImageUrl(profileUrl || null);
+
           form.setFieldsValue({
             firstName,
             lastName,
             phoneNumber,
             email,
-            // companyProfileUrl: profileUrl,
-            company: companyName,
-            gstNumber: gstNumber || "",
-            doorNumber: address?.doorNumber || "",
-            street: address?.street || "",
-            city: address?.city || "",
-            pinCode: address?.pinCode || "",
-            country: address?.country || undefined,
-            state: address?.state || undefined,
           });
         }
       } catch {
         messageApi.error("Failed to load profile");
       } finally {
-        setLoading(false);
-
-        if (firstLoadRef.current) {
-          setTimeout(() => {
-            setInitialLoading(false);
-            firstLoadRef.current = false; // 🔒 prevent again
-          }, 300);
-        }
+        setPageLoading(false);
       }
-    };
-
-    loadProfile();
+    })();
   }, []);
 
+  // ── upload helper ──
   const handleUpload = async (file) => {
     const allowed = ["image/jpeg", "image/png", "image/jpg"];
     if (!allowed.includes(file.type)) {
-      messageApi.error("Only JPG, JPEG, PNG images allowed!");
-      return Upload.LIST_IGNORE;
+      messageApi.error("Only JPG / PNG allowed");
+      return false;
     }
-    if (file.size > 200 * 1024) {
-      messageApi.error("Image must be smaller than 200KB!");
-      return Upload.LIST_IGNORE;
+    if (file.size > 2 * 1024 * 1024) {
+      messageApi.error("Max file size is 2 MB");
+      return false;
     }
 
     try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await uploadProfilePicture(formData);
+      setUploadingProfile(true);
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await uploadProfilePicture(fd);
       if (res?.url) {
         setProfileImageUrl(res.url);
-        messageApi.success("Logo uploaded successfully!");
+        messageApi.success("Uploaded successfully");
       } else {
         messageApi.error("Upload failed");
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       messageApi.error("Upload error");
     } finally {
-      setUploading(false);
+      setUploadingProfile(false);
     }
-
-    return false; // prevent antd default upload
+    return false;
   };
 
+  // ── save ──
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      setLoading(true);
+      setSaving(true);
 
-      const profilePayload = {
+      const payload = {
         name: `${values.firstName} ${values.lastName}`.trim(),
         phoneNumber: values.phoneNumber,
-        companyName: values.company,
-        gstNumber: values.gstNumber,
         profileUrl: profileImageUrl,
-        address: {
-          doorNumber: values.doorNumber,
-          street: values.street,
-          city: values.city,
-          pinCode: values.pinCode,
-          country: values.country,
-          state: values.state,
-        },
       };
 
-      const res = await UpdateUserProfileDetails(profilePayload);
-      if (res.status !== "success") {
-        messageApi.error("Profile update failed");
-        return;
+      const res = await UpdateCompanyPersonalProfile(payload);
+      if (res?.status === "success") {
+        messageApi.success({
+          content: onSaveSuccess
+            ? "Profile saved! Now complete your company profile."
+            : "Profile updated successfully",
+          duration: 5,
+        });
+        onSaveSuccess?.();
+      } else {
+        messageApi.error("Update failed");
       }
-      messageApi.success("Profile updated successfully!");
-      setEditable(false);
-    } catch {
-      messageApi.error("Something went wrong!");
+    } catch (e) {
+      if (e?.errorFields)
+        messageApi.warning("Please fix the highlighted fields");
+      else messageApi.error("Something went wrong");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  useEffect(() => {
-    if (!isVerifying || canResend) return;
-    const interval = setInterval(() => {
-      setTimer((t) => {
-        if (t > 1) return t - 1;
-        clearInterval(interval);
-        setCanResend(true);
-        return 0;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isVerifying, canResend]);
-
-  useEffect(() => {
-    if (isPhoneVerified) setIsPhoneVerified(false);
-  }, [form.getFieldValue("phoneNumber")]);
-
-  const VerifyPhoneOtp = async () => ({ success: false });
+  // ── render ──
+  if (pageLoading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 20px" }}>
       {contextHolder}
 
-      <Card
-        style={{
-          maxWidth: 1000,
-          margin: "0 auto",
-          borderRadius: 12,
-          boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
-        }}
-        bodyStyle={{ padding: 32 }}
-      >
-        {/* ===== HEADER ===== */}
-        <div style={{ marginBottom: 24 }}>
-          <Title level={4} style={{ marginBottom: 4 }}>
-            Personal Information
-          </Title>
-          <Text type="secondary">Update your personal and contact details</Text>
-        </div>
-
-        <Divider />
-
-        {initialLoading ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              minHeight: "400px",
-            }}
-          >
-            <Progress
-              type="circle"
-              percent={progress}
-              width={90}
-              strokeColor={{
-                "0%": "#4F63F6",
-                "100%": "#7C8CFF",
-              }}
-              trailColor="#E6E8FF"
-              showInfo={false}
-            />
-            <div
-              style={{
-                marginTop: 16,
-                color: "#555",
-                fontSize: 14,
-                fontWeight: 500,
-              }}
-            >
-              Loading your profile…
-            </div>
-          </div>
-        ) : (
-          <Form layout="vertical" form={form}>
-            {/* ===== NAME ===== */}
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item
-                  label="First Name"
-                  name="firstName"
-                  rules={[
-                    { required: true, message: "First name is required" },
-                    {
-                      pattern: /^[^0-9]+$/,
-                      message: "Numbers are not allowed",
-                    },
-                    { min: 2, message: "Minimum 2 characters required" },
-                    { max: 30, message: "Maximum 30 characters allowed" },
-                  ]}
-                >
-                  <Input disabled={!editable} placeholder="Enter first name" />
-                </Form.Item>
-              </Col>
-
-              <Col span={12}>
-                <Form.Item
-                  label="Last Name"
-                  name="lastName"
-                  rules={[
-                    { required: true, message: "Last name is required" },
-                    {
-                      pattern: /^[^0-9]+$/,
-                      message: "Numbers are not allowed",
-                    },
-                    { min: 2, message: "Minimum 2 characters required" },
-                    { max: 30, message: "Maximum 30 characters allowed" },
-                  ]}
-                >
-                  <Input disabled={!editable} placeholder="Enter last name" />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            {/* ===== PHONE ===== */}
-            <Row gutter={24} align="middle">
-              <Col span={12}>
-                <Form.Item
-                  label={
-                    <Space>
-                      Phone Number
-                      {!isPhoneVerified ? (
-                        <Tooltip title="Not verified">
-                          {/* <CloseCircleOutlined style={{ color: "red" }} /> */}
-                        </Tooltip>
-                      ) : (
-                        <CheckCircleOutlined style={{ color: "green" }} />
-                      )}
-                    </Space>
-                  }
-                  name="phoneNumber"
-                  rules={[{ required: true }]}
-                >
-                  <Input
-                    disabled={!editable}
-                    placeholder="Enter phone number"
-                  />
-                </Form.Item>
-              </Col>
-
-              {/* <Col span={12}>
-                {!isVerifying && !isPhoneVerified && (
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      setIsVerifying(true);
-                      setTimer(60);
-                    }}
-                    style={{
-                      backgroundColor: "#1E6BFF", // exact blue tone
-                      color: "#FFFFFF",
-                      borderRadius: 999, // full pill
-                      height: 44,
-                      padding: "0 26px",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      border: "none",
-                      boxShadow: "none",
-                    }}
-                  >
-                    Verify Phone
-                  </Button>
-                )}
-
-                {isVerifying && (
-                  <Space>
-                    <Input
-                      value={otp}
-                      maxLength={4}
-                      onChange={(e) => setOtp(e.target.value)}
-                      placeholder="OTP"
-                      style={{ width: 100 }}
-                    />
-                    <Button
-                      type="primary"
-                      loading={otpLoading}
-                      onClick={async () => {
-                        setOtpLoading(true);
-                        const res = await VerifyPhoneOtp();
-                        setIsPhoneVerified(res.success);
-                        setOtpLoading(false);
-                      }}
-                    >
-                      Submit
-                    </Button>
-
-                    {!canResend ? (
-                      <Text type="secondary">{timer}s</Text>
-                    ) : (
-                      <Button type="link">Resend</Button>
-                    )}
-                  </Space>
-                )}
-              </Col> */}
-            </Row>
-
-            {/* ===== EMAIL + COMPANY ===== */}
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item label="Email" name="email">
-                  <Input disabled />
-                </Form.Item>
-              </Col>
-
-              {userRole === "company" && (
-                <Col span={12}>
-                  <Form.Item
-                    label="Company Name"
-                    name="company"
-                    rules={[{ required: true }]}
-                  >
-                    <Input
-                      disabled={!editable}
-                      placeholder="Enter company name"
-                    />
-                  </Form.Item>
-                </Col>
-              )}
-            </Row>
-
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item
-                  label="GST Number"
-                  name="gstNumber"
-                  rules={[
-                    {
-                      pattern:
-                        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/,
-                      message: "Enter valid GST number",
-                    },
-                  ]}
-                >
-                  <Input
-                    disabled={!editable}
-                    placeholder="Enter GST number"
-                    maxLength={15}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            {/* <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item label="Company Logo" name="companyLogo">
-                  <Input
-                    disabled={!editable}
-                    placeholder="Enter company logo URL"
-                  />
-                </Form.Item>
-              </Col>
-            </Row> */}
-            <Form.Item label="Company Logo" name="companyProfileUrl">
-              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <Upload
-                  beforeUpload={handleUpload}
-                  accept="image/jpeg,image/png,image/jpg"
-                  disabled={!editable}
-                  showUploadList={false}
-                >
-                  {profileImageUrl ? (
-                    <Avatar
-                      src={profileImageUrl}
-                      size={80}
-                      style={{ cursor: editable ? "pointer" : "default" }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: "50%",
-                        border: "1px dashed #d9d9d9",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: editable ? "pointer" : "default",
-                        backgroundColor: "#fafafa",
-                      }}
-                    >
-                      <UploadOutlined style={{ fontSize: 20, color: "#999" }} />
-                      <div
-                        style={{ fontSize: 12, color: "#999", marginTop: 4 }}
-                      >
-                        Upload
-                      </div>
-                    </div>
-                  )}
-                </Upload>
-              </div>
-            </Form.Item>
-
-            {/* ===== ADDRESS ===== */}
-            <Address form={form} editable={editable} />
-
-            <Divider />
-
-            {/* ===== ACTION ===== */}
-            <div style={{ textAlign: "right", borderRadius: 8 }}>
-              <Button
-                type="primary"
-                onClick={handleSave}
-                loading={loading}
-                size="large"
-                style={{
-                  backgroundColor: "#1E6BFF", // exact blue tone
-                  color: "#FFFFFF",
-                  borderRadius: 999, // full pill
-                  height: 44,
-                  padding: "0 26px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  border: "none",
-                  boxShadow: "none",
-                }}
+      <Form form={form} layout="vertical">
+        {/* ════════ 1. PERSONAL INFO ════════ */}
+        <Card title="Personal Information" style={{ marginBottom: 20 }}>
+          <Form.Item label="Profile Picture">
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <Avatar size={68} src={profileImageUrl} icon={<UserOutlined />} />
+              <Upload
+                beforeUpload={(f) => handleUpload(f)}
+                showUploadList={false}
+                accept="image/jpeg,image/png,image/jpg"
               >
-                Save Changes
-              </Button>
+                <Button icon={<UploadOutlined />} loading={uploadingProfile}>
+                  {profileImageUrl ? "Change Photo" : "Upload Photo"}
+                </Button>
+              </Upload>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                JPG / PNG · max 2 MB
+              </Text>
             </div>
-          </Form>
-        )}
-      </Card>
+          </Form.Item>
+
+          <Divider style={{ margin: "12px 0 20px" }} />
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="First Name"
+                name="firstName"
+                rules={[
+                  { required: true, message: "First name is required" },
+                  { min: 2, message: "Min 2 characters" },
+                  { max: 30, message: "Max 30 characters" },
+                  { pattern: /^[^0-9]+$/, message: "Numbers are not allowed" },
+                ]}
+              >
+                <Input placeholder="Jane" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Last Name"
+                name="lastName"
+                rules={[
+                  { required: true, message: "Last name is required" },
+                  { min: 2, message: "Min 2 characters" },
+                  { max: 30, message: "Max 30 characters" },
+                  { pattern: /^[^0-9]+$/, message: "Numbers are not allowed" },
+                ]}
+              >
+                <Input placeholder="Doe" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Email" name="email">
+                <Input disabled />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Phone Number"
+                name="phoneNumber"
+                rules={[
+                  { required: true, message: "Phone number is required" },
+                ]}
+              >
+                <Input placeholder="9876543210" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+
+        {/* ════════ SAVE ════════ */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            paddingBottom: 32,
+          }}
+        >
+          <Button
+            type="primary"
+            size="large"
+            loading={saving}
+            onClick={handleSave}
+          >
+            Save Changes
+          </Button>
+        </div>
+      </Form>
     </div>
   );
 };

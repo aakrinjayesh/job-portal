@@ -397,6 +397,7 @@ const markCandidateReviewed = async (req, res) => {
 const getAllCandidates = async (req, res) => {
   try {
     const userAuth = req.user;
+    const recruiterDomain = userAuth.email.split("@")[1].toLowerCase();
     const savedCandidates = await prisma.savedCandidate.findMany({
       where: {
         organizationId: userAuth.organizationId,
@@ -424,13 +425,18 @@ const getAllCandidates = async (req, res) => {
     // Step 1: Fetch ALL candidates
     const allCandidates = await prisma.userProfile.findMany({
       where: {
-        OR: [
-          { status: "active" }, // only active candidates
+        status: "active",
+
+        AND: [
+          {
+            NOT: {
+              hiddenDomains: {
+                has: recruiterDomain,
+              },
+            },
+          },
         ],
       },
-      // where: {
-      //   status: "ACTIVE",
-      // },
       orderBy: { createdAt: "desc" },
       include: {
         vendor: {
@@ -514,6 +520,17 @@ const getCandidateDetails = async (req, res) => {
             name: true,
             email: true,
             phoneNumber: true,
+            organizationMember: {
+              select: {
+                organization: {
+                  select: {
+                    companyProfile: {
+                      select: { slug: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         user: {
@@ -583,6 +600,9 @@ const getCandidateDetails = async (req, res) => {
           ...profile,
           isVendor,
           isSaved,
+          companyProfileSlug:
+            candidate.vendor?.organizationMember?.organization?.companyProfile
+              ?.slug || null,
         },
         avgRating: Number(avgRating.toFixed(1)),
         ratingReviews,
