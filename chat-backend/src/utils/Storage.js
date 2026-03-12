@@ -68,7 +68,7 @@ export const uploadToS3 = async (file) => {
     const mimeType = file.mimetype;
     console.log("mimetype", mimeType);
     // const uniqueFileName = `chat/${fileName}-${uuidv4()}`;
-    const uniqueFileName = `chat/${uuidv4()}-${fileName}`;
+    const uniqueFileName = `chat/${fileName}-${uuidv4()}`;
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: uniqueFileName,
