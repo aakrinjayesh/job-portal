@@ -235,7 +235,14 @@ const LoginPage = () => {
   const [companyForm] = Form.useForm();
 
   // null = show role picker; "candidate"/"company" = show login form
-  const [selectedRole, setSelectedRole] = useState(role || null);
+  const [selectedRole, setSelectedRole] = useState(
+    role || localStorage.getItem("loginRole") || null,
+  );
+
+  const handleRoleSelect = (r) => {
+    localStorage.setItem("loginRole", r);
+    setSelectedRole(r);
+  };
 
   // keep activeTab in sync (used for hero bg colour etc.)
   const activeTab = selectedRole || "candidate";
@@ -323,7 +330,7 @@ const LoginPage = () => {
   };
 
   if (!selectedRole) {
-    return <RolePickerScreen onSelect={setSelectedRole} navigate={navigate} />;
+    return <RolePickerScreen onSelect={handleRoleSelect} navigate={navigate} />;
   }
 
   return (
@@ -361,7 +368,10 @@ const LoginPage = () => {
                   type="link"
                   size="small"
                   style={{ padding: 0, fontSize: 13 }}
-                  onClick={() => setSelectedRole(null)}
+                  onClick={() => {
+                    localStorage.removeItem("loginRole");
+                    setSelectedRole(null);
+                  }}
                 >
                   ← Change
                 </Button>

@@ -28,6 +28,7 @@ const PersonalProfile = ({ onSaveSuccess }) => {
   const [form] = Form.useForm();
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [uploadingProfile, setUploadingProfile] = useState(false);
@@ -79,6 +80,7 @@ const PersonalProfile = ({ onSaveSuccess }) => {
       const res = await uploadProfilePicture(fd);
       if (res?.url) {
         setProfileImageUrl(res.url);
+        setIsDirty(true);
         messageApi.success("Uploaded successfully");
       } else {
         messageApi.error("Upload failed");
@@ -105,6 +107,7 @@ const PersonalProfile = ({ onSaveSuccess }) => {
 
       const res = await UpdateCompanyPersonalProfile(payload);
       if (res?.status === "success") {
+        setIsDirty(false);
         messageApi.success({
           content: onSaveSuccess
             ? "Profile saved! Now complete your company profile."
@@ -144,7 +147,7 @@ const PersonalProfile = ({ onSaveSuccess }) => {
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 20px" }}>
       {contextHolder}
 
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" onValuesChange={() => setIsDirty(true)}>
         {/* ════════ 1. PERSONAL INFO ════════ */}
         <Card title="Personal Information" style={{ marginBottom: 20 }}>
           <Form.Item label="Profile Picture">
@@ -230,6 +233,7 @@ const PersonalProfile = ({ onSaveSuccess }) => {
             type="primary"
             size="large"
             loading={saving}
+            disabled={!isDirty}
             onClick={handleSave}
           >
             Save Changes

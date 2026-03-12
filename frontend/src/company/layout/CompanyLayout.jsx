@@ -76,7 +76,9 @@ const CompanyLayout = ({ children }) => {
       await logout();
     } catch (err) {
     } finally {
+      const loginRole = localStorage.getItem("loginRole");
       localStorage.clear();
+      if (loginRole) localStorage.setItem("loginRole", loginRole);
       sessionStorage.removeItem("companyPopupClosed");
       googleLogout();
       navigate("/login");
@@ -165,6 +167,7 @@ const CompanyLayout = ({ children }) => {
       "savedcandidates",
       "chat",
       "jobs",
+      "profile",
     ];
 
     const token = localStorage.getItem("token");

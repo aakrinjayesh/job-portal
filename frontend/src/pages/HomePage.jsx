@@ -1708,14 +1708,18 @@ const HomePage = () => {
               Login
             </Button>
             <Button
-              onClick={() => navigate("/signup", { state: { role: "candidate" } })}
+              onClick={() =>
+                navigate("/signup", { state: { role: "candidate" } })
+              }
               style={{ fontWeight: 500 }}
             >
               Candidate Signup
             </Button>
             <Button
               type="primary"
-              onClick={() => navigate("/signup", { state: { role: "company" } })}
+              onClick={() =>
+                navigate("/signup", { state: { role: "company" } })
+              }
             >
               Company Signup
             </Button>
@@ -1760,9 +1764,10 @@ const HomePage = () => {
                     maxWidth: 480,
                   }}
                 >
-                  A B2B platform built exclusively for Salesforce partners —
-                  list bench resources, hire certified consultants, and build a
-                  trusted network that drives real revenue.
+                  A B2B platform built for the Salesforce ecosystem where
+                  partners can outsource projects, hire certified consultants,
+                  exchange bench resources, and connect directly with clients to
+                  build trusted partnerships and drive real revenue.
                 </Paragraph>
 
                 <Space size={10} wrap>

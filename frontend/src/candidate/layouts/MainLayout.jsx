@@ -145,7 +145,9 @@ const MainLayout = ({ children }) => {
     }
 
     if (key === "logout") {
+      const loginRole = localStorage.getItem("loginRole");
       localStorage.clear();
+      if (loginRole) localStorage.setItem("loginRole", loginRole);
       navigate("/login");
       return;
     }

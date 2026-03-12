@@ -89,7 +89,9 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (err) {
         // Refresh token invalid or expired → logout
+        const loginRole = localStorage.getItem("loginRole");
         localStorage.clear();
+        if (loginRole) localStorage.setItem("loginRole", loginRole);
         window.location.href = "/";
         return Promise.reject(err);
       } finally {
