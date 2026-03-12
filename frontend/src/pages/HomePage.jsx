@@ -1643,9 +1643,7 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>
-          ForceHead – Salesforce Vendor Marketplace for Bench Resources
-        </title>
+        <title>ForceHead – Built for the Salesforce Ecosystem</title>
         <meta
           name="description"
           content="ForceHead is a Salesforce-focused B2B vendor marketplace where partners list bench resources, hire certified Salesforce consultants, and monetize unused talent."
@@ -1657,11 +1655,11 @@ const HomePage = () => {
         <link rel="canonical" href="https://www.forcehead.com/" />
         <meta
           property="og:title"
-          content="ForceHead – The Salesforce Vendor Marketplace"
+          content="ForceHead – Built for the Salesforce Ecosystem"
         />
         <meta
           property="og:description"
-          content="A B2B marketplace for Salesforce vendors to list bench consultants and hire trusted Salesforce talent."
+          content="A B2B platform built for the Salesforce ecosystem where partners can outsource projects, hire certified consultants, exchange bench resources, and connect directly with clients to build trusted partnerships and drive real revenue"
         />
         <meta property="og:url" content="https://www.forcehead.com/" />
         <meta property="og:type" content="website" />
@@ -1695,7 +1693,9 @@ const HomePage = () => {
 
             <div>
               <div className="fh-logo-text">ForceHead</div>
-              <div className="fh-logo-sub">Salesforce Vendor Marketplace</div>
+              <div className="fh-logo-sub">
+                Built for the Salesforce Ecosystem
+              </div>
             </div>
           </div>
 
