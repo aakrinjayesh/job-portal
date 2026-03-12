@@ -1384,6 +1384,7 @@ const RecruiterJobList = () => {
             />
           </div>
         }
+        maskClosable={false}
         open={isModalVisible}
         footer={null}
         onOk={() => form.submit()}

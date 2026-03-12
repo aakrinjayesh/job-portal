@@ -103,14 +103,16 @@ const Signup = () => {
 
       if (check.status === "success") {
         // Show message with existing email
-        if (check.existingEmail) {
-          messageApi.warning(
-            `${check.message} Existing email: ${check.existingEmail}`,
-            5,
-          );
-        } else {
-          messageApi.warning(check.message);
-        }
+        // if (check?.existingEmail) {
+        //   messageApi.warning(
+        //     `${check.message} Existing email: ${check.existingEmail}`,
+        //     5,
+        //   );
+        // } else {
+        //   messageApi.warning(check.message);
+        // }
+        // return;
+        messageApi.warning(check.message);
         return;
       }
 
@@ -473,8 +475,20 @@ const Signup = () => {
 
 const CompanyHero = () => (
   <>
-    <img src={cloudImage} alt="cloud" style={styles.cloud} loading="lazy" decoding="async" />
-    <img src={personImg} alt="person" style={styles.person} loading="lazy" decoding="async" />
+    <img
+      src={cloudImage}
+      alt="cloud"
+      style={styles.cloud}
+      loading="lazy"
+      decoding="async"
+    />
+    <img
+      src={personImg}
+      alt="person"
+      style={styles.person}
+      loading="lazy"
+      decoding="async"
+    />
 
     <div style={styles.heroText}>
       <Title
@@ -526,8 +540,20 @@ const CompanyHero = () => (
 
 const CandidateHero = () => (
   <>
-    <img src={cloudImage} alt="cloud" style={styles.cloud} loading="lazy" decoding="async" />
-    <img src={andrewImg} alt="candidate" style={styles.candidateperson} loading="lazy" decoding="async" />
+    <img
+      src={cloudImage}
+      alt="cloud"
+      style={styles.cloud}
+      loading="lazy"
+      decoding="async"
+    />
+    <img
+      src={andrewImg}
+      alt="candidate"
+      style={styles.candidateperson}
+      loading="lazy"
+      decoding="async"
+    />
 
     <div style={styles.heroText}>
       <Title
