@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Typography,
   Slider,
@@ -68,16 +68,27 @@ const FiltersPanel = ({
   isFilterOpen,
   handleClearFilters,
   toggleFilter,
+  savedFilters,
+  skipFirstEmit,
 }) => {
-  const [experience, setExperience] = useState(0);
-  const [selectedLocations, setSelectedLocations] = useState([]);
-  const [selectedJobTypes, setSelectedJobTypes] = useState([]);
-  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
-  const [skills, setSkills] = useState([]);
-  const [clouds, setClouds] = useState([]);
+  const [experience, setExperience] = useState(savedFilters?.experience || 0);
+  const [selectedLocations, setSelectedLocations] = useState(
+    savedFilters?.location || [],
+  );
+  const [selectedJobTypes, setSelectedJobTypes] = useState(
+    savedFilters?.jobType || [],
+  );
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState(
+    savedFilters?.employmentType || [],
+  );
+  const [skills, setSkills] = useState(savedFilters?.skills || []);
+  const [clouds, setClouds] = useState(savedFilters?.clouds || []);
   const [experienceError, setExperienceError] = useState("");
-  const [candidateType, setCandidateType] = useState([]);
+  const [candidateType, setCandidateType] = useState(
+    savedFilters?.candidateType || [],
+  );
   const [locationOptions, setLocationOptions] = useState([]);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -102,14 +113,23 @@ const FiltersPanel = ({
   }, []);
 
   /* 🔽 collapse states */
+  // const [open, setOpen] = useState({
+  //   experience: false,
+  //   location: false,
+  //   candidateType: false,
+  //   jobType: false,
+  //   employment: false,
+  //   skills: false,
+  //   clouds: false,
+  // });
   const [open, setOpen] = useState({
-    experience: false,
-    location: false,
-    candidateType: false,
-    jobType: false,
-    employment: false,
-    skills: false,
-    clouds: false,
+    experience: true,
+    location: true,
+    candidateType: true,
+    jobType: true,
+    employment: true,
+    skills: true,
+    clouds: true,
   });
 
   const toggle = (key) => setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -251,6 +271,10 @@ const FiltersPanel = ({
 
   /* 🔁 Emit filters */
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (skipFirstEmit) return; // ✅ skip first emit — FindJob already called fetchJobs with savedFilters on mount
+    }
     onFiltersChange?.({
       experience:
         experience === 0 || experience === 30 || experience === ""

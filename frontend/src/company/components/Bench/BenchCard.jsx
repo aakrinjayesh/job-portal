@@ -213,8 +213,9 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
               {candidate?.isVerified ? "Verified" : "Not Verified"}
             </Tag>
           )}
-          <Tag color={candidate?.isVendor ? "blue" : "green"}>
-            {candidate?.isVendor ? "Vendor Candidate" : "Individual Candidate"}
+
+          <Tag color={candidate?.vendorId ? "blue" : "green"}>
+            {candidate?.vendorId ? "Vendor Candidate" : "Individual Candidate"}
           </Tag>
 
           <Tooltip title={saved ? "Saved Candidate" : "UnSave Candidate"}>
@@ -262,7 +263,10 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
           <br />
           <Typography.Text>{rate || "-"}</Typography.Text>
         </Col> */}
-        {candidate?.isVendor && (
+        {/* {candidate?.isVendor && (
+          <Col span={6}>
+            <Typography.Text strong>Budget</Typography.Text> */}
+        {candidate?.vendorId && (
           <Col span={6}>
             <Typography.Text strong>Budget</Typography.Text>
             <br />

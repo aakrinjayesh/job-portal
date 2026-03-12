@@ -527,3 +527,24 @@ export async function ToggleCandidateStatus() {
     throw error;
   }
 }
+
+export async function UpdateCandidateDomains(payload) {
+  try {
+    let data = JSON.stringify(payload);
+
+    const response = await axiosInstance.post(
+      "/profile/update-candidate-domains",
+      data,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error in UpdateCandidateDomains:", error);
+    throw error;
+  }
+}

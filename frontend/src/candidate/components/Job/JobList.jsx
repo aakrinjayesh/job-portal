@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   Typography,
@@ -36,7 +36,7 @@ import { LuBookmark } from "react-icons/lu";
 import { LuBookmarkCheck } from "react-icons/lu";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { SaveJob, UnSaveJob, CVEligibility } from "../../api/api";
 
 dayjs.extend(relativeTime);
@@ -104,6 +104,8 @@ const JobList = ({
   isMobile: isMobileProp, // ✅ accept from parent
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasAppliedInitialSort = useRef(false);
   // ✅ use prop if passed, otherwise detect locally (fallback)
   const isMobileLocal = useIsMobile();
   const isMobile = isMobileProp !== undefined ? isMobileProp : isMobileLocal;
@@ -114,29 +116,48 @@ const JobList = ({
   const [loadingEligibility, setLoadingEligibility] = useState({});
   const [eligibilityByJob, setEligibilityByJob] = useState({});
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [sortOrder, setSortOrder] = useState("dsc");
-
-  // useEffect(() => {
-  //   setSortedJobs(jobs);
-  // }, [jobs]);
+  // const [sortOrder, setSortOrder] = useState("dsc");
+  // const [sortOrder, setSortOrder] = useState(() => {
+  //   return sessionStorage.getItem("findJobSortOrder") || "dsc";
+  // });
+  const [sortOrder, setSortOrder] = useState(() => {
+    const isReturning = sessionStorage.getItem("isReturning");
+    if (isReturning) {
+      return sessionStorage.getItem("findJobSortOrder_returning") || "dsc";
+    }
+    return "dsc"; // ✅ fresh visit = always Posted Time
+  });
+  // ADD this after the existing useEffect for savedJobIds
   useEffect(() => {
-    if (!jobs) return;
+    sessionStorage.removeItem("isReturning"); // ✅ clear after reading
+  }, []);
+
+  useEffect(() => {
+    setSavedJobIds(jobids || []);
+  }, [jobids]);
+  // Add this useEffect in JobList.jsx
+  useEffect(() => {
+    return () => {
+      // ✅ clear sort when leaving the page
+      if (!sessionStorage.getItem("isReturning")) {
+        sessionStorage.removeItem("findJobSortOrder_returning");
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!jobs || jobs.length === 0) return;
 
     let filteredJobs = jobs;
 
-    // 🚀 Hide closed jobs only for candidate
     if (portal === "candidate") {
       filteredJobs = jobs.filter(
         (job) => job.status?.toLowerCase() !== "closed",
       );
     }
 
-    setSortedJobs(filteredJobs);
+    handleSort(sortOrder, filteredJobs);
   }, [jobs, portal]);
-
-  useEffect(() => {
-    setSavedJobIds(jobids || []);
-  }, [jobids]);
 
   const handleSaveToggle = async (jobId) => {
     const getUser = localStorage.getItem("token");
@@ -209,44 +230,38 @@ const JobList = ({
     }
   };
 
-  const handleSort = (key) => {
+  const handleSort = (key, jobsToSort = null) => {
     setSortOrder(key);
-
-    let sorted = [...jobs];
-
+    // sessionStorage.setItem("findJobSortOrder", key); // ✅ persist it
+    sessionStorage.setItem("findJobSortOrder_returning", key); // ✅ save selected sort
+    sessionStorage.setItem("isReturning", "true");
+    let sorted = [...(jobsToSort || jobs)];
     switch (key) {
-      case "posted_desc": // Newest first
+      case "posted_desc":
         sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         break;
-
-      case "posted_asc": // Oldest first
+      case "posted_asc":
         sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         break;
-
-      case "experience_desc": // High to Low
+      case "experience_desc":
         sorted.sort(
           (a, b) => (b.experience?.number || 0) - (a.experience?.number || 0),
         );
         break;
-
-      case "experience_asc": // Low to High
+      case "experience_asc":
         sorted.sort(
           (a, b) => (a.experience?.number || 0) - (b.experience?.number || 0),
         );
         break;
-
       case "salary_desc":
         sorted.sort((a, b) => getMinSalary(b.salary) - getMinSalary(a.salary));
         break;
-
       case "salary_asc":
         sorted.sort((a, b) => getMinSalary(a.salary) - getMinSalary(b.salary));
         break;
-
       default:
         break;
     }
-
     setSortedJobs(sorted);
   };
 
@@ -281,6 +296,9 @@ const JobList = ({
   };
 
   const handleCardClick = (job) => {
+    sessionStorage.setItem("lastClickedJobId", job.id);
+    sessionStorage.setItem("isReturning", "true");
+    sessionStorage.setItem("findJobSortOrder_returning", sortOrder);
     if (portal === "company") {
       navigate(`/company/job/${job.id}`, {
         state: {
@@ -288,6 +306,8 @@ const JobList = ({
           type,
           portal,
           highlight: "findjob",
+          savedSortOrder: sortOrder,
+          fromPath: location.pathname,
         },
       });
     } else {
@@ -298,6 +318,8 @@ const JobList = ({
           type,
           portal,
           highlight: "findjob",
+          savedSortOrder: sortOrder,
+          fromPath: location.pathname,
         },
       });
     }

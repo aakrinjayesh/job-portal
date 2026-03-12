@@ -12,7 +12,15 @@ function FindJob() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [currentFilters, setCurrentFilters] = useState({});
+  // const [currentFilters, setCurrentFilters] = useState({});
+  const [currentFilters, setCurrentFilters] = useState(() => {
+    const isReturning = sessionStorage.getItem("isReturning");
+    if (isReturning) {
+      const saved = sessionStorage.getItem("savedFilters");
+      return saved ? JSON.parse(saved) : {};
+    }
+    return {};
+  });
   const [totalCount, setTotalCount] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -21,7 +29,13 @@ function FindJob() {
   const location = useLocation();
 
   // ⭐ filter open / close
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  // const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => {
+    const isReturning = sessionStorage.getItem("isReturning");
+    return isReturning
+      ? sessionStorage.getItem("filterOpen") === "true"
+      : false;
+  });
 
   const fetchJobs = useCallback(async (pageNum = 1, filters = {}) => {
     if (controllerRef.current) controllerRef.current.abort();
@@ -127,6 +141,8 @@ function FindJob() {
 
   // Handle filter changes - reset to page 1
   const handleFiltersChange = (filters) => {
+    sessionStorage.setItem("savedFilters", JSON.stringify(filters)); // ✅
+    sessionStorage.setItem("filterOpen", "true");
     console.log("filters", filters);
     setCurrentFilters(filters);
     setPage(1);
@@ -136,6 +152,8 @@ function FindJob() {
 
   // Clear filters
   const handleClearFilters = () => {
+    sessionStorage.removeItem("savedFilters"); // ✅
+    sessionStorage.removeItem("filterOpen"); // ✅
     setCurrentFilters({});
     setPage(1);
     setHasMore(true);
@@ -183,6 +201,8 @@ function FindJob() {
               onFiltersChange={handleFiltersChange}
               handleClearFilters={handleClearFilters}
               showCandidateType={false}
+              savedFilters={currentFilters}
+              skipFirstEmit={true}
             />
           </Col>
         )}
@@ -259,7 +279,12 @@ function FindJob() {
                   portal="company"
                   isFilterOpen={isFilterOpen}
                   // toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
-                  toggleFilter={() => setIsFilterOpen((prev) => !prev)}
+                  // toggleFilter={() => setIsFilterOpen((prev) => !prev)}
+                  toggleFilter={() => {
+                    const next = !isFilterOpen;
+                    setIsFilterOpen(next);
+                    sessionStorage.setItem("filterOpen", String(next)); // ✅
+                  }}
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}

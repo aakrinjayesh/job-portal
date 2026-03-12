@@ -10,6 +10,7 @@ import {
   Upload,
   Popconfirm,
   Typography,
+  Tooltip,
 } from "antd";
 import {
   DeleteOutlined,
@@ -1464,55 +1465,75 @@ const Bench = () => {
           >
             {/* Buttons section unchanged */}
             <div style={{ display: "flex", gap: 24 }}>
-              <Button
-                // disabled={selectedRowKeys.length === 0}
-                disabled={
-                  selectedRowKeys.length === 0 ||
-                  candidates
-                    .filter((c) => selectedRowKeys.includes(c.id))
-                    .every((c) => c.status === "inactive")
+              <Tooltip
+                title={
+                  selectedRowKeys.length === 0
+                    ? "Please select any candidate"
+                    : ""
                 }
-                onClick={() => updateStatus("inactive")}
-                // onClick={() => updateStatus("INACTIVE")}
-                style={{
-                  height: 35,
-                  borderRadius: 100,
-                  padding: "10px 24px",
-                  background: "transparent",
-                  border: "1px solid #666666",
-                  color: "#666666",
-                  fontSize: 14,
-                  fontWeight: 590,
-                  textTransform: "capitalize",
-                }}
               >
-                Deactivate Selected
-              </Button>
+                <span>
+                  <Button
+                    // disabled={selectedRowKeys.length === 0}
+                    disabled={
+                      selectedRowKeys.length === 0 ||
+                      candidates
+                        .filter((c) => selectedRowKeys.includes(c.id))
+                        .every((c) => c.status === "inactive")
+                    }
+                    onClick={() => updateStatus("inactive")}
+                    // onClick={() => updateStatus("INACTIVE")}
+                    style={{
+                      height: 40,
+                      borderRadius: 100,
+                      padding: "10px 24px",
+                      background: "transparent",
+                      border: "1px solid #666666",
+                      color: "#666666",
+                      fontSize: 14,
+                      fontWeight: 590,
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    Deactivate Selected
+                  </Button>
+                </span>
+              </Tooltip>
 
-              <Button
-                // disabled={selectedRowKeys.length === 0}
-                disabled={
-                  selectedRowKeys.length === 0 ||
-                  candidates
-                    .filter((c) => selectedRowKeys.includes(c.id))
-                    .every((c) => c.status !== "inactive")
+              <Tooltip
+                title={
+                  selectedRowKeys.length === 0
+                    ? "Please select any candidate"
+                    : ""
                 }
-                onClick={() => updateStatus("active")}
-                // onClick={() => updateStatus("ACTIVE")}
-                style={{
-                  height: 40,
-                  borderRadius: 100,
-                  padding: "10px 24px",
-                  background: "#1677FF",
-                  border: "none",
-                  color: "#FFFFFF",
-                  fontSize: 14,
-                  fontWeight: 590,
-                  textTransform: "capitalize",
-                }}
               >
-                Activate Selected
-              </Button>
+                <span>
+                  <Button
+                    // disabled={selectedRowKeys.length === 0}
+                    disabled={
+                      selectedRowKeys.length === 0 ||
+                      candidates
+                        .filter((c) => selectedRowKeys.includes(c.id))
+                        .every((c) => c.status !== "inactive")
+                    }
+                    onClick={() => updateStatus("active")}
+                    // onClick={() => updateStatus("ACTIVE")}
+                    style={{
+                      height: 40,
+                      borderRadius: 100,
+                      padding: "10px 24px",
+                      background: "#1677FF",
+                      border: "none",
+                      color: "#FFFFFF",
+                      fontSize: 14,
+                      fontWeight: 590,
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    Activate Selected
+                  </Button>
+                </span>
+              </Tooltip>
             </div>
           </div>
         </>

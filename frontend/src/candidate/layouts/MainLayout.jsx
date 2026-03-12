@@ -8,7 +8,7 @@ import {
   Breadcrumb,
   Space,
   Modal,
-  Drawer,             // ✅ NEW
+  Drawer, // ✅ NEW
 } from "antd";
 import {
   FileTextOutlined,
@@ -22,7 +22,7 @@ import {
   BellOutlined,
   // DownOutlined,
   UserOutlined,
-  MenuOutlined,       // ✅ NEW
+  MenuOutlined, // ✅ NEW
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -101,7 +101,7 @@ const MainLayout = ({ children }) => {
     chat: ["/candidate/chat"],
     settings: ["/candidate/settings"],
     profile: ["/candidate/profile"],
-    contact: ["/contact"]
+    contact: ["/contact"],
   };
 
   /* 🎯 Active menu */
@@ -134,7 +134,7 @@ const MainLayout = ({ children }) => {
       "chat",
       "settings",
       "profile",
-      "contactsupport"
+      "contactsupport",
     ];
 
     const token = localStorage.getItem("token");
@@ -155,10 +155,10 @@ const MainLayout = ({ children }) => {
       return;
     }
 
-     if (key === "contact") {
-    window.open("/contact", "_blank");
-    return;
-  }
+    if (key === "contact") {
+      window.open("/contact", "_blank");
+      return;
+    }
 
     const route = menuRoutes[key];
     if (route && route.length) {
@@ -174,7 +174,7 @@ const MainLayout = ({ children }) => {
     chat: "Chats",
     settings: "Settings",
     profile: "Profile",
-    contactsupport: "Contact & Support"
+    contactsupport: "Contact & Support",
   };
 
   const pageTitle = pageTitleMap[selectedKey] || "Find Jobs";
@@ -191,17 +191,13 @@ const MainLayout = ({ children }) => {
           alignItems: "center",
         }}
       >
-         <Avatar size={40} src={user?.profileUrl || undefined}>
-              {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
+        <Avatar size={40} src={user?.profileUrl || undefined}>
+          {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
         </Avatar>
         <div>
-          <Text style={{ color: "#fff", fontWeight: 600 }}>
-            {user.name}
-          </Text>
+          <Text style={{ color: "#fff", fontWeight: 600 }}>{user.name}</Text>
           <br />
-          <Text style={{ color: "#AAAAAA", fontSize: 12 }}>
-            {user.role}
-          </Text>
+          <Text style={{ color: "#AAAAAA", fontSize: 12 }}>{user.role}</Text>
         </div>
       </div>
 
@@ -215,7 +211,11 @@ const MainLayout = ({ children }) => {
         items={[
           { key: "jobs", icon: <SearchOutlined />, label: "Find Jobs" },
           { key: "savedjobs", icon: <SaveFilled />, label: "Saved Jobs" },
-          { key: "appliedjobs", icon: <FileTextOutlined />, label: "Applied Jobs" },
+          {
+            key: "appliedjobs",
+            icon: <FileTextOutlined />,
+            label: "Applied Jobs",
+          },
           { key: "chat", icon: <WhatsAppOutlined />, label: "Chat" },
         ]}
       />
@@ -238,7 +238,7 @@ const MainLayout = ({ children }) => {
         onClick={onMenuClick}
         style={{ background: "transparent", border: "none" }}
         items={[
-          // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+          { key: "settings", icon: <SettingOutlined />, label: "Settings" },
           { key: "profile", icon: <UserOutlined />, label: "Profile" },
           {
             key: "contact",
@@ -262,12 +262,14 @@ const MainLayout = ({ children }) => {
           // ✅ KEY FIX: on mobile always collapsed (icon-only), on desktop use state
           collapsed={isMobile ? true : collapsed}
           // ✅ on desktop allow toggling; on mobile keep fixed at icon width
-          onCollapse={(val) => { if (!isMobile) setCollapsed(val); }}
+          onCollapse={(val) => {
+            if (!isMobile) setCollapsed(val);
+          }}
           // ✅ on desktop show collapse trigger; on mobile hide it (we use drawer instead)
           collapsible={!isMobile}
           trigger={isMobile ? null : undefined}
           width={260}
-          collapsedWidth={60}  // ✅ icon-only width on mobile
+          collapsedWidth={60} // ✅ icon-only width on mobile
           style={{
             background: "#011026",
             height: "100vh",
@@ -287,7 +289,9 @@ const MainLayout = ({ children }) => {
               // ✅ on mobile tap avatar to open full drawer
               cursor: isMobile ? "pointer" : "default",
             }}
-            onClick={() => { if (isMobile) setMobileDrawerOpen(true); }}
+            onClick={() => {
+              if (isMobile) setMobileDrawerOpen(true);
+            }}
           >
             <Avatar size={36} src={user?.profileUrl || undefined}>
               {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
@@ -309,12 +313,22 @@ const MainLayout = ({ children }) => {
 
           {/* ✅ MOBILE: hamburger button to open drawer */}
           {isMobile && (
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: 8,
+              }}
+            >
               <Button
                 type="text"
                 icon={<MenuOutlined style={{ color: "#fff", fontSize: 16 }} />}
                 onClick={() => setMobileDrawerOpen(true)}
-                style={{ background: "transparent", border: "none", padding: 4 }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  padding: 4,
+                }}
               />
             </div>
           )}
@@ -363,13 +377,13 @@ const MainLayout = ({ children }) => {
             inlineCollapsed={isMobile ? true : collapsed} // ✅
             style={{ background: "transparent", border: "none" }}
             items={[
-              // { key: "settings", icon: <SettingOutlined />, label: "Settings" },
+              { key: "settings", icon: <SettingOutlined />, label: "Settings" },
               { key: "profile", icon: <UserOutlined />, label: "Profile" },
-               {
-        key: "contact",
-        icon: <ContactsOutlined />,
-        label: "Contact & Support",
-      },
+              {
+                key: "contact",
+                icon: <ContactsOutlined />,
+                label: "Contact & Support",
+              },
               { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
             ]}
           />
@@ -451,7 +465,10 @@ const MainLayout = ({ children }) => {
               {/* <Avatar size={56}>
                 {user.name?.slice(0, 2).toUpperCase()}
               </Avatar> */}
-              <Avatar size={isMobile ? 40 : 56} src={user?.profileUrl || undefined}>
+              <Avatar
+                size={isMobile ? 40 : 56}
+                src={user?.profileUrl || undefined}
+              >
                 {!user?.profileUrl && user?.name?.slice(0, 2)?.toUpperCase()}
               </Avatar>
 

@@ -66,6 +66,7 @@ const CandidateDetails = () => {
   const activityOnly = location?.state?.activityOnly;
   const defaultTab = location?.state?.defaultTab;
   const [loadingCandidate, setLoadingCandidate] = useState(true);
+  const [isViewReviewsModalOpen, setIsViewReviewsModalOpen] = useState(false);
 
   console.log("sourcw", source);
   console.log("location", location);
@@ -362,19 +363,39 @@ const CandidateDetails = () => {
 
                     <Space direction="vertical" size={0}>
                       <Text style={{ fontWeight: 600 }}>{candidate.name}</Text>
+                      {profile?.title && (
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {profile.title}
+                        </Text>
+                      )}
                       {source !== "bench" && (
                         <Text type="secondary" style={{ fontSize: 12 }}>
                           Applied {candidate.updatedAt}
                         </Text>
                       )}
 
-                      <Space size={8} align="center">
-                        {/* <Rate allowHalf defaultValue={2.5} /> */}
+                      {/* <Space size={8} align="center">
+                       
 
                         <Rate
                           disabled
                           value={Math.round(candidate.avgRating || 0)}
                         />
+                       
+                        {candidate?.ratingReviews?.length > 0 && (
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              background: "#EEF2FF",
+                              padding: "2px 10px",
+                              borderRadius: 6,
+                              color: "#4338CA",
+                              marginLeft: 6,
+                            }}
+                          >
+                            {candidate.ratingReviews[0].comment}
+                          </Text>
+                        )}
                         {source !== "bench" && (
                           <Text
                             style={{
@@ -386,6 +407,41 @@ const CandidateDetails = () => {
                             onClick={() => {
                               setIsReviewModalOpen(true);
                             }}
+                          >
+                            Add Review
+                          </Text>
+                        )}
+                      </Space> */}
+                      <Space size={8} align="center">
+                        <Rate
+                          disabled
+                          value={Math.round(candidate.avgRating || 0)}
+                        />
+
+                        {/* Show Reviews Button */}
+                        {candidate?.ratingReviews?.length > 0 && (
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: "#1677FF",
+                              cursor: "pointer",
+                              fontWeight: 500,
+                            }}
+                            onClick={() => setIsViewReviewsModalOpen(true)}
+                          >
+                            Show Reviews ({candidate.ratingReviews.length})
+                          </Text>
+                        )}
+
+                        {source !== "bench" && (
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: "#1677FF",
+                              cursor: "pointer",
+                              fontWeight: 500,
+                            }}
+                            onClick={() => setIsReviewModalOpen(true)}
                           >
                             Add Review
                           </Text>
@@ -570,7 +626,7 @@ const CandidateDetails = () => {
                                 label="POC Phone"
                                 value={
                                   profile.vendor?.phoneNumber
-                                    ? `+91 ${profile.vendor.phoneNumber}`
+                                    ? ` ${profile.vendor.phoneNumber}`
                                     : "-"
                                 }
                               />
@@ -578,6 +634,7 @@ const CandidateDetails = () => {
                           ) : (
                             <>
                               <InfoItem label="Email" value={profile.email} />
+
                               <InfoItem
                                 label="Phone"
                                 value={
@@ -589,7 +646,59 @@ const CandidateDetails = () => {
                             </>
                           )}
 
-                          <InfoItem label="Title" value={profile.title} />
+                          <div
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 4,
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: 20,
+                                fontSize: 14,
+                                fontWeight: 590,
+                                color: "#2E2E2E",
+                                lineHeight: "18px",
+                              }}
+                            >
+                              Company Profile
+                            </div>
+
+                            <div
+                              style={{
+                                minHeight: 18,
+                                fontSize: 14,
+                                fontWeight: 400,
+                                color: "#1677FF",
+                                lineHeight: "18px",
+                                wordBreak: "break-word",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {profile.companyProfileSlug ? (
+                                <span
+                                  onClick={() =>
+                                    navigate(
+                                      `/company/${profile.companyProfileSlug}`,
+                                      {
+                                        state: {
+                                          highlight: location.state?.highlight,
+                                        },
+                                      },
+                                    )
+                                  }
+                                >
+                                  {window.location.origin}/company/
+                                  {profile.companyProfileSlug}
+                                </span>
+                              ) : (
+                                "-"
+                              )}
+                            </div>
+                          </div>
                         </div>
 
                         {/* ROW 2 */}
@@ -615,12 +724,22 @@ const CandidateDetails = () => {
 
                         {/* ROW 3 */}
                         <div style={{ display: "flex", gap: 28 }}>
-                          <InfoItem
+                          {/* <InfoItem
                             label="Expected CTC"
                             value={
                               profile.expectedCTC
                                 ? `${profile.expectedCTC} LPA`
                                 : "-"
+                            }
+                          /> */}
+                          <InfoItem
+                            label="Expected CTC"
+                            value={
+                              profile.isVendor
+                                ? "N/A"
+                                : profile.expectedCTC
+                                  ? `${profile.expectedCTC} LPA`
+                                  : "-"
                             }
                           />
                           {/* {!profile.isVendor && (
@@ -1246,6 +1365,58 @@ const CandidateDetails = () => {
             Add
           </Button>
         </div>
+      </Modal>
+
+      <Modal
+        open={isViewReviewsModalOpen}
+        footer={null}
+        centered
+        width={600}
+        onCancel={() => setIsViewReviewsModalOpen(false)}
+        title={
+          <div style={{ fontSize: 18, fontWeight: 600, color: "#101828" }}>
+            All Reviews
+          </div>
+        }
+      >
+        {candidate?.ratingReviews?.length > 0 ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              marginTop: 12,
+            }}
+          >
+            {candidate.ratingReviews.map((review, index) => (
+              <div
+                key={index}
+                style={{
+                  border: "1px solid #EDEDED",
+                  borderRadius: 10,
+                  padding: "14px 16px",
+                  background: "#FAFAFA",
+                }}
+              >
+                {review.comment && (
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "#344054",
+                      background: "#EEF2FF",
+                      borderRadius: 6,
+                      padding: "6px 10px",
+                    }}
+                  >
+                    {review.comment}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Text type="secondary">No reviews yet.</Text>
+        )}
       </Modal>
 
       <Modal

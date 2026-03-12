@@ -47,6 +47,7 @@ const CandidateList = () => {
   const [answersModalOpen, setAnswersModalOpen] = useState(false);
   const [answersCandidate, setAnswersCandidate] = useState(null);
   const [actionPopoverId, setActionPopoverId] = useState(null);
+  const [savedCandidateIds, setSavedCandidateIds] = useState(new Set());
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -73,8 +74,16 @@ const CandidateList = () => {
 
         if (response?.data && response.data.length > 0) {
           const map = {};
+          const savedIds = new Set();
           response.data.forEach((c) => {
             map[c.applicationId] = c.status || "Pending";
+            // if (c?.profile?.isSaved) {
+            //   savedIds.add(c.profile.id);
+            // }
+            // ✅ CHANGE TO
+            if (c?.profile?.isSaved === true && c?.status === "BookMark") {
+              savedIds.add(c.profile.id);
+            }
           });
 
           setStatusMap(map);
@@ -102,11 +111,20 @@ const CandidateList = () => {
 
         if (response?.data && response.data.length > 0) {
           const map = {};
+          const savedIds = new Set();
           response.data.forEach((c) => {
             map[c.applicationId] = c.status || "Pending";
+            // if (c?.profile?.isSaved) {
+            //   savedIds.add(c.profile.id);
+            // }
+            // ✅ CHANGE TO
+            if (c?.profile?.isSaved === true && c?.status === "BookMark") {
+              savedIds.add(c.profile.id);
+            }
           });
 
           setStatusMap(map);
+          setSavedCandidateIds(savedIds);
           setCandidates(response.data);
           setTotal(response.total || response.data.length);
         } else {
@@ -249,13 +267,75 @@ const CandidateList = () => {
                 }
 
                 try {
+                  // if (finalStatus === "BookMark") {
+                  //   // ⭐ NEW CHECK (added)
+                  //   if (savedCandidateIds.has(record.profile.id)) {
+                  //     messageAPI.warning("Candidate already saved");
+
+                  //     setStatusMap((prev) => ({
+                  //       ...prev,
+                  //       [record.applicationId]: "BookMark",
+                  //     }));
+
+                  //     return;
+                  //   }
+                  //   await MarkCandidateBookmark({
+                  //     jobApplicationId: record.applicationId,
+                  //   });
+                  //   await SaveCandidate({
+                  //     candidateProfileId: record.profile.id,
+                  //   });
+                  //   // ⭐ store saved candidate locally
+                  //   setSavedCandidateIds((prev) =>
+                  //     new Set(prev).add(record.profile.id),
+                  //   );
+
+                  //   // ⭐ Update UI immediately
+                  //   setStatusMap((prev) => ({
+                  //     ...prev,
+                  //     [record.applicationId]: "BookMark",
+                  //   }));
+
+                  //   return; // ⭐ important - stop here
+                  // }
                   if (finalStatus === "BookMark") {
+                    // ⭐ Check if candidate already saved
+                    if (
+                      // record?.profile?.isSaved ||
+                      savedCandidateIds.has(record.profile.id)
+                    ) {
+                      // messageAPI.warning("Candidate already saved");
+
+                      setStatusMap((prev) => ({
+                        ...prev,
+                        [record.applicationId]: "BookMark",
+                      }));
+
+                      return;
+                    }
+
+                    // ⭐ Save new candidate
                     await MarkCandidateBookmark({
                       jobApplicationId: record.applicationId,
                     });
+
                     await SaveCandidate({
                       candidateProfileId: record.profile.id,
                     });
+
+                    // ⭐ Add to saved list locally
+                    setSavedCandidateIds((prev) => {
+                      const updated = new Set(prev);
+                      updated.add(record.profile.id);
+                      return updated;
+                    });
+
+                    setStatusMap((prev) => ({
+                      ...prev,
+                      [record.applicationId]: "BookMark",
+                    }));
+
+                    return;
                   } else {
                     await UpdateVendorCandidateStatus({
                       jobApplicationId: record.applicationId,
@@ -268,7 +348,23 @@ const CandidateList = () => {
                     [record.applicationId]: finalStatus,
                   }));
                 } catch (err) {
-                  messageAPI.error("Failed to update status");
+                  // catch (err) {
+                  //   messageAPI.error("Failed to update status");
+                  // }
+                  const apiMessage =
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    "Failed to update status";
+                  console.log("API Error:", apiMessage);
+
+                  if (apiMessage) {
+                    messageAPI.warning(apiMessage);
+                    // ⭐ update UI immediately
+                    setStatusMap((prev) => ({
+                      ...prev,
+                      [record.applicationId]: "BookMark",
+                    }));
+                  }
                 }
               }}
             >

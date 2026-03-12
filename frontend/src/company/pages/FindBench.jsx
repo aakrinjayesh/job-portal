@@ -20,7 +20,7 @@ function FindBench() {
   const controllerRef = useRef(null);
   const location = useLocation();
 
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   // const [selectedCandidate, setSelectedCandidate] = useState(null);
   // const [detailsModalVisible, setDetailsModalVisible] = useState(false);
 
