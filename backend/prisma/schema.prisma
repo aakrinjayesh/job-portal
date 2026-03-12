@@ -305,6 +305,7 @@ model Job {
   responsibilities    String
   certifications      String[]
   jobType             String
+  applicantSource ApplicantSource @default(Both)
   status              JobStatus        @default(Open)
   applicationDeadline String?
   isDeleted           Boolean          @default(false)
@@ -328,6 +329,12 @@ model Job {
   candidateTaskList CandidateTaskList[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+}
+
+enum ApplicantSource {
+  Candidate
+  Company
+  Both
 }
 
 enum ApplicationStatus {
