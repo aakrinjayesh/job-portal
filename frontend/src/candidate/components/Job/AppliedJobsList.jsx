@@ -87,6 +87,8 @@ const TagsWithMore = ({ items = [], tagStyle, max = 3 }) => {
 const AppliedJobsList = ({
   applications,
   lastJobRef,
+  onJobClick,
+  highlightJobId,
   isMobile: isMobileProp, // ✅ accept from parent (AppliedJobs.jsx passes this)
 }) => {
   const [statusFilter, setStatusFilter] = useState("All");
@@ -113,12 +115,14 @@ const AppliedJobsList = ({
     <Row gutter={[16, 16]}>
       {/* FILTER OPTIONS */}
       <Col span={24}>
-   <div style={{
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 8,
-  marginBottom: 16,
-}}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            marginBottom: 16,
+          }}
+        >
           {["All", "Pending", "Shortlisted", "Rejected"].map((status) => (
             <Tag
               key={status}
@@ -149,7 +153,7 @@ const AppliedJobsList = ({
       )}
 
       {applications
-       ?.filter((app) =>
+        ?.filter((app) =>
           statusFilter === "All"
             ? app.status !== "BookMark"
             : app.status === statusFilter,
@@ -160,172 +164,185 @@ const AppliedJobsList = ({
           const isLast = index === applications.length - 1;
 
           return (
-            <Col xs={24} key={app?.id} ref={isLast ? lastJobRef : null}>
-             <Card
-  hoverable
-  onClick={() => handleCardClick(job?.id)}
-  style={{
-    borderRadius: 12,
-    background: "#fff",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-  }}
-  bodyStyle={{
-    padding: isMobile ? "12px" : "24px",
-  }}
->
+            <Col
+              xs={24}
+              key={app?.id}
+              ref={isLast ? lastJobRef : null}
+              id={`applied-job-${job?.id}`}
+            >
+              <Card
+                hoverable
+                onClick={() => {
+                  onJobClick(job?.id);
+                  handleCardClick(job?.id);
+                }}
+                style={{
+                  borderRadius: 12,
+                  background: "#fff",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                }}
+                bodyStyle={{
+                  padding: isMobile ? "12px" : "24px",
+                }}
+              >
                 {/* Header */}
-              {/* Header */}
-<div
-  style={{
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 8,
-    flexWrap: "nowrap",
-  }}
->
-  {/* Logo */}
-  <div style={{ flexShrink: 0 }}>
-    {job?.companyLogo ? (
-      <img
-        src={job.companyLogo}
-        alt="logo"
-        style={{
-          width: isMobile ? 40 : 56,
-          height: isMobile ? 40 : 56,
-          borderRadius: 12,
-          objectFit: "cover",
-          border: "1px solid #f0f0f0",
-        }}
-      />
-    ) : (
-      <div
-        style={{
-          width: isMobile ? 40 : 56,
-          height: isMobile ? 40 : 56,
-          borderRadius: isMobile ? 8 : 12,
-          background: "linear-gradient(135deg, #1677FF, #69B1FF)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: isMobile ? 16 : 22,
-          fontWeight: 700,
-          color: "#fff",
-        }}
-      >
-        {(job?.companyName || job?.role || "").charAt(0).toUpperCase()}
-      </div>
-    )}
-  </div>
+                {/* Header */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 8,
+                    flexWrap: "nowrap",
+                  }}
+                >
+                  {/* Logo */}
+                  <div style={{ flexShrink: 0 }}>
+                    {job?.companyLogo ? (
+                      <img
+                        src={job.companyLogo}
+                        alt="logo"
+                        style={{
+                          width: isMobile ? 40 : 56,
+                          height: isMobile ? 40 : 56,
+                          borderRadius: 12,
+                          objectFit: "cover",
+                          border: "1px solid #f0f0f0",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: isMobile ? 40 : 56,
+                          height: isMobile ? 40 : 56,
+                          borderRadius: isMobile ? 8 : 12,
+                          background:
+                            "linear-gradient(135deg, #1677FF, #69B1FF)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: isMobile ? 16 : 22,
+                          fontWeight: 700,
+                          color: "#fff",
+                        }}
+                      >
+                        {(job?.companyName || job?.role || "")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
+                  </div>
 
-  {/* Job info */}
-  <div style={{ flex: 1, minWidth: 0 }}>
-    {/* Title row — role + status on right (desktop only) */}
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-        gap: 8,
-      }}
-    >
-      <div
-        style={{
-          fontSize: isMobile ? 13 : 16,
-          fontWeight: 600,
-          color: "#212121",
-          lineHeight: "20px",
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-          marginBottom: 2,
-          flex: 1,
-        }}
-      >
-        {job?.role}
-      </div>
+                  {/* Job info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Title row — role + status on right (desktop only) */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: isMobile ? 13 : 16,
+                          fontWeight: 600,
+                          color: "#212121",
+                          lineHeight: "20px",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          marginBottom: 2,
+                          flex: 1,
+                        }}
+                      >
+                        {job?.role}
+                      </div>
 
-      {/* STATUS TAG — right side on desktop only */}
-      {!isMobile && (
-        <Tag
-          color={
-            app?.status === "Pending"
-              ? "orange"
-              : app?.status === "Shortlisted"
-                ? "green"
-                : app?.status === "Rejected"
-                  ? "red"
-                  : "blue"
-          }
-          style={{
-            fontWeight: 500,
-            borderRadius: 20,
-            padding: "2px 10px",
-            fontSize: 13,
-            flexShrink: 0,
-            marginTop: 2,
-          }}
-        >
-          {app?.status}
-        </Tag>
-      )}
-    </div>
+                      {/* STATUS TAG — right side on desktop only */}
+                      {!isMobile && (
+                        <Tag
+                          color={
+                            app?.status === "Pending"
+                              ? "orange"
+                              : app?.status === "Shortlisted"
+                                ? "green"
+                                : app?.status === "Rejected"
+                                  ? "red"
+                                  : "blue"
+                          }
+                          style={{
+                            fontWeight: 500,
+                            borderRadius: 20,
+                            padding: "2px 10px",
+                            fontSize: 13,
+                            flexShrink: 0,
+                            marginTop: 2,
+                          }}
+                        >
+                          {app?.status}
+                        </Tag>
+                      )}
+                    </div>
 
-    {/* STATUS TAG — below role on mobile only */}
-    {isMobile && (
-      <Tag
-        color={
-          app?.status === "Pending"
-            ? "orange"
-            : app?.status === "Shortlisted"
-              ? "green"
-              : app?.status === "Rejected"
-                ? "red"
-                : "blue"
-        }
-        style={{
-          fontWeight: 500,
-          borderRadius: 20,
-          padding: "1px 8px",
-          fontSize: 11,
-          display: "inline-block",
-          marginBottom: 4,
-        }}
-      >
-        {app?.status}
-      </Tag>
-    )}
+                    {/* STATUS TAG — below role on mobile only */}
+                    {isMobile && (
+                      <Tag
+                        color={
+                          app?.status === "Pending"
+                            ? "orange"
+                            : app?.status === "Shortlisted"
+                              ? "green"
+                              : app?.status === "Rejected"
+                                ? "red"
+                                : "blue"
+                        }
+                        style={{
+                          fontWeight: 500,
+                          borderRadius: 20,
+                          padding: "1px 8px",
+                          fontSize: 11,
+                          display: "inline-block",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {app?.status}
+                      </Tag>
+                    )}
 
-    <Text
-      strong
-      style={{
-        color: "#1890ff",
-        fontSize: isMobile ? 12 : 14,
-        display: "block",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {job?.companyName}
-    </Text>
-  </div>
-</div>
+                    <Text
+                      strong
+                      style={{
+                        color: "#1890ff",
+                        fontSize: isMobile ? 12 : 14,
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {job?.companyName}
+                    </Text>
+                  </div>
+                </div>
 
                 {/* ── META ROW — wraps freely, nothing clipped ── */}
-               <div
-  style={{
-    display: "flex",
-    gap: isMobile ? 4 : 10,
-    flexWrap: "wrap",
-    color: "#666",
-    fontSize: isMobile ? 11 : 13,
-    marginTop: 10,
-    rowGap: isMobile ? 4 : 6,
-  }}
->
+                <div
+                  style={{
+                    display: "flex",
+                    gap: isMobile ? 4 : 10,
+                    flexWrap: "wrap",
+                    color: "#666",
+                    fontSize: isMobile ? 11 : 13,
+                    marginTop: 10,
+                    rowGap: isMobile ? 4 : 6,
+                  }}
+                >
                   {job?.location && (
-                    <span><EnvironmentOutlined /> {job.location}</span>
+                    <span>
+                      <EnvironmentOutlined /> {job.location}
+                    </span>
                   )}
                   {job?.salary && (
                     <>
@@ -336,7 +353,9 @@ const AppliedJobsList = ({
                   {job?.employmentType && (
                     <>
                       <Divider type="vertical" style={{ margin: "0 2px" }} />
-                      <span><ClockCircleOutlined /> {job.employmentType}</span>
+                      <span>
+                        <ClockCircleOutlined /> {job.employmentType}
+                      </span>
                     </>
                   )}
                   {job?.experience && (
@@ -370,7 +389,7 @@ const AppliedJobsList = ({
                   >
                     {job?.clouds?.length > 0 && (
                       <div
-                        onClick={(e) => e.stopPropagation()}
+                        // onClick={(e) => e.stopPropagation()}
                         style={{
                           flex: 1,
                           padding: 12,
@@ -402,7 +421,7 @@ const AppliedJobsList = ({
 
                     {job?.skills?.length > 0 && (
                       <div
-                        onClick={(e) => e.stopPropagation()}
+                        // onClick={(e) => e.stopPropagation()}
                         style={{
                           flex: 1,
                           padding: 12,
@@ -435,43 +454,52 @@ const AppliedJobsList = ({
                 )}
 
                 {/* Applied Info */}
-              <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 14,
-    gap: 8,
-  }}
->
-  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-    <ClockCircleOutlined style={{ color: "#999", flexShrink: 0 }} />
-    <Text
-      type="secondary"
-      style={{
-        fontSize: isMobile ? 11 : 13,
-        whiteSpace: isMobile ? "nowrap" : "normal",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-      }}
-    >
-      {isMobile
-        ? dayjs(app?.appliedAt).format("MMM D, YYYY")
-        : `Applied ${dayjs(app?.appliedAt).fromNow()} (${dayjs(app?.appliedAt).format("MMM D, YYYY")})`}
-    </Text>
-  </div>
-  <Button
-    type="link"
-    size={isMobile ? "small" : "middle"}
-    style={{ flexShrink: 0, paddingRight: 0 }}
-    onClick={(e) => {
-      e.stopPropagation();
-      handleCardClick(job?.id);
-    }}
-  >
-    View Job
-  </Button>
-</div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: 14,
+                    gap: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      minWidth: 0,
+                    }}
+                  >
+                    <ClockCircleOutlined
+                      style={{ color: "#999", flexShrink: 0 }}
+                    />
+                    <Text
+                      type="secondary"
+                      style={{
+                        fontSize: isMobile ? 11 : 13,
+                        whiteSpace: isMobile ? "nowrap" : "normal",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {isMobile
+                        ? dayjs(app?.appliedAt).format("MMM D, YYYY")
+                        : `Applied ${dayjs(app?.appliedAt).fromNow()} (${dayjs(app?.appliedAt).format("MMM D, YYYY")})`}
+                    </Text>
+                  </div>
+                  <Button
+                    type="link"
+                    size={isMobile ? "small" : "middle"}
+                    style={{ flexShrink: 0, paddingRight: 0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick(job?.id);
+                    }}
+                  >
+                    View Job
+                  </Button>
+                </div>
               </Card>
             </Col>
           );

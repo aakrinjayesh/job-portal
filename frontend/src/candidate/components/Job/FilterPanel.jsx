@@ -3,6 +3,7 @@ import {
   Typography,
   Slider,
   Divider,
+  Select,
   Input,
   InputNumber,
   Button,
@@ -70,6 +71,15 @@ const FiltersPanel = ({
   toggleFilter,
   savedFilters,
   skipFirstEmit,
+  hideJobTypeFilters,
+  // showCurrentLocation, // 🆕
+  showPreferredLocation, // 🆕
+  preferredLocationOptions,
+  showExpectedCTC, // 🆕
+  showJoiningPeriod,
+  showRateCard,
+  showFitScore,
+  hideLocation,
 }) => {
   const [experience, setExperience] = useState(savedFilters?.experience || 0);
   const [selectedLocations, setSelectedLocations] = useState(
@@ -87,8 +97,25 @@ const FiltersPanel = ({
   const [candidateType, setCandidateType] = useState(
     savedFilters?.candidateType || [],
   );
+  // const [currentLocation, setCurrentLocation] = useState(
+  //   savedFilters?.currentLocation || "",
+  // );
+  // const [preferredLocation, setPreferredLocation] = useState(
+  //   savedFilters?.preferredLocation || "",
+  // );
+  const [preferredLocation, setPreferredLocation] = useState(
+    savedFilters?.preferredLocation || [],
+  );
+  const [expectedCTC, setExpectedCTC] = useState(
+    savedFilters?.expectedCTC || "",
+  );
+  const [joiningPeriod, setJoiningPeriod] = useState(
+    savedFilters?.joiningPeriod || "",
+  );
+  const [fitScore, setFitScore] = useState(savedFilters?.fitScore || null);
   const [locationOptions, setLocationOptions] = useState([]);
   const isFirstRender = useRef(true);
+  const [rateCard, setRateCard] = useState(savedFilters?.rateCard || "");
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -130,6 +157,12 @@ const FiltersPanel = ({
     employment: true,
     skills: true,
     clouds: true,
+    currentLocation: true, // 🆕
+    preferredLocation: true, // 🆕
+    expectedCTC: true, // 🆕
+    joiningPeriod: true,
+    fitScore: true,
+    rateCard: true,
   });
 
   const toggle = (key) => setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -256,6 +289,13 @@ const FiltersPanel = ({
     setClouds([]);
     setCandidateType([]);
     setExperienceError("");
+    // setCurrentLocation("");
+    // setPreferredLocation("");
+    setPreferredLocation([]);
+    setExpectedCTC("");
+    setJoiningPeriod("");
+    setFitScore(null);
+    setRateCard("");
 
     // 🔁 notify parent immediately
     onFiltersChange?.({
@@ -266,6 +306,12 @@ const FiltersPanel = ({
       skills: [],
       clouds: [],
       candidateType: [],
+      // preferredLocation: "",
+      preferredLocation: [],
+      expectedCTC: "",
+      joiningPeriod: "",
+      fitScore: null,
+      rateCard: "",
     });
   };
 
@@ -277,15 +323,24 @@ const FiltersPanel = ({
     }
     onFiltersChange?.({
       experience:
-        experience === 0 || experience === 30 || experience === ""
+        // experience === 0 || experience === 30 || experience === ""
+        //   ? null
+        //   : experience,
+        !experience || experience === 0 || Number(experience) === 30
           ? null
-          : experience,
+          : Number(experience),
       location: selectedLocations,
       jobType: selectedJobTypes,
       employmentType: selectedEmploymentTypes,
       skills,
       clouds,
       candidateType,
+      // currentLocation, // 🆕
+      preferredLocation, // 🆕
+      expectedCTC, // 🆕
+      joiningPeriod,
+      fitScore,
+      rateCard,
     });
   }, [
     experience,
@@ -295,6 +350,12 @@ const FiltersPanel = ({
     skills,
     clouds,
     candidateType,
+    // currentLocation,
+    preferredLocation,
+    expectedCTC,
+    joiningPeriod,
+    fitScore,
+    rateCard,
   ]);
 
   const collapseItems = [
@@ -328,34 +389,80 @@ const FiltersPanel = ({
               value={experience}
               placeholder="e.g. 5"
               inputMode="numeric"
-              maxLength={2}
+              maxLength={5}
               style={{ width: "100%" }}
+              // onChange={(e) => {
+              //   const value = e.target.value;
+
+              //   // ❌ non-numeric
+              //   if (!/^\d*$/.test(value)) {
+              //     setExperienceError("Only numbers are allowed");
+              //     return;
+              //   }
+
+              //   // ❌ more than 2 digits
+              //   if (value.length > 2) {
+              //     setExperienceError("Maximum 2 digits allowed");
+              //     return;
+              //   }
+
+              //   // ✅ valid
+              //   setExperienceError("");
+              //   setExperience(value === "" ? "" : Number(value));
+              // }}
               onChange={(e) => {
                 const value = e.target.value;
 
-                // ❌ non-numeric
-                if (!/^\d*$/.test(value)) {
+                // ❌ only numbers and one dot allowed
+                if (!/^[0-9.]*$/.test(value)) {
                   setExperienceError("Only numbers are allowed");
                   return;
                 }
 
-                // ❌ more than 2 digits
-                if (value.length > 2) {
-                  setExperienceError("Maximum 2 digits allowed");
+                // ❌ more than one dot
+                if ((value.match(/\./g) || []).length > 1) {
+                  setExperienceError("Only one decimal point is allowed");
+                  return;
+                }
+
+                // ❌ max 2 digits before decimal, max 2 after
+                if (!/^\d{0,2}(\.\d{0,2})?$/.test(value)) {
+                  setExperienceError(
+                    "Max 2 digits before and 2 after decimal (e.g. 5.55)",
+                  );
                   return;
                 }
 
                 // ✅ valid
                 setExperienceError("");
-                setExperience(value === "" ? "" : Number(value));
+                setExperience(value === "" ? "" : value);
               }}
             />
           </Form.Item>
         </>
       ),
     },
-
-    {
+    showFitScore && {
+      key: "fitScore",
+      label: <CollapseLabel title="Fit Score" isOpen={open.fitScore} />,
+      children: (
+        <Input
+          type="number"
+          placeholder="e.g. 75"
+          value={fitScore ?? ""}
+          min={0}
+          max={100}
+          suffix="%"
+          onChange={(e) => {
+            const val = e.target.value;
+            setFitScore(val === "" ? null : Number(val));
+          }}
+          allowClear
+          onClear={() => setFitScore(null)}
+        />
+      ),
+    },
+    !hideLocation && {
       key: "location",
       label: <CollapseLabel title="Location" isOpen={open.location} />,
       children: (
@@ -363,6 +470,31 @@ const FiltersPanel = ({
           options={locationOptions}
           selected={selectedLocations}
           onChange={setSelectedLocations}
+          showCount
+        />
+      ),
+    },
+    showPreferredLocation && {
+      key: "preferredLocation",
+      label: (
+        <CollapseLabel
+          title="Preferred Location"
+          isOpen={open.preferredLocation}
+        />
+      ),
+      // children: (
+      //   <Input
+      //     placeholder="e.g. Bangalore"
+      //     value={preferredLocation}
+      //     onChange={(e) => setPreferredLocation(e.target.value)}
+      //     allowClear
+      //   />
+      // ),
+      children: (
+        <FilterSection
+          options={preferredLocationOptions || []}
+          selected={preferredLocation}
+          onChange={setPreferredLocation}
           showCount
         />
       ),
@@ -396,7 +528,7 @@ const FiltersPanel = ({
         </>
       ),
     },
-    {
+    !hideJobTypeFilters && {
       key: "jobType",
       label: <CollapseLabel title="Job Type" isOpen={open.jobType} />,
 
@@ -408,7 +540,7 @@ const FiltersPanel = ({
         />
       ),
     },
-    {
+    !hideJobTypeFilters && {
       key: "employment",
       label: <CollapseLabel title="Employee Type" isOpen={open.employment} />,
       children: (
@@ -440,6 +572,74 @@ const FiltersPanel = ({
           values={clouds}
           onChange={setClouds}
           suggestions={salesforceCloudSuggestions}
+        />
+      ),
+    },
+    // showCurrentLocation && {
+    //   key: "currentLocation",
+    //   label: (
+    //     <CollapseLabel title="Current Location" isOpen={open.currentLocation} />
+    //   ),
+    //   children: (
+    //     <Input
+    //       placeholder="e.g. Hyderabad"
+    //       value={currentLocation}
+    //       onChange={(e) => setCurrentLocation(e.target.value)}
+    //       allowClear
+    //     />
+    //   ),
+    // },
+
+    showExpectedCTC && {
+      key: "expectedCTC",
+      label: <CollapseLabel title="Expected CTC" isOpen={open.expectedCTC} />,
+      children: (
+        <Input
+          placeholder="e.g. 10 LPA"
+          value={expectedCTC}
+          onChange={(e) => setExpectedCTC(e.target.value)}
+          allowClear
+        />
+      ),
+    },
+
+    showJoiningPeriod && {
+      key: "joiningPeriod",
+      label: (
+        <CollapseLabel title="Joining Period" isOpen={open.joiningPeriod} />
+      ),
+      children: (
+        <Select
+          placeholder="Select joining period"
+          value={joiningPeriod || undefined}
+          allowClear
+          style={{ width: "100%" }}
+          onChange={(val) => setJoiningPeriod(val || "")}
+          onClear={() => setJoiningPeriod("")}
+          options={[
+            { label: "Immediately", value: "Immediately" },
+            { label: "15 days", value: "15 days" },
+            { label: "1 month", value: "1 month" },
+            { label: "2 months", value: "2 months" },
+            { label: "3 months", value: "3 months" },
+          ]}
+        />
+      ),
+    },
+    showRateCard && {
+      key: "rateCard",
+      label: <CollapseLabel title="Rate Card / Hour" isOpen={open.rateCard} />,
+      children: (
+        <Input
+          placeholder="e.g. 50000"
+          value={rateCard}
+          onChange={(e) => {
+            const val = e.target.value.replace(/[^0-9]/g, "");
+            setRateCard(val);
+          }}
+          allowClear
+          onClear={() => setRateCard("")}
+          suffix="INR"
         />
       ),
     },

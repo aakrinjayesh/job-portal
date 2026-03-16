@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Progress, message, Spin, Row, Col, Card } from "antd";
+// import { Progress, message, Spin, Row, Col, Card } from "antd";
+import { Progress, message, Spin, Row, Col, Card, Button, Tooltip } from "antd";
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import BenchCard from "../Bench/BenchCard";
 import { SavedCandidatesList } from "../../api/api";
 import FiltersPanel from "../../../candidate/components/Job/FilterPanel";
@@ -11,9 +13,20 @@ function SavedCandidates() {
   const [progress, setProgress] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [readyToShow, setReadyToShow] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => {
+    return sessionStorage.getItem("savedCandidates_filterOpen") === "true";
+  });
 
   const [page, setPage] = useState(1);
   const observer = useRef(null);
+  const cardRef = useRef(null);
+
+  const handleCandidateClick = (candidateId) => {
+    const scrollTop = cardRef.current?.scrollTop || 0;
+    sessionStorage.setItem("savedCandScrollPos", scrollTop);
+    sessionStorage.setItem("savedCandLastId", candidateId);
+    sessionStorage.setItem("savedCandIsReturning", "true");
+  };
   // ADD after the filters useState:
   const filtersRef = useRef({
     experience: null,
@@ -25,64 +38,21 @@ function SavedCandidates() {
     candidateType: [],
   });
 
-  const [filters, setFilters] = useState(filtersRef.current);
+  // const [filters, setFilters] = useState(filtersRef.current);
+  const FILTER_KEY = "savedCandidates_filters";
 
-  const handleFiltersChange = (newFilters) => {
-    filtersRef.current = newFilters;
-    setFilters(newFilters);
-    setPage(1);
-    fetchSavedCandidates(1, newFilters);
-  };
+  // const [filters, setFilters] = useState(() => {
+  //   const saved = sessionStorage.getItem(FILTER_KEY);
+  //   return saved ? JSON.parse(saved) : filtersRef.current;
 
-  // const fetchSavedCandidates = useCallback(async (pageNum = 1) => {
-  //   setLoading(true);
-  //   setReadyToShow(false);
+  // });
+  const [filters, setFilters] = useState(() => {
+    const saved = sessionStorage.getItem(FILTER_KEY);
+    const parsed = saved ? JSON.parse(saved) : filtersRef.current;
+    filtersRef.current = parsed; // ✅ keep ref in sync
+    return parsed;
+  });
 
-  //   if (pageNum === 1) {
-  //     setProgress(10); // start progress only on first page
-  //   }
-
-  //   try {
-  //     const resp = await SavedCandidatesList(pageNum, 10);
-
-  //     if (resp?.status === "success") {
-  //       const { savedCandidates, pagination } = resp.data;
-
-  //       const mappedCandidates = savedCandidates.map((c) => ({
-  //         ...c,
-  //         id: c.id || c._id,
-  //         candidateName: c.name,
-  //         role: c.title || "N/A",
-  //         location: c.currentLocation || "N/A",
-  //         experience: c.totalExperience ? `${c.totalExperience} yrs` : "N/A",
-  //         skills: c.skillsJson || [],
-  //         clouds: c.primaryClouds || [],
-  //         avatar: c.profilePicture,
-  //         isSaved: true,
-  //       }));
-
-  //       setCandidates((prev) =>
-  //         pageNum === 1 ? mappedCandidates : [...prev, ...mappedCandidates],
-  //       );
-
-  //       // setHasMore(pagination.page < pagination.totalPages);
-  //       setHasMore(pageNum < pagination.totalPages);
-  //     }
-  //   } catch (err) {
-  //     message.error("Failed to load saved candidates");
-  //   } finally {
-  //     if (pageNum === 1) {
-  //       setProgress(100); // ✅ ONLY HERE
-  //       setTimeout(() => {
-  //         setInitialLoading(false);
-  //         setReadyToShow(true); // 🔑 unlock rendering
-  //         setProgress(0);
-  //       }, 250);
-  //     }
-  //     setLoading(false);
-  //   }
-  // }, []);
-  // const fetchSavedCandidates = useCallback(async (pageNum = 1) => {
   const fetchSavedCandidates = useCallback(
     async (pageNum = 1, appliedFilters = null) => {
       const filtersToUse = appliedFilters ?? filtersRef.current; // ✅ different names
@@ -139,6 +109,80 @@ function SavedCandidates() {
     [],
   );
 
+  const handleFiltersChange = (newFilters) => {
+    filtersRef.current = newFilters;
+    setFilters(newFilters);
+    sessionStorage.setItem(FILTER_KEY, JSON.stringify(newFilters)); // ✅
+    setPage(1);
+    fetchSavedCandidates(1, newFilters);
+  };
+  const handleClearFilters = () => {
+    const empty = {
+      experience: null,
+      location: [],
+      jobType: [],
+      employmentType: [],
+      skills: [],
+      clouds: [],
+      candidateType: [],
+    };
+    filtersRef.current = empty;
+    setFilters(empty);
+    sessionStorage.removeItem(FILTER_KEY);
+    setPage(1);
+    fetchSavedCandidates(1, empty);
+  };
+
+  // const fetchSavedCandidates = useCallback(async (pageNum = 1) => {
+  //   setLoading(true);
+  //   setReadyToShow(false);
+
+  //   if (pageNum === 1) {
+  //     setProgress(10); // start progress only on first page
+  //   }
+
+  //   try {
+  //     const resp = await SavedCandidatesList(pageNum, 10);
+
+  //     if (resp?.status === "success") {
+  //       const { savedCandidates, pagination } = resp.data;
+
+  //       const mappedCandidates = savedCandidates.map((c) => ({
+  //         ...c,
+  //         id: c.id || c._id,
+  //         candidateName: c.name,
+  //         role: c.title || "N/A",
+  //         location: c.currentLocation || "N/A",
+  //         experience: c.totalExperience ? `${c.totalExperience} yrs` : "N/A",
+  //         skills: c.skillsJson || [],
+  //         clouds: c.primaryClouds || [],
+  //         avatar: c.profilePicture,
+  //         isSaved: true,
+  //       }));
+
+  //       setCandidates((prev) =>
+  //         pageNum === 1 ? mappedCandidates : [...prev, ...mappedCandidates],
+  //       );
+
+  //       // setHasMore(pagination.page < pagination.totalPages);
+  //       setHasMore(pageNum < pagination.totalPages);
+  //     }
+  //   } catch (err) {
+  //     message.error("Failed to load saved candidates");
+  //   } finally {
+  //     if (pageNum === 1) {
+  //       setProgress(100); // ✅ ONLY HERE
+  //       setTimeout(() => {
+  //         setInitialLoading(false);
+  //         setReadyToShow(true); // 🔑 unlock rendering
+  //         setProgress(0);
+  //       }, 250);
+  //     }
+  //     setLoading(false);
+  //   }
+  // }, []);
+  // const fetchSavedCandidates = useCallback(async (pageNum = 1) => {
+
   // useEffect(() => {
   //   fetchSavedCandidates(1);
   // }, [fetchSavedCandidates]);
@@ -155,6 +199,9 @@ function SavedCandidates() {
 
     return () => clearInterval(interval);
   }, [loading]);
+  useEffect(() => {
+    fetchSavedCandidates(1, filters);
+  }, []);
 
   const lastCandidateRef = useCallback(
     (node) => {
@@ -181,6 +228,21 @@ function SavedCandidates() {
   useEffect(() => {
     if (page > 1) fetchSavedCandidates(page);
   }, [page]);
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("savedCandIsReturning");
+    if (isReturning && candidates.length > 0 && readyToShow) {
+      const savedScroll = parseInt(
+        sessionStorage.getItem("savedCandScrollPos") || "0",
+        10,
+      );
+      setTimeout(() => {
+        if (cardRef.current) {
+          cardRef.current.scrollTop = savedScroll;
+          sessionStorage.removeItem("savedCandIsReturning");
+        }
+      }, 300);
+    }
+  }, [candidates, readyToShow]);
 
   const handleRemoveCandidate = (id) => {
     setCandidates((prev) => prev.filter((c) => c.id !== id));
@@ -275,17 +337,34 @@ function SavedCandidates() {
     >
       <Row gutter={[16, 16]} style={{ flex: 1, height: "100%" }}>
         {/* LEFT FILTER PANEL */}
-        <Col span={6} style={{ height: "100%", overflowY: "auto" }}>
-          <FiltersPanel
+        <Col
+          span={6}
+          style={{
+            height: "100%",
+            overflowY: "auto",
+            display: isFilterOpen ? "block" : "none",
+          }}
+        >
+          {/* <FiltersPanel
             onFiltersChange={handleFiltersChange}
             showCandidateType={true}
             savedFilters={filters}
+          /> */}
+          <FiltersPanel
+            onFiltersChange={handleFiltersChange}
+            handleClearFilters={handleClearFilters}
+            showCandidateType={true}
+            hideJobTypeFilters={true}
+            savedFilters={filters}
+            skipFirstEmit={true}
           />
         </Col>
 
         {/* RIGHT CONTENT */}
-        <Col span={18} style={{ height: "100%" }}>
+        {/* <Col span={18} style={{ height: "100%" }}> */}
+        <Col span={isFilterOpen ? 18 : 24} style={{ height: "100%" }}>
           <Card
+            ref={cardRef}
             style={{
               height: "100%",
               borderRadius: 12,
@@ -295,6 +374,39 @@ function SavedCandidates() {
             }}
             bodyStyle={{ padding: "16px 24px" }}
           >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <div style={{ fontSize: 20, fontWeight: 700 }}>
+                <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
+                  <Button
+                    type="text"
+                    onClick={() => {
+                      const next = !isFilterOpen;
+                      setIsFilterOpen(next);
+                      sessionStorage.setItem(
+                        "savedCandidates_filterOpen",
+                        next,
+                      );
+                    }}
+                    style={{ fontSize: 20 }}
+                    icon={
+                      isFilterOpen ? (
+                        <MenuFoldOutlined />
+                      ) : (
+                        <MenuUnfoldOutlined />
+                      )
+                    }
+                  />
+                </Tooltip>
+                Saved Candidates
+              </div>
+            </div>
             {!readyToShow ? (
               <div
                 style={{
@@ -341,6 +453,8 @@ function SavedCandidates() {
                         candidate={candidate}
                         type="save"
                         onUnsave={handleRemoveCandidate}
+                        onCandidateClick={handleCandidateClick}
+                        isHighlighted={false}
                       />
                     </div>
                   );

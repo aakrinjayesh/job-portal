@@ -25,6 +25,14 @@ function AppliedJobs() {
   const [readyToShow, setReadyToShow] = useState(false);
 
   const observer = useRef();
+  const cardRef = useRef(null);
+  const handleJobClick = (jobId) => {
+    const scrollTop = cardRef.current?.scrollTop || 0;
+
+    sessionStorage.setItem("appliedScrollPos", scrollTop);
+    sessionStorage.setItem("appliedLastJobId", jobId);
+    sessionStorage.setItem("appliedIsReturning", "true");
+  };
   const isMobile = useIsMobile(); // ✅
 
   useEffect(() => {
@@ -102,6 +110,25 @@ function AppliedJobs() {
   useEffect(() => {
     if (page > 1) fetchJobs(page);
   }, [page, fetchJobs]);
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("appliedIsReturning");
+    const jobId = sessionStorage.getItem("appliedLastJobId");
+
+    if (isReturning && jobId && applications.length > 0) {
+      setTimeout(() => {
+        const element = document.getElementById(`applied-job-${jobId}`);
+
+        if (element) {
+          element.scrollIntoView({
+            behavior: "auto",
+            block: "center",
+          });
+        }
+
+        sessionStorage.removeItem("appliedIsReturning");
+      }, 300);
+    }
+  }, [applications]);
 
   // ✅ shared loading view
   const LoadingView = () => (
@@ -134,7 +161,7 @@ function AppliedJobs() {
       <AppliedJobsList
         applications={applications}
         lastJobRef={lastJobRef}
-        isMobile={isMobile}  // ✅ pass down so AppliedJobsList can adapt too
+        isMobile={isMobile} // ✅ pass down so AppliedJobsList can adapt too
       />
 
       {loading && page > 1 && (
@@ -196,6 +223,7 @@ function AppliedJobs() {
       <Row style={{ flex: 1, minHeight: 0 }}>
         <Col span={24} style={{ height: "100%", minHeight: 0 }}>
           <Card
+            ref={cardRef}
             style={{
               height: "100%",
               borderRadius: 12,
@@ -213,6 +241,8 @@ function AppliedJobs() {
                 <AppliedJobsList
                   applications={applications}
                   lastJobRef={lastJobRef}
+                  onJobClick={handleJobClick}
+                  highlightJobId={sessionStorage.getItem("appliedLastJobId")}
                   isMobile={false}
                 />
 

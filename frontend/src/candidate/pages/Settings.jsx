@@ -49,30 +49,56 @@ function Settings() {
     loadDomains();
   }, [form]);
 
+  // const onFinish = async (values) => {
+  //   try {
+  //     setLoading(true); // start loader
+
+  //     const emails = values.domains || [];
+
+  //     // const domains = emails.map((email) => {
+  //     //   const parts = email.split("@");
+  //     //   return parts[1]?.toLowerCase().trim();
+  //     // });
+  //     const domains = emails.map((d) => d.toLowerCase().trim());
+
+  //     const payload = {
+  //       hiddenDomains: domains,
+  //     };
+
+  //     await UpdateCandidateDomains(payload);
+
+  //     message.success("Company emails saved successfully");
+  //   } catch (error) {
+  //     console.error(error);
+  //     message.error("Failed to save");
+  //   } finally {
+  //     setLoading(false); // stop loader
+  //   }
+  // };
+
   const onFinish = async (values) => {
     try {
-      setLoading(true); // start loader
+      setLoading(true);
 
-      const emails = values.domains || [];
+      const entries = values.domains || [];
 
-      // const domains = emails.map((email) => {
-      //   const parts = email.split("@");
-      //   return parts[1]?.toLowerCase().trim();
-      // });
-      const domains = emails.map((d) => d.toLowerCase().trim());
+      const domains = entries.map((entry) => {
+        const trimmed = entry.toLowerCase().trim();
+        // If it's an email, extract domain part
+        if (trimmed.includes("@")) {
+          return trimmed.split("@")[1];
+        }
+        // Otherwise it's already a domain
+        return trimmed;
+      });
 
-      const payload = {
-        hiddenDomains: domains,
-      };
-
-      await UpdateCandidateDomains(payload);
-
+      await UpdateCandidateDomains({ hiddenDomains: domains });
       message.success("Company emails saved successfully");
     } catch (error) {
       console.error(error);
       message.error("Failed to save");
     } finally {
-      setLoading(false); // stop loader
+      setLoading(false);
     }
   };
 
@@ -128,12 +154,42 @@ function Settings() {
                       {...restField}
                       name={name}
                       noStyle
+                      // rules={[
+                      //   {
+                      //     required: true,
+                      //     message: "Enter company domain name",
+                      //   },
+                      //   { type: "email", message: "Enter valid domain name" },
+                      // ]}
                       rules={[
                         {
                           required: true,
                           message: "Enter company domain name",
                         },
-                        { type: "email", message: "Enter valid domain name" },
+                        {
+                          validator(_, value) {
+                            if (!value) return Promise.resolve();
+
+                            // Accept plain domain like "forcehead.com"
+                            const domainRegex =
+                              /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                            // Accept email like "user@forcehead.com"
+                            const emailRegex =
+                              /^[^\s@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+                            if (
+                              domainRegex.test(value) ||
+                              emailRegex.test(value)
+                            ) {
+                              return Promise.resolve();
+                            }
+                            return Promise.reject(
+                              new Error(
+                                "Enter a valid domain (e.g. company.com) or email (e.g. user@company.com)",
+                              ),
+                            );
+                          },
+                        },
                       ]}
                     >
                       <Input placeholder="example: company.com" />

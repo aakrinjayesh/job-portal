@@ -13,6 +13,14 @@ function SavedJobs() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [readyToShow, setReadyToShow] = useState(false);
+  const cardRef = useRef(null);
+  const handleJobClick = (jobId) => {
+    const scrollTop = cardRef.current?.scrollTop || 0;
+
+    sessionStorage.setItem("savedScrollPos", scrollTop);
+    sessionStorage.setItem("savedLastJobId", jobId);
+    sessionStorage.setItem("savedIsReturning", "true");
+  };
 
   // Fetch saved jobs
   const fetchSavedJobs = useCallback(async (pageNum = 1) => {
@@ -108,6 +116,24 @@ function SavedJobs() {
     if (page > 1) fetchSavedJobs(page);
   }, [page, fetchSavedJobs]);
 
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("savedIsReturning");
+
+    if (isReturning && jobs.length > 0 && !loading) {
+      const savedScroll = parseInt(
+        sessionStorage.getItem("savedScrollPos") || "0",
+        10,
+      );
+
+      setTimeout(() => {
+        if (cardRef.current) {
+          cardRef.current.scrollTop = savedScroll;
+          sessionStorage.removeItem("savedIsReturning");
+        }
+      }, 300);
+    }
+  }, [jobs, loading]);
+
   const handleRemoveJob = (jobId) => {
     setJobs((prev) => prev.filter((j) => j.id !== jobId));
   };
@@ -154,6 +180,7 @@ function SavedJobs() {
 
       {/* 🔹 SCROLLABLE JOB LIST AREA */}
       <div
+        ref={cardRef}
         style={{
           flex: 1, // 🔑 take remaining height
           overflowY: "auto", // 🔑 vertical scroll only here
@@ -202,6 +229,8 @@ function SavedJobs() {
             portal={"candidate"}
             onUnsave={handleRemoveJob}
             hideSortAndFilter={true}
+            onJobClick={handleJobClick}
+            highlightJobId={sessionStorage.getItem("savedLastJobId")}
           />
         ) : (
           <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>

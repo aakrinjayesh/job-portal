@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { googleLogout } from "@react-oauth/google";
 import {
   Layout,
@@ -36,6 +36,27 @@ const CompanyLayout = ({ children }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      sessionStorage.removeItem("justLoggedIn");
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+  const [canGoBack, setCanGoBack] = useState(false);
+
+  useEffect(() => {
+    const history = JSON.parse(sessionStorage.getItem("appHistory") || "[]");
+
+    // Don't add duplicate consecutive pages
+    const last = history[history.length - 1];
+    if (last !== location.pathname) {
+      history.push(location.pathname);
+      sessionStorage.setItem("appHistory", JSON.stringify(history));
+    }
+
+    // Can go back only if there's a DIFFERENT previous page
+    setCanGoBack(history.length > 1);
+  }, [location.pathname]);
 
   // const user = JSON.parse(localStorage.getItem("user")) || {
   //   name: "Aakrin Company",
@@ -147,10 +168,10 @@ const CompanyLayout = ({ children }) => {
     if (path.startsWith("/company/jobs")) return "jobs";
 
     // ✅ Public Company Profile (/company/:slug)
-    if (path.match(/^\/company\/[^/]+$/)) {
-      if (highlight) return highlight;
-      return "companyprofile";
-    }
+    // if (path.match(/^\/company\/[^/]+$/)) {
+    //   if (highlight) return highlight;
+    //   return "companyprofile";
+    // }
 
     return "dashboard";
   }, [location.pathname, location.state]);
@@ -216,7 +237,7 @@ const CompanyLayout = ({ children }) => {
 
     if (path.startsWith("/company/candidates")) return "View Candidates";
 
-    if (path.match(/^\/company\/[^/]+$/)) return "Company Profile";
+    // if (path.match(/^\/company\/[^/]+$/)) return "Company Profile";
 
     if (path.startsWith("/contact")) return "";
 
@@ -402,15 +423,31 @@ const CompanyLayout = ({ children }) => {
             }}
           >
             <Space size={16}>
+              {/* {selectedKey !== "dashboard" && ( */}
+
               {selectedKey !== "dashboard" && (
                 <Button
                   icon={<ArrowLeftOutlined />}
-                  onClick={() => navigate(-1)}
+                  disabled={!canGoBack}
+                  onClick={() => {
+                    const history = JSON.parse(
+                      sessionStorage.getItem("appHistory") || "[]",
+                    );
+                    history.pop();
+                    sessionStorage.setItem(
+                      "appHistory",
+                      JSON.stringify(history),
+                    );
+                    setCanGoBack(history.length > 1);
+                    navigate(-1);
+                  }}
                   style={{
                     borderRadius: 20,
                     background: "#F8F8F8",
                     border: "none",
                     fontWeight: 500,
+                    opacity: canGoBack ? 1 : 0.4,
+                    cursor: canGoBack ? "pointer" : "not-allowed",
                   }}
                 >
                   Back

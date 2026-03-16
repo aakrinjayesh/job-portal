@@ -7,81 +7,109 @@ import { GetAllVendorCandidates } from "../api/api";
 import { useLocation } from "react-router-dom";
 
 function FindBench() {
+  const FILTER_KEY = "findBench_filters";
   const [bench, setBench] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true); // ✅ Added
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [currentFilters, setCurrentFilters] = useState({}); // ✅ Track filters
+  // const [currentFilters, setCurrentFilters] = useState({}); // ✅ Track filters
+  const [currentFilters, setCurrentFilters] = useState(() => {
+    const saved = sessionStorage.getItem(FILTER_KEY);
+    return saved ? JSON.parse(saved) : {};
+  });
   const [totalCount, setTotalCount] = useState(0); // ✅ Added
   const [progress, setProgress] = useState(0);
 
   const observer = useRef();
   const controllerRef = useRef(null);
   const location = useLocation();
+  const cardRef = useRef(null);
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const handleCandidateClick = (candidateId) => {
+    const scrollTop = cardRef.current?.scrollTop || 0;
+    sessionStorage.setItem("benchScrollPos", scrollTop);
+    sessionStorage.setItem("benchLastId", candidateId);
+    sessionStorage.setItem("benchIsReturning", "true");
+  };
+  const [sortBy, setSortBy] = useState(() => {
+    return sessionStorage.getItem("findBench_sortBy") || "newest";
+  });
+
+  // const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => {
+    return sessionStorage.getItem("findBench_filterOpen") === "true";
+  });
   // const [selectedCandidate, setSelectedCandidate] = useState(null);
   // const [detailsModalVisible, setDetailsModalVisible] = useState(false);
 
   // ✅ Server-side filtering: pass filters to API
-  const fetchBench = useCallback(async (pageNum = 1, filters = {}) => {
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
-
-    controllerRef.current = new AbortController();
-
-    if (pageNum === 1) {
-      setInitialLoading(true);
-      setLoading(true);
-      setProgress(10);
-    } else {
-      setLoading(true);
-    }
-
-    try {
-      const res = await GetAllVendorCandidates(
-        pageNum,
-        10,
-        filters,
-        controllerRef.current.signal,
-      );
-
-      const newList = res?.candidates || [];
-
-      setBench((prev) => (pageNum === 1 ? newList : [...prev, ...newList]));
-      // const newList = res?.candidates || [];
-
-      // // ✅ FILTER ONLY ACTIVE CANDIDATES
-      // const activeCandidates = newList.filter(
-      //   (candidate) => candidate.status === "active",
-      // );
-
-      // setBench((prev) =>
-      //   pageNum === 1 ? activeCandidates : [...prev, ...activeCandidates],
-      // );
-
-      setTotalCount(res.totalCount || 0);
-      setHasMore(pageNum < res.totalPages);
-    } catch (error) {
-      if (error.code !== "ERR_CANCELED") {
-        message.error("Failed to load bench candidates");
+  const handleSortChange = (value) => {
+    setSortBy(value);
+    sessionStorage.setItem("findBench_sortBy", value);
+    setHasMore(true);
+  };
+  const fetchBench = useCallback(
+    async (pageNum = 1, filters = {}, sort = "newest") => {
+      if (controllerRef.current) {
+        controllerRef.current.abort();
       }
-    } finally {
+
+      controllerRef.current = new AbortController();
+
       if (pageNum === 1) {
-        setProgress(100);
-
-        setTimeout(() => {
-          setInitialLoading(false);
-          setLoading(false);
-          setProgress(0);
-        }, 300);
+        setInitialLoading(true);
+        setLoading(true);
+        setProgress(10);
       } else {
-        setLoading(false);
+        setLoading(true);
       }
-    }
-  }, []);
+
+      try {
+        const res = await GetAllVendorCandidates(
+          pageNum,
+          10,
+          filters,
+          sort,
+          controllerRef.current.signal,
+        );
+
+        const newList = res?.candidates || [];
+
+        setBench((prev) => (pageNum === 1 ? newList : [...prev, ...newList]));
+        // const newList = res?.candidates || [];
+
+        // // ✅ FILTER ONLY ACTIVE CANDIDATES
+        // const activeCandidates = newList.filter(
+        //   (candidate) => candidate.status === "active",
+        // );
+
+        // setBench((prev) =>
+        //   pageNum === 1 ? activeCandidates : [...prev, ...activeCandidates],
+        // );
+
+        setTotalCount(res.totalCount || 0);
+        setHasMore(pageNum < res.totalPages);
+      } catch (error) {
+        if (error.code !== "ERR_CANCELED") {
+          message.error("Failed to load bench candidates");
+        }
+      } finally {
+        if (pageNum === 1) {
+          setProgress(100);
+
+          setTimeout(() => {
+            setInitialLoading(false);
+            setLoading(false);
+            setProgress(0);
+          }, 300);
+        } else {
+          setLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   // Cleanup on route change
   useEffect(() => {
@@ -96,8 +124,8 @@ function FindBench() {
   // Initial load
   useEffect(() => {
     setPage(1);
-    fetchBench(1, currentFilters);
-  }, [currentFilters]);
+    fetchBench(1, currentFilters, sortBy);
+  }, [currentFilters, sortBy]);
 
   // ===============================
   // INFINITE SCROLL OBSERVER
@@ -121,9 +149,24 @@ function FindBench() {
   // Fetch next page when page changes
   useEffect(() => {
     if (page > 1) {
-      fetchBench(page, currentFilters);
+      fetchBench(page, currentFilters, sortBy);
     }
   }, [page]);
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("benchIsReturning");
+    if (isReturning && bench.length > 0 && !initialLoading) {
+      const savedScroll = parseInt(
+        sessionStorage.getItem("benchScrollPos") || "0",
+        10,
+      );
+      setTimeout(() => {
+        if (cardRef.current) {
+          cardRef.current.scrollTop = savedScroll;
+          sessionStorage.removeItem("benchIsReturning");
+        }
+      }, 300);
+    }
+  }, [bench, initialLoading]);
 
   useEffect(() => {
     if (initialLoading || (loading && page === 1)) {
@@ -138,22 +181,35 @@ function FindBench() {
   }, [initialLoading, loading, page]);
 
   // ✅ Handle filter changes - reset to page 1 and fetch from server
+  // const handleFiltersChange = (filters) => {
+  //   console.log("Received filters:", filters);
+  //   setCurrentFilters(filters);
+  //   // setPage(1);
+  //   // setProgress(0);
+  //   setHasMore(true);
+  //   // fetchBench(1, filters);
+  // };
   const handleFiltersChange = (filters) => {
-    console.log("Received filters:", filters);
     setCurrentFilters(filters);
-    // setPage(1);
-    // setProgress(0);
+    sessionStorage.setItem(FILTER_KEY, JSON.stringify(filters));
     setHasMore(true);
-    // fetchBench(1, filters);
   };
 
   // ✅ Clear filters and fetch all from server
+  // const handleClearFilters = () => {
+  //   setCurrentFilters({});
+  //   setPage(1);
+  //   setHasMore(true);
+  //   setProgress(0);
+  //   // fetchBench(1, {});
+  // };
+  // Update handleClearFilters to also clear sessionStorage:
   const handleClearFilters = () => {
     setCurrentFilters({});
+    sessionStorage.removeItem(FILTER_KEY);
     setPage(1);
     setHasMore(true);
     setProgress(0);
-    // fetchBench(1, {});
   };
 
   // ===============================
@@ -201,12 +257,16 @@ function FindBench() {
             hideJobFilters={true}
             showJoiningFilter={true}
             showCandidateType={true}
+            hideJobTypeFilters={true}
+            savedFilters={currentFilters} // ✅ add this
+            skipFirstEmit={true}
           />
         </Col>
 
         {/* Main Bench List */}
         <Col span={isFilterOpen ? 18 : 24} style={{ height: "100%" }}>
           <Card
+            ref={cardRef}
             style={{
               height: "100%",
               borderRadius: 12,
@@ -262,7 +322,16 @@ function FindBench() {
                   bench={bench}
                   lastBenchRef={lastBenchRef}
                   isFilterOpen={isFilterOpen}
-                  toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+                  // toggleFilter={() => setIsFilterOpen(!isFilterOpen)}
+                  toggleFilter={() => {
+                    const next = !isFilterOpen;
+                    setIsFilterOpen(next);
+                    sessionStorage.setItem("findBench_filterOpen", next);
+                  }}
+                  sortBy={sortBy} // ✅ add
+                  onSortChange={handleSortChange}
+                  onCandidateClick={handleCandidateClick}
+                  highlightCandidateId={sessionStorage.getItem("benchLastId")}
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}

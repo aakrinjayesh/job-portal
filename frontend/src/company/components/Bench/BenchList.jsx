@@ -7,9 +7,25 @@ import {
 } from "@ant-design/icons";
 import BenchCard from "./BenchCard";
 
-const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
+const BenchList = ({
+  bench,
+  isFilterOpen,
+  toggleFilter,
+  lastBenchRef,
+  onCandidateClick,
+  highlightCandidateId,
+}) => {
   const [sortedCandidates, setSortedCandidates] = useState([]);
-  const [sortOrder, setSortOrder] = useState("dsc");
+  // const [sortOrder, setSortOrder] = useState("dsc");
+  // const [sortOrder, setSortOrder] = useState(() => {
+  //   return sessionStorage.getItem("findBench_sortBy") || "dsc";
+  // });
+  const [sortOrder, setSortOrder] = useState(() => {
+    const isReturning = sessionStorage.getItem("findBench_isReturning");
+    return isReturning
+      ? sessionStorage.getItem("findBench_sortBy") || "dsc"
+      : "dsc";
+  });
 
   const sortMenu = {
     items: [
@@ -22,13 +38,51 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
   };
 
   /* 🔁 Sync incoming bench data */
+  // useEffect(() => {
+  //   setSortedCandidates(bench || []);
+  // }, [bench]);
+
+  // BEFORE
   useEffect(() => {
     setSortedCandidates(bench || []);
   }, [bench]);
 
+  // AFTER
+  useEffect(() => {
+    const saved = sessionStorage.getItem("findBench_sortBy") || "dsc";
+    let sorted = [...(bench || [])];
+
+    switch (saved) {
+      case "asc":
+        sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case "dsc":
+        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case "exp":
+        sorted.sort(
+          (a, b) => (b.totalExperience || 0) - (a.totalExperience || 0),
+        );
+        break;
+      case "rate":
+        sorted.sort(
+          (a, b) =>
+            (b.rateCardPerHour?.value || b.rateCardPerHour || 0) -
+            (a.rateCardPerHour?.value || a.rateCardPerHour || 0),
+        );
+        break;
+      default:
+        break;
+    }
+
+    setSortedCandidates(sorted);
+  }, [bench]);
   /* 🔃 Sort handler */
   const handleSort = (value) => {
     setSortOrder(value);
+
+    sessionStorage.setItem("findBench_sortBy", value);
+    sessionStorage.setItem("findBench_isReturning", "true");
 
     let sorted = [...sortedCandidates];
 
@@ -130,7 +184,11 @@ const BenchList = ({ bench, isFilterOpen, toggleFilter, lastBenchRef }) => {
 
           return (
             <Col xs={24} key={candidate.id} ref={isLast ? lastBenchRef : null}>
-              <BenchCard candidate={candidate} />
+              <BenchCard
+                candidate={candidate}
+                onCandidateClick={onCandidateClick}
+                isHighlighted={candidate.id === highlightCandidateId}
+              />
             </Col>
           );
         })}

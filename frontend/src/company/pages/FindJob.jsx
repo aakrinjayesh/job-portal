@@ -27,6 +27,7 @@ function FindJob() {
   const observer = useRef();
   const controllerRef = useRef(null);
   const location = useLocation();
+  const cardRef = useRef(null);
 
   // ⭐ filter open / close
   // const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -36,6 +37,12 @@ function FindJob() {
       ? sessionStorage.getItem("filterOpen") === "true"
       : false;
   });
+  const handleJobClick = (jobId) => {
+    const scrollTop = cardRef.current?.scrollTop || 0;
+    sessionStorage.setItem("scrollPos", scrollTop);
+    sessionStorage.setItem("lastJobId", jobId);
+    sessionStorage.setItem("isReturning", "true");
+  };
 
   const fetchJobs = useCallback(async (pageNum = 1, filters = {}) => {
     if (controllerRef.current) controllerRef.current.abort();
@@ -114,6 +121,20 @@ function FindJob() {
   useEffect(() => {
     fetchJobs(1, currentFilters);
   }, []);
+
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("isReturning");
+    if (isReturning && cardRef.current) {
+      const savedScroll = parseInt(
+        sessionStorage.getItem("scrollPos") || "0",
+        10,
+      );
+      // Wait for jobs to render, then scroll
+      setTimeout(() => {
+        cardRef.current?.scrollTo({ top: savedScroll, behavior: "instant" });
+      }, 100);
+    }
+  }, [jobs]); // fires after jobs are populated
 
   // Infinite scroll
   const lastJobRef = useCallback(
@@ -210,6 +231,7 @@ function FindJob() {
         {/* Main Job List */}
         <Col span={isFilterOpen ? 18 : 24} style={{ height: "100%" }}>
           <Card
+            ref={cardRef}
             style={{
               height: "100%",
               borderRadius: 12,
@@ -285,6 +307,8 @@ function FindJob() {
                     setIsFilterOpen(next);
                     sessionStorage.setItem("filterOpen", String(next)); // ✅
                   }}
+                  onJobClick={handleJobClick} // ← new
+                  highlightJobId={sessionStorage.getItem("lastJobId")}
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}

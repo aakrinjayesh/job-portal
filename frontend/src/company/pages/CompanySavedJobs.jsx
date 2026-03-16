@@ -4,7 +4,6 @@ import JobList from "../../candidate/components/Job/JobList";
 import { SavedJobsList, UserJobsids } from "../../candidate/api/api";
 import { useLocation } from "react-router-dom";
 
-
 function CompanySavedJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,75 +14,76 @@ function CompanySavedJobs() {
   const controllerRef = useRef(null);
   const location = useLocation();
   const [progress, setProgress] = useState(0);
+  const cardRef = useRef(null);
 
-
-
+  const handleJobClick = (jobId) => {
+    const scrollTop = cardRef.current?.scrollTop || 0;
+    sessionStorage.setItem("savedScrollPos", scrollTop);
+    sessionStorage.setItem("savedLastJobId", jobId);
+    sessionStorage.setItem("savedIsReturning", "true");
+  };
 
   // Fetch saved jobs
- const fetchSavedJobs = useCallback(async (pageNum = 1) => {
-  if (controllerRef.current) controllerRef.current.abort();
-  controllerRef.current = new AbortController();
+  const fetchSavedJobs = useCallback(async (pageNum = 1) => {
+    if (controllerRef.current) controllerRef.current.abort();
+    controllerRef.current = new AbortController();
 
-  if (pageNum === 1) {
-    setProgress(10);
-    setLoading(true);
-  }
+    if (pageNum === 1) {
+      setProgress(10);
+      setLoading(true);
+    }
 
-  try {
-    const resp = await SavedJobsList(
-      pageNum,
-      10,
-      controllerRef.current.signal
-    );
-
-    if (resp?.status === "success") {
-      const { savedJobs, pagination } = resp.data || {};
-
-      setJobs((prev) =>
-        pageNum === 1 ? savedJobs : [...prev, ...savedJobs]
+    try {
+      const resp = await SavedJobsList(
+        pageNum,
+        10,
+        controllerRef.current.signal,
       );
 
-      setHasMore(pagination?.page < pagination?.totalPages);
-    }
-  } catch (err) {
-    if (err.name !== "AbortError") {
-      message.error("Error fetching saved jobs");
-    }
-  } finally {
-    if (pageNum === 1) {
-      setProgress(100);           // ✅ only now reach 100%
-      setTimeout(() => {
-        setLoading(false);        // ✅ hide loader AFTER 100%
-        setProgress(0);
-      }, 300);
-    } else {
-      setLoading(false);
-    }
-  }
-}, []);
+      if (resp?.status === "success") {
+        const { savedJobs, pagination } = resp.data || {};
 
+        setJobs((prev) =>
+          pageNum === 1 ? savedJobs : [...prev, ...savedJobs],
+        );
+
+        setHasMore(pagination?.page < pagination?.totalPages);
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        message.error("Error fetching saved jobs");
+      }
+    } finally {
+      if (pageNum === 1) {
+        setProgress(100); // ✅ only now reach 100%
+        setTimeout(() => {
+          setLoading(false); // ✅ hide loader AFTER 100%
+          setProgress(0);
+        }, 300);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-  return () => {
-    if (controllerRef.current) {
-      console.log("🔥 Aborting SavedJobs API due to tab switch");
-      controllerRef.current.abort();
-    }
-  };
-}, [location.pathname]);
+    return () => {
+      if (controllerRef.current) {
+        console.log("🔥 Aborting SavedJobs API due to tab switch");
+        controllerRef.current.abort();
+      }
+    };
+  }, [location.pathname]);
 
-useEffect(() => {
-  if (!loading || page !== 1) return;
+  useEffect(() => {
+    if (!loading || page !== 1) return;
 
-  const interval = setInterval(() => {
-    setProgress((prev) => (prev < 85 ? prev + 5 : prev));
-  }, 300);
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 85 ? prev + 5 : prev));
+    }, 300);
 
-  return () => clearInterval(interval);
-}, [loading, page]);
-
-
-
+    return () => clearInterval(interval);
+  }, [loading, page]);
 
   useEffect(() => {
     fetchSavedJobs(1);
@@ -118,12 +118,28 @@ useEffect(() => {
 
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore],
   );
 
   useEffect(() => {
     if (page > 1) fetchSavedJobs(page);
   }, [page, fetchSavedJobs]);
+
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("savedIsReturning");
+    if (isReturning && jobs.length > 0 && !loading) {
+      const savedScroll = parseInt(
+        sessionStorage.getItem("savedScrollPos") || "0",
+        10,
+      );
+      setTimeout(() => {
+        if (cardRef.current) {
+          cardRef.current.scrollTop = savedScroll;
+          sessionStorage.removeItem("savedIsReturning");
+        }
+      }, 300);
+    }
+  }, [jobs, loading]);
 
   const handleRemoveJob = (jobId) => {
     setJobs((prev) => prev.filter((j) => j.id !== jobId));
@@ -131,50 +147,66 @@ useEffect(() => {
 
   return (
     <div style={{ padding: "16px" }}>
-     {loading && page === 1 ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      minHeight: "400px",
-    }}
-  >
-    <Progress
-      type="circle"
-      percent={progress}
-      width={90}
-      strokeColor={{
-        "0%": "#4F63F6",
-        "100%": "#7C8CFF",
-      }}
-      trailColor="#E6E8FF"
-      showInfo={false}
-    />
-    <div
-      style={{
-        marginTop: 16,
-        color: "#555",
-        fontSize: 14,
-        fontWeight: 500,
-      }}
-    >
-      Loading your saved jobs…
-    </div>
-  </div>
-)
-
-      : jobs.length > 0 ? (
-        <JobList
-          jobs={jobs}
-          lastJobRef={lastJobRef}
-          type="save"
-          jobids={ids}
-          portal={"company"}
-          onUnsave={handleRemoveJob}
-           hideSortAndFilter={true}  
-        />
+      {loading && page === 1 ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "400px",
+          }}
+        >
+          <Progress
+            type="circle"
+            percent={progress}
+            width={90}
+            strokeColor={{
+              "0%": "#4F63F6",
+              "100%": "#7C8CFF",
+            }}
+            trailColor="#E6E8FF"
+            showInfo={false}
+          />
+          <div
+            style={{
+              marginTop: 16,
+              color: "#555",
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            Loading your saved jobs…
+          </div>
+        </div>
+      ) : // : jobs.length > 0 ? (
+      //   <JobList
+      //     jobs={jobs}
+      //     lastJobRef={lastJobRef}
+      //     type="save"
+      //     jobids={ids}
+      //     portal={"company"}
+      //     onUnsave={handleRemoveJob}
+      //      hideSortAndFilter={true}
+      //   />
+      // ) : (
+      jobs.length > 0 ? (
+        <div
+          ref={cardRef}
+          style={{ height: "calc(100vh - 100px)", overflowY: "auto" }}
+        >
+          <JobList
+            jobs={jobs}
+            lastJobRef={lastJobRef}
+            type="save"
+            jobids={ids}
+            portal={"company"}
+            onUnsave={handleRemoveJob}
+            hideSortAndFilter={true}
+            onJobClick={handleJobClick}
+            highlightJobId={sessionStorage.getItem("savedLastJobId")}
+          />
+        </div>
       ) : (
         <p style={{ textAlign: "center", color: "#999", marginTop: 40 }}>
           No saved jobs found.

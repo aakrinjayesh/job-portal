@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-
+import ScreeningQuestionsStep from "./ScreeningQuestionsStep";
 import {
   Card,
   Typography,
@@ -197,6 +197,30 @@ const RecruiterJobList = () => {
       fetchJobs(page);
     }
   }, [page]);
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("recruiterIsReturning");
+    if (isReturning && jobs.length > 0 && !initialLoading) {
+      const savedScroll = parseInt(
+        sessionStorage.getItem("recruiterScrollPos") || "0",
+        10,
+      );
+      // Larger timeout to wait for all cards to render in DOM
+      setTimeout(() => {
+        if (jobsContainerRef.current) {
+          jobsContainerRef.current.scrollTop = savedScroll;
+          sessionStorage.removeItem("recruiterIsReturning"); // ✅ clear AFTER scrolling
+        }
+      }, 300);
+    }
+  }, [jobs, initialLoading]);
+  useEffect(() => {
+    if (location.state?.openEdit) {
+      const jobToEdit = location.state.openEdit;
+      // wait for jobs to load, or use jobData directly
+      showEditModal(jobToEdit); // ✅ works because jobData has all fields
+      window.history.replaceState({}, ""); // clear state
+    }
+  }, [location.state?.openEdit]);
 
   useEffect(() => {
     if (isModalVisible && currentStep === 3 && !isEditing) {
@@ -306,6 +330,12 @@ const RecruiterJobList = () => {
     form.resetFields();
     setCurrentStep(0);
     setScreeningQuestions([]); // reset on cancel
+  };
+  const handleJobClick = (jobId) => {
+    const scrollTop = jobsContainerRef.current?.scrollTop || 0;
+    sessionStorage.setItem("recruiterScrollPos", scrollTop);
+    sessionStorage.setItem("recruiterLastJobId", jobId);
+    sessionStorage.setItem("recruiterIsReturning", "true");
   };
 
   const fetchJobs = async (pageNumber = 1) => {
@@ -761,7 +791,7 @@ const RecruiterJobList = () => {
   const STEP_ITEMS = [
     { title: "Basic Info" },
     { title: "Job Details" },
-    { title: "Location & Skills" },
+    { title: "Loc & Skills" },
     { title: "Other Details" },
     { title: "Screening Questions" }, // NEW step
   ];
@@ -972,21 +1002,27 @@ const RecruiterJobList = () => {
                 <Col span={24} key={job.id}>
                   <Card
                     hoverable
-                    onClick={() =>
+                    onClick={() => {
+                      handleJobClick(job.id);
                       navigate(`/company/job/${job.id}`, {
                         state: {
                           source: "myjobs",
                           highlight: "jobs",
                           count: job.applicantCount,
+                          jobData: job,
                         },
-                      })
-                    }
+                      });
+                    }}
                     style={{
                       borderRadius: 12,
                       background: "#fff",
                       cursor: "pointer",
                       border: "1px solid #EEEEEE",
-                      height: 235,
+                      // border:
+                      //   job.id === sessionStorage.getItem("recruiterLastJobId")
+                      //     ? "2px solid #4F63F6"
+                      //     : "1px solid #EEEEEE",
+                      // height: 235,
                     }}
                   >
                     {/* TOP SECTION */}
@@ -1122,6 +1158,8 @@ const RecruiterJobList = () => {
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
+                            sessionStorage.removeItem("candidateListPage"); // ✅ ADD THIS
+                            sessionStorage.removeItem("candidateListPageSize"); // ✅ ADD THIS
                             navigate("/company/candidates", {
                               state: {
                                 id: job.id,
@@ -2050,7 +2088,7 @@ const RecruiterJobList = () => {
               )}
 
               {/* ── STEP 4: Screening Questions ── */}
-              {currentStep === 4 && (
+              {/* {currentStep === 4 && (
                 <div>
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 14, color: "#6B7280" }}>
@@ -2099,7 +2137,7 @@ const RecruiterJobList = () => {
                             position: "relative",
                           }}
                         >
-                          {/* Question number + delete */}
+                          
                           <div
                             style={{
                               display: "flex",
@@ -2132,7 +2170,7 @@ const RecruiterJobList = () => {
                             </div>
                           </div>
 
-                          {/* Question text */}
+                        
                           <div style={{ marginBottom: 10 }}>
                             <div
                               style={{
@@ -2166,7 +2204,7 @@ const RecruiterJobList = () => {
                             )}
                           </div>
 
-                          {/* Type + Required row */}
+                         
                           <div
                             style={{
                               display: "flex",
@@ -2218,7 +2256,7 @@ const RecruiterJobList = () => {
                             </div>
                           </div>
 
-                          {/* Options — only for SELECT type */}
+                          
                           {q.type === "SELECT" && (
                             <div style={{ marginTop: 12 }}>
                               <div
@@ -2262,7 +2300,7 @@ const RecruiterJobList = () => {
                     </div>
                   )}
 
-                  {/* Add Question button */}
+                
                   <Button
                     type="dashed"
                     icon={<PlusOutlined />}
@@ -2287,6 +2325,13 @@ const RecruiterJobList = () => {
                     </div>
                   )}
                 </div>
+              )} */}
+              {currentStep === 4 && (
+                <ScreeningQuestionsStep
+                  screeningQuestions={screeningQuestions}
+                  setScreeningQuestions={setScreeningQuestions}
+                  messageApi={messageApi}
+                />
               )}
             </Form>
           </div>

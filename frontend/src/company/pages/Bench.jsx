@@ -68,7 +68,13 @@ const Bench = () => {
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [unverifiedCount, setUnverifiedCount] = useState(0);
 
-  const [activeTab, setActiveTab] = useState("all");
+  // const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(() => {
+    return sessionStorage.getItem("benchActiveTab") || "all";
+  });
+  const [currentPage, setCurrentPage] = useState(() => {
+    return parseInt(sessionStorage.getItem("benchCurrentPage") || "1");
+  });
   const [messageApi, contextHolder] = message.useMessage();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
@@ -213,7 +219,7 @@ const Bench = () => {
         setAllCandidates(list || []);
         setCandidates(list || []);
 
-        setActiveTab("all");
+        // setActiveTab("all");
 
         if (Array.isArray(list)) {
           const verified = list.filter((c) => !!c.isVerified).length;
@@ -1365,7 +1371,13 @@ const Bench = () => {
             return (
               <div
                 key={item.key}
-                onClick={() => setActiveTab(item.key)}
+                // onClick={() => setActiveTab(item.key)}
+                onClick={() => {
+                  setActiveTab(item.key);
+                  sessionStorage.setItem("benchActiveTab", item.key);
+                  setCurrentPage(1);
+                  sessionStorage.setItem("benchCurrentPage", "1");
+                }}
                 style={{
                   height: 36,
                   padding: "6px 16px",
@@ -1438,7 +1450,15 @@ const Bench = () => {
                   : candidates.filter((c) => c.status === "inactive")
             }
             rowKey={(record) => record.id || record.name}
-            pagination={{ pageSize: 5 }}
+            // pagination={{ pageSize: 5 }}
+            pagination={{
+              pageSize: 5,
+              current: currentPage,
+              onChange: (page) => {
+                setCurrentPage(page);
+                sessionStorage.setItem("benchCurrentPage", String(page));
+              },
+            }}
             scroll={{ x: "max-content" }}
             style={{ cursor: "pointer" }}
             rowClassName={(_, index) =>

@@ -137,7 +137,11 @@ const RolePickerScreen = ({ onSelect, navigate }) => {
         padding: 24,
       }}
     >
-      <img src={logo} alt="ForceHead" style={{ width: 160, height: "auto", marginBottom: 32 }} />
+      <img
+        src={logo}
+        alt="ForceHead"
+        style={{ width: 160, height: "auto", marginBottom: 32 }}
+      />
 
       <Title level={3} style={{ marginBottom: 8, textAlign: "center" }}>
         Login to your account
@@ -146,7 +150,15 @@ const RolePickerScreen = ({ onSelect, navigate }) => {
         Choose how you want to continue
       </Text>
 
-      <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          marginBottom: 32,
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
         {cards.map(({ role, icon, title, subtitle }) => (
           <div
             key={role}
@@ -160,12 +172,17 @@ const RolePickerScreen = ({ onSelect, navigate }) => {
               background: picked === role ? "#EFF6FF" : "#fff",
               position: "relative",
               transition: "all 0.15s",
-              boxShadow: picked === role ? "0 4px 12px rgba(22,119,255,0.15)" : "none",
+              boxShadow:
+                picked === role ? "0 4px 12px rgba(22,119,255,0.15)" : "none",
             }}
           >
             <div style={{ fontSize: 36, marginBottom: 12 }}>{icon}</div>
-            <Text strong style={{ display: "block", fontSize: 15 }}>{title}</Text>
-            <Text type="secondary" style={{ fontSize: 13 }}>{subtitle}</Text>
+            <Text strong style={{ display: "block", fontSize: 15 }}>
+              {title}
+            </Text>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {subtitle}
+            </Text>
             <div
               style={{
                 position: "absolute",
@@ -182,7 +199,14 @@ const RolePickerScreen = ({ onSelect, navigate }) => {
               }}
             >
               {picked === role && (
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#fff",
+                  }}
+                />
               )}
             </div>
           </div>
@@ -302,9 +326,13 @@ const LoginPage = () => {
           const cleanPath = redirectPath.startsWith("/")
             ? redirectPath.slice(1)
             : redirectPath;
+          sessionStorage.setItem("justLoggedIn", "true");
+          sessionStorage.setItem("appHistory", "[]");
 
           navigate(`${rolePrefix}/${cleanPath}`, { replace: true });
         } else {
+          sessionStorage.setItem("justLoggedIn", "true");
+          sessionStorage.setItem("appHistory", "[]");
           navigate(
             res?.user?.role === "candidate"
               ? "/candidate/profile"
@@ -362,7 +390,9 @@ const LoginPage = () => {
               {/* Role header + change link */}
               <div style={{ marginBottom: 20, textAlign: "center" }}>
                 <Title level={4} style={{ margin: 0 }}>
-                  {selectedRole === "candidate" ? "Candidate Login" : "Company Login"}
+                  {selectedRole === "candidate"
+                    ? "Candidate Login"
+                    : "Company Login"}
                 </Title>
                 <Button
                   type="link"
@@ -378,7 +408,9 @@ const LoginPage = () => {
               </div>
 
               <LoginForm
-                form={selectedRole === "candidate" ? candidateForm : companyForm}
+                form={
+                  selectedRole === "candidate" ? candidateForm : companyForm
+                }
                 role={selectedRole}
                 onFinish={onFinish}
                 submitting={submitting}
@@ -459,8 +491,20 @@ const LoginPage = () => {
 /* ================= HERO COMPONENTS ================= */
 const CompanyHero = () => (
   <>
-    <img src={cloudImage} alt="cloud" style={styles.cloud} loading="lazy" decoding="async" />
-    <img src={personImg} alt="person" style={styles.person} loading="lazy" decoding="async" />
+    <img
+      src={cloudImage}
+      alt="cloud"
+      style={styles.cloud}
+      loading="lazy"
+      decoding="async"
+    />
+    <img
+      src={personImg}
+      alt="person"
+      style={styles.person}
+      loading="lazy"
+      decoding="async"
+    />
 
     <div style={styles.heroText}>
       <Title
@@ -512,7 +556,13 @@ const CompanyHero = () => (
 const CandidateHero = () => (
   <>
     <img src={cloudImage} alt="cloud" style={styles.cloud} />
-    <img src={andrewImg} alt="candidate" style={styles.candidateperson} loading="lazy" decoding="async" />
+    <img
+      src={andrewImg}
+      alt="candidate"
+      style={styles.candidateperson}
+      loading="lazy"
+      decoding="async"
+    />
 
     <div style={styles.heroText}>
       <Title

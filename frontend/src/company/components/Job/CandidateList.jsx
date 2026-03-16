@@ -6,6 +6,8 @@ import { GetCandidateList, CVEligibility } from "../../api/api";
 import { EyeOutlined } from "@ant-design/icons";
 import { Popover } from "antd";
 import CandidateActivity from "../activity/CandidateActivity";
+import { MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons";
+import FiltersPanel from "../../../candidate/components/Job/FilterPanel";
 
 import {
   MarkCandidateReviewed,
@@ -23,8 +25,19 @@ const CandidateList = () => {
 
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  // const [page, setPage] = useState(1);
+  // const [page, setPage] = useState(location.state?.savedPage || 1);
+  // const [pageSize, setPageSize] = useState(10);
+  // const [pageSize, setPageSize] = useState(location.state?.savedPageSize || 10);
+  // ✅ REPLACE WITH:
+  const [page, setPage] = useState(() => {
+    const saved = sessionStorage.getItem("candidateListPage");
+    return saved ? parseInt(saved) : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const saved = sessionStorage.getItem("candidateListPageSize");
+    return saved ? parseInt(saved) : 10;
+  });
   const [messageAPI, contextHolder] = message.useMessage();
   const [total, setTotal] = useState(0);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -48,81 +61,89 @@ const CandidateList = () => {
   const [answersCandidate, setAnswersCandidate] = useState(null);
   const [actionPopoverId, setActionPopoverId] = useState(null);
   const [savedCandidateIds, setSavedCandidateIds] = useState(new Set());
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
 
+  // useEffect(() => {
+  //   const fetchCandidates = async () => {
+  //     try {
+  //       setLoading(true);
+  //       setProgress(10);
+
+  //       const interval = setInterval(() => {
+  //         setProgress((prev) => {
+  //           if (prev >= 90) return prev;
+  //           return prev + 10;
+  //         });
+  //       }, 200);
+
+  //       const payload = { jobId };
+  //       const response = await GetCandidateList(payload);
+
+  //       clearInterval(interval);
+  //       setProgress(100);
+
+  //       setTimeout(() => {
+  //         setLoading(false);
+  //       }, 400);
+
+  //       if (response?.data && response.data.length > 0) {
+  //         const map = {};
+  //         const savedIds = new Set();
+  //         response.data.forEach((c) => {
+  //           map[c.applicationId] = c.status || "Pending";
+  //           // if (c?.profile?.isSaved) {
+  //           //   savedIds.add(c.profile.id);
+  //           // }
+  //           // ✅ CHANGE TO
+  //           if (c?.profile?.isSaved === true && c?.status === "BookMark") {
+  //             savedIds.add(c.profile.id);
+  //           }
+  //         });
+
+  //         setStatusMap(map);
+  //         setCandidates(response.data);
+  //         setTotal(response.total || response.data.length);
+  //       } else {
+  //         setCandidates([]);
+  //         messageAPI.warning("No candidates found for this job.");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching candidates:", error);
+  //       messageAPI.error("Failed to load candidates.");
+  //     }
+  //   };
+
+  //   if (jobId) fetchCandidates();
+  // }, [jobId]);
+
+  // ✅ KEEP ONLY THIS ONE useEffect
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
         setLoading(true);
-        setProgress(10);
+        setProgress(10); // ✅ added
 
         const interval = setInterval(() => {
-          setProgress((prev) => {
-            if (prev >= 90) return prev;
-            return prev + 10;
-          });
+          // ✅ added
+          setProgress((prev) => (prev >= 90 ? prev : prev + 10));
         }, 200);
 
         const payload = { jobId };
         const response = await GetCandidateList(payload);
 
-        clearInterval(interval);
-        setProgress(100);
-
-        setTimeout(() => {
-          setLoading(false);
-        }, 400);
+        clearInterval(interval); // ✅ added
+        setProgress(100); // ✅ added
 
         if (response?.data && response.data.length > 0) {
           const map = {};
           const savedIds = new Set();
           response.data.forEach((c) => {
             map[c.applicationId] = c.status || "Pending";
-            // if (c?.profile?.isSaved) {
-            //   savedIds.add(c.profile.id);
-            // }
-            // ✅ CHANGE TO
             if (c?.profile?.isSaved === true && c?.status === "BookMark") {
               savedIds.add(c.profile.id);
             }
           });
-
-          setStatusMap(map);
-          setCandidates(response.data);
-          setTotal(response.total || response.data.length);
-        } else {
-          setCandidates([]);
-          messageAPI.warning("No candidates found for this job.");
-        }
-      } catch (error) {
-        console.error("Error fetching candidates:", error);
-        messageAPI.error("Failed to load candidates.");
-      }
-    };
-
-    if (jobId) fetchCandidates();
-  }, [jobId]);
-
-  useEffect(() => {
-    const fetchCandidates = async () => {
-      try {
-        setLoading(true);
-        const payload = { jobId };
-        const response = await GetCandidateList(payload);
-
-        if (response?.data && response.data.length > 0) {
-          const map = {};
-          const savedIds = new Set();
-          response.data.forEach((c) => {
-            map[c.applicationId] = c.status || "Pending";
-            // if (c?.profile?.isSaved) {
-            //   savedIds.add(c.profile.id);
-            // }
-            // ✅ CHANGE TO
-            if (c?.profile?.isSaved === true && c?.status === "BookMark") {
-              savedIds.add(c.profile.id);
-            }
-          });
-
           setStatusMap(map);
           setSavedCandidateIds(savedIds);
           setCandidates(response.data);
@@ -135,12 +156,52 @@ const CandidateList = () => {
         console.error("Error fetching candidates:", error);
         messageAPI.error("Failed to load candidates.");
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 400); // ✅ changed
       }
     };
 
     if (jobId) fetchCandidates();
-  }, [jobId, page, pageSize]);
+  }, [jobId, page, pageSize]); // ✅ KEEP THIS
+
+  // useEffect(() => {
+  //   const fetchCandidates = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const payload = { jobId };
+  //       const response = await GetCandidateList(payload);
+
+  //       if (response?.data && response.data.length > 0) {
+  //         const map = {};
+  //         const savedIds = new Set();
+  //         response.data.forEach((c) => {
+  //           map[c.applicationId] = c.status || "Pending";
+  //           // if (c?.profile?.isSaved) {
+  //           //   savedIds.add(c.profile.id);
+  //           // }
+  //           // ✅ CHANGE TO
+  //           if (c?.profile?.isSaved === true && c?.status === "BookMark") {
+  //             savedIds.add(c.profile.id);
+  //           }
+  //         });
+
+  //         setStatusMap(map);
+  //         setSavedCandidateIds(savedIds);
+  //         setCandidates(response.data);
+  //         setTotal(response.total || response.data.length);
+  //       } else {
+  //         setCandidates([]);
+  //         messageAPI.warning("No candidates found for this job.");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching candidates:", error);
+  //       messageAPI.error("Failed to load candidates.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   if (jobId) fetchCandidates();
+  // }, [jobId, page, pageSize]);
 
   const filteredCandidates = candidates
     .filter((c) => {
@@ -149,6 +210,79 @@ const CandidateList = () => {
       if (candidateType === "NORMAL") return vendorId == null;
       if (candidateType === "VENDOR") return vendorId != null;
       return true;
+    })
+    .filter((c) => {
+      if (!activeFilters?.experience) return true;
+      const exp = parseFloat(c?.profile?.totalExperience || 0);
+      return exp >= activeFilters.experience;
+    })
+    .filter((c) => {
+      if (activeFilters?.fitScore == null) return true;
+      const score = c?.matchScore;
+      if (score == null) return false;
+      if (activeFilters.fitScore === 0) return score < 40;
+      return score >= activeFilters.fitScore;
+    })
+    .filter((c) => {
+      if (!activeFilters?.preferredLocation?.length) return true;
+      const preferred = c?.profile?.preferredLocation || [];
+      return activeFilters.preferredLocation.some((sel) =>
+        preferred.some((l) => l.toLowerCase().includes(sel.toLowerCase())),
+      );
+    })
+    // .filter((c) => {
+    //   if (!activeFilters?.location?.length) return true;
+    //   const loc = c?.profile?.currentLocation || "";
+    //   return activeFilters.location.some((l) =>
+    //     loc.toLowerCase().includes(l.toLowerCase()),
+    //   );
+    // })
+    .filter((c) => {
+      if (!activeFilters?.skills?.length) return true;
+      const candidateSkills =
+        c?.profile?.skillsJson?.map((s) => s.name.toLowerCase()) || [];
+      return activeFilters.skills.every((s) =>
+        candidateSkills.some((cs) => cs.includes(s.toLowerCase())),
+      );
+    })
+    .filter((c) => {
+      if (!activeFilters?.clouds?.length) return true;
+      const candidateClouds = [
+        ...(c?.profile?.primaryClouds?.map((cl) => cl.name.toLowerCase()) ||
+          []),
+        ...(c?.profile?.secondaryClouds?.map((cl) => cl.name.toLowerCase()) ||
+          []),
+      ];
+      return activeFilters.clouds.every((cl) =>
+        candidateClouds.some((cc) => cc.includes(cl.toLowerCase())),
+      );
+    })
+    // .filter((c) => {
+    //   if (!activeFilters?.preferredLocation?.length) return true;
+    //   const preferred = c?.profile?.preferredLocation || [];
+    //   return activeFilters.preferredLocation.some((sel) =>
+    //     preferred.some((l) => l.toLowerCase().includes(sel.toLowerCase())),
+    //   );
+    // })
+    .filter((c) => {
+      if (!activeFilters?.expectedCTC?.trim()) return true;
+      const ctc = c?.profile?.expectedCTC || "";
+      return ctc
+        .toLowerCase()
+        .includes(activeFilters.expectedCTC.toLowerCase().trim());
+    })
+    .filter((c) => {
+      if (!activeFilters?.joiningPeriod?.trim()) return true;
+      const jp = c?.profile?.joiningPeriod?.toLowerCase() || "";
+      return jp.includes(activeFilters.joiningPeriod.toLowerCase().trim());
+    })
+    .filter((c) => {
+      if (!activeFilters?.rateCard?.trim()) return true;
+      const rate = String(c?.profile?.rateCardPerHour?.value || "").replace(
+        /,/g,
+        "",
+      );
+      return rate.includes(activeFilters.rateCard.trim());
     })
     .filter((c) => {
       if (!searchText.trim()) return true;
@@ -535,39 +669,98 @@ const CandidateList = () => {
       },
     },
 
+    // {
+    //   title: "Name",
+    //   dataIndex: "name",
+    //   key: "name",
+    //   fixed: "left",
+    //   render: (text, record) => (
+    //     <span
+    //       onClick={async (e) => {
+    //         e.stopPropagation();
+    //         try {
+    //           await MarkCandidateReviewed({
+    //             jobApplicationId: record.applicationId,
+    //           });
+    //         } catch {}
+    //         setCandidates((prev) =>
+    //           prev.map((c) =>
+    //             c.applicationId === record.applicationId
+    //               ? { ...c, status: "Reviewed" }
+    //               : c,
+    //           ),
+    //         );
+
+    //         sessionStorage.setItem("candidateListPage", page);
+    //         sessionStorage.setItem("candidateListPageSize", pageSize);
+    //         navigate(`/company/candidate/${record.profile.id}`, {
+    //           state: {
+    //             candidate: { ...record, status: "Reviewed" },
+    //             jobId,
+    //             highlight: highlight || "findbench",
+    //           },
+    //         });
+    //       }}
+    //       style={{ color: "#1677ff", cursor: "pointer" }}
+    //     >
+    //       {text}
+    //     </span>
+    //   ),
+    // },
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
       fixed: "left",
       render: (text, record) => (
-        <span
-          onClick={async (e) => {
-            e.stopPropagation();
-            try {
-              await MarkCandidateReviewed({
-                jobApplicationId: record.applicationId,
-              });
-            } catch {}
-            setCandidates((prev) =>
-              prev.map((c) =>
-                c.applicationId === record.applicationId
-                  ? { ...c, status: "Reviewed" }
-                  : c,
-              ),
-            );
-            navigate(`/company/candidate/${record.profile.id}`, {
-              state: {
-                candidate: { ...record, status: "Reviewed" },
-                jobId,
-                highlight: highlight || "findbench",
-              },
-            });
-          }}
-          style={{ color: "#1677ff", cursor: "pointer" }}
+        <Popover
+          trigger="hover"
+          placement="right"
+          content={
+            <div style={{ fontSize: 12, color: "#6B7280", maxWidth: 220 }}>
+              <div
+                style={{ fontWeight: 500, color: "#1A1A2E", marginBottom: 6 }}
+              >
+                More details inside 👆
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span> Expected CTC</span>
+                <span> Joining Period</span>
+                <span> Rate Card / Hour</span>
+              </div>
+            </div>
+          }
         >
-          {text}
-        </span>
+          <span
+            onClick={async (e) => {
+              e.stopPropagation();
+              try {
+                await MarkCandidateReviewed({
+                  jobApplicationId: record.applicationId,
+                });
+              } catch {}
+              setCandidates((prev) =>
+                prev.map((c) =>
+                  c.applicationId === record.applicationId
+                    ? { ...c, status: "Reviewed" }
+                    : c,
+                ),
+              );
+              sessionStorage.setItem("candidateListPage", page);
+              sessionStorage.setItem("candidateListPageSize", pageSize);
+              navigate(`/company/candidate/${record.profile.id}`, {
+                state: {
+                  candidate: { ...record, status: "Reviewed" },
+                  jobId,
+                  highlight: highlight || "findbench",
+                },
+              });
+            }}
+            style={{ color: "#1677ff", cursor: "pointer" }}
+          >
+            {text}
+          </span>
+        </Popover>
       ),
     },
 
@@ -622,12 +815,12 @@ const CandidateList = () => {
     },
 
     {
-      title: "Key Match Skills",
+      title: "Matched Skills",
       width: 200,
       key: "keyMatchSkills",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_match_skills || [];
-        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
+        if (!list.length) return <Tag style={chipStyle}>No Matched Skills</Tag>;
 
         const visibleSkills = list.slice(0, 2);
         const remainingCount = list.length - 2;
@@ -659,11 +852,11 @@ const CandidateList = () => {
     },
 
     {
-      title: "Key Gap Skills",
+      title: "Missing Skills",
       key: "keyGapSkills",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_gap_skills || [];
-        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
+        if (!list.length) return <Tag style={chipStyle}>No Missing Skills</Tag>;
 
         const visibleSkills = list.slice(0, 2);
         const remainingCount = list.length - 2;
@@ -695,11 +888,11 @@ const CandidateList = () => {
     },
 
     {
-      title: "Key Match Clouds",
+      title: "Matched Clouds",
       key: "keyMatchClouds",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_match_clouds || [];
-        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
+        if (!list.length) return <Tag style={chipStyle}>No Matched Clouds</Tag>;
 
         const visibleClouds = list.slice(0, 2);
         const remainingCount = list.length - 2;
@@ -731,11 +924,11 @@ const CandidateList = () => {
     },
 
     {
-      title: "Key Gap Clouds",
+      title: "Missing Clouds",
       key: "keyGapClouds",
       render: (_, record) => {
         const list = record?.aiAnalysis?.key_gap_clouds || [];
-        if (!list.length) return <Tag style={chipStyle}>NA</Tag>;
+        if (!list.length) return <Tag style={chipStyle}>No Missing SKills</Tag>;
 
         const visibleClouds = list.slice(0, 2);
         const remainingCount = list.length - 2;
@@ -899,6 +1092,26 @@ const CandidateList = () => {
       >
         {/* LEFT — TOGGLES */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+            style={{
+              height: 32,
+              width: 32,
+              borderRadius: 6,
+              cursor: "pointer",
+              outline: isFilterOpen ? "1px solid #3F41D1" : "1px solid #A3A3A3",
+              background: isFilterOpen ? "#EBEBFA" : "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {isFilterOpen ? (
+              <MenuFoldOutlined style={{ fontSize: 15, color: "#3F41D1" }} />
+            ) : (
+              <MenuUnfoldOutlined style={{ fontSize: 15, color: "#666666" }} />
+            )}
+          </div>
           {["ALL", "NORMAL", "VENDOR"].map((type) => {
             const labels = {
               ALL: `All (${candidates.length})`,
@@ -1005,24 +1218,75 @@ const CandidateList = () => {
         </div>
       ) : (
         <>
-          <Table
-            rowSelection={rowSelection}
-            columns={columns}
-            dataSource={filteredCandidates}
-            rowKey={(record) => record.applicationId}
-            bordered
-            scroll={{ x: "max-content" }}
-            pagination={{
-              current: page,
-              pageSize,
-              total,
-              showSizeChanger: true,
-              onChange: (p, ps) => {
-                setPage(p);
-                setPageSize(ps);
-              },
-            }}
-          />
+          <div style={{ display: "flex", gap: 0, alignItems: "flex-start" }}>
+            {isFilterOpen && (
+              <div
+                style={{
+                  height: "calc(100vh - 120px)",
+                  overflowY: "auto",
+                  flexShrink: 0,
+                }}
+              >
+                <FiltersPanel
+                  onFiltersChange={(filters) => setActiveFilters(filters)}
+                  showCandidateType={false}
+                  isFilterOpen={isFilterOpen}
+                  handleClearFilters={() => setActiveFilters({})}
+                  toggleFilter={() => setIsFilterOpen(false)}
+                  savedFilters={{}}
+                  skipFirstEmit={true}
+                  hideJobTypeFilters={true}
+                  hideLocation={true}
+                  // showCurrentLocation={true}
+                  showPreferredLocation={true}
+                  preferredLocationOptions={(() => {
+                    const allLocs = candidates.flatMap(
+                      (c) => c?.profile?.preferredLocation || [],
+                    );
+                    const countMap = allLocs.reduce((acc, loc) => {
+                      acc[loc] = (acc[loc] || 0) + 1;
+                      return acc;
+                    }, {});
+                    return Object.entries(countMap).map(([loc, count]) => ({
+                      label: loc,
+                      value: loc,
+                      count,
+                    }));
+                  })()}
+                  showExpectedCTC={true}
+                  showJoiningPeriod={true}
+                  showFitScore={true}
+                  showRateCard={true}
+                />
+              </div>
+            )}
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              <Table
+                rowSelection={rowSelection}
+                columns={columns}
+                dataSource={filteredCandidates}
+                rowKey={(record) => record.applicationId}
+                bordered
+                scroll={{ x: "max-content" }}
+                pagination={{
+                  current: page,
+                  pageSize,
+                  total,
+                  showSizeChanger: true,
+                  // onChange: (p, ps) => {
+                  //   setPage(p);
+                  //   setPageSize(ps);
+                  // },
+                  onChange: (p, ps) => {
+                    setPage(p);
+                    setPageSize(ps);
+                    sessionStorage.setItem("candidateListPage", p);
+                    sessionStorage.setItem("candidateListPageSize", ps);
+                  },
+                }}
+              />
+            </div>
+          </div>
 
           {/* GROUP CHAT MODAL (unchanged) */}
           <Modal

@@ -23,20 +23,46 @@ function Jobs() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [currentFilters, setCurrentFilters] = useState({});
+  // const [currentFilters, setCurrentFilters] = useState({});
+  const [currentFilters, setCurrentFilters] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("candidateJobFilters");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [totalCount, setTotalCount] = useState(0);
   const [progress, setProgress] = useState(0);
 
   // ⭐ filter open / close
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => {
+    return sessionStorage.getItem("candidateJobFilterOpen") === "true";
+  });
   const observer = useRef();
   const [ids, setIds] = useState();
 
   const controllerRef = useRef(null);
   const isMobile = useIsMobile(); // ✅ NEW
+  const cardRef = useRef(null);
 
+  const handleJobClick = (jobId) => {
+    const scrollTop = cardRef.current?.scrollTop || 0;
+    sessionStorage.setItem("candidateJobScrollPos", scrollTop);
+    sessionStorage.setItem("candidateJobLastId", jobId);
+    sessionStorage.setItem("candidateJobIsReturning", "true");
+  };
+
+  // const toggleFilter = () => {
+  //   setIsFilterOpen((prev) => !prev);
+  // };
   const toggleFilter = () => {
-    setIsFilterOpen((prev) => !prev);
+    setIsFilterOpen((prev) => {
+      const next = !prev;
+      sessionStorage.setItem("candidateJobFilterOpen", String(next));
+      return next;
+    });
   };
 
   // ✅ Server-side filtering: pass filters to API
@@ -59,7 +85,12 @@ function Jobs() {
     }
 
     try {
-      const response = await GetJobsList(pageNum, 10, filters, controller.signal);
+      const response = await GetJobsList(
+        pageNum,
+        10,
+        filters,
+        controller.signal,
+      );
       const newJobs = response?.jobs || [];
 
       if (pageNum === 1) {
@@ -89,8 +120,13 @@ function Jobs() {
   }, []);
 
   // Initial fetch
+  // useEffect(() => {
+  //   fetchJobs(1, currentFilters);
+  // }, []);
   useEffect(() => {
-    fetchJobs(1, currentFilters);
+    const saved = sessionStorage.getItem("candidateJobFilters");
+    const restoredFilters = saved ? JSON.parse(saved) : {};
+    fetchJobs(1, restoredFilters);
   }, []);
 
   // Infinite scroll observer
@@ -107,7 +143,7 @@ function Jobs() {
 
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore],
   );
 
   // ✅ Fetch user's saved job IDs in background
@@ -131,10 +167,26 @@ function Jobs() {
       fetchJobs(page, currentFilters);
     }
   }, [page, currentFilters, fetchJobs]);
+  useEffect(() => {
+    const isReturning = sessionStorage.getItem("candidateJobIsReturning");
+    if (isReturning && jobs.length > 0 && !initialLoading) {
+      const savedScroll = parseInt(
+        sessionStorage.getItem("candidateJobScrollPos") || "0",
+        10,
+      );
+      setTimeout(() => {
+        if (cardRef.current) {
+          cardRef.current.scrollTop = savedScroll;
+          sessionStorage.removeItem("candidateJobIsReturning");
+        }
+      }, 300);
+    }
+  }, [jobs, initialLoading]);
 
   // ✅ Handle filter changes
   const handleFiltersChange = (filters) => {
     setCurrentFilters(filters);
+    sessionStorage.setItem("candidateJobFilters", JSON.stringify(filters));
     setPage(1);
     setHasMore(true);
     fetchJobs(1, filters);
@@ -145,6 +197,7 @@ function Jobs() {
   // ✅ Clear filters
   const handleClearFilters = () => {
     setCurrentFilters({});
+    sessionStorage.removeItem("candidateJobFilters");
     setPage(1);
     setHasMore(true);
     fetchJobs(1, {});
@@ -192,6 +245,9 @@ function Jobs() {
         portal="candidate"
         isFilterOpen={isFilterOpen}
         toggleFilter={toggleFilter}
+        isMobile={isMobile}
+        onJobClick={handleJobClick}
+        highlightJobId={sessionStorage.getItem("candidateJobLastId")}
       />
 
       {loading && page > 1 && (
@@ -247,6 +303,8 @@ function Jobs() {
             onFiltersChange={handleFiltersChange}
             handleClearFilters={handleClearFilters}
             showCandidateType={false}
+            savedFilters={currentFilters}
+            skipFirstEmit={true}
           />
         </Drawer>
 
@@ -290,6 +348,8 @@ function Jobs() {
               onFiltersChange={handleFiltersChange}
               handleClearFilters={handleClearFilters}
               showCandidateType={false}
+              savedFilters={currentFilters}
+              skipFirstEmit={true}
             />
           </Col>
         )}
@@ -303,6 +363,7 @@ function Jobs() {
           }}
         >
           <Card
+            ref={cardRef}
             style={{
               height: "100%",
               borderRadius: 12,
@@ -354,6 +415,8 @@ function Jobs() {
                   portal="candidate"
                   isFilterOpen={isFilterOpen}
                   toggleFilter={toggleFilter}
+                  onJobClick={handleJobClick}
+                  highlightJobId={sessionStorage.getItem("candidateJobLastId")}
                 />
 
                 {/* ✅ Show spinner only for page 2+ (infinite scroll loading) */}

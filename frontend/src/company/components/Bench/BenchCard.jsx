@@ -26,7 +26,13 @@ import {
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 
-const BenchCard = ({ candidate, onUnsave, type }) => {
+const BenchCard = ({
+  candidate,
+  onUnsave,
+  type,
+  onCandidateClick,
+  isHighlighted,
+}) => {
   const navigate = useNavigate();
   const role = candidate?.title || "Unknown Role";
   const [saved, setSaved] = useState(candidate?.isSaved || false);
@@ -179,13 +185,15 @@ const BenchCard = ({ candidate, onUnsave, type }) => {
         position: "relative",
         marginBottom: 20,
         cursor: "pointer",
+        // border: isHighlighted ? "2px solid #4F63F6" : "1px solid #EEEEEE",
       }}
       bodyStyle={{ padding: 20 }}
-      onClick={() =>
+      onClick={() => {
+        if (onCandidateClick) onCandidateClick(candidate.id);
         navigate(`/company/candidate/${candidate.id}`, {
           state: { source: "bench", highlight: "findbench" },
-        })
-      }
+        });
+      }}
     >
       {contextHolder}
 
