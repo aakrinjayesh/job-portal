@@ -100,6 +100,8 @@ const JobList = ({
   onUnsave,
   isFilterOpen,
   toggleFilter,
+  highlightJobId,
+  onJobClick,
   hideSortAndFilter,
   isMobile: isMobileProp, // ✅ accept from parent
 }) => {
@@ -299,6 +301,7 @@ const JobList = ({
     sessionStorage.setItem("lastClickedJobId", job.id);
     sessionStorage.setItem("isReturning", "true");
     sessionStorage.setItem("findJobSortOrder_returning", sortOrder);
+    if (onJobClick) onJobClick(job.id);
     if (portal === "company") {
       navigate(`/company/job/${job.id}`, {
         state: {
@@ -562,24 +565,27 @@ const JobList = ({
                       gap: 4,
                     }}
                   >
-                    <div
-                      style={{
-                        fontSize: isMobile ? 13 : 16,
-                        fontWeight: 600,
-                        color: "#212121",
-                        lineHeight: "20px",
-                        flex: 1,
-                        minWidth: 0,
-                        // ✅ always 2-line clamp — works on both mobile and desktop for long titles
-                        display: "-webkit-box",
-                        WebkitLineClamp: isMobile ? 2 : 1,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {job.role || job.title}
-                    </div>
-
+<div
+  style={{
+    fontSize: isMobile ? 13 : 16,
+    fontWeight: 600,
+    color: "#212121",
+    lineHeight: "20px",
+    flex: 1,
+    minWidth: 0,
+    // ✅ mobile: show full title, desktop: 1-line clamp
+    ...(isMobile
+      ? {}
+      : {
+          display: "-webkit-box",
+          WebkitLineClamp: 1,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }),
+  }}
+>
+  {job.role || job.title}
+</div>
                     {job.status === "Closed" && (
                       <Tag color="red" style={{ flexShrink: 0, marginTop: 1 }}>
                         Closed

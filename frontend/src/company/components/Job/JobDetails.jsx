@@ -17,7 +17,7 @@ import {
   Input,
 } from "antd";
 import { LuBookmark, LuBookmarkCheck } from "react-icons/lu";
-import { GetJobDetails, SaveJob, UnSaveJob } from "../../api/api";
+import { GetJobDetails, SaveJob, UnSaveJob, CloseJob} from "../../api/api";
 import { ShareAltOutlined } from "@ant-design/icons";
 import { ApplyJob } from "../../../candidate/api/api";
 import ApplyBenchJob from "../../pages/ApplyBenchJob";
@@ -39,6 +39,7 @@ const JobDetails = ({ mode }) => {
   const source = location?.state?.source;
   const count = location?.state?.count;
   const jobids = location?.state?.jobids;
+  const jobData = location?.state?.jobData;
 
   const isCandidate = mode === "candidate";
   const isCompany = mode === "company";
@@ -61,6 +62,23 @@ const JobDetails = ({ mode }) => {
   // Use the hook's messageApi so there's a single message context
   const { messageApi, contextHolder } = screening;
   // ──────────────────────────────────────────────────────────────────────────
+
+  const [closeJobId, setCloseJobId] = useState(null);
+  const [closeLoading, setCloseLoading] = useState(false);
+
+  const handleCloseJob = async (jobId) => {
+    setCloseLoading(true);
+    try {
+      await CloseJob(jobId);
+      messageApi.success("Job closed successfully");
+      setJob((prev) => ({ ...prev, status: "Closed" }));
+      setCloseJobId(null);
+    } catch (error) {
+      messageApi.error(error?.response?.data?.message || "Failed to close job");
+    } finally {
+      setCloseLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchJobDetails();
@@ -273,17 +291,19 @@ ${generatedUrl}
 
       {contextHolder}
 
-      <div style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}>
+     <div style={{ maxWidth: "100%", margin: "0 auto", padding: "16px 12px" }}>
         <Card style={{ borderRadius: 14 }}>
           {/* HEADER */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+        <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+    gap: 12,
+  }}
+>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
               {job.companyLogo ? (
                 <img
                   src={job.companyLogo}
@@ -320,21 +340,50 @@ ${generatedUrl}
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              {isCompany && source === "myjobs" && (
-                <Button
-                  style={{
-                    background: "#D1E4FF",
-                    borderRadius: 100,
-                    fontWeight: 600,
-                  }}
-                  onClick={() =>
-                    navigate("/company/candidates", { state: { id } })
-                  }
-                >
-                  View Candidates ({count || 0})
-                </Button>
+           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+             {isCompany && source === "myjobs" && (
+                <>
+                  {job.status === "Open" && (
+                    <Button
+                      danger
+                      style={{ borderRadius: 100 }}
+                      onClick={() => setCloseJobId(job.id)}
+                    >
+                      Close
+                    </Button>
+                  )}
+
+                  <Button
+                    disabled={job.status === "Closed"}
+                    style={{
+                      background: "#F0F2F4",
+                      borderRadius: 100,
+                      color: "#666",
+                    }}
+                    onClick={() =>
+                      navigate("/company/jobs", {
+                        state: { openEdit: jobData || job },
+                      })
+                    }
+                  >
+                    Edit
+                  </Button>
+
+                  <Button
+                    style={{
+                      background: "#D1E4FF",
+                      borderRadius: 100,
+                      fontWeight: 600,
+                    }}
+                    onClick={() =>
+                      navigate("/company/candidates", { state: { id } })
+                    }
+                  >
+                    View Candidates ({count || 0})
+                  </Button>
+                </>
               )}
+
 
               <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
                 <div onClick={handleSaveToggle} style={{ cursor: "pointer" }}>
@@ -362,13 +411,13 @@ ${generatedUrl}
           <Divider />
 
           {/* DETAILS GRID */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 20,
-            }}
-          >
+       <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+    gap: 16,
+  }}
+>
             <div>
               <Text strong>Employment Type</Text>
               <div>{job.employmentType}</div>
@@ -595,6 +644,18 @@ ${generatedUrl}
         applyLoading={applyLoading}
         onSubmit={handleScreeningSubmit}
       />
+      <Modal
+        open={!!closeJobId}
+        title="Close Job"
+        okText="Yes, Close"
+        okButtonProps={{ danger: true }}
+        confirmLoading={closeLoading}
+        centered
+        onCancel={() => setCloseJobId(null)}
+        onOk={() => handleCloseJob(closeJobId)}
+      >
+        Are you sure you want to close this job?
+      </Modal>
     </>
   );
 };

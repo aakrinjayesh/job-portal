@@ -1,7 +1,19 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Col, Row, Card, message, Progress, Spin } from "antd";
+import { Col, Row, Card, message, Progress, Spin, Drawer, Button } from "antd";
+import { CloseOutlined } from "@ant-design/icons";
 import AppliedJobsList from "../../candidate/components/Job/AppliedJobsList";
-import { AppliedJobsList as GetAppliedJobs } from "../../candidate/api/api"; // your API call function
+import { AppliedJobsList as GetAppliedJobs } from "../../candidate/api/api";
+
+// ✅ same hook as Jobs.jsx and JobList.jsx
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+};
 
 function AppliedJobs() {
   const [applications, setApplications] = useState([]);
@@ -13,6 +25,7 @@ function AppliedJobs() {
   const [readyToShow, setReadyToShow] = useState(false);
 
   const observer = useRef();
+  const isMobile = useIsMobile(); // ✅
 
   useEffect(() => {
     if (!loading) return;
@@ -52,10 +65,10 @@ function AppliedJobs() {
       message.error("Failed to fetch applied jobs");
     } finally {
       if (pageNum === 1) {
-        setProgress(100); // ✅ force completion
+        setProgress(100);
         setTimeout(() => {
           setInitialLoading(false);
-          setReadyToShow(true); // 🔓 unlock UI
+          setReadyToShow(true);
           setProgress(0);
         }, 250);
       }
@@ -90,16 +103,93 @@ function AppliedJobs() {
     if (page > 1) fetchJobs(page);
   }, [page, fetchJobs]);
 
+  // ✅ shared loading view
+  const LoadingView = () => (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "400px",
+      }}
+    >
+      <Progress
+        type="circle"
+        percent={progress}
+        width={90}
+        strokeColor={{ "0%": "#4F63F6", "100%": "#7C8CFF" }}
+        trailColor="#E6E8FF"
+        showInfo={false}
+      />
+      <div style={{ marginTop: 16, color: "#555", fontWeight: 500 }}>
+        Loading applied jobs…
+      </div>
+    </div>
+  );
+
+  // ✅ shared content
+  const Content = () => (
+    <>
+      <AppliedJobsList
+        applications={applications}
+        lastJobRef={lastJobRef}
+        isMobile={isMobile}  // ✅ pass down so AppliedJobsList can adapt too
+      />
+
+      {loading && page > 1 && (
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <Spin />
+        </div>
+      )}
+
+      {!hasMore && !loading && applications.length > 0 && (
+        <p style={{ textAlign: "center", margin: "16px 0", color: "#888" }}>
+          You've reached the end!
+        </p>
+      )}
+    </>
+  );
+
+  // ─────────────────────────────────────────────────────────────
+  // ✅ MOBILE LAYOUT
+  // ─────────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          background: "#f5f6fa",
+          padding: "10px",
+          minHeight: "100vh",
+        }}
+      >
+        <Card
+          style={{
+            borderRadius: 12,
+            background: "#fff",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          }}
+          bodyStyle={{ padding: "12px 16px" }}
+        >
+          {!readyToShow ? <LoadingView /> : <Content />}
+        </Card>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // ✅ DESKTOP LAYOUT — original, unchanged
+  // ─────────────────────────────────────────────────────────────
   return (
     <div
       style={{
-        // height: "100vh",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         background: "#f5f6fa",
         padding: "16px",
-        // overflow: "hidden",
         overflowY: "auto",
       }}
     >
@@ -117,35 +207,13 @@ function AppliedJobs() {
             bodyStyle={{ padding: "16px 24px" }}
           >
             {!readyToShow ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minHeight: "400px",
-                }}
-              >
-                <Progress
-                  type="circle"
-                  percent={progress}
-                  width={90}
-                  strokeColor={{
-                    "0%": "#4F63F6",
-                    "100%": "#7C8CFF",
-                  }}
-                  trailColor="#E6E8FF"
-                  showInfo={false}
-                />
-                <div style={{ marginTop: 16, color: "#555", fontWeight: 500 }}>
-                  Loading applied jobs…
-                </div>
-              </div>
+              <LoadingView />
             ) : (
               <>
                 <AppliedJobsList
                   applications={applications}
                   lastJobRef={lastJobRef}
+                  isMobile={false}
                 />
 
                 {loading && page > 1 && (
@@ -162,7 +230,7 @@ function AppliedJobs() {
                       color: "#888",
                     }}
                   >
-                    You’ve reached the end!
+                    You've reached the end!
                   </p>
                 )}
               </>

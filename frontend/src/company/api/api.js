@@ -239,6 +239,7 @@ export async function GetAllVendorCandidates(
   page = 1,
   limit = 10,
   filters = {},
+  sort = "newest",
   signal,
 ) {
   try {
@@ -248,6 +249,7 @@ export async function GetAllVendorCandidates(
         page,
         limit,
         filters,
+        sort,
       },
       { signal },
     );
@@ -811,6 +813,19 @@ export async function MarkCandidateBookmark(payload) {
     return response.data;
   } catch (error) {
     console.error("Error in MarkCandidateBookmark:", error);
+    throw error;
+  }
+}
+
+export async function GetAppliedCandidatesWithJob(id) {
+  try {
+    // const data = JSON.stringify(payload);
+    const response = await axiosInstance.get(`/vendor/appliedcandidate/all`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetAppliedCandidatesWithJob:", error);
     throw error;
   }
 }
