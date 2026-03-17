@@ -258,7 +258,7 @@ const MainLayout = ({ children }) => {
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      <Layout hasSider>
+     <Layout hasSider style={{ position: "relative" }}>
         {/* 🧭 Sidebar */}
         <Sider
           // ✅ KEY FIX: on mobile always collapsed (icon-only), on desktop use state
@@ -268,8 +268,6 @@ const MainLayout = ({ children }) => {
             if (!isMobile) setCollapsed(val);
           }}
           // ✅ on desktop show collapse trigger; on mobile hide it (we use drawer instead)
-          collapsible={!isMobile}
-          trigger={isMobile ? null : undefined}
           width={260}
           collapsedWidth={60} // ✅ icon-only width on mobile
           style={{
@@ -277,9 +275,56 @@ const MainLayout = ({ children }) => {
             height: "100vh",
             position: "sticky",
             top: 0,
-            overflow: "hidden",
+             overflow: "visible",
           }}
+          
         >
+          {/* ✅ Floating edge toggle — desktop only */}
+{!isMobile && (
+  <div
+    onClick={() => setCollapsed((prev) => !prev)}
+    style={{
+      position: "absolute",
+      top: "50%",
+      right: -14,
+      transform: "translateY(-50%)",
+      zIndex: 200,
+      width: 28,
+      height: 28,
+      borderRadius: "50%",
+      background: "#1a2942",
+      border: "2px solid #2d4a7a",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+      transition: "all 0.2s",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.background = "#1677FF";
+      e.currentTarget.style.borderColor = "#1677FF";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.background = "#1a2942";
+      e.currentTarget.style.borderColor = "#2d4a7a";
+    }}
+  >
+    {collapsed ? (
+      // Right arrow (expand)
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+        <path d="M9 18l6-6-6-6" stroke="#ffffff" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ) : (
+      // Left arrow (collapse)
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="#ffffff" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )}
+  </div>
+)}
           {/* 👤 User Info — avatar only when collapsed */}
           <div
             style={{

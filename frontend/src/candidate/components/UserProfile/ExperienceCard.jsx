@@ -190,7 +190,7 @@ const ExperienceCard = ({
           Add {title}
         </Button>
       }
-      style={{ height: 350, overflowY: "auto", scrollbarWidth: "none" }}
+    style={{ minHeight: 100, overflowY: "auto", scrollbarWidth: "none" }}
     >
       {experiences.length > 0 ? (
         <List

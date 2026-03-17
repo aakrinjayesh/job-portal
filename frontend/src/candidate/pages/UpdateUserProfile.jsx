@@ -46,6 +46,7 @@ import ReusableSelect from "../components/UserProfile/ReusableSelect";
 import SkillManagerCard from "../components/UserProfile/SkillManagerCard";
 import EducationCard from "../components/UserProfile/EducationCard";
 import ExperienceCard from "../components/UserProfile/ExperienceCard";
+import "./UpdateUserProfile.css";
 import { useRef } from "react";
 import html2pdf from "html2pdf.js";
 import ResumeTemplate from "../../company/components/Bench/ResumeTemplate";
@@ -540,23 +541,61 @@ const UpdateUserProfile = ({
   //   form.setFieldsValue({ secondarySkills: updatedSkills });
   // };
   const handleSecondarySkillsChange = (updatedSkills) => {
+    const totalExp = parseFloat(form.getFieldValue("totalExperience") || 0);
+
+    const invalidSkill = updatedSkills.find(
+      (skill) => Number(skill.experience || 0) > totalExp,
+    );
+
+    if (invalidSkill) {
+      messageAPI.error(
+        `Skill experience for "${invalidSkill.name}" cannot be greater than Total Experience`,
+      );
+      return;
+    }
+
     setSecondarySkills(updatedSkills);
     form.setFieldsValue({ secondarySkills: updatedSkills });
-    form.validateFields(["secondarySkills"]); // 👈 IMPORTANT
+    form.validateFields(["secondarySkills"]);
   };
 
   const handlePrimaryCloudsChange = (updatedClouds) => {
+    const totalExp = parseFloat(form.getFieldValue("totalExperience") || 0);
+
+    const invalidCloud = updatedClouds.find(
+      (cloud) => Number(cloud.experience || 0) > totalExp,
+    );
+
+    if (invalidCloud) {
+      messageAPI.error(
+        `Cloud experience for "${invalidCloud.name}" cannot be greater than Total Experience`,
+      );
+      return;
+    }
+
     setPrimaryClouds(updatedClouds);
     form.setFieldsValue({ primaryClouds: updatedClouds });
     form.validateFields(["primaryClouds"]);
   };
 
-  const handleSecondaryCloudsChange = (updatedClouds) => {
+ const handleSecondaryCloudsChange = (updatedClouds) => {
+    const totalExp = parseFloat(form.getFieldValue("totalExperience") || 0);
+
+    const invalidCloud = updatedClouds.find(
+      (cloud) => Number(cloud.experience || 0) > totalExp,
+    );
+
+    if (invalidCloud) {
+      messageAPI.error(
+        `Cloud experience for "${invalidCloud.name}" cannot be greater than Total Experience`,
+      );
+      return;
+    }
+
     setSecondaryClouds(updatedClouds);
     form.setFieldsValue({ secondaryClouds: updatedClouds });
     form.validateFields(["secondaryClouds"]);
   };
-
   const handleEducationChange = (updatedEducationList) => {
     console.log("education changes", updatedEducationList);
     setEducationList(updatedEducationList);
@@ -775,18 +814,16 @@ const UpdateUserProfile = ({
   );
 
   return (
-    <div
-      style={{
-        // height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        // overflow: "hidden",
-        minHeight: "100vh",
-        overflowY: "auto",
-
-        background: "#f5f6fa",
-      }}
-    >
+   <div
+  className="profile-page-mobile"
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    minHeight: "100vh",
+    overflowY: "auto",
+    background: "#f5f6fa",
+  }}
+>
       {contextHolder}
 
       <div>
@@ -810,68 +847,100 @@ const UpdateUserProfile = ({
             )
           }
         >
-          <Title level={2} style={{ margin: "4px 0 8px" }}>
-            Resume Extractor
-          </Title>
+        
+ {/* ── Title + All buttons in one row (desktop) / stacked (mobile) ── */}
+<div style={{ marginBottom: 16 }}>
+  <Title level={2} style={{ margin: "0 0 12px 0" }}>
+    Resume Extractor
+  </Title>
 
-          <Upload
-            customRequest={handleUpload}
-            showUploadList={false}
-            accept=".pdf,.doc,.docx"
-            maxCount={1}
-            beforeUpload={(file) => {
-              const allowedTypes = [
-                "application/pdf",
-                "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-              ];
-
-              if (!allowedTypes.includes(file.type)) {
-                message.error(
-                  "Only PDF and Word (.doc, .docx) files are allowed!",
-                );
-                return Upload.LIST_IGNORE;
-              }
-
-              return true;
-            }}
-          >
-            <Button
-              type="primary"
-              icon={<UploadOutlined />}
+  <div
+   className="top-btn-row"
+    style={{
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 10,
+      alignItems: "center",
+    }}
+  >
+    {/* Extract button */}
+    <Upload
+      customRequest={handleUpload}
+      showUploadList={false}
+      accept=".pdf,.doc,.docx"
+      maxCount={1}
+      beforeUpload={(file) => {
+        const allowedTypes = [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          message.error("Only PDF and Word (.doc, .docx) files are allowed!");
+          return Upload.LIST_IGNORE;
+        }
+        return true;
+      }}
+    >
+      <Button
+        type="primary"
+        icon={<UploadOutlined />}
               size="large"
-              loading={loading}
-            >
-              Extract Details from Resume (PDF / DOC / DOCX)
-            </Button>
-          </Upload>
+        loading={loading}
+      >
+        Extract Details from Resume (PDF / DOC / DOCX)
+      </Button>
+    </Upload>
 
-          {role === "candidate" && !Reciviedrole && (
-            <>
-              <Button
-                type="primary"
-                size="large"
-                onClick={handleDownloadResume}
-                style={{ marginLeft: 12 }}
-                disabled={!isProfileLoaded}
-              >
-                Download Resume
-              </Button>
+    {/* Download Resume + Active/Inactive — candidate only */}
+    {role === "candidate" && !Reciviedrole && (
+      <>
+        <Button
+          type="primary"
+          onClick={handleDownloadResume}
+          disabled={!isProfileLoaded}
+          style={{
+            height: 40,
+            borderRadius: 8,
+            fontWeight: 500,
+            fontSize: 13,
+            whiteSpace: "nowrap",
+            padding: "0 16px",
+          }}
+        >
+          Download Resume
+        </Button>
 
-              <Button
-                size="large"
-                style={{ marginLeft: 12 }}
-                type={isActive ? "primary" : "default"}
-                danger={!isActive}
-                onClick={() => setStatusModalVisible(true)} // ← open modal instead
-              >
-                {isActive ? "Active" : "Inactive"}
-              </Button>
-            </>
-          )}
-
+        <Button
+          type={isActive ? "primary" : "default"}
+          danger={!isActive}
+          onClick={() => setStatusModalVisible(true)}
+          style={{
+            height: 40,
+            borderRadius: 8,
+            fontWeight: 500,
+            fontSize: 13,
+            whiteSpace: "nowrap",
+            padding: "0 16px",
+          }}
+        >
+          {isActive ? "Active" : "Inactive"}
+        </Button>
+      </>
+    )}
+  </div>
+</div>
           {/* INNER CARD START */}
-          <Card title="Candidate Information Form" style={{ marginTop: 20 }}>
+     <Card
+  
+  title={
+    <span style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+      Candidate Information Form
+    </span>
+  }
+  style={{ marginTop: 20 }}
+  headStyle={{ padding: "0 12px" }}
+>
             <Form
               form={form}
               layout="vertical"
@@ -988,109 +1057,42 @@ const UpdateUserProfile = ({
                         >
                           <Input placeholder="Enter full name" />
                         </Form.Item> */}
-                        <Form.Item
-                          label="Full Name"
-                          name="name"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Please enter full name",
-                            },
-                            {
-                              pattern: /^[A-Za-z. ]+$/,
-                              message:
-                                "Only letters, spaces and dots are allowed",
-                            },
-                            {
-                              max: 50,
-                              message: "Full name cannot exceed 50 characters",
-                            },
-                          ]}
-                        >
-                          <Input placeholder="Enter full name" />
-                        </Form.Item>
+                     <Form.Item
+  label="Full Name"
+  name="name"
+  rules={[
+    {
+      required: true,
+      message: "Please enter full name",
+    },
+    {
+      pattern: /^[A-Za-z ]+$/,
+      message: "Only letters and spaces are allowed",
+    },
+    {
+      max: 50,
+      message: "Full name cannot exceed 50 characters",
+    },
+  ]}
+>
+  <Input
+    placeholder="Enter full name"
+    onBlur={(e) => {
+      const formatted = e.target.value
+        .toLowerCase()
+        .split(" ")
+        .map(word =>
+          word.charAt(0).toUpperCase() + word.slice(1)
+        )
+        .join(" ");
+      e.target.value = formatted;
+    }}
+  />
+</Form.Item>
                       </Col>
 
                       <Col xs={24} sm={12} md={12}>
-                        {/* <Form.Item
-                          label={
-                            isCompany ? "POC Phone Number" : "Phone Number"
-                          }
-                          name="phoneNumber"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Please enter phone number",
-                            },
-                            {
-                              validator: (_, value) => {
-                                if (!value) return Promise.resolve();
-
-                                // Allow format: optional +countrycode, optional space, then digits
-                                // e.g: +91 9963713116 or 9963713116 or +919963713116
-                                // if (!/^\+?\d*\s?\d+$/.test(value))
-                                if (!/^[+\d\s]+$/.test(value)) {
-                                  return Promise.reject(
-                                    new Error(
-                                      "Invalid format. Use format like +91 9963713116",
-                                    ),
-                                  );
-                                }
-
-                                // Count only digits (exclude + and space)
-                                const digitsOnly = value.replace(/[\+\s]/g, "");
-                                if (digitsOnly.length > 13) {
-                                  return Promise.reject(
-                                    new Error(
-                                      "Phone number must not exceed 13 digits",
-                                    ),
-                                  );
-                                }
-
-                                return Promise.resolve();
-                              },
-                            },
-                          ]}
-                        >
-                          <Input
-                            placeholder="+91 9963713116"
-                            maxLength={17} // +XX space + 13 digits
-                            onKeyPress={(e) => {
-                              const currentValue = e.target.value;
-
-                              // Allow '+' only as first character
-                              if (e.key === "+") {
-                                if (currentValue.length !== 0) {
-                                  e.preventDefault();
-                                }
-                                return;
-                              }
-
-                              // Allow only one space (after country code)
-                              if (e.key === " ") {
-                                if (
-                                  currentValue.includes(" ") ||
-                                  currentValue.length === 0
-                                ) {
-                                  e.preventDefault(); // block if space already exists or value is empty
-                                }
-                                return;
-                              }
-
-                              // Block non-numeric keys
-                              if (!/[0-9]/.test(e.key)) {
-                                e.preventDefault();
-                              }
-                            }}
-                            onPaste={(e) => {
-                              const pasted = e.clipboardData.getData("Text");
-                              // Allow paste only if matches valid phone format
-                              if (!/^\+?\d*\s?\d+$/.test(pasted)) {
-                                e.preventDefault();
-                              }
-                            }}
-                          />
-                        </Form.Item> */}
+                       
                         <Form.Item
                           label={
                             isCompany ? "POC Phone Number" : "Phone Number"
@@ -1246,29 +1248,89 @@ const UpdateUserProfile = ({
                       </Col>
 
                       {/* Title / Role */}
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label="Title / Role (candidate is looking for)"
-                          name="title"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Please enter the candidate's role!",
-                            },
-                            {
-                              pattern: /^[A-Za-z ]+$/,
-                              message: "Only letters spaces are allowed!",
-                            },
-                          ]}
-                        >
-                          <ReusableSelect
-                            placeholder="Select Role"
-                            fetchFunction={GetRole}
-                            addFunction={PostRole}
-                            single={true}
-                          />
-                        </Form.Item>
-                      </Col>
+                     <Col xs={24} sm={12}>
+  <Form.Item
+    label="Title / Role (candidate is looking for)"
+    name="title"
+    rules={[
+      {
+        required: true,
+        message: "Please enter the candidate's role!",
+      },
+      {
+        pattern: /^[A-Za-z ]+$/,
+        message: "Only letters spaces are allowed!",
+      },
+    ]}
+  >
+    <ReusableSelect
+      placeholder="Select Role"
+      fetchFunction={GetRole}
+      addFunction={PostRole}
+      single={true}
+      tagRender={({ label, closable, onClose }) => (
+        <div
+          style={{
+            background: "#E2EEFF",
+            border: "0.5px solid #1677FF",
+            borderRadius: 100,
+            padding: "clamp(2px, 1vw, 6px) clamp(6px, 2vw, 12px)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "clamp(4px, 1vw, 8px)",
+            fontSize: "clamp(10px, 2.5vw, 13px)",
+            fontWeight: 500,
+            color: "#111",
+            cursor: "default",
+            margin: "3px",
+            maxWidth: "100%",
+            boxSizing: "border-box",
+            lineHeight: 1.3,
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <span
+            style={{
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              display: "inline-block",
+              maxWidth: "clamp(100px, 50vw, 300px)",
+            }}
+            title={typeof label === "string" ? label : undefined}
+          >
+            {label}
+          </span>
+          {closable && (
+            <span
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              style={{
+                cursor: "pointer",
+                fontSize: "clamp(10px, 2vw, 12px)",
+                color: "#666",
+                lineHeight: 1,
+                flexShrink: 0,
+              }}
+            >
+              ×
+            </span>
+          )}
+        </div>
+      )}
+    />
+  </Form.Item>
+</Col>
 
                       {/* Preferred & Current Location */}
                       <Col xs={24} sm={12}>
@@ -2181,56 +2243,68 @@ const UpdateUserProfile = ({
                         style={{ width: "100%" }}
                         dropdownStyle={{ zIndex: 1050 }}
                         popupClassName="cert-popup"
-                        tagRender={({ label, closable, onClose }) => (
-                          <div
-                            style={{
-                              background: "#E2EEFF",
-                              border: "0.5px solid #1677FF",
-                              borderRadius: 100,
-                              padding: "6px 12px",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 8,
-                              fontSize: 14,
-                              fontWeight: 500,
-                              color: "#111",
-                              cursor: "default",
-                              margin: "4px",
-                              maxWidth: "100%",
-                              boxSizing: "border-box",
-                            }}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                          >
-                            <span style={{ whiteSpace: "nowrap" }}>
-                              {label}
-                            </span>
+                      tagRender={({ label, closable, onClose }) => (
+  <div
+    style={{
+      background: "#E2EEFF",
+      border: "0.5px solid #1677FF",
+      borderRadius: 100,
+      // clamp: mobile ~2px 6px, desktop ~6px 12px
+      padding: "clamp(2px, 1vw, 6px) clamp(6px, 2vw, 12px)",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "clamp(4px, 1vw, 8px)",
+      fontSize: "clamp(10px, 2.5vw, 13px)", // shrinks on mobile, caps at 13px desktop
+      fontWeight: 500,
+      color: "#111",
+      cursor: "default",
+      margin: "3px",
+      maxWidth: "100%",
+      boxSizing: "border-box",
+      lineHeight: 1.3,
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
+  >
+    <span
+      style={{
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        maxWidth: "clamp(80px, 30vw, 220px)", // truncates long names on small screens
+        display: "inline-block",
+      }}
+      title={typeof label === "string" ? label : undefined} // tooltip on hover for truncated text
+    >
+      {label}
+    </span>
 
-                            {closable && (
-                              <span
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  onClose();
-                                }}
-                                style={{
-                                  cursor: "pointer",
-                                  fontSize: 12,
-                                  color: "#666",
-                                  lineHeight: 1,
-                                }}
-                              >
-                                ×
-                              </span>
-                            )}
-                          </div>
-                        )}
+    {closable && (
+      <span
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }}
+        style={{
+          cursor: "pointer",
+          fontSize: "clamp(10px, 2vw, 12px)",
+          color: "#666",
+          lineHeight: 1,
+          flexShrink: 0, // prevents × from being squished
+        }}
+      >
+        ×
+      </span>
+    )}
+  </div>
+)}
                       />
                     </Form.Item>
                   ),

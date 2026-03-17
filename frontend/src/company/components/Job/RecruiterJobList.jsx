@@ -1184,9 +1184,12 @@ const RecruiterJobList = () => {
                         overflow: "hidden",
                       }}
                     >
-                      <span>
-                        <EnvironmentOutlined /> {job.jobType} ({job.location})
-                      </span>
+                     <span>
+  <EnvironmentOutlined /> {job.jobType}{" "}
+  {job.location && (
+    <>({job.location.split(",")[0].trim()})</>
+  )}
+</span>
                       <Divider type="vertical" />
                       {/* <span>
                         
