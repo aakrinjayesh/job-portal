@@ -87,21 +87,21 @@ const Signup = () => {
   };
 
   const handleGenerateOtp = async () => {
-    const email = form.getFieldValue("email");
-    const fname = form.getFieldValue("fname");
-    const lname = form.getFieldValue("lname");
+  const email = form.getFieldValue("email");
+  const fname = form.getFieldValue("fname");
+  const lname = form.getFieldValue("lname");
 
-    if (!fname || !lname || !email) {
-      messageApi.warning("Please fill all required fields");
-      return;
-    }
+  if (!fname || !lname || !email) {
+    messageApi.warning("Please fill all required fields");
+    return;
+  }
 
-    try {
-      setGenerateLoading(true);
+  try {
+    setGenerateLoading(true);
 
-      const check = await CheckUserExist({ email, role });
+       const check = await CheckUserExist({ email, role });
 
-      if (check.status === "success") {
+    if (check.status === "success") {
         // Show message with existing email
         // if (check?.existingEmail) {
         //   messageApi.warning(
@@ -112,31 +112,31 @@ const Signup = () => {
         //   messageApi.warning(check.message);
         // }
         // return;
-        messageApi.warning(check.message);
-        return;
-      }
-
-      const res = await GenerateOtp({
-        email,
-        role,
-        name: `${fname} ${lname}`,
-      });
-
-      if (res.status === "success") {
-        messageApi.success("OTP sent to your email");
-        setOtpSent(true);
-        setTimer(60);
-      } else {
-        messageApi.error(res.message || "Failed to send OTP");
-      }
-    } catch (e) {
-      messageApi.error(
-        "Failed to send OTP: " + (e.response?.data?.message || e.message),
-      );
-    } finally {
-      setGenerateLoading(false);
+      messageApi.warning(check.message);
+      return;
     }
-  };
+
+    const res = await GenerateOtp({
+      email,
+      role,
+      name: `${fname} ${lname}`,
+    });
+
+    if (res.status === "success") {
+      messageApi.success("OTP sent to your email");
+      setOtpSent(true);
+      setTimer(60);
+    } else {
+      messageApi.error(res.message || "Failed to send OTP");
+    }
+  } catch (e) {
+    messageApi.error(
+        "Failed to send OTP: " + (e.response?.data?.message || e.message),
+    );
+  } finally {
+    setGenerateLoading(false);
+  }
+};
 
   const triggerNameValidation = () => {
     form.validateFields(["fname"]);
@@ -408,6 +408,7 @@ const Signup = () => {
                   marginBottom: 10,
                   display: "flex",
                   justifyContent: "center",
+                  marginTop: 10
                 }}
               >
                 <Input.OTP
