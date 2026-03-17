@@ -17,7 +17,7 @@ import {
   Input,
 } from "antd";
 import { LuBookmark, LuBookmarkCheck } from "react-icons/lu";
-import { GetJobDetails, SaveJob, UnSaveJob, CloseJob} from "../../api/api";
+import { GetJobDetails, SaveJob, UnSaveJob, CloseJob } from "../../api/api";
 import { ShareAltOutlined } from "@ant-design/icons";
 import { ApplyJob } from "../../../candidate/api/api";
 import ApplyBenchJob from "../../pages/ApplyBenchJob";
@@ -63,7 +63,7 @@ const JobDetails = ({ mode }) => {
   const { messageApi, contextHolder } = screening;
   // ──────────────────────────────────────────────────────────────────────────
 
-  const [closeJobId, setCloseJobId] = useState(null);
+   const [closeJobId, setCloseJobId] = useState(null);
   const [closeLoading, setCloseLoading] = useState(false);
 
   const handleCloseJob = async (jobId) => {
@@ -79,6 +79,19 @@ const JobDetails = ({ mode }) => {
       setCloseLoading(false);
     }
   };
+  
+  
+  const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+};
+
+const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchJobDetails();
@@ -291,57 +304,67 @@ ${generatedUrl}
 
       {contextHolder}
 
-     <div style={{ maxWidth: "100%", margin: "0 auto", padding: "16px 12px" }}>
-        <Card style={{ borderRadius: 14 }}>
-          {/* HEADER */}
-        <div
+      <div style={{ maxWidth: "100%", margin: "0 auto", padding: isMobile ? "12px" : "24px" }}>
+      <Card style={{ borderRadius: 14 }} bodyStyle={{ padding: isMobile ? "16px" : "24px" }}>
+         {/* HEADER */}
+<div
   style={{
     display: "flex",
+    flexDirection: isMobile ? "column" : "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    flexWrap: "wrap",
-    gap: 12,
+    alignItems: isMobile ? "flex-start" : "center",
+    gap: isMobile ? 12 : 0,
   }}
 >
-          <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
-              {job.companyLogo ? (
-                <img
-                  src={job.companyLogo}
-                  alt="logo"
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 8,
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 12,
-                    background: "linear-gradient(135deg, #1677FF, #69B1FF)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    color: "#fff",
-                  }}
-                >
-                  {(job.companyName || job.role || "").charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div>
-                <Title level={4} style={{ marginBottom: 0 }}>
-                  {job.role}
-                </Title>
-                <Text type="secondary">{job.companyName}</Text>
-              </div>
-            </div>
+  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+    {job.companyLogo ? (
+      <img
+        src={job.companyLogo}
+        alt="logo"
+        style={{
+          width: isMobile ? 44 : 56,
+          height: isMobile ? 44 : 56,
+          borderRadius: 8,
+          objectFit: "cover",
+        }}
+      />
+    ) : (
+      <div
+        style={{
+          width: isMobile ? 44 : 56,
+          height: isMobile ? 44 : 56,
+          borderRadius: 12,
+          background: "linear-gradient(135deg, #1677FF, #69B1FF)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 700,
+          fontSize: isMobile ? 18 : 22,
+          color: "#fff",
+          flexShrink: 0,
+        }}
+      >
+        {(job.companyName || job.role || "").charAt(0).toUpperCase()}
+      </div>
+    )}
+    <div>
+      <Title level={isMobile ? 5 : 4} style={{ marginBottom: 0 }}>
+        {job.role}
+      </Title>
+      <Text type="secondary">{job.companyName}</Text>
+    </div>
+  </div>
 
-           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-             {isCompany && source === "myjobs" && (
+  {/* Action buttons row */}
+  <div
+    style={{
+      display: "flex",
+      gap: 10,
+      alignItems: "center",
+      flexWrap: "wrap",
+    }}
+  >
+    {isCompany && source === "myjobs" && (
                 <>
                   {job.status === "Open" && (
                     <Button
@@ -383,72 +406,74 @@ ${generatedUrl}
                   </Button>
                 </>
               )}
+    <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+      <div onClick={handleSaveToggle} style={{ cursor: "pointer" }}>
+        {job?.isSaved ? (
+          <LuBookmarkCheck size={20} color="#1677ff" />
+        ) : (
+          <LuBookmark size={20} color="#9CA3AF" />
+        )}
+      </div>
+    </Tooltip>
 
+    <Tooltip title="Share Job">
+      <ShareAltOutlined
+        style={{ fontSize: 18, cursor: "pointer", color: "#6B7280" }}
+        onClick={handleShare}
+      />
+    </Tooltip>
 
-              <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
-                <div onClick={handleSaveToggle} style={{ cursor: "pointer" }}>
-                  {job?.isSaved ? (
-                    <LuBookmarkCheck size={22} color="#1677ff" />
-                  ) : (
-                    <LuBookmark size={22} color="#9CA3AF" />
-                  )}
-                </div>
-              </Tooltip>
-
-              <Tooltip title="Share Job">
-                <ShareAltOutlined
-                  style={{ fontSize: 20, cursor: "pointer", color: "#6B7280" }}
-                  onClick={handleShare}
-                />
-              </Tooltip>
-
-              <Tag color={job.status === "Closed" ? "error" : "success"}>
-                {job.status}
-              </Tag>
-            </div>
-          </div>
+    <Tag color={job.status === "Closed" ? "error" : "success"}>
+      {job.status}
+    </Tag>
+  </div>
+</div>
 
           <Divider />
 
-          {/* DETAILS GRID */}
-       <div
+       {/* DETAILS GRID */}
+<div
   style={{
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: 16,
+    gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
+    gap: isMobile ? 14 : 20,
   }}
 >
-            <div>
-              <Text strong>Employment Type</Text>
-              <div>{job.employmentType}</div>
-            </div>
-            <div>
-              <Text strong>Experience Required</Text>
-              <div>
-                {job.experience?.min && job.experience?.max
-                  ? `${job.experience.min} - ${job.experience.max} ${job.experience.type}s`
-                  : job.experience?.number
-                    ? `${job.experience.number} ${job.experience.type}s`
-                    : "Not specified"}
-              </div>
-            </div>
-            <div>
-              <Text strong>Salary</Text>
-              <div>₹ {job.salary} LPA</div>
-            </div>
-            <div>
-              <Text strong>Location</Text>
-              <div>{job.location}</div>
-            </div>
-            <div>
-              <Text strong>Job Type</Text>
-              <div>{job.jobType}</div>
-            </div>
-            <div>
-              <Text strong>Experience Level</Text>
-              <div>{job.experienceLevel || "N/A"}</div>
-            </div>
-          </div>
+  <div>
+    <Text strong style={{ fontSize: isMobile ? 12 : 14 }}>Employment Type</Text>
+    <div style={{ fontSize: isMobile ? 13 : 14 }}>{job.employmentType}</div>
+  </div>
+  <div>
+    <Text strong style={{ fontSize: isMobile ? 12 : 14 }}>Experience</Text>
+    <div style={{ fontSize: isMobile ? 13 : 14 }}>
+      {job.experience?.min && job.experience?.max
+        ? `${job.experience.min} - ${job.experience.max} ${job.experience.type}s`
+        : job.experience?.number
+          ? `${job.experience.number} ${job.experience.type}s`
+          : "Not specified"}
+    </div>
+  </div>
+  <div>
+    <Text strong style={{ fontSize: isMobile ? 12 : 14 }}>Salary</Text>
+    <div style={{ fontSize: isMobile ? 13 : 14 }}>₹ {job.salary} LPA</div>
+  </div>
+  <div>
+    <Text strong style={{ fontSize: isMobile ? 12 : 14 }}>Location</Text>
+    <div style={{ fontSize: isMobile ? 13 : 14 }}>
+      {isMobile
+        ? job.location?.split(",")[0]?.trim()  // city only on mobile
+        : job.location}
+    </div>
+  </div>
+  <div>
+    <Text strong style={{ fontSize: isMobile ? 12 : 14 }}>Job Type</Text>
+    <div style={{ fontSize: isMobile ? 13 : 14 }}>{job.jobType}</div>
+  </div>
+  <div>
+    <Text strong style={{ fontSize: isMobile ? 12 : 14 }}>Exp Level</Text>
+    <div style={{ fontSize: isMobile ? 13 : 14 }}>{job.experienceLevel || "N/A"}</div>
+  </div>
+</div>
 
           <Divider />
 
