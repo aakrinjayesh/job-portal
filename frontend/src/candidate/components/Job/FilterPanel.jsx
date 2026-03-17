@@ -117,27 +117,45 @@ const FiltersPanel = ({
   const isFirstRender = useRef(true);
   const [rateCard, setRateCard] = useState(savedFilters?.rateCard || "");
 
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const res = await GetLocations();
-        console.log("LOCATION API RESPONSE 👉", res);
+ useEffect(() => {
+  const fetchLocations = async () => {
+    try {
+      const res = await GetLocations();
 
-        // adjust depending on backend response structure
-        const formatted = res.data?.map((loc) => ({
-          label: loc.name || loc.location, // 👈 adjust field name
-          value: loc.name || loc.location,
-          count: loc.count || 0,
-        }));
+      const formatted = res.data?.map((loc) => {
+        const fullName = loc.name || loc.location;
+        const cityOnly = fullName?.split(",")[0]?.trim();
+        return {
+          label: cityOnly,
+          value: fullName,
+        };
+      });
 
-        setLocationOptions(formatted || []);
-      } catch (error) {
-        console.error("Failed to fetch locations:", error);
-      }
-    };
+      const famousCities = [
+        "Bengaluru", "Hyderabad", "Pune", "Chennai", "Mumbai",
+        "Delhi", "Kolkata", "Gurugram", "Noida", "Ahmedabad",
+        "San Francisco", "New York", "Seattle", "Austin", "Chicago",
+        "Boston", "Los Angeles", "Dallas", "Atlanta", "Denver",
+      ];
 
-    fetchLocations();
-  }, []);
+      const sorted = [...(formatted || [])].sort((a, b) => {
+        const aIndex = famousCities.indexOf(a.label);
+        const bIndex = famousCities.indexOf(b.label);
+
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return a.label.localeCompare(b.label);
+      });
+
+      setLocationOptions(sorted);
+    } catch (error) {
+      console.error("Failed to fetch locations:", error);
+    }
+  };
+
+  fetchLocations();
+}, []);
 
   /* 🔽 collapse states */
   // const [open, setOpen] = useState({
@@ -628,7 +646,7 @@ const FiltersPanel = ({
     },
     showRateCard && {
       key: "rateCard",
-      label: <CollapseLabel title="Rate Card / Hour" isOpen={open.rateCard} />,
+      label: <CollapseLabel title="Rate Card / Month" isOpen={open.rateCard} />,
       children: (
         <Input
           placeholder="e.g. 50000"

@@ -31,9 +31,9 @@ const FilterSection = ({ title, options = [], selected = [], onChange }) => {
             <Checkbox key={opt.label} value={opt.label}>
               <Text>
                 {opt.label}{" "}
-                <Text type="secondary" style={{ marginLeft: 4 }}>
+                {/* <Text type="secondary" style={{ marginLeft: 4 }}>
                   ({opt.count})
-                </Text>
+                </Text> */}
               </Text>
             </Checkbox>
           ))}
