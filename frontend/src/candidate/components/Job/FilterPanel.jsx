@@ -721,16 +721,116 @@ const FiltersPanel = ({
   ].filter(Boolean);
 
   return (
-    <div
-      style={{
-        width: 250, // ✅ reduced width
-        // height: "calc(100vh - 30px)", // ✅ smaller scroll area
-        borderRight: "1px solid #eee",
-        padding: 14,
-        // overflowY: "auto",
-        background: "#fff",
-      }}
-    >
+  <div
+    className="filters-panel-mobile"
+    style={{
+      width: 250,
+      borderRight: "1px solid #eee",
+      padding: 14,
+      background: "#fff",
+    }}
+  >
+    <style>{`
+      @media (max-width: 768px) {
+        .filters-panel-mobile {
+          width: 100% !important;
+          border-right: none !important;
+          padding: 0 !important;
+          background: transparent !important;
+        }
+
+        /* Search bar */
+        .filters-panel-mobile .ant-input-affix-wrapper,
+        .filters-panel-mobile textarea {
+          border-radius: 12px !important;
+          border: 1.5px solid #e5e7eb !important;
+          background: #f9fafb !important;
+          font-size: 14px !important;
+        }
+
+        /* All Filters header */
+        .filters-panel-mobile .filters-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 14px 16px 8px;
+          background: #fff;
+          border-radius: 12px 12px 0 0;
+        }
+
+        /* Collapse panel */
+        .filters-panel-mobile .ant-collapse {
+          background: transparent !important;
+          border: none !important;
+        }
+
+        .filters-panel-mobile .ant-collapse-item {
+          background: #fff !important;
+          border-radius: 12px !important;
+          border: 1.5px solid #f0f0f0 !important;
+          margin-bottom: 10px !important;
+          overflow: hidden !important;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+        }
+
+        .filters-panel-mobile .ant-collapse-header {
+          padding: 14px 16px !important;
+          font-weight: 600 !important;
+          font-size: 14px !important;
+          color: #111827 !important;
+          background: #fff !important;
+        }
+
+        .filters-panel-mobile .ant-collapse-content-box {
+          padding: 12px 16px 16px !important;
+          background: #fafafa !important;
+        }
+
+        /* Checkboxes in FilterSection */
+        .filters-panel-mobile .ant-checkbox-wrapper {
+          font-size: 13px !important;
+          padding: 4px 0 !important;
+        }
+
+        /* Inputs inside filters */
+        .filters-panel-mobile .ant-input {
+          border-radius: 8px !important;
+          border: 1.5px solid #e5e7eb !important;
+          background: #fff !important;
+          font-size: 13px !important;
+        }
+
+        /* Select inside filters */
+        .filters-panel-mobile .ant-select-selector {
+          border-radius: 8px !important;
+          border: 1.5px solid #e5e7eb !important;
+          background: #fff !important;
+        }
+
+        /* Slider track */
+        .filters-panel-mobile .ant-slider-track {
+          background: #1677ff !important;
+        }
+
+        /* Divider */
+        .filters-panel-mobile .ant-divider {
+          margin: 8px 0 !important;
+        }
+
+        /* Clear All button */
+        .filters-panel-mobile .clear-all-text {
+          color: #ef4444 !important;
+          font-weight: 500 !important;
+          font-size: 13px !important;
+        }
+
+        /* Tag chips */
+        .filters-panel-mobile .ant-tag {
+          border-radius: 20px !important;
+          font-size: 12px !important;
+        }
+      }
+    `}</style>
       {/* SEARCH */}
 
       {/* <Tooltip title={isFilterOpen ? "Hide Filters" : "Show Filters"}>
@@ -753,26 +853,28 @@ const FiltersPanel = ({
         handleClearFilters={handleClearFilters}
         type="candidate"
       />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 12,
-          marginTop: 12,
-        }}
-      >
-        <Text strong>All Filters</Text>
-        <Text
-          type="link"
-          onClick={() => {
-            resetFilters();
-            handleClearFilters?.();
-          }}
-          style={{ cursor: "pointer", fontSize: 13 }}
-        >
-          Clear All
-        </Text>
-      </div>
+    <div
+  className="filters-header"
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    marginTop: 12,
+  }}
+>
+  <Text strong>All Filters</Text>
+  <Text
+    className="clear-all-text"
+    type="link"
+    onClick={() => {
+      resetFilters();
+      handleClearFilters?.();
+    }}
+    style={{ cursor: "pointer", fontSize: 13 }}
+  >
+    Clear All
+  </Text>
+</div>
 
       <Divider style={{ margin: "12px 0" }} />
 

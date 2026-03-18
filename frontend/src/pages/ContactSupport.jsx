@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Row,
   Col,
@@ -51,6 +52,23 @@ const ContactSupport = () => {
   const [submitting, setSubmitting] = useState(false);
   const [messageAPI, contextHolder] = message.useMessage();
 
+  const navigate = useNavigate();
+const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+useEffect(() => {
+  const handleResize = () => setIsMobile(window.innerWidth < 768);
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
+
+const handleClose = () => {
+  // if opened in new tab — close the tab
+  if (window.history.length <= 1 || document.referrer === "") {
+    window.close();
+  } else {
+    // if navigated normally — go back
+    navigate(-1);
+  }
+};
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
@@ -76,8 +94,37 @@ const ContactSupport = () => {
       {/* <AppHeader /> */}
 
       {/* ── Hero Banner ── */}
-      <div className="cs-hero">
-        <div className="cs-hero-inner">
+     {/* ── Hero Banner ── */}
+<div className="cs-hero">
+
+  {/* ✅ Mobile close button */}
+  {isMobile && (
+    <div
+    onClick={handleClose}
+      style={{
+        position: "absolute",
+        top: 14,
+        right: 16,
+        width: 32,
+        height: 32,
+        borderRadius: "50%",
+        background: "rgba(255,255,255,0.2)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        zIndex: 10,
+        fontSize: 16,
+        color: "#fff",
+        backdropFilter: "blur(4px)",
+        border: "1px solid rgba(255,255,255,0.3)",
+      }}
+    >
+      ✕
+    </div>
+  )}
+
+  <div className="cs-hero-inner">
           {/* <div className="cs-hero-badge">💬 We're here to help</div> */}
           <Title
             level={1}
@@ -585,13 +632,59 @@ const css = `
     transform: translateY(0) !important;
   }
 
-  /* Mobile tweaks */
-  @media (max-width: 768px) {
-    .cs-hero { padding: 52px 20px 64px; }
-    .cs-form-card { padding: 24px 20px; }
-    .cs-info-card { padding: 24px 20px; }
-    .cs-tags-grid { grid-template-columns: 1fr 1fr; }
+ /* Mobile tweaks */
+@media (max-width: 768px) {
+  /* Hero */
+  .cs-hero { padding: 40px 16px 60px; }
+  .cs-hero-inner h1 { font-size: 20px !important; }
+
+  /* Page wrap — reduce negative pull and side padding */
+  .cs-page-wrap {
+    margin: -24px auto 40px;
+    padding: 0 14px;
   }
+
+  /* Cards */
+  .cs-form-card {
+    padding: 20px 16px 24px;
+    border-radius: 14px;
+  }
+  .cs-info-card {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+
+ /* Info card — centered on mobile */
+.cs-info-card   { text-align: center; }
+.cs-brand-block { margin-bottom: 8px; justify-content: center; }
+.cs-brand-name  { font-size: 15px; }
+.cs-divider     { margin: 16px 0; }
+.cs-section-label { text-align: center; }
+.cs-contact-row { justify-content: center; }
+.cs-tags-grid   { justify-items: center; }
+.cs-response-badge { justify-content: center; }
+
+  /* Contact rows — tighter spacing on mobile */
+  .cs-contact-row { margin-bottom: 12px; gap: 10px; }
+  .cs-contact-value { font-size: 13px; }
+
+  /* Tags — 2 columns already, just tighten gap */
+  .cs-tags-grid { gap: 8px; }
+  .cs-tag       { padding: 8px 10px; font-size: 12px; }
+
+  /* Response badge */
+  .cs-response-badge { padding: 8px 12px; }
+
+  /* Form header */
+  .cs-form-header { margin-bottom: 20px; }
+  .cs-form-header h3 { font-size: 18px !important; }
+
+  /* Submit button */
+  .cs-submit-btn { height: 46px !important; font-size: 14px !important; }
+
+  /* Section label */
+  .cs-section-label { font-size: 10px; }
+}
 `;
 
 export default ContactSupport;

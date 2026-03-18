@@ -435,19 +435,28 @@ const Signup = () => {
               </Button>
             </Form>
 
-            <Divider style={{ marginBottom: 10 }} />
+          <Divider style={{ marginBottom: 10 }} />
 
-            <Text style={{ marginTop: 0 }}>
-              Already have an account?{" "}
-              <Button
-                type="link"
-                onClick={() =>
-                  navigate("/login", { state: { redirect: redirectPath } })
-                }
-              >
-                Login
-              </Button>
-            </Text>
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "nowrap",
+    gap: 4,
+  }}
+>
+  <Text style={{ whiteSpace: "nowrap" }}>Already have an account?</Text>
+  <Button
+    type="link"
+    style={{ padding: 0, height: "auto", whiteSpace: "nowrap" }}
+    onClick={() =>
+      navigate("/login", { state: { redirect: redirectPath } })
+    }
+  >
+    Login
+  </Button>
+</div>
           </div>
         </Col>
         {/* </div> */}
