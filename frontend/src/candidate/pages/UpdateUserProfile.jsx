@@ -265,7 +265,10 @@ const UpdateUserProfile = ({
         setIsCandidate(!!user.userId);
         // setIsActive(user?.status === "ACTIVE");
         if (role === "candidate") {
-          setIsActive(user?.status ? user.status === "ACTIVE" : true);
+          // setIsActive(user?.status ? user.status === "ACTIVE" : true);
+          setIsActive(
+            user?.status ? user.status.toLowerCase() === "active" : true,
+          );
         }
 
         // Extract skills from skillsJson
@@ -578,7 +581,7 @@ const UpdateUserProfile = ({
     form.validateFields(["primaryClouds"]);
   };
 
- const handleSecondaryCloudsChange = (updatedClouds) => {
+  const handleSecondaryCloudsChange = (updatedClouds) => {
     const totalExp = parseFloat(form.getFieldValue("totalExperience") || 0);
 
     const invalidCloud = updatedClouds.find(
@@ -814,16 +817,16 @@ const UpdateUserProfile = ({
   );
 
   return (
-   <div
-  className="profile-page-mobile"
-  style={{
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-    overflowY: "auto",
-    background: "#f5f6fa",
-  }}
->
+    <div
+      className="profile-page-mobile"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        overflowY: "auto",
+        background: "#f5f6fa",
+      }}
+    >
       {contextHolder}
 
       <div>
@@ -847,100 +850,100 @@ const UpdateUserProfile = ({
             )
           }
         >
-        
- {/* ── Title + All buttons in one row (desktop) / stacked (mobile) ── */}
-<div style={{ marginBottom: 16 }}>
-  <Title level={2} style={{ margin: "0 0 12px 0" }}>
-    Resume Extractor
-  </Title>
+          {/* ── Title + All buttons in one row (desktop) / stacked (mobile) ── */}
+          <div style={{ marginBottom: 16 }}>
+            <Title level={2} style={{ margin: "0 0 12px 0" }}>
+              Resume Extractor
+            </Title>
 
-  <div
-   className="top-btn-row"
-    style={{
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 10,
-      alignItems: "center",
-    }}
-  >
-    {/* Extract button */}
-    <Upload
-      customRequest={handleUpload}
-      showUploadList={false}
-      accept=".pdf,.doc,.docx"
-      maxCount={1}
-      beforeUpload={(file) => {
-        const allowedTypes = [
-          "application/pdf",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ];
-        if (!allowedTypes.includes(file.type)) {
-          message.error("Only PDF and Word (.doc, .docx) files are allowed!");
-          return Upload.LIST_IGNORE;
-        }
-        return true;
-      }}
-    >
-      <Button
-        type="primary"
-        icon={<UploadOutlined />}
-              size="large"
-        loading={loading}
-      >
-        Extract Details from Resume (PDF / DOC / DOCX)
-      </Button>
-    </Upload>
+            <div
+              className="top-btn-row"
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+                alignItems: "center",
+              }}
+            >
+              {/* Extract button */}
+              <Upload
+                customRequest={handleUpload}
+                showUploadList={false}
+                accept=".pdf,.doc,.docx"
+                maxCount={1}
+                beforeUpload={(file) => {
+                  const allowedTypes = [
+                    "application/pdf",
+                    "application/msword",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  ];
+                  if (!allowedTypes.includes(file.type)) {
+                    message.error(
+                      "Only PDF and Word (.doc, .docx) files are allowed!",
+                    );
+                    return Upload.LIST_IGNORE;
+                  }
+                  return true;
+                }}
+              >
+                <Button
+                  type="primary"
+                  icon={<UploadOutlined />}
+                  size="large"
+                  loading={loading}
+                >
+                  Extract Details from Resume (PDF / DOC / DOCX)
+                </Button>
+              </Upload>
 
-    {/* Download Resume + Active/Inactive — candidate only */}
-    {role === "candidate" && !Reciviedrole && (
-      <>
-        <Button
-          type="primary"
-          onClick={handleDownloadResume}
-          disabled={!isProfileLoaded}
-          style={{
-            height: 40,
-            borderRadius: 8,
-            fontWeight: 500,
-            fontSize: 13,
-            whiteSpace: "nowrap",
-            padding: "0 16px",
-          }}
-        >
-          Download Resume
-        </Button>
+              {/* Download Resume + Active/Inactive — candidate only */}
+              {role === "candidate" && !Reciviedrole && (
+                <>
+                  <Button
+                    type="primary"
+                    onClick={handleDownloadResume}
+                    disabled={!isProfileLoaded}
+                    style={{
+                      height: 40,
+                      borderRadius: 8,
+                      fontWeight: 500,
+                      fontSize: 13,
+                      whiteSpace: "nowrap",
+                      padding: "0 16px",
+                    }}
+                  >
+                    Download Resume
+                  </Button>
 
-        <Button
-          type={isActive ? "primary" : "default"}
-          danger={!isActive}
-          onClick={() => setStatusModalVisible(true)}
-          style={{
-            height: 40,
-            borderRadius: 8,
-            fontWeight: 500,
-            fontSize: 13,
-            whiteSpace: "nowrap",
-            padding: "0 16px",
-          }}
-        >
-          {isActive ? "Active" : "Inactive"}
-        </Button>
-      </>
-    )}
-  </div>
-</div>
+                  <Button
+                    type={isActive ? "primary" : "default"}
+                    danger={!isActive}
+                    onClick={() => setStatusModalVisible(true)}
+                    style={{
+                      height: 40,
+                      borderRadius: 8,
+                      fontWeight: 500,
+                      fontSize: 13,
+                      whiteSpace: "nowrap",
+                      padding: "0 16px",
+                    }}
+                  >
+                    {isActive ? "Active" : "Inactive"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
           {/* INNER CARD START */}
-     <Card
-  
-  title={
-    <span style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-      Candidate Information Form
-    </span>
-  }
-  style={{ marginTop: 20 }}
-  headStyle={{ padding: "0 12px" }}
->
+          <Card
+            title={
+              <span style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                Candidate Information Form
+              </span>
+            }
+            style={{ marginTop: 20 }}
+            headStyle={{ padding: "0 12px" }}
+          >
             <Form
               form={form}
               layout="vertical"
@@ -1057,42 +1060,43 @@ const UpdateUserProfile = ({
                         >
                           <Input placeholder="Enter full name" />
                         </Form.Item> */}
-                     <Form.Item
-  label="Full Name"
-  name="name"
-  rules={[
-    {
-      required: true,
-      message: "Please enter full name",
-    },
-    {
-      pattern: /^[A-Za-z ]+$/,
-      message: "Only letters and spaces are allowed",
-    },
-    {
-      max: 50,
-      message: "Full name cannot exceed 50 characters",
-    },
-  ]}
->
-  <Input
-    placeholder="Enter full name"
-    onBlur={(e) => {
-      const formatted = e.target.value
-        .toLowerCase()
-        .split(" ")
-        .map(word =>
-          word.charAt(0).toUpperCase() + word.slice(1)
-        )
-        .join(" ");
-      e.target.value = formatted;
-    }}
-  />
-</Form.Item>
+                        <Form.Item
+                          label="Full Name"
+                          name="name"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter full name",
+                            },
+                            {
+                              pattern: /^[A-Za-z ]+$/,
+                              message: "Only letters and spaces are allowed",
+                            },
+                            {
+                              max: 50,
+                              message: "Full name cannot exceed 50 characters",
+                            },
+                          ]}
+                        >
+                          <Input
+                            placeholder="Enter full name"
+                            onBlur={(e) => {
+                              const formatted = e.target.value
+                                .toLowerCase()
+                                .split(" ")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() +
+                                    word.slice(1),
+                                )
+                                .join(" ");
+                              e.target.value = formatted;
+                            }}
+                          />
+                        </Form.Item>
                       </Col>
 
                       <Col xs={24} sm={12} md={12}>
-                       
                         <Form.Item
                           label={
                             isCompany ? "POC Phone Number" : "Phone Number"
@@ -1248,89 +1252,94 @@ const UpdateUserProfile = ({
                       </Col>
 
                       {/* Title / Role */}
-                     <Col xs={24} sm={12}>
-  <Form.Item
-    label="Title / Role (candidate is looking for)"
-    name="title"
-    rules={[
-      {
-        required: true,
-        message: "Please enter the candidate's role!",
-      },
-      {
-        pattern: /^[A-Za-z ]+$/,
-        message: "Only letters spaces are allowed!",
-      },
-    ]}
-  >
-    <ReusableSelect
-      placeholder="Select Role"
-      fetchFunction={GetRole}
-      addFunction={PostRole}
-      single={true}
-      tagRender={({ label, closable, onClose }) => (
-        <div
-          style={{
-            background: "#E2EEFF",
-            border: "0.5px solid #1677FF",
-            borderRadius: 100,
-            padding: "clamp(2px, 1vw, 6px) clamp(6px, 2vw, 12px)",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "clamp(4px, 1vw, 8px)",
-            fontSize: "clamp(10px, 2.5vw, 13px)",
-            fontWeight: 500,
-            color: "#111",
-            cursor: "default",
-            margin: "3px",
-            maxWidth: "100%",
-            boxSizing: "border-box",
-            lineHeight: 1.3,
-          }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          <span
-            style={{
-              whiteSpace: "normal",
-              wordBreak: "break-word",
-              overflowWrap: "break-word",
-              display: "inline-block",
-              maxWidth: "clamp(100px, 50vw, 300px)",
-            }}
-            title={typeof label === "string" ? label : undefined}
-          >
-            {label}
-          </span>
-          {closable && (
-            <span
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-              }}
-              style={{
-                cursor: "pointer",
-                fontSize: "clamp(10px, 2vw, 12px)",
-                color: "#666",
-                lineHeight: 1,
-                flexShrink: 0,
-              }}
-            >
-              ×
-            </span>
-          )}
-        </div>
-      )}
-    />
-  </Form.Item>
-</Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Title / Role (candidate is looking for)"
+                          name="title"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter the candidate's role!",
+                            },
+                            {
+                              pattern: /^[A-Za-z ]+$/,
+                              message: "Only letters spaces are allowed!",
+                            },
+                          ]}
+                        >
+                          <ReusableSelect
+                            placeholder="Select Role"
+                            fetchFunction={GetRole}
+                            addFunction={PostRole}
+                            single={true}
+                            tagRender={({ label, closable, onClose }) => (
+                              <div
+                                style={{
+                                  background: "#E2EEFF",
+                                  border: "0.5px solid #1677FF",
+                                  borderRadius: 100,
+                                  padding:
+                                    "clamp(2px, 1vw, 6px) clamp(6px, 2vw, 12px)",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "clamp(4px, 1vw, 8px)",
+                                  fontSize: "clamp(10px, 2.5vw, 13px)",
+                                  fontWeight: 500,
+                                  color: "#111",
+                                  cursor: "default",
+                                  margin: "3px",
+                                  maxWidth: "100%",
+                                  boxSizing: "border-box",
+                                  lineHeight: 1.3,
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    whiteSpace: "normal",
+                                    wordBreak: "break-word",
+                                    overflowWrap: "break-word",
+                                    display: "inline-block",
+                                    maxWidth: "clamp(100px, 50vw, 300px)",
+                                  }}
+                                  title={
+                                    typeof label === "string"
+                                      ? label
+                                      : undefined
+                                  }
+                                >
+                                  {label}
+                                </span>
+                                {closable && (
+                                  <span
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onClose();
+                                    }}
+                                    style={{
+                                      cursor: "pointer",
+                                      fontSize: "clamp(10px, 2vw, 12px)",
+                                      color: "#666",
+                                      lineHeight: 1,
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    ×
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          />
+                        </Form.Item>
+                      </Col>
 
                       {/* Preferred & Current Location */}
                       <Col xs={24} sm={12}>
@@ -1597,7 +1606,8 @@ const UpdateUserProfile = ({
                                     try {
                                       const res = await ToggleCandidateStatus();
                                       if (res?.status === "success") {
-                                        setIsActive(res.newStatus === "ACTIVE");
+                                        // setIsActive(res.newStatus === "ACTIVE");
+                                        setIsActive(res.newStatus === "active");
                                         setStatusModalVisible(false);
                                         message.success(
                                           `Your profile is now ${res.newStatus}`,
@@ -2243,68 +2253,71 @@ const UpdateUserProfile = ({
                         style={{ width: "100%" }}
                         dropdownStyle={{ zIndex: 1050 }}
                         popupClassName="cert-popup"
-                      tagRender={({ label, closable, onClose }) => (
-  <div
-    style={{
-      background: "#E2EEFF",
-      border: "0.5px solid #1677FF",
-      borderRadius: 100,
-      // clamp: mobile ~2px 6px, desktop ~6px 12px
-      padding: "clamp(2px, 1vw, 6px) clamp(6px, 2vw, 12px)",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "clamp(4px, 1vw, 8px)",
-      fontSize: "clamp(10px, 2.5vw, 13px)", // shrinks on mobile, caps at 13px desktop
-      fontWeight: 500,
-      color: "#111",
-      cursor: "default",
-      margin: "3px",
-      maxWidth: "100%",
-      boxSizing: "border-box",
-      lineHeight: 1.3,
-    }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    }}
-  >
-    <span
-      style={{
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        maxWidth: "clamp(80px, 30vw, 220px)", // truncates long names on small screens
-        display: "inline-block",
-      }}
-      title={typeof label === "string" ? label : undefined} // tooltip on hover for truncated text
-    >
-      {label}
-    </span>
+                        tagRender={({ label, closable, onClose }) => (
+                          <div
+                            style={{
+                              background: "#E2EEFF",
+                              border: "0.5px solid #1677FF",
+                              borderRadius: 100,
+                              // clamp: mobile ~2px 6px, desktop ~6px 12px
+                              padding:
+                                "clamp(2px, 1vw, 6px) clamp(6px, 2vw, 12px)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "clamp(4px, 1vw, 8px)",
+                              fontSize: "clamp(10px, 2.5vw, 13px)", // shrinks on mobile, caps at 13px desktop
+                              fontWeight: 500,
+                              color: "#111",
+                              cursor: "default",
+                              margin: "3px",
+                              maxWidth: "100%",
+                              boxSizing: "border-box",
+                              lineHeight: 1.3,
+                            }}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            <span
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "clamp(80px, 30vw, 220px)", // truncates long names on small screens
+                                display: "inline-block",
+                              }}
+                              title={
+                                typeof label === "string" ? label : undefined
+                              } // tooltip on hover for truncated text
+                            >
+                              {label}
+                            </span>
 
-    {closable && (
-      <span
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onClose();
-        }}
-        style={{
-          cursor: "pointer",
-          fontSize: "clamp(10px, 2vw, 12px)",
-          color: "#666",
-          lineHeight: 1,
-          flexShrink: 0, // prevents × from being squished
-        }}
-      >
-        ×
-      </span>
-    )}
-  </div>
-)}
+                            {closable && (
+                              <span
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  onClose();
+                                }}
+                                style={{
+                                  cursor: "pointer",
+                                  fontSize: "clamp(10px, 2vw, 12px)",
+                                  color: "#666",
+                                  lineHeight: 1,
+                                  flexShrink: 0, // prevents × from being squished
+                                }}
+                              >
+                                ×
+                              </span>
+                            )}
+                          </div>
+                        )}
                       />
                     </Form.Item>
                   ),

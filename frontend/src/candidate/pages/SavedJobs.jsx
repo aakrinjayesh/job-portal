@@ -25,9 +25,10 @@ function SavedJobs() {
   // Fetch saved jobs
   const fetchSavedJobs = useCallback(async (pageNum = 1) => {
     setLoading(true);
-    setReadyToShow(false);
+    // setReadyToShow(false);
 
     if (pageNum === 1) {
+      setReadyToShow(false);
       setProgress(10); // start only on first load
     }
 
@@ -101,11 +102,18 @@ function SavedJobs() {
       if (loading) return;
       if (observer.current) observer.current.disconnect();
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prev) => prev + 1);
-        }
-      });
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMore) {
+            setPage((prev) => prev + 1);
+          }
+        },
+        {
+          root: cardRef.current, // ✅ ADD THIS
+          rootMargin: "0px 0px 200px 0px", // ✅ ADD THIS
+          threshold: 0.1, // ✅ ADD THIS
+        },
+      );
 
       if (node) observer.current.observe(node);
     },
@@ -116,10 +124,28 @@ function SavedJobs() {
     if (page > 1) fetchSavedJobs(page);
   }, [page, fetchSavedJobs]);
 
+  // useEffect(() => {
+  //   const isReturning = sessionStorage.getItem("savedIsReturning");
+
+  //   if (isReturning && jobs.length > 0 && !loading) {
+  //     const savedScroll = parseInt(
+  //       sessionStorage.getItem("savedScrollPos") || "0",
+  //       10,
+  //     );
+
+  //     setTimeout(() => {
+  //       if (cardRef.current) {
+  //         cardRef.current.scrollTop = savedScroll;
+  //         sessionStorage.removeItem("savedIsReturning");
+  //       }
+  //     }, 300);
+  //   }
+  // }, [jobs, loading]);
   useEffect(() => {
     const isReturning = sessionStorage.getItem("savedIsReturning");
 
-    if (isReturning && jobs.length > 0 && !loading) {
+    if (isReturning && jobs.length > 0 && readyToShow) {
+      // ✅ use readyToShow instead of !loading
       const savedScroll = parseInt(
         sessionStorage.getItem("savedScrollPos") || "0",
         10,
@@ -129,10 +155,12 @@ function SavedJobs() {
         if (cardRef.current) {
           cardRef.current.scrollTop = savedScroll;
           sessionStorage.removeItem("savedIsReturning");
+          sessionStorage.removeItem("savedScrollPos"); // ✅ clean this up too
+          sessionStorage.removeItem("savedLastJobId"); // ✅ clean this up too
         }
       }, 300);
     }
-  }, [jobs, loading]);
+  }, [jobs, readyToShow]); // ✅ changed from [jobs, loading] to [jobs, readyToShow]
 
   const handleRemoveJob = (jobId) => {
     setJobs((prev) => prev.filter((j) => j.id !== jobId));

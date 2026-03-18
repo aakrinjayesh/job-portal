@@ -113,6 +113,7 @@ const RecruiterJobList = () => {
   const [isExperienceRange, setIsExperienceRange] = useState(false);
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [companyLogo, setCompanyLogo] = useState("");
 
   // ── SCREENING QUESTIONS STATE ──────────────────────────
   const [screeningQuestions, setScreeningQuestions] = useState([]);
@@ -210,7 +211,7 @@ const RecruiterJobList = () => {
           jobsContainerRef.current.scrollTop = savedScroll;
           sessionStorage.removeItem("recruiterIsReturning"); // ✅ clear AFTER scrolling
         }
-      }, 300);
+      }, 500);
     }
   }, [jobs, initialLoading]);
   useEffect(() => {
@@ -222,14 +223,29 @@ const RecruiterJobList = () => {
     }
   }, [location.state?.openEdit]);
 
+  // useEffect(() => {
+  //   if (isModalVisible && currentStep === 3 && !isEditing) {
+  //     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  //     form.setFieldsValue({
+  //       companyName: storedUser?.companyName || "",
+  //       companyLogo: storedUser?.profileUrl || storedUser?.avatar?.url || "", // ✅ ADD THIS
+  //     });
+  //   }
+  // }, [isModalVisible, currentStep]);
   useEffect(() => {
-    if (isModalVisible && currentStep === 3 && !isEditing) {
+    if (isModalVisible && !isEditing) {
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      const logo = storedUser?.profileUrl || storedUser?.avatar?.url || "";
+
+      setCompanyLogo(logo); // ✅ store in state
+
       form.setFieldsValue({
         companyName: storedUser?.companyName || "",
+        companyLogo: logo, // ✅ still set in form
       });
     }
-  }, [isModalVisible, currentStep]);
+  }, [isModalVisible]);
 
   const showCreateModal = () => {
     setIsEditing(false);
@@ -522,6 +538,7 @@ const RecruiterJobList = () => {
           options: q.type === "SELECT" ? q.options : [],
           order: index,
         }));
+      values.companyLogo = values.companyLogo || companyLogo; // ✅ fallback safety
 
       let payload = {
         role: values.role,
@@ -694,6 +711,7 @@ const RecruiterJobList = () => {
         jobdetails: {
           role: values.role,
           experience: values.experience,
+
           experienceLevel: values.experienceLevel,
           instructions: values.instructions || "",
         },
@@ -732,6 +750,7 @@ const RecruiterJobList = () => {
           skills: res?.jobDescription?.skills || [],
           clouds: res?.jobDescription?.clouds || [],
         });
+
         setAiModalVisible(false);
         aiForm.resetFields();
       } else {
@@ -1160,6 +1179,14 @@ const RecruiterJobList = () => {
                             e.stopPropagation();
                             sessionStorage.removeItem("candidateListPage"); // ✅ ADD THIS
                             sessionStorage.removeItem("candidateListPageSize"); // ✅ ADD THIS
+                            sessionStorage.setItem(
+                              "recruiterScrollPos",
+                              jobsContainerRef.current?.scrollTop || 0,
+                            );
+                            sessionStorage.setItem(
+                              "recruiterIsReturning",
+                              "true",
+                            );
                             navigate("/company/candidates", {
                               state: {
                                 id: job.id,
@@ -1184,12 +1211,12 @@ const RecruiterJobList = () => {
                         overflow: "hidden",
                       }}
                     >
-                     <span>
-  <EnvironmentOutlined /> {job.jobType}{" "}
-  {job.location && (
-    <>({job.location.split(",")[0].trim()})</>
-  )}
-</span>
+                      <span>
+                        <EnvironmentOutlined /> {job.jobType}{" "}
+                        {job.location && (
+                          <>({job.location.split(",")[0].trim()})</>
+                        )}
+                      </span>
                       <Divider type="vertical" />
                       {/* <span>
                         
@@ -2023,6 +2050,82 @@ const RecruiterJobList = () => {
                   >
                     <Input placeholder="Company Name" />
                   </Form.Item>
+                  <Form.Item label="Company Logo">
+                    <div
+                      style={{
+                        marginBottom: 16,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      {companyLogo ? (
+                        <>
+                          <img
+                            src={companyLogo}
+                            alt="Company Logo"
+                            style={{
+                              width: 60,
+                              height: 60,
+                              borderRadius: 8,
+                              border: "1px solid #eee",
+                              objectFit: "cover",
+                            }}
+                          />
+
+                          {/* ❌ Remove button */}
+                          <Button
+                            danger
+                            size="small"
+                            onClick={() => {
+                              setCompanyLogo("");
+                              form.setFieldsValue({ companyLogo: "" });
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </>
+                      ) : (
+                        <Upload
+                          showUploadList={false}
+                          beforeUpload={(file) => {
+                            const isImage = file.type.startsWith("image/");
+                            if (!isImage) {
+                              messageApi.error("Only image files are allowed");
+                              return Upload.LIST_IGNORE;
+                            }
+
+                            const isLessThan200MB =
+                              file.size / 1024 / 1024 < 200;
+
+                            if (!isLessThan200MB) {
+                              messageApi.error(
+                                "Image must be smaller than 200MB",
+                              );
+                              return Upload.LIST_IGNORE;
+                            }
+
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              const base64 = e.target.result;
+
+                              setCompanyLogo(base64);
+                              form.setFieldsValue({ companyLogo: base64 });
+                            };
+
+                            reader.readAsDataURL(file);
+
+                            return false; // prevent auto upload
+                          }}
+                        >
+                          <Button icon={<UploadOutlined />}>Upload Logo</Button>
+                        </Upload>
+                      )}
+                    </div>
+                  </Form.Item>
+                  {/* <Form.Item name="companyLogo" label="Company Name">
+                    <Input />
+                  </Form.Item> */}
 
                   <Form.Item name="certifications" label="Certifications">
                     <ReusableSelect

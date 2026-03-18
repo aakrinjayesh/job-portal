@@ -80,6 +80,9 @@ const FiltersPanel = ({
   showRateCard,
   showFitScore,
   hideLocation,
+  skillOptions,
+  cloudOptions,
+  useFilterSectionForSkillsAndClouds,
 }) => {
   const [experience, setExperience] = useState(savedFilters?.experience || 0);
   const [selectedLocations, setSelectedLocations] = useState(
@@ -117,45 +120,61 @@ const FiltersPanel = ({
   const isFirstRender = useRef(true);
   const [rateCard, setRateCard] = useState(savedFilters?.rateCard || "");
 
- useEffect(() => {
-  const fetchLocations = async () => {
-    try {
-      const res = await GetLocations();
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await GetLocations();
 
-      const formatted = res.data?.map((loc) => {
-        const fullName = loc.name || loc.location;
-        const cityOnly = fullName?.split(",")[0]?.trim();
-        return {
-          label: cityOnly,
-          value: fullName,
-        };
-      });
+        const formatted = res.data?.map((loc) => {
+          const fullName = loc.name || loc.location;
+          const cityOnly = fullName?.split(",")[0]?.trim();
+          return {
+            label: cityOnly,
+            value: fullName,
+          };
+        });
 
-      const famousCities = [
-        "Bengaluru", "Hyderabad", "Pune", "Chennai", "Mumbai",
-        "Delhi", "Kolkata", "Gurugram", "Noida", "Ahmedabad",
-        "San Francisco", "New York", "Seattle", "Austin", "Chicago",
-        "Boston", "Los Angeles", "Dallas", "Atlanta", "Denver",
-      ];
+        const famousCities = [
+          "Bengaluru",
+          "Hyderabad",
+          "Pune",
+          "Chennai",
+          "Mumbai",
+          "Delhi",
+          "Kolkata",
+          "Gurugram",
+          "Noida",
+          "Ahmedabad",
+          "San Francisco",
+          "New York",
+          "Seattle",
+          "Austin",
+          "Chicago",
+          "Boston",
+          "Los Angeles",
+          "Dallas",
+          "Atlanta",
+          "Denver",
+        ];
 
-      const sorted = [...(formatted || [])].sort((a, b) => {
-        const aIndex = famousCities.indexOf(a.label);
-        const bIndex = famousCities.indexOf(b.label);
+        const sorted = [...(formatted || [])].sort((a, b) => {
+          const aIndex = famousCities.indexOf(a.label);
+          const bIndex = famousCities.indexOf(b.label);
 
-        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-        if (aIndex !== -1) return -1;
-        if (bIndex !== -1) return 1;
-        return a.label.localeCompare(b.label);
-      });
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+          if (aIndex !== -1) return -1;
+          if (bIndex !== -1) return 1;
+          return a.label.localeCompare(b.label);
+        });
 
-      setLocationOptions(sorted);
-    } catch (error) {
-      console.error("Failed to fetch locations:", error);
-    }
-  };
+        setLocationOptions(sorted);
+      } catch (error) {
+        console.error("Failed to fetch locations:", error);
+      }
+    };
 
-  fetchLocations();
-}, []);
+    fetchLocations();
+  }, []);
 
   /* 🔽 collapse states */
   // const [open, setOpen] = useState({
@@ -569,10 +588,41 @@ const FiltersPanel = ({
         />
       ),
     },
+    // {
+    //   key: "skills",
+    //   label: <CollapseLabel title="Skills" isOpen={open.skills} />,
+    //   children: (
+    //     <AddSkillInput
+    //       placeholder="Select Skills"
+    //       values={skills}
+    //       onChange={setSkills}
+    //       suggestions={salesforceSkillSuggestions}
+    //     />
+    //   ),
+    // },
+    // {
+    //   key: "clouds",
+    //   label: <CollapseLabel title="Clouds" isOpen={open.clouds} />,
+    //   children: (
+    //     <AddSkillInput
+    //       placeholder="Select Clouds"
+    //       values={clouds}
+    //       onChange={setClouds}
+    //       suggestions={salesforceCloudSuggestions}
+    //     />
+    //   ),
+    // },
     {
       key: "skills",
       label: <CollapseLabel title="Skills" isOpen={open.skills} />,
-      children: (
+      children: useFilterSectionForSkillsAndClouds ? (
+        <FilterSection
+          options={skillOptions || []}
+          selected={skills}
+          onChange={setSkills}
+          showCount
+        />
+      ) : (
         <AddSkillInput
           placeholder="Select Skills"
           values={skills}
@@ -584,7 +634,14 @@ const FiltersPanel = ({
     {
       key: "clouds",
       label: <CollapseLabel title="Clouds" isOpen={open.clouds} />,
-      children: (
+      children: useFilterSectionForSkillsAndClouds ? (
+        <FilterSection
+          options={cloudOptions || []}
+          selected={clouds}
+          onChange={setClouds}
+          showCount
+        />
+      ) : (
         <AddSkillInput
           placeholder="Select Clouds"
           values={clouds}

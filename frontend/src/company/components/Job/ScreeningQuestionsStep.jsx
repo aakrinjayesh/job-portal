@@ -3,7 +3,7 @@ import { Input, Select, Switch, Button, Tag } from "antd";
 import {
   DeleteOutlined,
   PlusOutlined,
-  ThunderboltOutlined,
+  // ThunderboltOutlined,
 } from "@ant-design/icons";
 
 const QUESTION_TYPE_OPTIONS = [
@@ -352,7 +352,7 @@ const ScreeningQuestionsStep = ({
   setScreeningQuestions,
   messageApi,
 }) => {
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const [suggestionSearch, setSuggestionSearch] = useState("");
 
   const addQuestion = () => {
@@ -447,7 +447,7 @@ const ScreeningQuestionsStep = ({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <ThunderboltOutlined style={{ color: "#4F46E5", fontSize: 15 }} />
+            {/* <ThunderboltOutlined style={{ color: "#4F46E5", fontSize: 15 }} /> */}
             <span style={{ fontWeight: 600, fontSize: 13, color: "#4338CA" }}>
               Frequently Asked Questions
             </span>
@@ -482,99 +482,102 @@ const ScreeningQuestionsStep = ({
             }}
           >
             {SUGGESTED_QUESTIONS.map((suggestion, i) => { */}
-        <div
-          style={{
-            background: "#F5F7FF",
-            padding: "12px 16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-          }}
-        >
-          {/* Search Input */}
-          <input
-            type="text"
-            value={suggestionSearch}
-            onChange={(e) => setSuggestionSearch(e.target.value)}
-            placeholder="Search questions..."
-            style={{
-              width: "100%",
-              padding: "8px 12px",
-              borderRadius: 8,
-              border: "1px solid #D1D5DB",
-              fontSize: 13,
-              outline: "none",
-              marginBottom: 4,
-              boxSizing: "border-box",
-              background: "#fff",
-            }}
-          />
-
-          {/* Scrollable list */}
+        {showSuggestions && (
           <div
             style={{
+              background: "#F5F7FF",
+              padding: "12px 16px",
               display: "flex",
               flexDirection: "column",
               gap: 8,
-              maxHeight: 280,
-              overflowY: "auto",
             }}
           >
-            {SUGGESTED_QUESTIONS.filter((s) =>
-              s.question.toLowerCase().includes(suggestionSearch.toLowerCase()),
-            ).map((suggestion, i) => {
-              const added = alreadyAdded(suggestion.question);
-              const atMax = screeningQuestions.length >= 10;
-              return (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "9px 14px",
-                    background: added ? "#F0FDF4" : "#FFFFFF",
-                    border: added ? "1px solid #86EFAC" : "1px solid #E5E7EB",
-                    borderRadius: 8,
-                    gap: 12,
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        color: "#111827",
-                        fontWeight: 500,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {suggestion.question}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 6,
-                        marginTop: 4,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <Tag
+            {/* Search Input */}
+            <input
+              type="text"
+              value={suggestionSearch}
+              onChange={(e) => setSuggestionSearch(e.target.value)}
+              placeholder="Search questions..."
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #D1D5DB",
+                fontSize: 13,
+                outline: "none",
+                marginBottom: 4,
+                boxSizing: "border-box",
+                background: "#fff",
+              }}
+            />
+
+            {/* Scrollable list */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                maxHeight: 280,
+                overflowY: "auto",
+              }}
+            >
+              {SUGGESTED_QUESTIONS.filter((s) =>
+                s.question
+                  .toLowerCase()
+                  .includes(suggestionSearch.toLowerCase()),
+              ).map((suggestion, i) => {
+                const added = alreadyAdded(suggestion.question);
+                const atMax = screeningQuestions.length >= 10;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "9px 14px",
+                      background: added ? "#F0FDF4" : "#FFFFFF",
+                      border: added ? "1px solid #86EFAC" : "1px solid #E5E7EB",
+                      borderRadius: 8,
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
                         style={{
-                          fontSize: 11,
-                          borderRadius: 100,
-                          padding: "0 8px",
-                          background: "#EFF6FF",
-                          border: "1px solid #BFDBFE",
-                          color: "#1D4ED8",
+                          fontSize: 13,
+                          color: "#111827",
+                          fontWeight: 500,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
                         }}
                       >
-                        {QUESTION_TYPE_OPTIONS.find(
-                          (o) => o.value === suggestion.type,
-                        )?.label || suggestion.type}
-                      </Tag>
-                      {/* {suggestion.required && (
+                        {suggestion.question}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          marginTop: 4,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <Tag
+                          style={{
+                            fontSize: 11,
+                            borderRadius: 100,
+                            padding: "0 8px",
+                            background: "#EFF6FF",
+                            border: "1px solid #BFDBFE",
+                            color: "#1D4ED8",
+                          }}
+                        >
+                          {QUESTION_TYPE_OPTIONS.find(
+                            (o) => o.value === suggestion.type,
+                          )?.label || suggestion.type}
+                        </Tag>
+                        {/* {suggestion.required && (
                         <Tag
                           style={{
                             fontSize: 11,
@@ -588,43 +591,48 @@ const ScreeningQuestionsStep = ({
                           Required
                         </Tag>
                       )} */}
-                      {suggestion.options.length > 0 && (
-                        <span style={{ fontSize: 11, color: "#9CA3AF" }}>
-                          {suggestion.options.slice(0, 3).join(", ")}
-                          {suggestion.options.length > 3 ? "..." : ""}
-                        </span>
-                      )}
+                        {suggestion.options.length > 0 && (
+                          <span style={{ fontSize: 11, color: "#9CA3AF" }}>
+                            {suggestion.options.slice(0, 3).join(", ")}
+                            {suggestion.options.length > 3 ? "..." : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <Button
+                      size="small"
+                      disabled={added || atMax}
+                      onClick={() => handleAddSuggestion(suggestion)}
+                      style={{
+                        borderRadius: 100,
+                        fontSize: 12,
+                        height: 28,
+                        padding: "0 12px",
+                        background: added
+                          ? "#DCFCE7"
+                          : atMax
+                            ? "#F3F4F6"
+                            : "#4F46E5",
+                        color: added
+                          ? "#16A34A"
+                          : atMax
+                            ? "#9CA3AF"
+                            : "#FFFFFF",
+                        border: "none",
+                        flexShrink: 0,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {added ? "✓ Added" : "+ Add"}
+                    </Button>
                   </div>
-                  <Button
-                    size="small"
-                    disabled={added || atMax}
-                    onClick={() => handleAddSuggestion(suggestion)}
-                    style={{
-                      borderRadius: 100,
-                      fontSize: 12,
-                      height: 28,
-                      padding: "0 12px",
-                      background: added
-                        ? "#DCFCE7"
-                        : atMax
-                          ? "#F3F4F6"
-                          : "#4F46E5",
-                      color: added ? "#16A34A" : atMax ? "#9CA3AF" : "#FFFFFF",
-                      border: "none",
-                      flexShrink: 0,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {added ? "✓ Added" : "+ Add"}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          {/* )} */}
-        </div>
+            {/* )} */}
+          </div>
+        )}
 
         {/* Added Questions */}
         {screeningQuestions.length === 0 ? (

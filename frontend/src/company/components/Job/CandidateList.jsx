@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Progress, message, Button, Table, Tag, Modal, Input } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -25,11 +25,7 @@ const CandidateList = () => {
 
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
-  // const [page, setPage] = useState(1);
-  // const [page, setPage] = useState(location.state?.savedPage || 1);
-  // const [pageSize, setPageSize] = useState(10);
-  // const [pageSize, setPageSize] = useState(location.state?.savedPageSize || 10);
-  // ✅ REPLACE WITH:
+
   const [page, setPage] = useState(() => {
     const saved = sessionStorage.getItem("candidateListPage");
     return saved ? parseInt(saved) : 1;
@@ -60,9 +56,18 @@ const CandidateList = () => {
   const [answersModalOpen, setAnswersModalOpen] = useState(false);
   const [answersCandidate, setAnswersCandidate] = useState(null);
   const [actionPopoverId, setActionPopoverId] = useState(null);
+  const [flagPopoverId, setFlagPopoverId] = useState(null);
   const [savedCandidateIds, setSavedCandidateIds] = useState(new Set());
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({});
+  // const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // const [activeFilters, setActiveFilters] = useState({});
+  const [isFilterOpen, setIsFilterOpen] = useState(() => {
+    return sessionStorage.getItem("candidateFilterOpen") === "true";
+  });
+  const [activeFilters, setActiveFilters] = useState(() => {
+    const saved = sessionStorage.getItem("candidateActiveFilters");
+    return saved ? JSON.parse(saved) : {};
+  });
+  const isNavigatingToCandidate = useRef(false);
 
   // useEffect(() => {
   //   const fetchCandidates = async () => {
@@ -162,6 +167,27 @@ const CandidateList = () => {
 
     if (jobId) fetchCandidates();
   }, [jobId, page, pageSize]); // ✅ KEEP THIS
+  // ✅ ADD THIS useEffect — clears filters when leaving the page
+  // useEffect(() => {
+  //   return () => {
+  //     sessionStorage.removeItem("candidateActiveFilters");
+  //     sessionStorage.removeItem("candidateFilterOpen");
+  //   };
+  // }, []);
+  // ✅ REPLACE the existing cleanup useEffect with this
+  useEffect(() => {
+    return () => {
+      if (!isNavigatingToCandidate.current) {
+        // Tab switch → clear everything
+        sessionStorage.removeItem("candidateActiveFilters");
+        sessionStorage.removeItem("candidateFilterOpen");
+        sessionStorage.removeItem("candidateListPage");
+        sessionStorage.removeItem("candidateListPageSize");
+      }
+      // Reset flag
+      isNavigatingToCandidate.current = false;
+    };
+  }, []);
 
   // useEffect(() => {
   //   const fetchCandidates = async () => {
@@ -206,6 +232,16 @@ const CandidateList = () => {
   const filteredCandidates = candidates
     .filter((c) => {
       const vendorId = c?.profile?.vendorId;
+      if (activeFilters?.candidateType?.length) {
+        if (activeFilters.candidateType.includes("vendor") && vendorId != null)
+          return true;
+        if (
+          activeFilters.candidateType.includes("individual") &&
+          vendorId == null
+        )
+          return true;
+        return false;
+      }
       if (candidateType === "ALL") return true;
       if (candidateType === "NORMAL") return vendorId == null;
       if (candidateType === "VENDOR") return vendorId != null;
@@ -227,7 +263,11 @@ const CandidateList = () => {
       if (!activeFilters?.preferredLocation?.length) return true;
       const preferred = c?.profile?.preferredLocation || [];
       return activeFilters.preferredLocation.some((sel) =>
-        preferred.some((l) => l.toLowerCase().includes(sel.toLowerCase())),
+        preferred.some(
+          (l) =>
+            l.toLowerCase().includes(sel.toLowerCase()) ||
+            sel.toLowerCase().includes(l.toLowerCase()),
+        ),
       );
     })
     // .filter((c) => {
@@ -237,14 +277,36 @@ const CandidateList = () => {
     //     loc.toLowerCase().includes(l.toLowerCase()),
     //   );
     // })
+    // .filter((c) => {
+    //   if (!activeFilters?.skills?.length) return true;
+    //   const candidateSkills =
+    //     c?.profile?.skillsJson?.map((s) => s.name.toLowerCase()) || [];
+    //   return activeFilters.skills.every((s) =>
+    //     candidateSkills.some((cs) => cs.includes(s.toLowerCase())),
+    //   );
+    // })
     .filter((c) => {
       if (!activeFilters?.skills?.length) return true;
       const candidateSkills =
         c?.profile?.skillsJson?.map((s) => s.name.toLowerCase()) || [];
-      return activeFilters.skills.every((s) =>
-        candidateSkills.some((cs) => cs.includes(s.toLowerCase())),
-      );
+      return activeFilters.skills.every((s) => {
+        // Strip count suffix like " (24)" from the selected value
+        const cleanSkill = s.replace(/\s*\(\d+\)\s*$/, "").toLowerCase();
+        return candidateSkills.some((cs) => cs.includes(cleanSkill));
+      });
     })
+    // .filter((c) => {
+    //   if (!activeFilters?.clouds?.length) return true;
+    //   const candidateClouds = [
+    //     ...(c?.profile?.primaryClouds?.map((cl) => cl.name.toLowerCase()) ||
+    //       []),
+    //     ...(c?.profile?.secondaryClouds?.map((cl) => cl.name.toLowerCase()) ||
+    //       []),
+    //   ];
+    //   return activeFilters.clouds.every((cl) =>
+    //     candidateClouds.some((cc) => cc.includes(cl.toLowerCase())),
+    //   );
+    // })
     .filter((c) => {
       if (!activeFilters?.clouds?.length) return true;
       const candidateClouds = [
@@ -253,9 +315,11 @@ const CandidateList = () => {
         ...(c?.profile?.secondaryClouds?.map((cl) => cl.name.toLowerCase()) ||
           []),
       ];
-      return activeFilters.clouds.every((cl) =>
-        candidateClouds.some((cc) => cc.includes(cl.toLowerCase())),
-      );
+      return activeFilters.clouds.every((cl) => {
+        // Strip count suffix like " (8)" from the selected value
+        const cleanCloud = cl.replace(/\s*\(\d+\)\s*$/, "").toLowerCase();
+        return candidateClouds.some((cc) => cc.includes(cleanCloud));
+      });
     })
     // .filter((c) => {
     //   if (!activeFilters?.preferredLocation?.length) return true;
@@ -373,7 +437,7 @@ const CandidateList = () => {
     />
   );
 
-  const FlagDropdown = ({ record }) => {
+  const FlagDropdown = ({ record, closePopover }) => {
     const currentStatus = statusMap[record.applicationId] || "Pending";
 
     return (
@@ -444,7 +508,7 @@ const CandidateList = () => {
                         ...prev,
                         [record.applicationId]: "BookMark",
                       }));
-
+                      closePopover();
                       return;
                     }
 
@@ -468,7 +532,7 @@ const CandidateList = () => {
                       ...prev,
                       [record.applicationId]: "BookMark",
                     }));
-
+                    closePopover();
                     return;
                   } else {
                     await UpdateVendorCandidateStatus({
@@ -481,7 +545,9 @@ const CandidateList = () => {
                     ...prev,
                     [record.applicationId]: finalStatus,
                   }));
+                  closePopover();
                 } catch (err) {
+                  closePopover();
                   // catch (err) {
                   //   messageAPI.error("Failed to update status");
                   // }
@@ -523,6 +589,7 @@ const CandidateList = () => {
             } catch {
               messageAPI.error("Failed to clear status");
             }
+            closePopover();
           }}
           style={{
             marginTop: 8,
@@ -653,10 +720,24 @@ const CandidateList = () => {
         const currentStatus = statusMap[record.applicationId] || "Pending";
         const flagMeta = STATUS_FLAG_MAP[currentStatus];
         return (
+          // <Popover
+          //   trigger="click"
+          //   placement="right"
+          //   content={<FlagDropdown record={record} />}
+          // >
           <Popover
             trigger="click"
             placement="right"
-            content={<FlagDropdown record={record} />}
+            open={flagPopoverId === record.applicationId}
+            onOpenChange={(open) =>
+              setFlagPopoverId(open ? record.applicationId : null)
+            }
+            content={
+              <FlagDropdown
+                record={record}
+                closePopover={() => setFlagPopoverId(null)}
+              />
+            }
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -724,9 +805,10 @@ const CandidateList = () => {
                 More details inside 👆
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span> Experience</span>
                 <span> Expected CTC</span>
                 <span> Joining Period</span>
-                <span> Rate Card / Hour</span>
+                <span> Rate Card / Month</span>
               </div>
             </div>
           }
@@ -748,6 +830,7 @@ const CandidateList = () => {
               );
               sessionStorage.setItem("candidateListPage", page);
               sessionStorage.setItem("candidateListPageSize", pageSize);
+              isNavigatingToCandidate.current = true;
               navigate(`/company/candidate/${record.profile.id}`, {
                 state: {
                   candidate: { ...record, status: "Reviewed" },
@@ -768,6 +851,13 @@ const CandidateList = () => {
       title: "Fit Score",
       dataIndex: "matchScore",
       key: "matchScore",
+      // ✅ ADD THIS
+      sorter: (a, b) => {
+        const scoreA = a.matchScore ?? -1;
+        const scoreB = b.matchScore ?? -1;
+        return scoreA - scoreB;
+      },
+      sortDirections: ["descend", "ascend"], // High → Low first
       render: (score) => {
         if (score == null) return <Tag>N/A</Tag>;
 
@@ -840,6 +930,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
+                  color: "inherit",
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -876,6 +967,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
+                  color: "inherit",
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -912,6 +1004,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
+                  color: "inherit",
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -948,6 +1041,7 @@ const CandidateList = () => {
                   fontSize: 14,
                   fontWeight: 500,
                   lineHeight: "22px",
+                  color: "inherit",
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1093,7 +1187,14 @@ const CandidateList = () => {
         {/* LEFT — TOGGLES */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div
-            onClick={() => setIsFilterOpen((prev) => !prev)}
+            // onClick={() => setIsFilterOpen((prev) => !prev)}
+            onClick={() => {
+              setIsFilterOpen((prev) => {
+                const next = !prev;
+                sessionStorage.setItem("candidateFilterOpen", next);
+                return next;
+              });
+            }}
             style={{
               height: 32,
               width: 32,
@@ -1115,8 +1216,8 @@ const CandidateList = () => {
           {["ALL", "NORMAL", "VENDOR"].map((type) => {
             const labels = {
               ALL: `All (${candidates.length})`,
-              NORMAL: `Normal Candidates (${candidates.filter((c) => c?.profile?.vendorId == null).length})`,
-              VENDOR: `Bench Candidates (${candidates.filter((c) => c?.profile?.vendorId != null).length})`,
+              NORMAL: `Individual Candidates (${candidates.filter((c) => c?.profile?.vendorId == null).length})`,
+              VENDOR: `Vendor Candidates (${candidates.filter((c) => c?.profile?.vendorId != null).length})`,
             };
             return (
               <div
@@ -1228,12 +1329,24 @@ const CandidateList = () => {
                 }}
               >
                 <FiltersPanel
-                  onFiltersChange={(filters) => setActiveFilters(filters)}
+                  // onFiltersChange={(filters) => setActiveFilters(filters)}
+                  onFiltersChange={(filters) => {
+                    setActiveFilters(filters);
+                    sessionStorage.setItem(
+                      "candidateActiveFilters",
+                      JSON.stringify(filters),
+                    );
+                  }}
                   showCandidateType={false}
                   isFilterOpen={isFilterOpen}
-                  handleClearFilters={() => setActiveFilters({})}
+                  // handleClearFilters={() => setActiveFilters({})}
+                  handleClearFilters={() => {
+                    setActiveFilters({});
+                    sessionStorage.removeItem("candidateActiveFilters");
+                  }}
                   toggleFilter={() => setIsFilterOpen(false)}
-                  savedFilters={{}}
+                  // savedFilters={{}}
+                  savedFilters={activeFilters}
                   skipFirstEmit={true}
                   hideJobTypeFilters={true}
                   hideLocation={true}
@@ -1248,15 +1361,49 @@ const CandidateList = () => {
                       return acc;
                     }, {});
                     return Object.entries(countMap).map(([loc, count]) => ({
-                      label: loc,
+                      label: `${loc} (${count})`,
                       value: loc,
                       count,
                     }));
                   })()}
-                  showExpectedCTC={true}
+                  skillOptions={(() => {
+                    const allSkills = candidates.flatMap(
+                      (c) => c?.profile?.skillsJson?.map((s) => s.name) || [],
+                    );
+                    const countMap = allSkills.reduce((acc, skill) => {
+                      acc[skill] = (acc[skill] || 0) + 1;
+                      return acc;
+                    }, {});
+                    return Object.entries(countMap).map(([skill, count]) => ({
+                      label: `${skill} (${count})`,
+                      value: skill,
+                      count,
+                    }));
+                  })()}
+                  cloudOptions={(() => {
+                    const allClouds = candidates.flatMap((c) => [
+                      ...(c?.profile?.primaryClouds?.map((cl) => cl.name) ||
+                        []),
+                      ...(c?.profile?.secondaryClouds?.map((cl) => cl.name) ||
+                        []),
+                    ]);
+                    const countMap = allClouds.reduce((acc, cloud) => {
+                      acc[cloud] = (acc[cloud] || 0) + 1;
+                      return acc;
+                    }, {});
+                    return Object.entries(countMap).map(([cloud, count]) => ({
+                      label: `${cloud} (${count})`,
+                      value: cloud,
+                      count,
+                    }));
+                  })()}
+                  // showExpectedCTC={true}
+                  showExpectedCTC={candidateType !== "VENDOR"}
                   showJoiningPeriod={true}
                   showFitScore={true}
-                  showRateCard={true}
+                  // showRateCard={true}
+                  showRateCard={candidateType !== "NORMAL"}
+                  useFilterSectionForSkillsAndClouds={true}
                 />
               </div>
             )}
