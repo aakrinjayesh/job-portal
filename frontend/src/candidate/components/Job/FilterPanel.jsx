@@ -83,6 +83,7 @@ const FiltersPanel = ({
   skillOptions,
   cloudOptions,
   useFilterSectionForSkillsAndClouds,
+  locationOptions: locationOptionsProp,
 }) => {
   const [experience, setExperience] = useState(savedFilters?.experience || 0);
   const [selectedLocations, setSelectedLocations] = useState(
@@ -113,14 +114,74 @@ const FiltersPanel = ({
     savedFilters?.expectedCTC || "",
   );
   const [joiningPeriod, setJoiningPeriod] = useState(
-    savedFilters?.joiningPeriod || "",
+    // savedFilters?.joiningPeriod || "",
+    savedFilters?.joiningPeriod || [],
   );
   const [fitScore, setFitScore] = useState(savedFilters?.fitScore || null);
-  const [locationOptions, setLocationOptions] = useState([]);
+  // const [locationOptions, setLocationOptions] = useState([]);
   const isFirstRender = useRef(true);
   const [rateCard, setRateCard] = useState(savedFilters?.rateCard || "");
+  const [fetchedLocationOptions, setFetchedLocationOptions] = useState([]);
+
+  // useEffect(() => {
+  //   const fetchLocations = async () => {
+  //     try {
+  //       const res = await GetLocations();
+
+  //       const formatted = res.data?.map((loc) => {
+  //         const fullName = loc.name || loc.location;
+  //         const cityOnly = fullName?.split(",")[0]?.trim();
+  //         return {
+  //           label: cityOnly,
+  //           value: fullName,
+  //         };
+  //       });
+
+  //       const famousCities = [
+  //         "Bengaluru",
+  //         "Hyderabad",
+  //         "Pune",
+  //         "Chennai",
+  //         "Mumbai",
+  //         "Delhi",
+  //         "Kolkata",
+  //         "Gurugram",
+  //         "Noida",
+  //         "Ahmedabad",
+  //         "San Francisco",
+  //         "New York",
+  //         "Seattle",
+  //         "Austin",
+  //         "Chicago",
+  //         "Boston",
+  //         "Los Angeles",
+  //         "Dallas",
+  //         "Atlanta",
+  //         "Denver",
+  //       ];
+
+  //       const sorted = [...(formatted || [])].sort((a, b) => {
+  //         const aIndex = famousCities.indexOf(a.label);
+  //         const bIndex = famousCities.indexOf(b.label);
+
+  //         if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+  //         if (aIndex !== -1) return -1;
+  //         if (bIndex !== -1) return 1;
+  //         return a.label.localeCompare(b.label);
+  //       });
+
+  //       setLocationOptions(sorted);
+  //     } catch (error) {
+  //       console.error("Failed to fetch locations:", error);
+  //     }
+  //   };
+
+  //   fetchLocations();
+  // }, []);
 
   useEffect(() => {
+    if (locationOptionsProp) return; // skip if parent provides options
+
     const fetchLocations = async () => {
       try {
         const res = await GetLocations();
@@ -128,10 +189,7 @@ const FiltersPanel = ({
         const formatted = res.data?.map((loc) => {
           const fullName = loc.name || loc.location;
           const cityOnly = fullName?.split(",")[0]?.trim();
-          return {
-            label: cityOnly,
-            value: fullName,
-          };
+          return { label: cityOnly, value: fullName };
         });
 
         const famousCities = [
@@ -160,22 +218,21 @@ const FiltersPanel = ({
         const sorted = [...(formatted || [])].sort((a, b) => {
           const aIndex = famousCities.indexOf(a.label);
           const bIndex = famousCities.indexOf(b.label);
-
           if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
           if (aIndex !== -1) return -1;
           if (bIndex !== -1) return 1;
           return a.label.localeCompare(b.label);
         });
 
-        setLocationOptions(sorted);
+        setFetchedLocationOptions(sorted);
       } catch (error) {
         console.error("Failed to fetch locations:", error);
       }
     };
 
     fetchLocations();
-  }, []);
-
+  }, [locationOptionsProp]);
+  const locationOptions = locationOptionsProp || fetchedLocationOptions;
   /* 🔽 collapse states */
   // const [open, setOpen] = useState({
   //   experience: false,
@@ -330,7 +387,8 @@ const FiltersPanel = ({
     // setPreferredLocation("");
     setPreferredLocation([]);
     setExpectedCTC("");
-    setJoiningPeriod("");
+    // setJoiningPeriod("");
+    setJoiningPeriod([]);
     setFitScore(null);
     setRateCard("");
 
@@ -683,14 +741,25 @@ const FiltersPanel = ({
       label: (
         <CollapseLabel title="Joining Period" isOpen={open.joiningPeriod} />
       ),
+      // children: (
+      //   <Select
+      //     placeholder="Select joining period"
+      //     value={joiningPeriod || undefined}
+      //     allowClear
+      //     style={{ width: "100%" }}
+      //     onChange={(val) => setJoiningPeriod(val || "")}
+      //     onClear={() => setJoiningPeriod("")}
+      //     options={[
+      //       { label: "Immediately", value: "Immediately" },
+      //       { label: "15 days", value: "15 days" },
+      //       { label: "1 month", value: "1 month" },
+      //       { label: "2 months", value: "2 months" },
+      //       { label: "3 months", value: "3 months" },
+      //     ]}
+      //   />
+      // ),
       children: (
-        <Select
-          placeholder="Select joining period"
-          value={joiningPeriod || undefined}
-          allowClear
-          style={{ width: "100%" }}
-          onChange={(val) => setJoiningPeriod(val || "")}
-          onClear={() => setJoiningPeriod("")}
+        <FilterSection
           options={[
             { label: "Immediately", value: "Immediately" },
             { label: "15 days", value: "15 days" },
@@ -698,6 +767,9 @@ const FiltersPanel = ({
             { label: "2 months", value: "2 months" },
             { label: "3 months", value: "3 months" },
           ]}
+          selected={joiningPeriod}
+          onChange={setJoiningPeriod}
+          showCount
         />
       ),
     },
@@ -721,16 +793,16 @@ const FiltersPanel = ({
   ].filter(Boolean);
 
   return (
-  <div
-    className="filters-panel-mobile"
-    style={{
-      width: 250,
-      borderRight: "1px solid #eee",
-      padding: 14,
-      background: "#fff",
-    }}
-  >
-    <style>{`
+    <div
+      className="filters-panel-mobile"
+      style={{
+        width: 250,
+        borderRight: "1px solid #eee",
+        padding: 14,
+        background: "#fff",
+      }}
+    >
+      <style>{`
       @media (max-width: 768px) {
         .filters-panel-mobile {
           width: 100% !important;
@@ -853,28 +925,28 @@ const FiltersPanel = ({
         handleClearFilters={handleClearFilters}
         type="candidate"
       />
-    <div
-  className="filters-header"
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: 12,
-    marginTop: 12,
-  }}
->
-  <Text strong>All Filters</Text>
-  <Text
-    className="clear-all-text"
-    type="link"
-    onClick={() => {
-      resetFilters();
-      handleClearFilters?.();
-    }}
-    style={{ cursor: "pointer", fontSize: 13 }}
-  >
-    Clear All
-  </Text>
-</div>
+      <div
+        className="filters-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 12,
+          marginTop: 12,
+        }}
+      >
+        <Text strong>All Filters</Text>
+        <Text
+          className="clear-all-text"
+          type="link"
+          onClick={() => {
+            resetFilters();
+            handleClearFilters?.();
+          }}
+          style={{ cursor: "pointer", fontSize: 13 }}
+        >
+          Clear All
+        </Text>
+      </div>
 
       <Divider style={{ margin: "12px 0" }} />
 
