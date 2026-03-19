@@ -335,10 +335,21 @@ const CandidateList = () => {
         .toLowerCase()
         .includes(activeFilters.expectedCTC.toLowerCase().trim());
     })
+    // .filter((c) => {
+    //   if (!
+    //     activeFilters?.joiningPeriod?.trim()
+    //   ) return true;
+    //   const jp = c?.profile?.joiningPeriod?.toLowerCase() || "";
+    //   return jp.includes(activeFilters.joiningPeriod.toLowerCase().trim());
+    // })
     .filter((c) => {
-      if (!activeFilters?.joiningPeriod?.trim()) return true;
-      const jp = c?.profile?.joiningPeriod?.toLowerCase() || "";
-      return jp.includes(activeFilters.joiningPeriod.toLowerCase().trim());
+      if (!activeFilters?.joiningPeriod?.length) return true;
+
+      const jp = c?.profile?.joiningPeriod || "";
+
+      return activeFilters.joiningPeriod.some((selected) =>
+        jp.toLowerCase().includes(selected.toLowerCase()),
+      );
     })
     .filter((c) => {
       if (!activeFilters?.rateCard?.trim()) return true;
@@ -797,18 +808,57 @@ const CandidateList = () => {
         <Popover
           trigger="hover"
           placement="right"
+          // content={
+          //   <div style={{ fontSize: 12, color: "#6B7280", maxWidth: 220 }}>
+          //     <div
+          //       style={{ fontWeight: 500, color: "#1A1A2E", marginBottom: 6 }}
+          //     >
+          //       More details inside 👆
+          //     </div>
+          //     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          //       <span> Experience</span>
+          //       <span> Expected CTC</span>
+          //       <span> Joining Period</span>
+          //       <span> Rate Card / Month</span>
+          //     </div>
+          //   </div>
+          // }
           content={
             <div style={{ fontSize: 12, color: "#6B7280", maxWidth: 220 }}>
               <div
                 style={{ fontWeight: 500, color: "#1A1A2E", marginBottom: 6 }}
               >
-                More details inside 👆
+                More details inside
               </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span> Experience</span>
-                <span> Expected CTC</span>
-                <span> Joining Period</span>
-                <span> Rate Card / Month</span>
+                <span>
+                  Experience:{" "}
+                  {record?.profile?.totalExperience
+                    ? `${record.profile.totalExperience} yrs`
+                    : "N/A"}
+                </span>
+
+                {/* ✅ Only for Individual */}
+                {record?.profile?.vendorId == null && (
+                  <span>
+                    Expected CTC: {record?.profile?.expectedCTC || "N/A"}
+                  </span>
+                )}
+
+                <span>
+                  Joining Period: {record?.profile?.joiningPeriod || "N/A"}
+                </span>
+
+                {/* ✅ Only for Vendor */}
+                {record?.profile?.vendorId != null && (
+                  <span>
+                    Rate Card / Month:{" "}
+                    {record?.profile?.rateCardPerHour?.value
+                      ? `₹${record.profile.rateCardPerHour.value}`
+                      : "N/A"}
+                  </span>
+                )}
               </div>
             </div>
           }
