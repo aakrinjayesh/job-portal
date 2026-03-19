@@ -220,10 +220,8 @@ const MessageItem = ({
                     key={file._id}
                     style={{
                       position: "relative",
-                      aspectRatio: "1",
                       overflow: "hidden",
                       cursor: "pointer",
-                      backgroundColor: "#F0F0F0",
                       gridColumn:
                         images.length === 3 && index === 0 ? "1 / -1" : "auto",
                     }}
@@ -231,10 +229,13 @@ const MessageItem = ({
                     <Image
                       src={file.url}
                       alt="attachment"
+                      wrapperStyle={{ display: "block", width: "100%" }}
                       style={{
                         width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
+                        height: "auto",
+                        maxHeight: 300,
+                        objectFit: "contain",
+                        display: "block",
                       }}
                       preview={{
                         mask: (

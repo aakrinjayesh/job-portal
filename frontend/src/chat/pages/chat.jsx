@@ -91,6 +91,7 @@ const Chat = () => {
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [alertMessage, contextHolder] = msg.useMessage();
   const [uploadFileList, setUploadFileList] = useState([]);
+  const [sending, setSending] = useState(false);
 
   const [progress, setProgress] = useState(0);
 
@@ -194,6 +195,7 @@ useEffect(() => {
       return;
     }
 
+    setSending(true);
     socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
 
     await requestHandler(
@@ -207,6 +209,7 @@ useEffect(() => {
      (res) => {
   setMessage("");
   setAttachedFiles([]);
+  setUploadFileList([]);
 
   const newMessage = res.data;
 
@@ -230,14 +233,28 @@ useEffect(() => {
         alertMessage.error(error || "Failed to send message");
       },
     );
+    setSending(false);
   };
 
   const deleteChatMessage = async (message) => {
+    // Split messages have composite IDs like "realMongoId_fileId" — extract the real ID
+    const realMessageId = message._id.includes("_")
+      ? message._id.split("_")[0]
+      : message._id;
+
     await requestHandler(
-      async () => await deleteMessage(message.chat, message._id),
+      async () => await deleteMessage(message.chat, realMessageId),
       null,
       (res) => {
-        setMessages((prev) => prev.filter((msg) => msg._id !== res.data._id));
+        // Remove all splits of the same message (they all share the same real ID prefix)
+        setMessages((prev) =>
+          prev.filter((msg) => {
+            const msgRealId = msg._id.includes("_")
+              ? msg._id.split("_")[0]
+              : msg._id;
+            return msgRealId !== realMessageId;
+          })
+        );
         updateChatLastMessageOnDeletion(message.chat, message);
       },
       (error) => {
@@ -875,16 +892,18 @@ useEffect(() => {
                 >
                <Upload
   multiple
-  maxCount={3} // ✅ HARD LIMIT
   fileList={uploadFileList}
   showUploadList={false}
-  beforeUpload={() => false}
-  onChange={(info) => {
-    if (info.fileList.length > 3) {
-      alertMessage.error("You can send maximum 3 files at once.");
-      return;
+  beforeUpload={(file, fileList) => {
+    if (fileList.length > 3) {
+      if (file === fileList[0]) {
+        alertMessage.error("You can send maximum 3 files at once.");
+      }
+      return Upload.LIST_IGNORE;
     }
-
+    return false;
+  }}
+  onChange={(info) => {
     setUploadFileList(info.fileList);
     handleFileChange(info);
   }}
@@ -909,7 +928,7 @@ useEffect(() => {
                     value={message}
                     onChange={handleOnMessageChange}
                     onPressEnter={(e) => {
-                      if (!e.shiftKey) {
+                      if (!e.shiftKey && !sending) {
                         e.preventDefault();
                         sendChatMessage();
                       }
@@ -928,7 +947,8 @@ useEffect(() => {
                     shape="circle"
                     icon={<SendOutlined />}
                     onClick={sendChatMessage}
-                    disabled={!message.trim() && attachedFiles.length === 0}
+                    loading={sending}
+                    disabled={sending || (!message.trim() && attachedFiles.length === 0)}
                     style={{
                       background: "#25D366",
                       borderColor: "#25D366",
