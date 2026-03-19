@@ -81,7 +81,7 @@ const UpdateUserProfile = ({
   const [experienceList, setExperienceList] = useState([]);
 
   const [isCandidate, setIsCandidate] = useState(false);
-  const [isActive, setIsActive] = useState(true);
+  const [isActive, setIsActive] = useState();
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
 
   const role = localStorage.getItem("role");
@@ -265,10 +265,7 @@ const UpdateUserProfile = ({
         setIsCandidate(!!user.userId);
         // setIsActive(user?.status === "ACTIVE");
         if (role === "candidate") {
-          // setIsActive(user?.status ? user.status === "ACTIVE" : true);
-          setIsActive(
-            user?.status ? user.status.toLowerCase() === "active" : true,
-          );
+          setIsActive(user?.status ? user.status === "active" : true);
         }
 
         // Extract skills from skillsJson

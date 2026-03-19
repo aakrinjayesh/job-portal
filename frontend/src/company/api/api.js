@@ -829,3 +829,56 @@ export async function GetAppliedCandidatesWithJob(id) {
     throw error;
   }
 }
+
+export async function assignMemberLicense(memberId, licenseId) {
+  try {
+    const response = await axiosInstance.post("/billing/licenses/assign", {
+      memberId,
+      ...(licenseId && { licenseId }),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in assignMemberLicense:", error);
+    throw error;
+  }
+}
+
+export async function getOrgLicenses() {
+  try {
+    const response = await axiosInstance.get("/billing/licenses");
+    return response.data;
+  } catch (error) {
+    console.error("Error in getOrgLicenses:", error);
+    throw error;
+  }
+}
+
+export async function getSubscriptionStatus() {
+  try {
+    const response = await axiosInstance.get("/billing/subscription");
+    return response.data;
+  } catch (error) {
+    console.error("Error in getSubscriptionStatus:", error);
+    throw error;
+  }
+}
+
+export async function cancelSubscription() {
+  try {
+    const response = await axiosInstance.post("/billing/subscription/cancel");
+    return response.data;
+  } catch (error) {
+    console.error("Error in cancelSubscription:", error);
+    throw error;
+  }
+}
+
+export async function reEnableAutoRenew() {
+  try {
+    const response = await axiosInstance.post("/billing/subscription/renew");
+    return response.data;
+  } catch (error) {
+    console.error("Error in reEnableAutoRenew:", error);
+    throw error;
+  }
+}
