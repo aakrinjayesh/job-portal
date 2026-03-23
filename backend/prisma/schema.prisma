@@ -81,6 +81,7 @@ model OrganizationInvite {
   organizationId String
   role           OrgMemberRole @default(COMPANY_USER)
   permissions    OrgPermission @default(VIEW_ONLY)
+  licenseId      String?
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -305,7 +306,7 @@ model Job {
   responsibilities    String
   certifications      String[]
   jobType             String
-  applicantSource ApplicantSource @default(Both)
+  applicantSource     ApplicantSource  @default(Both)
   status              JobStatus        @default(Open)
   applicationDeadline String?
   isDeleted           Boolean          @default(false)
@@ -476,7 +477,7 @@ model Address {
   country    String?
   pinCode    String?
   userId     String  @unique
-  user       Users   @relation(fields: [userId], references: [id])
+  user       Users   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Country {
@@ -503,7 +504,7 @@ model Course {
   createdAt   DateTime @default(now())
   userId      String
   courseType  String?
-  instructor  Users    @relation(fields: [userId], references: [id])
+  instructor  Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
   classes     Class[]
   url         String?
   reviews     Review[]
@@ -581,7 +582,7 @@ model Dashboard {
   name        String
   description String?
   ownerId     String
-  owner       Users             @relation(fields: [ownerId], references: [id])
+  owner       Users             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   widgets     DashboardWidget[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -746,21 +747,21 @@ model TaskTemplate {
 
 model CandidateTaskList {
   id             String   @id @default(uuid())
-  recruiterId    String
+  recruiterId    String?
   candidateId    String
   jobId          String
   organizationId String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  recruiter    Users        @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  recruiter    Users?       @relation(fields: [recruiterId], references: [id], onDelete: SetNull)
   candidate    UserProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   job          Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   tasks CandidateTask[]
 
-  @@unique([recruiterId, candidateId, jobId, organizationId])
+  @@unique([candidateId, jobId, organizationId])
   @@index([candidateId])
   @@index([organizationId])
 }
@@ -832,9 +833,11 @@ model EmailLog {
 model OrganizationSubscription {
   id             String             @id @default(uuid())
   organizationId String             @unique
+  // razorpaySubscriptionId String?
   status         SubscriptionStatus @default(ACTIVE)
   billingCycle   BillingCycle       @default(MONTHLY)
-  autoRenew      Boolean            @default(true)
+  autoRenew      Boolean            @default(false)
+  // isSubscriptionPaused Boolean            @default(false)
 
   currentPeriodStart DateTime @default(now())
   currentPeriodEnd   DateTime
@@ -855,6 +858,7 @@ model License {
   validFrom      DateTime @default(now())
   validUntil     DateTime
   isActive       Boolean  @default(true)
+  // isPendingRemoval Boolean  @default(false)
 
   subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
   plan         SubscriptionPlan         @relation(fields: [planId], references: [id])
@@ -870,6 +874,8 @@ model SubscriptionPlan {
   name         String
   monthlyPrice Int
   yearlyPrice  Int
+  // razorpayMonthlyPlanId String?
+  // razorpayYearlyPlanId  String?
 
   licenses License[]
   limits   PlanLimit[]
@@ -921,7 +927,7 @@ model AITokenUsage {
   createdAt DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
-  user         Users        @relation(fields: [userId], references: [id])
+  user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
   license      License      @relation(fields: [licenseId], references: [id])
 }
 
@@ -1005,7 +1011,7 @@ enum LimitFeature {
   JD_EXTRACTION
   AI_TOKENS_TOTAL
 
-  // unused 
+  // unused
   AI_SEARCH
   DIRECT_CHAT
   GROUP_CHAT
