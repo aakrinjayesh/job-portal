@@ -38,11 +38,18 @@ import { getCandidateDetails, SaveCandidateRating } from "../../api/api";
 
 const { Title, Paragraph, Text } = Typography;
 
-const CandidateDetails = () => {
+const CandidateDetails = ({
+  candidateFromList,
+  idFromModal,
+  jobIdFromList,
+  isModal,
+  matchScore,
+}) => {
   console.log("candidates details page");
   // const { candidate, jobId } = location.state || {};
   const navigate = useNavigate();
   const { id } = useParams(); // userId in URL
+  const finalId = idFromModal || id;
   const [messageApi, contextHolder] = message.useMessage();
   const location = useLocation();
   // 🔹 Review state (per candidate)
@@ -58,7 +65,16 @@ const CandidateDetails = () => {
   const [progress, setProgress] = useState(0);
   const [readyToShow, setReadyToShow] = useState(false);
 
-  const { jobId, source } = location.state || {};
+  // const { jobId, source } = location.state || {};
+  const {
+    jobId: jobIdFromRoute,
+    source,
+    matchScore: matchScoreFromRoute,
+  } = location.state || {};
+  const jobId = jobIdFromList || jobIdFromRoute;
+
+  // ✅ matchScore from prop (modal) OR from route state (page navigation)
+  const resolvedMatchScore = matchScore ?? matchScoreFromRoute ?? null;
   const [candidate, setCandidate] = useState(null);
   const [addReviewLoading, setAddReviewLoading] = useState(false);
   const resumeRef = useRef();
@@ -70,6 +86,15 @@ const CandidateDetails = () => {
 
   console.log("sourcw", source);
   console.log("location", location);
+  useEffect(() => {
+    if (candidateFromList) {
+      console.log("SETTING DATA FROM LIST", candidateFromList);
+
+      setCandidate(candidateFromList);
+      setLoadingCandidate(false);
+      setReadyToShow(true);
+    }
+  }, [candidateFromList]);
 
   useEffect(() => {
     const fetchCandidate = async () => {
@@ -78,7 +103,8 @@ const CandidateDetails = () => {
         setReadyToShow(false);
         setLoadingCandidate(true);
 
-        const res = await getCandidateDetails(id);
+        // const res = await getCandidateDetails(id);
+        const res = await getCandidateDetails(finalId);
 
         if (res.status === "success") {
           setCandidate(res.candidate);
@@ -90,15 +116,20 @@ const CandidateDetails = () => {
       } finally {
         setProgress(100);
 
-        setTimeout(() => {
-          setLoadingCandidate(false);
-          setReadyToShow(true);
-        }, 300);
+        // setTimeout(() => {
+        //   setLoadingCandidate(false);
+        //   setReadyToShow(true);
+        // }, 300);
+        setLoadingCandidate(false);
+        setReadyToShow(true);
       }
     };
 
-    if (id) fetchCandidate();
-  }, [id]);
+    // if (id) fetchCandidate();
+    if (!candidateFromList && finalId) {
+      fetchCandidate();
+    }
+  }, [candidateFromList, finalId]);
 
   const handleSaveToggle = async (e) => {
     e.stopPropagation();
@@ -130,15 +161,15 @@ const CandidateDetails = () => {
     }
   };
 
-  useEffect(() => {
-    if (!loadingCandidate) return;
+  // useEffect(() => {
+  //   if (!loadingCandidate) return;
 
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev < 90 ? prev + 5 : prev));
-    }, 250);
+  //   const interval = setInterval(() => {
+  //     setProgress((prev) => (prev < 90 ? prev + 5 : prev));
+  //   }, 250);
 
-    return () => clearInterval(interval);
-  }, [loadingCandidate]);
+  //   return () => clearInterval(interval);
+  // }, [loadingCandidate]);
 
   const reloadCandidate = async () => {
     try {
@@ -153,7 +184,8 @@ const CandidateDetails = () => {
       if (res.status === "success") {
         messageApi.success(res.message || "Review Submitted!");
         // 🔥 REFETCH UPDATED DATA
-        const updated = await getCandidateDetails(id);
+        // const updated = await getCandidateDetails(id);
+        const updated = await getCandidateDetails(finalId);
 
         if (updated.status === "success") {
           setCandidate(updated.candidate); // ✅ update state
@@ -180,7 +212,8 @@ const CandidateDetails = () => {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          minHeight: "100vh",
+          // minHeight: "100vh",
+          minHeight: isModal ? 300 : "100vh",
           background: "#fafafa",
         }}
       >
@@ -331,8 +364,12 @@ const CandidateDetails = () => {
         {/* <Col span={16}> */}
         {/* <Col span={16} style={{ position: "relative" }}> */}
         {!activityOnly && (
+          // <Col
+          //   span={source === "bench" ? 24 : 16}
+          //   style={{ position: "relative" }}
+          // >
           <Col
-            span={source === "bench" ? 24 : 16}
+            span={isModal ? 16 : source === "bench" ? 24 : 16}
             style={{ position: "relative" }}
           >
             <Card bordered={false}>
@@ -348,7 +385,7 @@ const CandidateDetails = () => {
                   <Space size={12} align="center">
                     {/* <Avatar size={40}>{candidate.name?.charAt(0)}</Avatar> */}
                     <Avatar
-                      size={40}
+                      size={60}
                       src={
                         candidate?.profile?.profilePicture
                           ? `${
@@ -374,51 +411,12 @@ const CandidateDetails = () => {
                         </Text>
                       )}
 
-                      {/* <Space size={8} align="center">
-                       
-
-                        <Rate
-                          disabled
-                          value={Math.round(candidate.avgRating || 0)}
-                        />
-                       
-                        {candidate?.ratingReviews?.length > 0 && (
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              background: "#EEF2FF",
-                              padding: "2px 10px",
-                              borderRadius: 6,
-                              color: "#4338CA",
-                              marginLeft: 6,
-                            }}
-                          >
-                            {candidate.ratingReviews[0].comment}
-                          </Text>
-                        )}
-                        {source !== "bench" && (
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: "#1677FF",
-                              cursor: "pointer",
-                              fontWeight: 500,
-                            }}
-                            onClick={() => {
-                              setIsReviewModalOpen(true);
-                            }}
-                          >
-                            Add Review
-                          </Text>
-                        )}
-                      </Space> */}
                       <Space size={8} align="center">
                         <Rate
                           disabled
                           value={Math.round(candidate.avgRating || 0)}
                         />
 
-                        {/* Show Reviews Button */}
                         {candidate?.ratingReviews?.length > 0 && (
                           <Text
                             style={{
@@ -548,6 +546,45 @@ const CandidateDetails = () => {
                     </Tooltip>
                   </Space>
                 </Row>
+                {resolvedMatchScore != null && (
+                  <div style={{ marginTop: 12 }}>
+                    <span
+                      style={{
+                        padding: "4px 16px",
+                        borderRadius: "20px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        backgroundColor:
+                          resolvedMatchScore >= 80
+                            ? "#f6ffed"
+                            : resolvedMatchScore >= 60
+                              ? "#e6f4ff"
+                              : resolvedMatchScore >= 40
+                                ? "#fff7e6"
+                                : "#fff1f0",
+                        color:
+                          resolvedMatchScore >= 80
+                            ? "#389e0d"
+                            : resolvedMatchScore >= 60
+                              ? "#0958d9"
+                              : resolvedMatchScore >= 40
+                                ? "#d46b08"
+                                : "#cf1322",
+                        border: `1px solid ${
+                          resolvedMatchScore >= 80
+                            ? "#b7eb8f"
+                            : resolvedMatchScore >= 60
+                              ? "#91caff"
+                              : resolvedMatchScore >= 40
+                                ? "#ffd591"
+                                : "#ffa39e"
+                        }`,
+                      }}
+                    >
+                      Fit Score: {resolvedMatchScore}%
+                    </span>
+                  </div>
+                )}
               </div>
 
               {summary?.trim()?.length > 0 && (
@@ -1270,9 +1307,10 @@ const CandidateDetails = () => {
             </Card>
           </Col>
         )}
-        {source !== "bench" && (
+        {/* {source !== "bench" && ( */}
+        {(isModal || source !== "bench") && (
           <Col span={8}>
-            <Card
+            {/* <Card
               bordered={false}
               bodyStyle={{
                 padding: 0,
@@ -1292,7 +1330,19 @@ const CandidateDetails = () => {
                   overflowY: "auto",
                   padding: 24,
                 }}
-              >
+              > */}
+            <Card
+              bordered={false}
+              bodyStyle={{ padding: 0 }}
+              style={{
+                position: isModal ? "relative" : "sticky",
+                top: isModal ? "unset" : 20,
+                height: isModal ? "calc(100vh - 160px)" : "calc(100vh - 30px)",
+                overflow: "hidden",
+                borderRadius: 10,
+              }}
+            >
+              <div style={{ height: "100%", overflowY: "auto", padding: 24 }}>
                 <CandidateActivity
                   candidateId={profile?.id || id} // 🔥 fallback
                   jobId={jobId && jobId}

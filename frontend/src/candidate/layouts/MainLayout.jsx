@@ -258,7 +258,7 @@ const MainLayout = ({ children }) => {
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-     <Layout hasSider style={{ position: "relative" }}>
+      <Layout hasSider style={{ position: "relative" }}>
         {/* 🧭 Sidebar */}
         <Sider
           // ✅ KEY FIX: on mobile always collapsed (icon-only), on desktop use state
@@ -275,58 +275,67 @@ const MainLayout = ({ children }) => {
             height: "100vh",
             position: "sticky",
             top: 0,
-             overflow: "visible",
+            overflow: "visible",
           }}
-          
         >
           {/* ✅ Floating edge toggle — desktop only */}
-{!isMobile && (
-  <div
-    onClick={() => setCollapsed((prev) => !prev)}
-    style={{
-      position: "absolute",
-      top: "50%",
-      right: -14,
-      transform: "translateY(-50%)",
-      zIndex: 200,
-      width: 28,
-      height: 28,
-      borderRadius: "50%",
-      background: "#1a2942",
-      border: "2px solid #2d4a7a",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-      transition: "all 0.2s",
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = "#1677FF";
-      e.currentTarget.style.borderColor = "#1677FF";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.background = "#1a2942";
-      e.currentTarget.style.borderColor = "#2d4a7a";
-    }}
-  >
-    {collapsed ? (
-      // Right arrow (expand)
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-        <path d="M9 18l6-6-6-6" stroke="#ffffff" strokeWidth="2.5"
-          strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ) : (
-      // Left arrow (collapse)
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-        <path d="M15 18l-6-6 6-6" stroke="#ffffff" strokeWidth="2.5"
-          strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )}
-  </div>
-)}
+          {!isMobile && (
+            <div
+              onClick={() => setCollapsed((prev) => !prev)}
+              style={{
+                position: "absolute",
+                top: "50%",
+                right: -14,
+                transform: "translateY(-50%)",
+                zIndex: 200,
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                background: "#1a2942",
+                border: "2px solid #2d4a7a",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#1677FF";
+                e.currentTarget.style.borderColor = "#1677FF";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#1a2942";
+                e.currentTarget.style.borderColor = "#2d4a7a";
+              }}
+            >
+              {collapsed ? (
+                // Right arrow (expand)
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M9 18l6-6-6-6"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                // Left arrow (collapse)
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M15 18l-6-6 6-6"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+          )}
           {/* 👤 User Info — avatar only when collapsed */}
-          <div
+          {/* <div
             style={{
               display: "flex",
               gap: 12,
@@ -334,6 +343,23 @@ const MainLayout = ({ children }) => {
               alignItems: "center",
               justifyContent: isMobile ? "center" : "flex-start",
               // ✅ on mobile tap avatar to open full drawer
+              cursor: isMobile ? "pointer" : "default",
+            }}
+            onClick={() => {
+              if (isMobile) setMobileDrawerOpen(true);
+            }}
+          > */}
+          <div
+            style={{
+              display: "flex",
+              gap: collapsed ? 0 : 12,
+              padding: isMobile ? "20px 10px" : collapsed ? "24px 0" : 24,
+              alignItems: "center",
+              justifyContent: isMobile
+                ? "center"
+                : collapsed
+                  ? "center"
+                  : "flex-start", // ← this line
               cursor: isMobile ? "pointer" : "default",
             }}
             onClick={() => {

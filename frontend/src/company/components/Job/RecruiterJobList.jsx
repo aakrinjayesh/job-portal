@@ -104,6 +104,7 @@ const RecruiterJobList = () => {
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [aiIsExperienceRange, setAiIsExperienceRange] = useState(false);
 
   const LIMIT = 10;
 
@@ -303,6 +304,7 @@ const RecruiterJobList = () => {
       typeof job.location === "string"
         ? job.location.split(",").map((l) => l.trim())
         : job.location;
+    setCompanyLogo(job.companyLogo || "");
 
     form.setFieldsValue({
       ...job,
@@ -706,12 +708,24 @@ const RecruiterJobList = () => {
   const handleAiGenerateJD = async (values) => {
     try {
       setAiLoading(true);
+      let experienceValue;
+      if (aiIsExperienceRange) {
+        if (!values.experienceMin || !values.experienceMax) {
+          messageApi.error("Please enter both min and max experience");
+          setAiLoading(false);
+          return;
+        }
+        experienceValue = `${values.experienceMin}-${values.experienceMax}`;
+      } else {
+        experienceValue = values.experience;
+      }
 
       const payload = {
         jobdetails: {
           role: values.role,
-          experience: values.experience,
-
+          // experience: values.experience,
+          experience: experienceValue,
+          experienceType: values.experienceType || "year",
           experienceLevel: values.experienceLevel,
           instructions: values.instructions || "",
         },
@@ -743,14 +757,25 @@ const RecruiterJobList = () => {
         messageApi.success("JD generated successfully!");
         form.setFieldsValue({
           role: res?.jobDescription?.role,
-          experience: { type: "year", number: values?.experience },
+          experience: aiIsExperienceRange
+            ? {
+                type: values.experienceType || "year",
+                min: values.experienceMin,
+                max: values.experienceMax,
+              }
+            : {
+                type: values.experienceType || "year",
+                number: values.experience,
+              },
+          // experience: { type: "year", number: values?.experience },
           experienceLevel: values?.experienceLevel,
           description: res?.jobDescription?.description || "",
           responsibilities: res?.jobDescription?.responsibilities || "",
           skills: res?.jobDescription?.skills || [],
           clouds: res?.jobDescription?.clouds || [],
         });
-
+        setIsExperienceRange(aiIsExperienceRange);
+        setAiIsExperienceRange(false);
         setAiModalVisible(false);
         aiForm.resetFields();
       } else {
@@ -2088,19 +2113,53 @@ const RecruiterJobList = () => {
                       ) : (
                         <Upload
                           showUploadList={false}
+                          accept="image/jpeg,image/png,image/jpg"
+                          // beforeUpload={(file) => {
+                          //   const isImage = file.type.startsWith("image/");
+                          //   if (!isImage) {
+                          //     messageApi.error("Only image files are allowed");
+                          //     return Upload.LIST_IGNORE;
+                          //   }
+
+                          //   const isLessThan200MB =
+                          //     file.size / 1024 / 1024 < 200;
+
+                          //   if (!isLessThan200MB) {
+                          //     messageApi.error(
+                          //       "Image must be smaller than 200MB",
+                          //     );
+                          //     return Upload.LIST_IGNORE;
+                          //   }
+
+                          //   const reader = new FileReader();
+                          //   reader.onload = (e) => {
+                          //     const base64 = e.target.result;
+
+                          //     setCompanyLogo(base64);
+                          //     form.setFieldsValue({ companyLogo: base64 });
+                          //   };
+
+                          //   reader.readAsDataURL(file);
+
+                          //   return false; // prevent auto upload
+                          // }}
                           beforeUpload={(file) => {
-                            const isImage = file.type.startsWith("image/");
-                            if (!isImage) {
-                              messageApi.error("Only image files are allowed");
+                            const allowedTypes = [
+                              "image/jpeg",
+                              "image/png",
+                              "image/jpg",
+                            ];
+
+                            if (!allowedTypes.includes(file.type)) {
+                              messageApi.error(
+                                "Only JPG and PNG files are allowed",
+                              );
                               return Upload.LIST_IGNORE;
                             }
 
-                            const isLessThan200MB =
-                              file.size / 1024 / 1024 < 200;
-
-                            if (!isLessThan200MB) {
+                            if (file.size > 2 * 1024 * 1024) {
                               messageApi.error(
-                                "Image must be smaller than 200MB",
+                                "File size exceeds 2 MB. Only files up to 2 MB are allowed",
                               );
                               return Upload.LIST_IGNORE;
                             }
@@ -2108,14 +2167,11 @@ const RecruiterJobList = () => {
                             const reader = new FileReader();
                             reader.onload = (e) => {
                               const base64 = e.target.result;
-
                               setCompanyLogo(base64);
                               form.setFieldsValue({ companyLogo: base64 });
                             };
-
                             reader.readAsDataURL(file);
-
-                            return false; // prevent auto upload
+                            return false;
                           }}
                         >
                           <Button icon={<UploadOutlined />}>Upload Logo</Button>
@@ -2530,7 +2586,13 @@ const RecruiterJobList = () => {
             </div>
 
             <div
-              onClick={() => !aiLoading && setAiModalVisible(false)}
+              // onClick={() => !aiLoading && setAiModalVisible(false)}
+              onClick={() => {
+                if (!aiLoading) {
+                  setAiIsExperienceRange(false);
+                  setAiModalVisible(false);
+                }
+              }}
               style={{
                 width: 40,
                 height: 40,
@@ -2563,7 +2625,7 @@ const RecruiterJobList = () => {
                 />
               </Form.Item>
 
-              <Form.Item
+              {/* <Form.Item
                 label="Experience (Years)"
                 name="experience"
                 validateTrigger="onChange"
@@ -2594,7 +2656,110 @@ const RecruiterJobList = () => {
                   inputMode="decimal"
                   maxLength={5}
                 />
-              </Form.Item>
+              </Form.Item> */}
+              <Checkbox
+                checked={aiIsExperienceRange}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setAiIsExperienceRange(checked);
+                  aiForm.setFieldsValue({
+                    experience: undefined,
+                    experienceMin: undefined,
+                    experienceMax: undefined,
+                  });
+                }}
+                style={{ marginBottom: 8 }}
+              >
+                Use Experience Range
+              </Checkbox>
+
+              {!aiIsExperienceRange ? (
+                <Form.Item label="Experience" required>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Form.Item
+                      name="experience"
+                      noStyle
+                      rules={[
+                        { required: true, message: "Experience is required" },
+                        { validator: experienceValidator },
+                      ]}
+                    >
+                      <Input
+                        placeholder="Eg 3, 10, 5.5"
+                        inputMode="decimal"
+                        maxLength={5}
+                        style={{ width: "70%" }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      name="experienceType"
+                      noStyle
+                      initialValue="year"
+                    >
+                      <Select
+                        style={{ width: "30%" }}
+                        options={Experienceoptions}
+                      />
+                    </Form.Item>
+                  </Space.Compact>
+                </Form.Item>
+              ) : (
+                <Form.Item label="Experience Range" required>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Form.Item
+                      name="experienceMin"
+                      noStyle
+                      rules={[
+                        { required: true, message: "Min required" },
+                        { validator: experienceValidator },
+                      ]}
+                    >
+                      <Input
+                        placeholder="Min"
+                        inputMode="decimal"
+                        maxLength={5}
+                        style={{ width: "35%" }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      name="experienceMax"
+                      noStyle
+                      rules={[
+                        { required: true, message: "Max required" },
+                        { validator: experienceValidator },
+                        ({ getFieldValue }) => ({
+                          validator(_, value) {
+                            const min = getFieldValue("experienceMin");
+                            if (min && value && Number(value) < Number(min)) {
+                              return Promise.reject(
+                                "Max must be greater than Min",
+                              );
+                            }
+                            return Promise.resolve();
+                          },
+                        }),
+                      ]}
+                    >
+                      <Input
+                        placeholder="Max"
+                        inputMode="decimal"
+                        maxLength={5}
+                        style={{ width: "35%" }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      name="experienceType"
+                      noStyle
+                      initialValue="year"
+                    >
+                      <Select
+                        style={{ width: "30%" }}
+                        options={Experienceoptions}
+                      />
+                    </Form.Item>
+                  </Space.Compact>
+                </Form.Item>
+              )}
 
               <Form.Item label="Experience Level" name="experienceLevel">
                 <Select style={{ borderRadius: 8, height: 36 }}>
@@ -2651,7 +2816,14 @@ const RecruiterJobList = () => {
               >
                 <Button
                   disabled={aiLoading}
-                  onClick={() => setAiModalVisible(false)}
+                  // onClick={() => setAiModalVisible(false)}
+                  onClick={() => {
+                    if (!aiLoading) {
+                      setAiIsExperienceRange(false);
+                      aiForm.resetFields();
+                      setAiModalVisible(false);
+                    }
+                  }}
                   style={{
                     height: 40,
                     borderRadius: 100,

@@ -295,9 +295,10 @@ const CompanyLayout = ({ children }) => {
           <div
             style={{
               display: "flex",
-              gap: 12,
-              padding: 24,
+              gap: collapsed ? 0 : 12,
+              padding: collapsed ? "24px 0" : 24,
               alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
             }}
           >
             {/* <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>

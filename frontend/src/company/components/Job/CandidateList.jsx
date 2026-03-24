@@ -8,12 +8,15 @@ import { Popover } from "antd";
 import CandidateActivity from "../activity/CandidateActivity";
 import { MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons";
 import FiltersPanel from "../../../candidate/components/Job/FilterPanel";
+import CandidateDetails from "./CandidateDetails";
 
 import {
   MarkCandidateReviewed,
   UpdateVendorCandidateStatus,
   MarkCandidateBookmark,
   SaveCandidate,
+  UnsaveCandidate,
+  GetUserLicenseTier,
 } from "../../api/api";
 
 const CandidateList = () => {
@@ -60,14 +63,99 @@ const CandidateList = () => {
   const [savedCandidateIds, setSavedCandidateIds] = useState(new Set());
   // const [isFilterOpen, setIsFilterOpen] = useState(false);
   // const [activeFilters, setActiveFilters] = useState({});
+  const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
+  const [selectedCandidateId, setSelectedCandidateId] = useState(null);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [licenseTier, setLicenseTier] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(() => {
-    return sessionStorage.getItem("candidateFilterOpen") === "true";
+    const saved = sessionStorage.getItem("candidateFilterOpen");
+    const hasActiveFilters = sessionStorage.getItem("candidateActiveFilters");
+
+    // ✅ If filters are applied, always open the filter panel on refresh
+    if (hasActiveFilters) {
+      try {
+        const parsed = JSON.parse(hasActiveFilters);
+        const hasAnyFilter = Object.values(parsed).some((v) => {
+          if (Array.isArray(v)) return v.length > 0;
+          if (v === null || v === undefined || v === "") return false;
+          return true;
+        });
+        if (hasAnyFilter) return true;
+      } catch {
+        // ignore parse error
+      }
+    }
+
+    return saved === "true";
   });
   const [activeFilters, setActiveFilters] = useState(() => {
     const saved = sessionStorage.getItem("candidateActiveFilters");
     return saved ? JSON.parse(saved) : {};
   });
+  const [showFilteredCount, setShowFilteredCount] = useState(false);
+  const filterCountTimer = useRef(null);
   const isNavigatingToCandidate = useRef(false);
+  const [screeningFilters, setScreeningFilters] = useState({});
+
+  const handleScreeningFiltersChange = (filters) => {
+    setScreeningFilters(filters);
+    // ✅ Show count popup for screening filters too
+    // setShowFilteredCount(true);
+    // if (filterCountTimer.current) clearTimeout(filterCountTimer.current);
+    // filterCountTimer.current = setTimeout(() => {
+    //   setShowFilteredCount(false);
+    // }, 2500);
+  };
+
+  const matchesScreeningFilters = (candidate) => {
+    const answers = candidate.screeningAnswers || [];
+
+    for (const [questionId, filterVal] of Object.entries(screeningFilters)) {
+      if (!filterVal) continue;
+
+      const answer = answers.find((a) => a.questionId === questionId);
+      if (!answer) return false;
+
+      const rawAnswer = String(answer.answer ?? "").trim();
+
+      if (filterVal.type === "NUMBER") {
+        const hasMin =
+          filterVal.min !== null &&
+          filterVal.min !== undefined &&
+          String(filterVal.min) !== "";
+        const hasMax =
+          filterVal.max !== null &&
+          filterVal.max !== undefined &&
+          String(filterVal.max) !== "";
+        if (!hasMin && !hasMax) continue;
+        const num = parseFloat(rawAnswer);
+        if (isNaN(num)) return false;
+        if (hasMin && num < Number(filterVal.min)) return false;
+        if (hasMax && num > Number(filterVal.max)) return false;
+      }
+
+      if (filterVal.type === "BOOLEAN") {
+        if (filterVal.value === null || filterVal.value === undefined) continue;
+        // network sends "true" or "false" as plain strings — direct compare
+        if (rawAnswer.toLowerCase() !== filterVal.value.toLowerCase())
+          return false;
+      }
+
+      // if (filterVal.type === "MULTIPLE_CHOICE" || filterVal.type === "MCQ") {
+      if (
+        filterVal.type === "MULTIPLE_CHOICE" ||
+        filterVal.type === "MCQ" ||
+        filterVal.type === "SELECT"
+      ) {
+        if (!Array.isArray(filterVal.values) || filterVal.values.length === 0)
+          continue;
+        if (!filterVal.values.includes(rawAnswer)) return false;
+      }
+    }
+    return true;
+  };
 
   // useEffect(() => {
   //   const fetchCandidates = async () => {
@@ -121,6 +209,18 @@ const CandidateList = () => {
 
   //   if (jobId) fetchCandidates();
   // }, [jobId]);
+  useEffect(() => {
+    const fetchLicense = async () => {
+      try {
+        const res = await GetUserLicenseTier();
+        setLicenseTier(res?.tier); // BASIC / PROFESSIONAL / ORGANISATION
+      } catch (err) {
+        console.log("License fetch failed");
+      }
+    };
+
+    fetchLicense();
+  }, []);
 
   // ✅ KEEP ONLY THIS ONE useEffect
   useEffect(() => {
@@ -152,7 +252,7 @@ const CandidateList = () => {
           setStatusMap(map);
           setSavedCandidateIds(savedIds);
           setCandidates(response.data);
-          setTotal(response.total || response.data.length);
+          // setTotal(response.total || response.data.length);
         } else {
           setCandidates([]);
           messageAPI.warning("No candidates found for this job.");
@@ -166,7 +266,8 @@ const CandidateList = () => {
     };
 
     if (jobId) fetchCandidates();
-  }, [jobId, page, pageSize]); // ✅ KEEP THIS
+    // }, [jobId, page, pageSize]); // ✅ KEEP THIS
+  }, [jobId]);
   // ✅ ADD THIS useEffect — clears filters when leaving the page
   // useEffect(() => {
   //   return () => {
@@ -247,17 +348,57 @@ const CandidateList = () => {
       if (candidateType === "VENDOR") return vendorId != null;
       return true;
     })
+    // .filter((c) => {
+    //   if (!activeFilters?.experience) return true;
+    //   const exp = parseFloat(c?.profile?.totalExperience || 0);
+    //   return exp >= activeFilters.experience;
+    // })
     .filter((c) => {
-      if (!activeFilters?.experience) return true;
       const exp = parseFloat(c?.profile?.totalExperience || 0);
-      return exp >= activeFilters.experience;
+
+      const hasRange =
+        activeFilters?.expMin != null || activeFilters?.expMax != null;
+      const hasSingle = !!activeFilters?.experience;
+
+      // ✅ Range filter takes priority if either min or max is set
+      if (hasRange) {
+        const min = activeFilters.expMin ?? 0;
+        const max = activeFilters.expMax ?? 99;
+        return exp >= min && exp <= max;
+      }
+
+      // ✅ Fallback to single experience filter (slider/input)
+      if (hasSingle) {
+        const target = Number(activeFilters.experience);
+        return Math.floor(exp) === Math.floor(target);
+      }
+
+      return true;
     })
     .filter((c) => {
-      if (activeFilters?.fitScore == null) return true;
+      const hasRange =
+        activeFilters?.fitScoreMin != null ||
+        activeFilters?.fitScoreMax != null;
+
+      if (hasRange) {
+        const score = c?.matchScore;
+        if (score == null) return false;
+        const min =
+          activeFilters.fitScoreMin != null
+            ? Number(activeFilters.fitScoreMin)
+            : 0;
+        const max =
+          activeFilters.fitScoreMax != null
+            ? Number(activeFilters.fitScoreMax)
+            : 100;
+        return score >= min && score <= max;
+      }
+
+      if (activeFilters?.fitScore == null || activeFilters?.fitScore === "")
+        return true;
       const score = c?.matchScore;
       if (score == null) return false;
-      if (activeFilters.fitScore === 0) return score < 40;
-      return score >= activeFilters.fitScore;
+      return score === Number(activeFilters.fitScore);
     })
     .filter((c) => {
       if (!activeFilters?.preferredLocation?.length) return true;
@@ -329,6 +470,24 @@ const CandidateList = () => {
     //   );
     // })
     .filter((c) => {
+      const hasRange =
+        activeFilters?.expectedCTCMin != null ||
+        activeFilters?.expectedCTCMax != null;
+
+      if (hasRange) {
+        const ctcRaw = parseFloat(
+          String(c?.profile?.expectedCTC || "").replace(/[^0-9.]/g, ""),
+        );
+        if (isNaN(ctcRaw)) return false;
+        const min = activeFilters.expectedCTCMin
+          ? Number(activeFilters.expectedCTCMin)
+          : 0;
+        const max = activeFilters.expectedCTCMax
+          ? Number(activeFilters.expectedCTCMax)
+          : 9999;
+        return ctcRaw >= min && ctcRaw <= max;
+      }
+
       if (!activeFilters?.expectedCTC?.trim()) return true;
       const ctc = c?.profile?.expectedCTC || "";
       return ctc
@@ -352,6 +511,24 @@ const CandidateList = () => {
       );
     })
     .filter((c) => {
+      const hasRange =
+        activeFilters?.rateCardMin != null ||
+        activeFilters?.rateCardMax != null;
+
+      if (hasRange) {
+        const rate = Number(
+          String(c?.profile?.rateCardPerHour?.value || "").replace(/,/g, ""),
+        );
+        if (isNaN(rate)) return false;
+        const min = activeFilters.rateCardMin
+          ? Number(activeFilters.rateCardMin)
+          : 0;
+        const max = activeFilters.rateCardMax
+          ? Number(activeFilters.rateCardMax)
+          : 9999999;
+        return rate >= min && rate <= max;
+      }
+
       if (!activeFilters?.rateCard?.trim()) return true;
       const rate = String(c?.profile?.rateCardPerHour?.value || "").replace(
         /,/g,
@@ -394,15 +571,52 @@ const CandidateList = () => {
         keyGapClouds.includes(q)
       );
     })
+    .filter((c) => matchesScreeningFilters(c))
     .sort((a, b) => {
-      if (!searchText.trim()) return 0;
-      const aName = a?.name?.toLowerCase() || "";
-      const bName = b?.name?.toLowerCase() || "";
-      const q = searchText.toLowerCase();
-      const aMatch = aName.includes(q);
-      const bMatch = bName.includes(q);
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
+      // ✅ Search sort takes priority
+      if (searchText.trim()) {
+        const aName = a?.name?.toLowerCase() || "";
+        const bName = b?.name?.toLowerCase() || "";
+        const q = searchText.toLowerCase();
+        const aMatch = aName.includes(q);
+        const bMatch = bName.includes(q);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0;
+      }
+      if (activeFilters?.fitScore != null && activeFilters?.fitScore !== "") {
+        const scoreA = a?.matchScore ?? -1;
+        const scoreB = b?.matchScore ?? -1;
+        // return scoreA - scoreB;
+        return scoreB - scoreA; // ✅ high to low
+      }
+
+      if (
+        activeFilters?.fitScoreMin != null ||
+        activeFilters?.fitScoreMax != null
+      ) {
+        const scoreA = a?.matchScore ?? -1;
+        const scoreB = b?.matchScore ?? -1;
+        // return scoreA - scoreB;
+        return scoreB - scoreA; // ✅ high to low
+      }
+      if (activeFilters?.expMin != null || activeFilters?.expMax != null) {
+        const aExp = parseFloat(a?.profile?.totalExperience || 0);
+        const bExp = parseFloat(b?.profile?.totalExperience || 0);
+        return aExp - bExp; // ✅ low to high within range
+      }
+
+      // ✅ Single experience sort — exact match first, then ascending
+      if (
+        activeFilters?.experience &&
+        !activeFilters?.expMin &&
+        !activeFilters?.expMax
+      ) {
+        const aExp = parseFloat(a?.profile?.totalExperience || 0);
+        const bExp = parseFloat(b?.profile?.totalExperience || 0);
+        return aExp - bExp; // ✅ 4.0, 4.1, 4.2...4.9 in order
+      }
+
       return 0;
     });
 
@@ -413,6 +627,27 @@ const CandidateList = () => {
       setSelectedCandidates(rows);
     },
   };
+  // useEffect(() => {
+  //   // ✅ Show count whenever filtered results change (covers all filters including screening)
+  //   if (candidates.length > 0) {
+  //     setShowFilteredCount(true);
+  //     if (filterCountTimer.current) clearTimeout(filterCountTimer.current);
+  //     filterCountTimer.current = setTimeout(() => {
+  //       setShowFilteredCount(false);
+  //     }, 2500);
+  //   }
+  // }, [filteredCandidates.length]);
+  useEffect(() => {
+    const hasActiveFilter =
+      Object.values(activeFilters).some((v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        return v !== null && v !== undefined && v !== "";
+      }) ||
+      Object.keys(screeningFilters).length > 0 ||
+      searchText.trim() !== "";
+
+    setShowFilteredCount(hasActiveFilter);
+  }, [activeFilters, screeningFilters, searchText, filteredCandidates.length]);
 
   const chipStyle = {
     padding: "6px 8px",
@@ -431,7 +666,8 @@ const CandidateList = () => {
     Pending: { label: "Pending", color: "#bfbfbf" },
     Shortlisted: { label: "Shortlisted", color: "#52c41a" },
     Rejected: { label: "Rejected", color: "#f5222d" },
-    BookMark: { label: "BookMark", color: "#faad14" },
+    // BookMark: { label: "BookMark", color: "#faad14" },
+    BookMark: { label: "Save Candidate", color: "#faad14" },
   };
 
   const MANUAL_STATUS_OPTIONS = ["Shortlisted", "Rejected", "BookMark"];
@@ -587,20 +823,61 @@ const CandidateList = () => {
           );
         })}
         <div
+          // onClick={async () => {
+          //   try {
+          //     await UpdateVendorCandidateStatus({
+          //       jobApplicationId: record.applicationId,
+          //       status: "Pending",
+          //     });
+          //     setStatusMap((prev) => ({
+          //       ...prev,
+          //       [record.applicationId]: "Pending",
+          //     }));
+          //   } catch {
+          //     messageAPI.error("Failed to clear status");
+          //   }
+          //   closePopover();
+          // }}
           onClick={async () => {
+            const previousStatus = statusMap[record.applicationId] || "Pending";
+
+            // ✅ Update UI instantly
+            setStatusMap((prev) => ({
+              ...prev,
+              [record.applicationId]: "Pending",
+            }));
+            closePopover();
+
             try {
               await UpdateVendorCandidateStatus({
                 jobApplicationId: record.applicationId,
                 status: "Pending",
               });
+
+              // ✅ If was BookMark — also remove from savedCandidates
+              if (previousStatus === "BookMark") {
+                try {
+                  await UnsaveCandidate({
+                    candidateProfileId: record.profile.id,
+                  });
+                  // ✅ Remove from local savedCandidateIds set
+                  setSavedCandidateIds((prev) => {
+                    const updated = new Set(prev);
+                    updated.delete(record.profile.id);
+                    return updated;
+                  });
+                } catch {
+                  // unsave failed silently — not critical
+                }
+              }
+            } catch {
+              // ✅ Rollback on failure
               setStatusMap((prev) => ({
                 ...prev,
-                [record.applicationId]: "Pending",
+                [record.applicationId]: previousStatus,
               }));
-            } catch {
               messageAPI.error("Failed to clear status");
             }
-            closePopover();
           }}
           style={{
             marginTop: 8,
@@ -664,6 +941,182 @@ const CandidateList = () => {
     } finally {
       setGeneratingMap((prev) => ({ ...prev, [record.applicationId]: false }));
     }
+  };
+  // const generateBulkFitScore = async () => {
+  //   const targets =
+  //     selectedCandidates.length > 0
+  //       ? selectedCandidates.slice(0, 10)
+  //       : candidates.filter((c) => c.matchScore == null).slice(0, 5);
+
+  //   if (!targets.length) {
+  //     messageAPI.warning("No candidates available for bulk generation.");
+  //     return;
+  //   }
+
+  //   setBulkGenerating(true);
+  //   messageAPI.loading({
+  //     content: "Generating Fit Scores in bulk...",
+  //     key: "bulk",
+  //     duration: 0,
+  //   });
+
+  //   let successCount = 0;
+  //   let failCount = 0;
+  //   let limitReached = false;
+
+  //   for (const record of targets) {
+  //     try {
+  //       const payload = {
+  //         jobApplicationId: record.applicationId,
+  //         jobId: jobId,
+  //         candidateProfileId: record.profile.id,
+  //         force: false,
+  //       };
+
+  //       const response = await CVEligibility(payload);
+
+  //       if (response?.status === "success") {
+  //         setCandidates((prev) =>
+  //           prev.map((c) =>
+  //             c.applicationId === record.applicationId
+  //               ? {
+  //                   ...c,
+  //                   matchScore: response.data.fitPercentage,
+  //                   aiAnalysis: response.data.analysis,
+  //                 }
+  //               : c,
+  //           ),
+  //         );
+  //         successCount++;
+  //       }
+  //     } catch (err) {
+  //       // ✅ Check if it's a limit error from the API
+  //       const errMsg = err?.response?.data?.message || err?.message || "";
+
+  //       const isLimitError =
+  //         errMsg.toLowerCase().includes("limit") ||
+  //         errMsg.toLowerCase().includes("quota") ||
+  //         errMsg.toLowerCase().includes("exceeded") ||
+  //         errMsg.toLowerCase().includes("daily") ||
+  //         err?.response?.status === 429;
+
+  //       if (isLimitError) {
+  //         limitReached = true;
+  //         break; // ✅ Stop the loop immediately
+  //       }
+
+  //       failCount++;
+  //     }
+  //   }
+
+  //   setBulkGenerating(false);
+  //   messageAPI.destroy("bulk");
+
+  //   // ✅ Show appropriate message based on what happened
+  //   if (limitReached && successCount > 0) {
+  //     messageAPI.warning({
+  //       content: `${successCount} fit score${successCount > 1 ? "s" : ""} generated. Daily limit reached — remaining candidates were skipped.`,
+  //       duration: 5,
+  //     });
+  //   } else if (limitReached && successCount === 0) {
+  //     messageAPI.error({
+  //       content:
+  //         "Daily AI Fit Score limit reached. No scores were generated. Please try again tomorrow.",
+  //       duration: 5,
+  //     });
+  //   } else if (successCount > 0) {
+  //     messageAPI.success({
+  //       content: `Bulk complete: ${successCount} fit score${successCount > 1 ? "s" : ""} generated${failCount > 0 ? `, ${failCount} failed` : ""}.`,
+  //       duration: 4,
+  //     });
+  //   } else {
+  //     messageAPI.error("Failed to generate fit scores. Please try again.");
+  //   }
+  // };
+
+  const handleBulkFitScoreClick = async () => {
+    if (licenseTier === "BASIC") {
+      messageAPI.warning("Upgrade your plan to use Bulk Fit Score");
+      return;
+    }
+    // 👉 STEP 1: SELECT MODE
+    if (!isSelectionMode) {
+      const noScoreCandidates = candidates.filter((c) => c.matchScore == null);
+      const alreadyScored = candidates.filter((c) => c.matchScore != null);
+
+      if (!noScoreCandidates.length) {
+        messageAPI.warning("All candidates already have Fit Score.");
+        return;
+      }
+
+      const keys = noScoreCandidates.map((c) => c.applicationId);
+
+      setSelectedRowKeys(keys);
+      setSelectedCandidates(noScoreCandidates);
+
+      setIsSelectionMode(true); // ✅ switch mode
+
+      messageAPI.success({
+        content: `${noScoreCandidates.length} candidates selected. ${
+          alreadyScored.length ? `${alreadyScored.length} skipped` : ""
+        }`,
+      });
+
+      return;
+    }
+
+    // 👉 STEP 2: GENERATE MODE
+    if (!selectedCandidates.length) {
+      messageAPI.warning("No candidates selected.");
+      return;
+    }
+
+    setBulkGenerating(true);
+
+    let successCount = 0;
+
+    for (const record of selectedCandidates) {
+      try {
+        const payload = {
+          jobApplicationId: record.applicationId,
+          jobId: jobId,
+          candidateProfileId: record.profile.id,
+          force: false,
+        };
+
+        const response = await CVEligibility(payload);
+
+        if (response?.status === "success") {
+          setCandidates((prev) =>
+            prev.map((c) =>
+              c.applicationId === record.applicationId
+                ? {
+                    ...c,
+                    matchScore: response.data.fitPercentage,
+                    aiAnalysis: response.data.analysis,
+                  }
+                : c,
+            ),
+          );
+          successCount++;
+        }
+      } catch (err) {}
+    }
+
+    setBulkGenerating(false);
+    setIsSelectionMode(false); // ✅ reset
+    setSelectedRowKeys([]);
+    setSelectedCandidates([]);
+
+    messageAPI.success(`${successCount} fit scores generated`);
+  };
+  const formatName = (name = "") => {
+    return name
+      .toLowerCase()
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   // TABLE COLUMNS
@@ -761,44 +1214,6 @@ const CandidateList = () => {
       },
     },
 
-    // {
-    //   title: "Name",
-    //   dataIndex: "name",
-    //   key: "name",
-    //   fixed: "left",
-    //   render: (text, record) => (
-    //     <span
-    //       onClick={async (e) => {
-    //         e.stopPropagation();
-    //         try {
-    //           await MarkCandidateReviewed({
-    //             jobApplicationId: record.applicationId,
-    //           });
-    //         } catch {}
-    //         setCandidates((prev) =>
-    //           prev.map((c) =>
-    //             c.applicationId === record.applicationId
-    //               ? { ...c, status: "Reviewed" }
-    //               : c,
-    //           ),
-    //         );
-
-    //         sessionStorage.setItem("candidateListPage", page);
-    //         sessionStorage.setItem("candidateListPageSize", pageSize);
-    //         navigate(`/company/candidate/${record.profile.id}`, {
-    //           state: {
-    //             candidate: { ...record, status: "Reviewed" },
-    //             jobId,
-    //             highlight: highlight || "findbench",
-    //           },
-    //         });
-    //       }}
-    //       style={{ color: "#1677ff", cursor: "pointer" }}
-    //     >
-    //       {text}
-    //     </span>
-    //   ),
-    // },
     {
       title: "Name",
       dataIndex: "name",
@@ -808,21 +1223,6 @@ const CandidateList = () => {
         <Popover
           trigger="hover"
           placement="right"
-          // content={
-          //   <div style={{ fontSize: 12, color: "#6B7280", maxWidth: 220 }}>
-          //     <div
-          //       style={{ fontWeight: 500, color: "#1A1A2E", marginBottom: 6 }}
-          //     >
-          //       More details inside 👆
-          //     </div>
-          //     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          //       <span> Experience</span>
-          //       <span> Expected CTC</span>
-          //       <span> Joining Period</span>
-          //       <span> Rate Card / Month</span>
-          //     </div>
-          //   </div>
-          // }
           content={
             <div style={{ fontSize: 12, color: "#6B7280", maxWidth: 220 }}>
               <div
@@ -863,7 +1263,7 @@ const CandidateList = () => {
             </div>
           }
         >
-          <span
+          {/* <span
             onClick={async (e) => {
               e.stopPropagation();
               try {
@@ -880,6 +1280,10 @@ const CandidateList = () => {
               );
               sessionStorage.setItem("candidateListPage", page);
               sessionStorage.setItem("candidateListPageSize", pageSize);
+              sessionStorage.setItem(
+                "candidateFilterOpen",
+                String(isFilterOpen),
+              );
               isNavigatingToCandidate.current = true;
               navigate(`/company/candidate/${record.profile.id}`, {
                 state: {
@@ -892,6 +1296,24 @@ const CandidateList = () => {
             style={{ color: "#1677ff", cursor: "pointer" }}
           >
             {text}
+          </span> */}
+          {/* <span style={{ color: "#1A1A2E", cursor: "default" }}>{text}</span> */}
+          {/* <span style={{ color: "#1A1A2E", cursor: "default" }}>
+            {formatName(text)}
+          </span> */}
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              // setSelectedCandidateId(record.profile.id);
+              setSelectedCandidate({
+                ...record,
+                profile: record.profile || {},
+              });
+              setIsCandidateModalOpen(true);
+            }}
+            style={{ color: "#1677ff", cursor: "pointer", fontWeight: 500 }}
+          >
+            {formatName(text)}
           </span>
         </Popover>
       ),
@@ -1103,14 +1525,14 @@ const CandidateList = () => {
       },
     },
 
-    {
-      title: "Status",
-      key: "status",
-      render: (_, record) => {
-        const currentStatus = statusMap[record.applicationId] || "Pending";
-        return currentStatus;
-      },
-    },
+    // {
+    //   title: "Status",
+    //   key: "status",
+    //   render: (_, record) => {
+    //     const currentStatus = statusMap[record.applicationId] || "Pending";
+    //     return currentStatus;
+    //   },
+    // },
 
     {
       title: "Applied On",
@@ -1119,11 +1541,20 @@ const CandidateList = () => {
       render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
     },
 
+    // {
+    //   title: "Location",
+    //   dataIndex: ["profile", "currentLocation"],
+    //   key: "currentLocation",
+    //   render: (text) => text || "N/A",
+    // },
     {
-      title: "Location",
-      dataIndex: ["profile", "currentLocation"],
-      key: "currentLocation",
-      render: (text) => text || "N/A",
+      title: "Preferred Location",
+      dataIndex: ["profile", "preferredLocation"],
+      key: "preferredLocation",
+      render: (locations) =>
+        Array.isArray(locations) && locations.length > 0
+          ? locations.join(", ")
+          : "N/A",
     },
 
     {
@@ -1156,6 +1587,46 @@ const CandidateList = () => {
             }
             content={
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* 👤 View Candidate Details */}
+                <div
+                  style={{
+                    cursor: "pointer",
+                    padding: "6px 10px",
+                    fontWeight: 500,
+                  }}
+                  onClick={async () => {
+                    setActionPopoverId(null);
+                    try {
+                      await MarkCandidateReviewed({
+                        jobApplicationId: record.applicationId,
+                      });
+                    } catch {}
+                    setCandidates((prev) =>
+                      prev.map((c) =>
+                        c.applicationId === record.applicationId
+                          ? { ...c, status: "Reviewed" }
+                          : c,
+                      ),
+                    );
+                    sessionStorage.setItem("candidateListPage", page);
+                    sessionStorage.setItem("candidateListPageSize", pageSize);
+                    sessionStorage.setItem(
+                      "candidateFilterOpen",
+                      String(isFilterOpen),
+                    );
+                    isNavigatingToCandidate.current = true;
+                    navigate(`/company/candidate/${record.profile.id}`, {
+                      state: {
+                        candidate: { ...record, status: "Reviewed" },
+                        jobId,
+                        highlight: highlight || "findbench",
+                        matchScore: record?.matchScore ?? null,
+                      },
+                    });
+                  }}
+                >
+                  👤 View Candidate Details
+                </div>
                 {/* Generate Fit Score */}
                 <div
                   style={{
@@ -1217,7 +1688,16 @@ const CandidateList = () => {
   ];
 
   return (
-    <div style={{ padding: 0 }}>
+    // <div style={{ padding: 0 }}>
+    <div
+      style={{
+        padding: 0,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       {contextHolder}
 
       {/* HEADER CARD */}
@@ -1241,7 +1721,8 @@ const CandidateList = () => {
             onClick={() => {
               setIsFilterOpen((prev) => {
                 const next = !prev;
-                sessionStorage.setItem("candidateFilterOpen", next);
+                // sessionStorage.setItem("candidateFilterOpen", next);
+                sessionStorage.setItem("candidateFilterOpen", String(next)); // ✅
                 return next;
               });
             }}
@@ -1264,10 +1745,29 @@ const CandidateList = () => {
             )}
           </div>
           {["ALL", "NORMAL", "VENDOR"].map((type) => {
+            // const labels = {
+            //   ALL: `All (${candidates.length})`,
+            //   NORMAL: `Individual Candidates (${candidates.filter((c) => c?.profile?.vendorId == null).length})`,
+            //   VENDOR: `Vendor Candidates (${candidates.filter((c) => c?.profile?.vendorId != null).length})`,
+            // };
             const labels = {
+              // ✅ ALL shows total unfiltered count
               ALL: `All (${candidates.length})`,
-              NORMAL: `Individual Candidates (${candidates.filter((c) => c?.profile?.vendorId == null).length})`,
-              VENDOR: `Vendor Candidates (${candidates.filter((c) => c?.profile?.vendorId != null).length})`,
+              // ✅ NORMAL and VENDOR show filtered counts when filters are active
+              NORMAL: `Individual Candidates (${
+                candidateType === "NORMAL"
+                  ? filteredCandidates.length // already filtered to NORMAL
+                  : filteredCandidates.filter(
+                      (c) => c?.profile?.vendorId == null,
+                    ).length
+              })`,
+              VENDOR: `Vendor Candidates (${
+                candidateType === "VENDOR"
+                  ? filteredCandidates.length // already filtered to VENDOR
+                  : filteredCandidates.filter(
+                      (c) => c?.profile?.vendorId != null,
+                    ).length
+              })`,
             };
             return (
               <div
@@ -1315,6 +1815,79 @@ const CandidateList = () => {
             }}
             style={{ width: 200, height: 36, borderRadius: 20, fontSize: 13 }}
           />
+          {/* ✅ BULK FIT SCORE BUTTON */}
+          {/* <div
+            
+            onClick={() => {
+              if (licenseTier === "BASIC") {
+                messageAPI.warning("Upgrade required for Bulk Fit Score");
+                return;
+              }
+              !bulkGenerating && handleBulkFitScoreClick();
+            }}
+            style={{
+              height: 36,
+              borderRadius: 20,
+              padding: "6px 18px",
+              background: bulkGenerating ? "#EBEBEB" : "#722ED1",
+              display: "flex",
+              alignItems: "center",
+              cursor: bulkGenerating ? "not-allowed" : "pointer",
+              gap: 6,
+            }}
+          > */}
+          <div
+            onClick={() => {
+              if (licenseTier === "BASIC") {
+                messageAPI.warning(
+                  "🚫 This feature is available only in paid plans",
+                );
+                return;
+              }
+
+              if (!bulkGenerating) {
+                handleBulkFitScoreClick();
+              }
+            }}
+            style={{
+              height: 36,
+              borderRadius: 20,
+              padding: "6px 18px",
+              background:
+                licenseTier === "BASIC" || bulkGenerating
+                  ? "#EBEBEB"
+                  : "#722ED1",
+              display: "flex",
+              alignItems: "center",
+              cursor:
+                licenseTier === "BASIC" || bulkGenerating
+                  ? "not-allowed"
+                  : "pointer",
+              gap: 6,
+            }}
+          >
+            <span
+              style={{
+                color: bulkGenerating ? "#A3A3A3" : "#FFFFFF",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              {/* {bulkGenerating ? "⏳ Generating..." : "🤖 Bulk Fit Score"} */}
+              {/* {bulkGenerating
+                ? "⏳ Generating..."
+                : isSelectionMode
+                  ? "⚡ Generate Fit Score"
+                  : "🤖 Bulk Fit Score"} */}
+              {licenseTier === "BASIC"
+                ? "🔒 Upgrade Plan"
+                : bulkGenerating
+                  ? "⏳ Generating..."
+                  : isSelectionMode
+                    ? "⚡ Generate Fit Score"
+                    : "🤖 Bulk Fit Score"}
+            </span>
+          </div>
 
           <div
             onClick={() =>
@@ -1369,11 +1942,21 @@ const CandidateList = () => {
         </div>
       ) : (
         <>
-          <div style={{ display: "flex", gap: 0, alignItems: "flex-start" }}>
+          {/* <div style={{ display: "flex", gap: 0, alignItems: "flex-start" }}> */}
+          <div
+            style={{
+              display: "flex",
+              gap: 0,
+              alignItems: "flex-start",
+              flex: 1,
+              overflow: "hidden",
+            }}
+          >
             {isFilterOpen && (
               <div
                 style={{
                   height: "calc(100vh - 120px)",
+                  // height: "calc(100vh - 280px)",
                   overflowY: "auto",
                   flexShrink: 0,
                 }}
@@ -1386,6 +1969,13 @@ const CandidateList = () => {
                       "candidateActiveFilters",
                       JSON.stringify(filters),
                     );
+                    // ✅ Show count popup
+                    // setShowFilteredCount(true);
+                    // if (filterCountTimer.current)
+                    //   clearTimeout(filterCountTimer.current);
+                    // filterCountTimer.current = setTimeout(() => {
+                    //   setShowFilteredCount(false);
+                    // }, 2500);
                   }}
                   showCandidateType={false}
                   isFilterOpen={isFilterOpen}
@@ -1454,6 +2044,51 @@ const CandidateList = () => {
                   // showRateCard={true}
                   showRateCard={candidateType !== "NORMAL"}
                   useFilterSectionForSkillsAndClouds={true}
+                  screeningQuestions={(() => {
+                    const map = {};
+                    candidates.forEach((c) => {
+                      (c.screeningAnswers || []).forEach((a) => {
+                        if (!map[a.questionId]) {
+                          map[a.questionId] = {
+                            questionId: a.questionId,
+                            question: a.question,
+                            type: a.type,
+                            options: [],
+                            allAnswers: [],
+                          };
+                        }
+                        // collect unique answers for ALL filterable types as options
+                        if (
+                          a.answer &&
+                          !map[a.questionId].allAnswers.includes(a.answer)
+                        ) {
+                          map[a.questionId].allAnswers.push(a.answer);
+                        }
+                        // ✅ collect options for SELECT, MULTIPLE_CHOICE, MCQ
+                        if (
+                          (a.type === "MULTIPLE_CHOICE" ||
+                            a.type === "MCQ" ||
+                            a.type === "SELECT") &&
+                          a.answer &&
+                          !map[a.questionId].options.includes(a.answer)
+                        ) {
+                          map[a.questionId].options.push(a.answer);
+                        }
+                      });
+                    });
+                    return Object.values(map).filter((q) =>
+                      [
+                        "NUMBER",
+                        "BOOLEAN",
+                        "MULTIPLE_CHOICE",
+                        "MCQ",
+                        "SELECT",
+                        "YES_NO",
+                      ].includes(q.type),
+                    );
+                  })()}
+                  screeningFilters={screeningFilters}
+                  onScreeningFiltersChange={handleScreeningFiltersChange}
                 />
               </div>
             )}
@@ -1464,10 +2099,12 @@ const CandidateList = () => {
                 dataSource={filteredCandidates}
                 rowKey={(record) => record.applicationId}
                 bordered
-                scroll={{ x: "max-content" }}
+                // scroll={{ x: "max-content" }}
+                scroll={{ x: "max-content", y: "calc(100vh - 280px)" }}
                 pagination={{
                   current: page,
                   pageSize,
+                  total: filteredCandidates.length,
                   total,
                   showSizeChanger: true,
                   // onChange: (p, ps) => {
@@ -1484,7 +2121,6 @@ const CandidateList = () => {
               />
             </div>
           </div>
-
           {/* GROUP CHAT MODAL (unchanged) */}
           <Modal
             title="Create Group Chat"
@@ -1526,7 +2162,6 @@ const CandidateList = () => {
               maxLength={50}
             />
           </Modal>
-
           {/* ACTIVITY MODAL (unchanged) */}
           <Modal
             open={activityModalOpen}
@@ -1549,7 +2184,6 @@ const CandidateList = () => {
               />
             )}
           </Modal>
-
           {/* 🆕 SCREENING ANSWERS MODAL */}
           <Modal
             open={answersModalOpen}
@@ -1621,7 +2255,68 @@ const CandidateList = () => {
               </div>
             )}
           </Modal>
+
+          <Modal
+            open={isCandidateModalOpen}
+            onCancel={() => setIsCandidateModalOpen(false)}
+            footer={null}
+            width="80vw"
+            style={{ top: 20, paddingBottom: 0 }}
+            styles={{
+              content: {
+                maxHeight: "calc(100vh - 40px)",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+              },
+              header: {
+                flexShrink: 0,
+              },
+              body: {
+                flex: 1,
+                overflowY: "auto",
+                overflowX: "hidden",
+                padding: 0,
+              },
+            }}
+            destroyOnClose
+          >
+            {selectedCandidate && (
+              <CandidateDetails
+                candidateFromList={selectedCandidate}
+                jobIdFromList={jobId}
+                isModal={true}
+                matchScore={selectedCandidate?.matchScore}
+              />
+            )}
+          </Modal>
         </>
+      )}
+      {/* ✅ Filter count popup */}
+      {showFilteredCount && (
+        <div
+          style={{
+            position: "fixed",
+            top: 100,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#1677ff",
+            color: "#fff",
+            padding: "10px 20px",
+            borderRadius: 24,
+            fontSize: 13,
+            fontWeight: 500,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            pointerEvents: "none",
+          }}
+        >
+          🔍 {filteredCandidates.length} candidate
+          {filteredCandidates.length !== 1 ? "s" : ""} found
+        </div>
       )}
     </div>
   );

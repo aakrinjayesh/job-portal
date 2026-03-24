@@ -239,7 +239,20 @@ function Jobs() {
       )}
 
       <JobList
-        jobs={jobs}
+        // jobs={jobs}
+        jobs={(() => {
+          if (
+            currentFilters?.expMin != null ||
+            currentFilters?.expMax != null
+          ) {
+            return [...jobs].sort(
+              (a, b) =>
+                parseFloat(a.experience?.number || a.totalExperience || 0) -
+                parseFloat(b.experience?.number || b.totalExperience || 0),
+            );
+          }
+          return jobs;
+        })()}
         lastJobRef={lastJobRef}
         jobids={ids}
         portal="candidate"
@@ -409,7 +422,24 @@ function Jobs() {
                 )}
 
                 <JobList
-                  jobs={jobs}
+                  // jobs={jobs}
+                  jobs={(() => {
+                    if (
+                      currentFilters?.expMin != null ||
+                      currentFilters?.expMax != null
+                    ) {
+                      return [...jobs].sort(
+                        (a, b) =>
+                          parseFloat(
+                            a.experience?.number || a.totalExperience || 0,
+                          ) -
+                          parseFloat(
+                            b.experience?.number || b.totalExperience || 0,
+                          ),
+                      );
+                    }
+                    return jobs;
+                  })()}
                   lastJobRef={lastJobRef}
                   jobids={ids}
                   portal="candidate"

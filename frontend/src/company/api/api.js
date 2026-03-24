@@ -872,6 +872,15 @@ export async function cancelSubscription() {
     throw error;
   }
 }
+export async function GetUserLicenseTier() {
+  try {
+    const response = await axiosInstance.get("/billing/user-license-tier");
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetUserLicenseTier:", error);
+    throw error;
+  }
+}
 
 // export async function reEnableAutoRenew() {
 //   try {

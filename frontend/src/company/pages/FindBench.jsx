@@ -74,19 +74,50 @@ function FindBench() {
           controllerRef.current.signal,
         );
 
-        const newList = res?.candidates || [];
-
-        setBench((prev) => (pageNum === 1 ? newList : [...prev, ...newList]));
         // const newList = res?.candidates || [];
 
-        // // ✅ FILTER ONLY ACTIVE CANDIDATES
-        // const activeCandidates = newList.filter(
-        //   (candidate) => candidate.status === "active",
-        // );
+        // setBench((prev) => (pageNum === 1 ? newList : [...prev, ...newList]));
+        const newList = res?.candidates || [];
+        const hasRange = filters?.expMin != null || filters?.expMax != null;
+        const hasSingle = !!filters?.experience;
 
-        // setBench((prev) =>
-        //   pageNum === 1 ? activeCandidates : [...prev, ...activeCandidates],
-        // );
+        // ✅ Filter by experience
+        let filteredList = newList;
+        if (hasRange) {
+          const min = Number(filters.expMin ?? 0);
+          const max = Number(filters.expMax ?? 99);
+          filteredList = newList.filter((c) => {
+            const exp = parseFloat(c?.totalExperience || 0);
+            return exp >= min && exp <= max;
+          });
+        } else if (hasSingle) {
+          filteredList = newList.filter((c) => {
+            const exp = parseFloat(c?.totalExperience || 0);
+            return Math.floor(exp) === Math.floor(Number(filters.experience));
+          });
+        }
+
+        // ✅ Sort ascending by experience when range is active
+        if (hasRange) {
+          filteredList = [...filteredList].sort(
+            (a, b) =>
+              parseFloat(a.totalExperience || 0) -
+              parseFloat(b.totalExperience || 0),
+          );
+        }
+
+        setBench((prev) => {
+          const merged =
+            pageNum === 1 ? filteredList : [...prev, ...filteredList];
+          if (hasRange) {
+            return [...merged].sort(
+              (a, b) =>
+                parseFloat(a.totalExperience || 0) -
+                parseFloat(b.totalExperience || 0),
+            );
+          }
+          return merged;
+        });
 
         setTotalCount(res.totalCount || 0);
         setHasMore(pageNum < res.totalPages);
@@ -319,7 +350,20 @@ function FindBench() {
                 )}
 
                 <BenchList
-                  bench={bench}
+                  // bench={bench}
+                  bench={(() => {
+                    if (
+                      currentFilters?.expMin != null ||
+                      currentFilters?.expMax != null
+                    ) {
+                      return [...bench].sort(
+                        (a, b) =>
+                          parseFloat(a.totalExperience || 0) -
+                          parseFloat(b.totalExperience || 0),
+                      );
+                    }
+                    return bench;
+                  })()}
                   lastBenchRef={lastBenchRef}
                   isFilterOpen={isFilterOpen}
                   // toggleFilter={() => setIsFilterOpen(!isFilterOpen)}

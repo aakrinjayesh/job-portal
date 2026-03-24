@@ -202,18 +202,24 @@ const userApplyJob = async (req, res) => {
         id: application.id,
       },
     });
-
-    /* ───────── BACKGROUND PROCESS ───────── */
-    processCandidateApplicationInBackground({
-      application,
-      profile,
-      user,
-      job,
-      aiAllowed,
-      recruiterLicense,
-      recruiterMember,
-      limitConfigs,
+    const alreadyScoredCount = await prisma.applicationAnalysis.count({
+      where: {
+        jobApplication: { jobId },
+      },
     });
+
+    if (alreadyScoredCount < 5) {
+      processCandidateApplicationInBackground({
+        application,
+        profile,
+        user,
+        job,
+        aiAllowed,
+        recruiterLicense,
+        recruiterMember,
+        limitConfigs,
+      });
+    }
   } catch (error) {
     logger.error("userApplyJob Error:", error.message);
 
@@ -1677,7 +1683,8 @@ const editJob = async (req, res) => {
       const questionData = questions
         .filter((q) => q?.question && q.question.trim() !== "")
         .map((q, index) => ({
-          jobId: job.id,
+          // jobId: job.id,
+          jobId: id,
           question: q.question.trim(),
           type: q.type || "TEXT",
           options: Array.isArray(q.options) ? q.options : [],
@@ -1690,8 +1697,11 @@ const editJob = async (req, res) => {
           data: questionData,
         });
 
+        // console.log(
+        //   `Inserted ${result.count} screening questions for job ${job.id}`,
+        // );
         console.log(
-          `Inserted ${result.count} screening questions for job ${job.id}`,
+          `Inserted ${result.count} screening questions for job ${id}`,
         );
       }
     }

@@ -8,6 +8,7 @@ import {
   getOrgLicenses,
   getSubscriptionStatus,
   cancelSubscription,
+  getUserLicenseTier,
   // reEnableAutoRenew,
 } from "../controllers/billingController.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -56,6 +57,11 @@ BillingRoute.post(
   authenticateToken,
   ensureCompanyAdmin,
   cancelSubscription,
+);
+BillingRoute.get(
+  "/billing/user-license-tier",
+  authenticateToken,
+  getUserLicenseTier,
 );
 // BillingRoute.post(
 //   "/billing/subscription/renew",

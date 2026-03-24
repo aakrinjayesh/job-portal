@@ -107,21 +107,44 @@ const applyFilters = (jobs, filters) => {
     let score = 0;
 
     // ---------- EXPERIENCE ----------
-    if (filters.experience !== null && filters.experience !== undefined) {
-      let enteredExp = null;
+    // if (filters.experience !== null && filters.experience !== undefined) {
+    //   let enteredExp = null;
 
+    //   if (typeof filters.experience === "object") {
+    //     enteredExp = parseInt(filters.experience.number);
+    //   } else {
+    //     enteredExp = parseInt(filters.experience);
+    //   }
+
+    //   const jobExp = parseInt(job.experience?.number);
+
+    //   if (isNaN(enteredExp) || isNaN(jobExp) || jobExp !== enteredExp) {
+    //     continue;
+    //   }
+
+    //   score += 1;
+    // }
+    // ---------- EXPERIENCE ----------
+    const hasExpRange = filters.expMin != null || filters.expMax != null;
+
+    if (hasExpRange) {
+      const jobExp = parseFloat(job.experience?.number ?? 0);
+      const min = Number(filters.expMin ?? 0);
+      const max = Number(filters.expMax ?? 99);
+      if (isNaN(jobExp) || jobExp < min || jobExp > max) continue;
+      score += 1;
+    } else if (
+      filters.experience !== null &&
+      filters.experience !== undefined
+    ) {
+      let enteredExp = null;
       if (typeof filters.experience === "object") {
         enteredExp = parseInt(filters.experience.number);
       } else {
         enteredExp = parseInt(filters.experience);
       }
-
       const jobExp = parseInt(job.experience?.number);
-
-      if (isNaN(enteredExp) || isNaN(jobExp) || jobExp !== enteredExp) {
-        continue;
-      }
-
+      if (isNaN(enteredExp) || isNaN(jobExp) || jobExp !== enteredExp) continue;
       score += 1;
     }
 
@@ -273,18 +296,39 @@ const applyCandidateFilters = (candidates, filters) => {
     let score = 0;
 
     // ---------------- EXPERIENCE ----------------
-    if (
+    // if (
+    //   filters.experience &&
+    //   filters.experience !== "Any" &&
+    //   filters.experience !== 30
+    // ) {
+    //   const enteredExp = parseFloat(filters.experience);
+    //   const totalExp = parseFloat(candidate.totalExperience);
+
+    //   // ✅ Exact year match — only 2.0 to 2.9 passes when user enters 2
+    //   if (isNaN(totalExp) || Math.floor(totalExp) !== Math.floor(enteredExp))
+    //     continue;
+
+    //   score += 1;
+    // }
+    // ---------------- EXPERIENCE ----------------
+    // ---------------- EXPERIENCE ----------------
+    const hasExpRange = filters.expMin != null || filters.expMax != null;
+
+    if (hasExpRange) {
+      const totalExp = parseFloat(candidate.totalExperience);
+      const min = filters.expMin != null ? Number(filters.expMin) : 0;
+      const max = filters.expMax != null ? Number(filters.expMax) : 99;
+      if (isNaN(totalExp) || totalExp < min || totalExp > max) continue;
+      score += 1;
+    } else if (
       filters.experience &&
       filters.experience !== "Any" &&
       filters.experience !== 30
     ) {
       const enteredExp = parseFloat(filters.experience);
       const totalExp = parseFloat(candidate.totalExperience);
-
-      // ✅ Exact year match — only 2.0 to 2.9 passes when user enters 2
       if (isNaN(totalExp) || Math.floor(totalExp) !== Math.floor(enteredExp))
         continue;
-
       score += 1;
     }
 
@@ -376,6 +420,13 @@ const applyCandidateFilters = (candidates, filters) => {
     }
 
     scored.push({ ...candidate, _score: score });
+  }
+
+  if (filters.expMin != null || filters.expMax != null) {
+    return scored.sort(
+      (a, b) =>
+        parseFloat(a.totalExperience || 0) - parseFloat(b.totalExperience || 0),
+    );
   }
 
   // 🔥 SORT BY RELEVANCE

@@ -964,12 +964,18 @@ const vendorApplyCandidate = async (req, res) => {
       ...(failedApplications.length > 0 && { failedApplications }),
     });
 
-    /* ─────────────────────────────
-       🔟 BACKGROUND: AI → PDF → Recruiter Email
-    ───────────────────────────── */
-    if (appliedCandidates.length > 0) {
+    // ✅ FIX — renamed to remainingScoreSlots to avoid conflict
+    const alreadyScoredCount = await prisma.applicationAnalysis.count({
+      where: {
+        jobApplication: { jobId },
+      },
+    });
+
+    const remainingScoreSlots = 5 - alreadyScoredCount;
+
+    if (appliedCandidates.length > 0 && remainingScoreSlots > 0) {
       processInBackground({
-        appliedCandidates,
+        appliedCandidates: appliedCandidates.slice(0, remainingScoreSlots),
         job,
         aiAllowed,
         recruiterLicense,
@@ -1515,7 +1521,7 @@ const markCandidateBookmark = async (req, res) => {
     const application = await prisma.jobApplication.findUnique({
       where: { id: jobApplicationId },
       include: {
-        job: { select: { postedById: true } },
+        job: { select: { postedById: true, organizationId: true } },
       },
     });
 
@@ -1523,7 +1529,13 @@ const markCandidateBookmark = async (req, res) => {
       return res.status(404).json({ message: "Application not found" });
     }
 
-    if (application.job.postedById !== userAuth.id) {
+    // if (application.job.postedById !== userAuth.id) {
+    //   return res.status(403).json({ message: "Unauthorized" });
+    // }
+    if (
+      application.job.postedById !== userAuth.id &&
+      application.job.organizationId !== userAuth.organizationId
+    ) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 

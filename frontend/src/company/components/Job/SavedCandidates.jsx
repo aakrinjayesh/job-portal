@@ -86,11 +86,86 @@ function SavedCandidates() {
               : "Individual Candidate",
           }));
 
-          setCandidates((prev) =>
-            pageNum === 1 ? mappedCandidates : [...prev, ...mappedCandidates],
-          );
+          // setCandidates((prev) =>
+          //   pageNum === 1 ? mappedCandidates : [...prev, ...mappedCandidates],
+          // );
+          const filteredMapped = (() => {
+            const hasRange =
+              filtersToUse?.expMin != null || filtersToUse?.expMax != null;
+            const hasSingle =
+              !!filtersToUse?.experience &&
+              filtersToUse.experience !== "Any" &&
+              filtersToUse.experience !== 30;
+
+            let result = mappedCandidates;
+
+            if (hasRange) {
+              const min = Number(filtersToUse.expMin ?? 0);
+              const max = Number(filtersToUse.expMax ?? 99);
+              result = result.filter((c) => {
+                const exp = parseFloat(c?.totalExperience || 0);
+                return exp >= min && exp <= max;
+              });
+            } else if (hasSingle) {
+              const target = Math.floor(Number(filtersToUse.experience));
+              result = result.filter((c) => {
+                const exp = parseFloat(c?.totalExperience || 0);
+                return Math.floor(exp) === target;
+              });
+            }
+            if (filtersToUse?.candidateType?.length) {
+              const wantsVendor = filtersToUse.candidateType.includes("vendor");
+              const wantsIndividual =
+                filtersToUse.candidateType.includes("individual");
+              result = result.filter((c) => {
+                const isVendor = c.vendorId != null && c.vendorId !== "";
+                if (wantsVendor && wantsIndividual) return true; // both selected — show all
+                if (wantsVendor) return isVendor; // only vendor selected
+                if (wantsIndividual) return !isVendor; // only individual selected
+                return true;
+              });
+            }
+            // ✅ Location filter
+            if (filtersToUse?.location?.length) {
+              result = result.filter((c) => {
+                const preferred = c?.preferredLocation || [];
+                const current = c?.currentLocation || "";
+                return filtersToUse.location.some(
+                  (loc) =>
+                    preferred.some(
+                      (pl) =>
+                        pl?.toLowerCase().includes(loc.toLowerCase()) ||
+                        loc.toLowerCase().includes(pl?.toLowerCase()),
+                    ) || current.toLowerCase().includes(loc.toLowerCase()),
+                );
+              });
+            }
+
+            return result;
+
+            // return result;
+          })();
+
+          setCandidates((prev) => {
+            const merged =
+              pageNum === 1 ? filteredMapped : [...prev, ...filteredMapped];
+            // ✅ Sort ascending by experience when range is active
+            if (filtersToUse?.expMin != null || filtersToUse?.expMax != null) {
+              return [...merged].sort(
+                (a, b) =>
+                  parseFloat(a.totalExperience || 0) -
+                  parseFloat(b.totalExperience || 0),
+              );
+            }
+            return merged;
+          });
 
           setHasMore(pageNum < pagination.totalPages);
+
+          // ✅ If filtered result is empty but more pages exist, auto-fetch next page
+          if (filteredMapped.length === 0 && pageNum < pagination.totalPages) {
+            setTimeout(() => setPage((prev) => prev + 1), 100);
+          }
         }
       } catch (err) {
         message.error("Failed to load saved candidates");

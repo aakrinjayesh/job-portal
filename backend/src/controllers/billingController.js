@@ -877,6 +877,59 @@ const cancelSubscription = async (req, res) => {
     });
   }
 };
+const getUserLicenseTier = async (req, res) => {
+  try {
+    const userId = req.user?.id; // assuming auth middleware
+
+    // 1️⃣ Get organization member
+    const member = await prisma.organizationMember.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "User is not part of any organization",
+      });
+    }
+
+    // 2️⃣ Get license assigned to this member
+    const license = await prisma.license.findFirst({
+      where: {
+        assignedToId: member.id,
+        isActive: true,
+      },
+      include: {
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            tier: true,
+          },
+        },
+      },
+    });
+
+    // 4️⃣ Return plan tier
+    return res.status(200).json({
+      success: true,
+      data: {
+        hasLicense: true,
+        licenseId: license.id,
+        planId: license.plan.id,
+        planName: license.plan.name,
+        tier: license.plan.tier, // ✅ THIS IS WHAT YOU NEED
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user license tier:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 
 // const reEnableAutoRenew = async (req, res) => {
 //   try {
@@ -908,5 +961,6 @@ export {
   getOrgLicenses,
   getSubscriptionStatus,
   cancelSubscription,
+  getUserLicenseTier,
   // reEnableAutoRenew,
 };
