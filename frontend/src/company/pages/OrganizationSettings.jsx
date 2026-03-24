@@ -497,9 +497,7 @@ const OrganizationSettings = () => {
 
       {/* ── License stats ── */}
       {(() => {
-        const purchased = licenses.filter(
-          (l) => l.plan !== "BASIC" && l.isActive,
-        );
+        const purchased = licenses.filter((l) => l.plan !== "BASIC");
         const assignedCount = purchased.filter(
           (l) => l.isAssigned && l.assignedTo,
         ).length;
@@ -637,8 +635,7 @@ const OrganizationSettings = () => {
           {(() => {
             const now = new Date();
             const available = licenses.filter(
-              (l) =>
-                l.isActive && !l.isAssigned && new Date(l.validUntil) >= now,
+              (l) => !l.isAssigned && new Date(l.validUntil) >= now,
             );
             if (!available.length) {
               return (
@@ -698,7 +695,7 @@ const OrganizationSettings = () => {
         {(() => {
           const now = new Date();
           const available = licenses.filter(
-            (l) => l.isActive && !l.isAssigned && new Date(l.validUntil) >= now,
+            (l) => !l.isAssigned && new Date(l.validUntil) >= now,
           );
           if (!available.length) {
             return (
