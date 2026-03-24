@@ -19,8 +19,16 @@ BillingRoute.get("/billing/plans", authenticateToken, getSubscriptionPlans);
 BillingRoute.post("/billing/invoice", authenticateToken, createInvoice);
 
 // Legacy one-time order flow (kept for backward compatibility)
-BillingRoute.post("/billing/razorpay/order", createRazorpayOrder);
-BillingRoute.post("/billing/razorpay/verify", verifyRazorpayPayment);
+BillingRoute.post(
+  "/billing/razorpay/order",
+  authenticateToken,
+  createRazorpayOrder,
+);
+BillingRoute.post(
+  "/billing/razorpay/verify",
+  authenticateToken,
+  verifyRazorpayPayment,
+);
 
 // License management — COMPANY_ADMIN only
 BillingRoute.get(

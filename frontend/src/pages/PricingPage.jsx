@@ -275,7 +275,7 @@ export default function PricingPage() {
           messageApi.success("Payment successful 🎉");
 
           setTimeout(() => {
-            navigate("/company/dashboard");
+            navigate("/company/jobs");
           }, 800);
         },
       };
