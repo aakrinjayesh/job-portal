@@ -774,26 +774,51 @@ const getPlanUpgradeEmailTemplate = ({
 
 const getSubscriptionStatus = async (req, res) => {
   try {
-    const { organizationId } = req.user;
+    const { organizationId, userId } = req.user;
 
+    // 1️⃣ Get organization member
+    const orgMember = await prisma.organizationMember.findFirst({
+      where: {
+        userId,
+        // organizationId,
+      },
+      select: { id: true },
+    });
+
+    if (!orgMember) {
+      return res.status(404).json({
+        status: "error",
+        message: "Organization member not found",
+      });
+    }
+
+    // 2️⃣ Get subscription
     const subscription = await prisma.organizationSubscription.findUnique({
       where: { organizationId },
-      include: {
-        licenses: {
-          where: { isActive: true },
-          include: { plan: { select: { tier: true, name: true } } },
-          take: 1,
-        },
-      },
     });
 
     if (!subscription) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "No subscription found" });
+      return res.status(404).json({
+        status: "error",
+        message: "No subscription found",
+      });
     }
 
-    const activeLicense = subscription.licenses[0];
+    // 3️⃣ Get license assigned to this member
+    const activeLicense = await prisma.license.findFirst({
+      where: {
+        assignedToId: orgMember.id, // 👈 IMPORTANT FIX
+        isActive: true,
+      },
+      include: {
+        plan: {
+          select: {
+            tier: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     return res.status(200).json({
       status: "success",
@@ -804,7 +829,6 @@ const getSubscriptionStatus = async (req, res) => {
         billingCycle: subscription.billingCycle,
         subscriptionStatus: subscription.status,
         autoRenew: subscription.autoRenew,
-        // isPaused: subscription.isSubscriptionPaused,
         status: subscription.status,
         currentPeriodEnd: subscription.currentPeriodEnd,
         nextBillingDate: subscription.nextBillingDate,

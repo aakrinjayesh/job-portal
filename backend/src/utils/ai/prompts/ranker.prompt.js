@@ -358,9 +358,6 @@ export const cvRankerPrompt = (jobDescription, candidate) => ({
 SYSTEM ROLE: Expert ATS (Applicant Tracking System) AI for Salesforce candidate evaluation.
 OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
 
-JOB DESCRIPTION INPUT: ${jobStr}
-CANDIDATE PROFILE INPUT: ${candStr}
-
 JSON SCHEMA (include ALL keys exactly as shown):
 {
   "fit_percentage": number,
