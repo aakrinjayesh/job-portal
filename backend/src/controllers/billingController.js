@@ -6,103 +6,121 @@ import sendEmail from "../utils/sendEmail.js";
 import { logger } from "../utils/logger.js";
 
 const createInvoice = async (req, res) => {
-  const { organizationId } = req.user;
-  const { planTier, quantity, billingCycle, country } = req.body;
-  const rawBillingCycle = billingCycle?.toUpperCase();
+  try {
+    const { organizationId } = req.user;
+    const { planTier, quantity, billingCycle, country } = req.body;
+    const rawBillingCycle = billingCycle?.toUpperCase();
 
-  if (!["MONTHLY", "YEARLY"].includes(rawBillingCycle)) {
-    return res.status(400).json({ message: "Invalid billing cycle" });
-  }
+    if (!["MONTHLY", "YEARLY"].includes(rawBillingCycle)) {
+      return res.status(400).json({ message: "Invalid billing cycle" });
+    }
 
-  const plan = await prisma.subscriptionPlan.findUnique({
-    where: { tier: planTier },
-  });
+    const plan = await prisma.subscriptionPlan.findUnique({
+      where: { tier: planTier },
+    });
 
-  if (!plan) {
-    return res.status(400).json({ error: "Invalid plan" });
-  }
+    if (!plan) {
+      return res.status(400).json({ error: "Invalid plan" });
+    }
 
-  const address = await prisma.address.findUnique({
-    where: { userId: req.user.id },
-  });
+    const address = await prisma.address.findUnique({
+      where: { organizationId },
+    });
 
-  const detectedCountry = address?.country || country || "IN";
+    const detectedCountry = address?.country || country || "IN";
 
-  const unitPrice =
-    rawBillingCycle === "MONTHLY" ? plan.monthlyPrice : plan.yearlyPrice;
+    const unitPrice =
+      rawBillingCycle === "MONTHLY" ? plan.monthlyPrice : plan.yearlyPrice;
 
-  const subtotal = unitPrice * quantity;
-  const tax = detectedCountry === "IN" ? Math.round(subtotal * 0.18) : 0;
-  const total = subtotal + tax;
+    const subtotal = unitPrice * quantity;
+    const tax = detectedCountry === "IN" ? Math.round(subtotal * 0.18) : 0;
+    const total = subtotal + tax;
 
-  const subscription = await prisma.organizationSubscription.findUnique({
-    where: { organizationId },
-  });
+    const subscription = await prisma.organizationSubscription.findUnique({
+      where: { organizationId },
+    });
 
-  if (!subscription) {
-    return res
-      .status(404)
-      .json({ status: "error", message: "Subscription not found" });
-  }
+    if (!subscription) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Subscription not found" });
+    }
 
-  const now = new Date();
-  const periodEnd =
-    rawBillingCycle === "MONTHLY"
-      ? new Date(new Date().setMonth(now.getMonth() + 1))
-      : new Date(new Date().setFullYear(now.getFullYear() + 1));
+    const now = new Date();
+    const periodEnd =
+      rawBillingCycle === "MONTHLY"
+        ? new Date(new Date().setMonth(now.getMonth() + 1))
+        : new Date(new Date().setFullYear(now.getFullYear() + 1));
 
-  const invoice = await prisma.invoice.create({
-    data: {
-      subscriptionId: subscription.id,
-      invoiceNumber: `INV-${Date.now()}`,
-      status: "PENDING",
-      billingCycle: rawBillingCycle,
-      planTier,
-      subtotal,
-      tax,
+    const invoice = await prisma.invoice.create({
+      data: {
+        subscriptionId: subscription.id,
+        invoiceNumber: `INV-${Date.now()}`,
+        status: "PENDING",
+        billingCycle: rawBillingCycle,
+        planTier,
+        subtotal,
+        tax,
+        total,
+        quantity,
+        periodStart: now,
+        periodEnd,
+        dueDate: new Date(Date.now() + 7 * 86400000),
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      invoiceId: invoice.id,
       total,
-      quantity,
-      periodStart: now,
-      periodEnd,
-      dueDate: new Date(Date.now() + 7 * 86400000),
-    },
-  });
-
-  res.status(200).json({
-    status: "success",
-    invoiceId: invoice.id,
-    total,
-  });
+    });
+  } catch (error) {
+    console.log("error create invoice", error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Payment verification failed",
+      metadata: error.message,
+    });
+  }
 };
 
 const createRazorpayOrder = async (req, res) => {
-  const { invoiceId } = req.body;
+  try {
+    const { invoiceId } = req.body;
 
-  const invoice = await prisma.invoice.findUnique({
-    where: { id: invoiceId },
-  });
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+    });
 
-  if (!invoice || invoice.status !== "PENDING") {
-    return res.status(400).json({ error: "Invalid invoice" });
+    if (!invoice || invoice.status !== "PENDING") {
+      return res.status(400).json({ error: "Invalid invoice" });
+    }
+
+    const order = await razorpay.orders.create({
+      amount: invoice.total * 100,
+      currency: "INR",
+      receipt: invoice.invoiceNumber,
+      notes: {
+        invoiceId: invoice.id,
+        subscriptionId: invoice.subscriptionId,
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key: process.env.RAZORPAY_KEY_ID,
+    });
+  } catch (error) {
+    console.log("error razorpay order", error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Payment verification failed",
+      metadata: error.message,
+    });
   }
-
-  const order = await razorpay.orders.create({
-    amount: invoice.total * 100,
-    currency: "INR",
-    receipt: invoice.invoiceNumber,
-    notes: {
-      invoiceId: invoice.id,
-      subscriptionId: invoice.subscriptionId,
-    },
-  });
-
-  res.status(200).json({
-    status: "success",
-    orderId: order.id,
-    amount: order.amount,
-    currency: order.currency,
-    key: process.env.RAZORPAY_KEY_ID,
-  });
 };
 
 const verifyRazorpayPayment = async (req, res) => {
@@ -291,15 +309,14 @@ const verifyRazorpayPayment = async (req, res) => {
           }),
           limits: plan.limits,
         }),
-      }).catch((err) =>
-        logger.error("Plan upgrade email failed:", err.message),
-      );
+      }).catch((err) => console.log("Plan upgrade email failed:", err.message));
     }
   } catch (error) {
-    logger.error("Payment verification failed:", error.message);
+    console.log("Payment verification failed:", error.message);
     res.status(500).json({
       status: "error",
       message: "Payment verification failed",
+      metadata: error.message,
     });
   }
 };
@@ -471,29 +488,38 @@ const getOrgLicenses = async (req, res) => {
 };
 
 const getSubscriptionPlans = async (req, res) => {
-  const plans = await prisma.subscriptionPlan.findMany({
-    include: {
-      limits: true,
-    },
-    orderBy: {
-      monthlyPrice: "asc",
-    },
-  });
+  try {
+    const plans = await prisma.subscriptionPlan.findMany({
+      include: {
+        limits: true,
+      },
+      orderBy: {
+        monthlyPrice: "asc",
+      },
+    });
 
-  const formatted = plans.map((plan) => ({
-    id: plan.id,
-    tier: plan.tier,
-    name: plan.name,
-    monthlyPrice: plan.monthlyPrice,
-    yearlyPrice: plan.yearlyPrice,
-    features: plan.limits.map((limit) => ({
-      feature: limit.feature,
-      period: limit.period,
-      maxAllowed: limit.maxAllowed,
-    })),
-  }));
+    const formatted = plans.map((plan) => ({
+      id: plan.id,
+      tier: plan.tier,
+      name: plan.name,
+      monthlyPrice: plan.monthlyPrice,
+      yearlyPrice: plan.yearlyPrice,
+      features: plan.limits.map((limit) => ({
+        feature: limit.feature,
+        period: limit.period,
+        maxAllowed: limit.maxAllowed,
+      })),
+    }));
 
-  res.json(formatted);
+    res.json(formatted);
+  } catch (error) {
+    console.log("error getsubscription", error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Payment verification failed",
+      metadata: error.message,
+    });
+  }
 };
 
 const getPlanUpgradeEmailTemplate = ({
@@ -721,9 +747,11 @@ const getSubscriptionStatus = async (req, res) => {
     });
   } catch (error) {
     logger.error("getSubscriptionStatus error:", error.message);
-    return res
-      .status(500)
-      .json({ status: "error", message: "Failed to fetch subscription" });
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch subscription",
+      metadata: error.message,
+    });
   }
 };
 
@@ -753,9 +781,11 @@ const cancelSubscription = async (req, res) => {
     });
   } catch (error) {
     logger.error("cancelSubscription error:", error.message);
-    return res
-      .status(500)
-      .json({ status: "error", message: "Failed to cancel subscription" });
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to cancel subscription",
+      metadata: error.message,
+    });
   }
 };
 
@@ -776,7 +806,7 @@ const cancelSubscription = async (req, res) => {
 //     logger.error("reEnableAutoRenew error:", error.message);
 //     return res
 //       .status(500)
-//       .json({ status: "error", message: "Failed to re-enable auto-renewal" });
+//       .json({ status: "error", message: "Failed to re-enable auto-renewal", metadata: error.message });
 //   }
 // };
 

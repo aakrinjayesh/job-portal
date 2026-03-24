@@ -205,10 +205,11 @@ export const sendInvite = async (req, res) => {
       message: "Invite sent successfully",
     });
   } catch (error) {
-    console.error(error);
+    console.log("send invite error", error.message);
     res.status(500).json({
       status: "error",
       message: "Server Error",
+      metadata: error.message,
     });
   }
 };
