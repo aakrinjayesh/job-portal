@@ -476,6 +476,7 @@ model Address {
   state          String?
   country        String?
   pinCode        String?
+  gstNumber      String?
   organizationId String       @unique
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
