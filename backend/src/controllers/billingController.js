@@ -132,7 +132,7 @@ const verifyRazorpayPayment = async (req, res) => {
       invoiceId,
     } = req.body;
 
-    // 🔐 1️⃣ Verify Signature — before touching DB
+    // 🔐 Verify Signature
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -142,7 +142,7 @@ const verifyRazorpayPayment = async (req, res) => {
       return res.status(400).json({ error: "Invalid payment signature" });
     }
 
-    // 🔎 2️⃣ Pre-fetch invoice & plan (read-only, outside tx is fine)
+    // 🔎 Fetch invoice
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
     });
@@ -152,11 +152,13 @@ const verifyRazorpayPayment = async (req, res) => {
     }
 
     if (invoice.status === "PAID") {
-      return res
-        .status(200)
-        .json({ status: "success", message: "Already processed" });
+      return res.status(200).json({
+        status: "success",
+        message: "Already processed",
+      });
     }
 
+    // 🔎 Fetch plan
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { tier: invoice.planTier },
       include: { limits: true },
@@ -169,17 +171,15 @@ const verifyRazorpayPayment = async (req, res) => {
     const now = new Date();
     const periodEnd = invoice.periodEnd;
 
-    // 🔒 3️⃣ Single transaction — all DB writes are atomic.
-    //         If anything throws, invoice stays PENDING and no partial state is written.
     const { payingMemberEmail, payingMemberName } = await prisma.$transaction(
       async (tx) => {
-        // 3a. Mark invoice PAID
+        // 1️⃣ Mark invoice paid
         await tx.invoice.update({
           where: { id: invoice.id },
           data: { status: "PAID", paidAt: now },
         });
 
-        // 3b. Record payment
+        // 2️⃣ Record payment
         await tx.payment.create({
           data: {
             subscriptionId: invoice.subscriptionId,
@@ -193,7 +193,7 @@ const verifyRazorpayPayment = async (req, res) => {
           },
         });
 
-        // 3c. Fetch subscription
+        // 3️⃣ Subscription
         const subscription = await tx.organizationSubscription.findUnique({
           where: { id: invoice.subscriptionId },
         });
@@ -202,25 +202,53 @@ const verifyRazorpayPayment = async (req, res) => {
           throw new Error("Subscription not found");
         }
 
-        // 3d. Count members & fetch active licenses
-        const memberCount = await tx.organizationMember.count({
-          where: { organizationId: subscription.organizationId },
+        // 4️⃣ Buyer member
+        const buyerMember = await tx.organizationMember.findFirst({
+          where: {
+            userId: req.user.id,
+            organizationId: subscription.organizationId,
+          },
         });
 
-        const activeLicenses = await tx.license.findMany({
-          where: { subscriptionId: invoice.subscriptionId, isActive: true },
+        if (!buyerMember) {
+          throw new Error("Buyer not part of organization");
+        }
+
+        // 5️⃣ Existing license (WILL ALWAYS EXIST)
+        const existingLicense = await tx.license.findFirst({
+          where: {
+            assignedToId: buyerMember.id,
+            isActive: true,
+          },
+          include: { plan: true },
         });
 
+        if (!existingLicense) {
+          throw new Error("License invariant broken (BASIC missing)");
+        }
+
+        // 🔹 Plan hierarchy
+        const PLAN_ORDER = {
+          BASIC: 1,
+          PROFESSIONAL: 2,
+          ORGANISATION: 3,
+        };
+
+        const currentTier = existingLicense.plan.tier;
+        const newTier = plan.tier;
+
+        const isUpgrade = PLAN_ORDER[newTier] > PLAN_ORDER[currentTier];
+
+        const isSamePlan = PLAN_ORDER[newTier] === PLAN_ORDER[currentTier];
+
+        const isDowngrade = PLAN_ORDER[newTier] < PLAN_ORDER[currentTier];
+
         // ==================================================
-        // 🟢 CASE 1: 1 member, 1 license → PLAN UPGRADE
+        // 🟢 CASE 1: UPGRADE
         // ==================================================
-        if (
-          memberCount === 1 &&
-          activeLicenses.length === 1 &&
-          activeLicenses[0].planId !== plan.id
-        ) {
+        if (isUpgrade) {
           await tx.license.update({
-            where: { id: activeLicenses[0].id },
+            where: { id: existingLicense.id },
             data: {
               planId: plan.id,
               validFrom: now,
@@ -228,11 +256,27 @@ const verifyRazorpayPayment = async (req, res) => {
               isActive: true,
             },
           });
+
+          const remaining = invoice.quantity - 1;
+
+          if (remaining > 0) {
+            await tx.license.createMany({
+              data: Array.from({ length: remaining }, () => ({
+                subscriptionId: invoice.subscriptionId,
+                planId: plan.id,
+                validFrom: now,
+                validUntil: periodEnd,
+                isActive: true,
+                assignedToId: null,
+              })),
+            });
+          }
         }
+
         // ==================================================
-        // 🟢 CASE 2: multiple members → ADD NEW SEATS
+        // 🟢 CASE 2: SAME PLAN
         // ==================================================
-        else if (invoice.quantity > 0) {
+        else if (isSamePlan) {
           await tx.license.createMany({
             data: Array.from({ length: invoice.quantity }, () => ({
               subscriptionId: invoice.subscriptionId,
@@ -240,11 +284,28 @@ const verifyRazorpayPayment = async (req, res) => {
               validFrom: now,
               validUntil: periodEnd,
               isActive: true,
+              assignedToId: null,
             })),
           });
         }
 
-        // 3e. Promote first paying user to COMPANY_ADMIN if no admin yet
+        // ==================================================
+        // 🔴 CASE 3: DOWNGRADE (BLOCKED)
+        // ==================================================
+        else if (isDowngrade) {
+          await tx.license.createMany({
+            data: Array.from({ length: invoice.quantity }, () => ({
+              subscriptionId: invoice.subscriptionId,
+              planId: plan.id,
+              validFrom: now,
+              validUntil: periodEnd,
+              isActive: true,
+              assignedToId: null,
+            })),
+          });
+        }
+
+        // 6️⃣ Admin assignment
         const existingAdmin = await tx.organizationMember.findFirst({
           where: {
             organizationId: subscription.organizationId,
@@ -262,7 +323,7 @@ const verifyRazorpayPayment = async (req, res) => {
           });
         }
 
-        // 3f. Update subscription period
+        // 7️⃣ Update subscription
         await tx.organizationSubscription.update({
           where: { id: invoice.subscriptionId },
           data: {
@@ -274,7 +335,7 @@ const verifyRazorpayPayment = async (req, res) => {
           },
         });
 
-        // 3g. Fetch paying user's info to return for the email (still inside tx)
+        // 8️⃣ Email info
         const payingMember = await tx.organizationMember.findFirst({
           where: {
             userId: req.user.id,
@@ -290,14 +351,17 @@ const verifyRazorpayPayment = async (req, res) => {
       },
     );
 
-    // ✅ 4️⃣ Respond to client — transaction is committed at this point
-    res.status(200).json({ status: "success", message: "Payment Successful" });
+    res.status(200).json({
+      status: "success",
+      message: "Payment Successful",
+    });
 
-    // 📧 5️⃣ Send upgrade email in background (non-blocking)
+    // 📧 Email
     if (payingMemberEmail) {
       sendEmail({
         to: payingMemberEmail,
-        subject: `🚀 Your ForceHead Plan Has Been Upgraded to ${plan.tier}`,
+        subject: `🚀 Your ForceHead Plan Has Been Updated to ${plan.tier}`,
+        text: "Payment Conformation",
         html: getPlanUpgradeEmailTemplate({
           name: payingMemberName,
           plan: plan.tier,
@@ -313,6 +377,7 @@ const verifyRazorpayPayment = async (req, res) => {
     }
   } catch (error) {
     console.log("Payment verification failed:", error.message);
+
     res.status(500).json({
       status: "error",
       message: "Payment verification failed",
