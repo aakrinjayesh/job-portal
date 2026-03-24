@@ -286,12 +286,12 @@ const getCompanyProfileDetails = async (req, res) => {
     const user = await prisma.users.findUnique({
       where: { id },
       include: {
-        address: true,
         organizationMember: {
           include: {
             organization: {
               include: {
                 companyProfile: true,
+                address: true, // ← org-level address
               },
             },
           },
@@ -301,22 +301,19 @@ const getCompanyProfileDetails = async (req, res) => {
 
     if (!user) {
       logger.warn("User profile not found");
-
-      return res.status(404).json({
-        status: "error",
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ status: "error", message: "User not found" });
     }
 
-    const companyProfile =
-      user.organizationMember?.organization?.companyProfile || null;
+    const org = user.organizationMember?.organization;
+    const companyProfile = org?.companyProfile || null;
+    const address = org?.address || null; // ← org address, shared by all members
 
     const [firstName = "", lastName = ""] = user.name?.split(" ") || [];
 
     const data = {
-      // ------------------------
       // USER DETAILS
-      // ------------------------
       name: user.name,
       email: user.email || null,
       firstName,
@@ -324,11 +321,11 @@ const getCompanyProfileDetails = async (req, res) => {
       phoneNumber: user.phoneNumber,
       companyName: user.companyName,
       profileUrl: user.profileUrl,
-      address: user.address,
 
-      // ------------------------
+      // ORG-LEVEL ADDRESS (shared across all org members)
+      address,
+
       // COMPANY PROFILE DETAILS
-      // ------------------------
       companyProfile: {
         tagline: companyProfile?.tagline || null,
         description: companyProfile?.description || null,
@@ -346,20 +343,15 @@ const getCompanyProfileDetails = async (req, res) => {
       },
     };
 
-    return res.status(200).json({
-      status: "success",
-      data,
-    });
+    return res.status(200).json({ status: "success", data });
   } catch (error) {
     logger.error(
       "Error fetching profile:",
       JSON.stringify(error.message, null, 2),
     );
-
-    return res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
 
@@ -489,10 +481,9 @@ const updateCompanyProfile = async (req, res) => {
     const payload = req.body;
 
     if (!payload || Object.keys(payload).length === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "Payload is missing",
-      });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Payload is missing" });
     }
 
     const user = await prisma.users.findUnique({
@@ -502,10 +493,9 @@ const updateCompanyProfile = async (req, res) => {
 
     if (!user) {
       logger.warn("User not found");
-      return res.status(404).json({
-        status: "error",
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ status: "error", message: "User not found" });
     }
 
     const organizationId = user.organizationMember?.organizationId;
@@ -534,7 +524,6 @@ const updateCompanyProfile = async (req, res) => {
       socialLinks,
     } = payload;
 
-    // Generate slug BEFORE transaction
     const baseSlug = companyName
       ? await generateSlug(companyName, prisma)
       : null;
@@ -548,10 +537,10 @@ const updateCompanyProfile = async (req, res) => {
         });
       }
 
-      // — address upsert —
+      // — address upsert keyed on organizationId (shared for all org members) —
       if (address) {
         await tx.address.upsert({
-          where: { userId: id },
+          where: { organizationId }, // ← org-scoped, not userId
           update: {
             doorNumber: address.doorNumber,
             street: address.street,
@@ -561,7 +550,7 @@ const updateCompanyProfile = async (req, res) => {
             pinCode: address.pinCode,
           },
           create: {
-            userId: id,
+            organizationId, // ← org-scoped, not userId
             doorNumber: address.doorNumber,
             street: address.street,
             city: address.city,
@@ -607,10 +596,9 @@ const updateCompanyProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating company profile:", error.message);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
 };
 

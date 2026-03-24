@@ -10,6 +10,8 @@ import {
   Space,
   Tooltip,
   Segmented,
+  Select,
+  Modal,
   message,
   Progress,
 } from "antd";
@@ -33,6 +35,14 @@ import { loadRazorpay } from "../utils/loadRazorpay";
 const { Title, Text, Paragraph } = Typography;
 
 const GST_RATE = 0.18;
+
+const COUNTRY_OPTIONS = [
+  { value: "IN", label: "🇮🇳 India" },
+  { value: "US", label: "🇺🇸 United States" },
+  { value: "UK", label: "🇬🇧 United Kingdom" },
+  { value: "AU", label: "🇦🇺 Australia" },
+  { value: "SG", label: "🇸🇬 Singapore" },
+];
 
 const FEATURE_LABELS = {
   APPLY_BENCH_TO_JOB: "Apply Bench",
@@ -60,17 +70,18 @@ export default function PricingPage() {
   const location = useLocation();
 
   const redirectUrl = location?.state?.redirect;
-  console.log("redirect to pricing", redirectUrl);
 
   const [plans, setPlans] = useState([]);
-  // const [loading, setLoading] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
   const [quantities, setQuantities] = useState({});
   const [billingCycle, setBillingCycle] = useState("monthly");
+  const [country, setCountry] = useState();
   const [progress, setProgress] = useState(0);
   const [readyToShow, setReadyToShow] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ open: false, plan: null });
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   /* ===================== FETCH PLANS ===================== */
 
@@ -92,7 +103,6 @@ export default function PricingPage() {
         setQuantities(initial);
 
         clearInterval(interval);
-
         setProgress(100);
 
         setTimeout(() => {
@@ -111,6 +121,8 @@ export default function PricingPage() {
 
   /* ===================== HELPERS ===================== */
 
+  const isIndia = country === "IN";
+
   const calculateBasePrice = (plan) => {
     const qty = quantities[plan.tier] || 1;
     return billingCycle === "monthly"
@@ -118,7 +130,7 @@ export default function PricingPage() {
       : plan.yearlyPrice * qty;
   };
 
-  const calculateGST = (price) => Math.round(price * GST_RATE);
+  const calculateGST = (price) => (isIndia ? Math.round(price * GST_RATE) : 0);
 
   const calculateTotal = (price) => price + calculateGST(price);
 
@@ -156,17 +168,77 @@ export default function PricingPage() {
     return `${value} ${period}`;
   };
 
-  /* ===================== PURCHASE FLOW ===================== */
-
-  const handlePurchase = async (plan) => {
+  const handlePurchase = (plan) => {
     if (plan.tier === "BASIC") {
       setRedirecting(true);
-      navigate(redirectUrl ? redirectUrl : "/company/dashboard");
+      navigate(redirectUrl ? redirectUrl : "/company/jobs");
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    setConfirmModal({ open: true, plan });
+  };
+
+  // do not remove this comment this is for autopay for later
+
+  // const handleConfirmPay = async () => {
+  //   const plan = confirmModal.plan;
+  //   try {
+  //     setLoadingPlan(plan.tier);
+
+  //     const quantity = quantities[plan.tier];
+
+  //     const invoice = await createInvoice({
+  //       planTier: plan.tier,
+  //       quantity,
+  //       billingCycle,
+  //       country,
+  //     });
+
+  //     const subscription = await createRazorpaySubscription(invoice.invoiceId);
+
+  //     const loaded = await loadRazorpay();
+  //     if (!loaded) throw new Error("Razorpay SDK failed");
+
+  //     setConfirmModal({ open: false, plan: null });
+
+  //     const options = {
+  //       key: subscription.key,
+  //       subscription_id: subscription.subscriptionId,
+  //       name: "ForceHead",
+  //       description: `${plan.name} Plan`,
+  //       handler: async (response) => {
+  //         setRedirecting(true);
+  //         await verifyRazorpaySubscriptionPayment({
+  //           razorpay_payment_id: response.razorpay_payment_id,
+  //           razorpay_subscription_id: response.razorpay_subscription_id,
+  //           razorpay_signature: response.razorpay_signature,
+  //           invoiceId: invoice.invoiceId,
+  //         });
+  //         messageApi.success("Payment successful 🎉");
+  //         setTimeout(() => navigate("/company/jobs"), 800);
+  //       },
+  //     };
+
+  //     new window.Razorpay(options).open();
+  //   } catch (err) {
+  //     console.error(err);
+  //     messageApi.error(
+  //       err?.response?.data?.error || "Payment failed. Please try again.",
+  //     );
+  //   } finally {
+  //     setLoadingPlan(null);
+  //   }
+  // };
+
+  const handleConfirmPay = async () => {
+    const plan = confirmModal.plan;
     try {
-      // setLoading(true);
       setLoadingPlan(plan.tier);
 
       const quantity = quantities[plan.tier];
@@ -175,12 +247,15 @@ export default function PricingPage() {
         planTier: plan.tier,
         quantity,
         billingCycle,
+        country,
       });
 
       const order = await createRazorpayOrder(invoice.invoiceId);
 
       const loaded = await loadRazorpay();
       if (!loaded) throw new Error("Razorpay SDK failed");
+
+      setConfirmModal({ open: false, plan: null });
 
       const options = {
         key: order.key,
@@ -208,9 +283,10 @@ export default function PricingPage() {
       new window.Razorpay(options).open();
     } catch (err) {
       console.error(err);
-      messageApi.error("Payment failed. Please try again.");
+      messageApi.error(
+        err?.response?.data?.error || "Payment failed. Please try again.",
+      );
     } finally {
-      // setLoading(false);
       setLoadingPlan(null);
     }
   };
@@ -235,14 +311,10 @@ export default function PricingPage() {
             type="circle"
             percent={progress}
             width={110}
-            strokeColor={{
-              "0%": "#4F63F6",
-              "100%": "#7C8CFF",
-            }}
+            strokeColor={{ "0%": "#4F63F6", "100%": "#7C8CFF" }}
             trailColor="#E6E8FF"
             showInfo={false}
           />
-
           <div
             style={{
               marginTop: 16,
@@ -258,11 +330,163 @@ export default function PricingPage() {
     );
   }
 
+  /* ===================== CONFIRM MODAL ===================== */
+
+  const ConfirmModal = () => {
+    const plan = confirmModal.plan;
+    if (!plan) return null;
+
+    const qty = quantities[plan.tier] || 1;
+    const base =
+      billingCycle === "monthly"
+        ? plan.monthlyPrice * qty
+        : plan.yearlyPrice * qty;
+    const gst = isIndia ? Math.round(base * GST_RATE) : 0;
+    const total = base + gst;
+
+    return (
+      <Modal
+        title={
+          <Text strong style={{ fontSize: 16 }}>
+            Confirm Plan Changes
+          </Text>
+        }
+        open={confirmModal.open}
+        onCancel={() => setConfirmModal({ open: false, plan: null })}
+        footer={null}
+        width={420}
+        centered
+      >
+        {/* Plan name + total */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 4,
+          }}
+        >
+          <div>
+            <Text strong style={{ fontSize: 15 }}>
+              {plan.name} Plan
+            </Text>
+            <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>
+              Billed {billingCycle}, starting today
+            </div>
+          </div>
+          <Text strong style={{ fontSize: 15 }}>
+            ₹{total.toLocaleString()}
+          </Text>
+        </div>
+
+        <Divider style={{ margin: "16px 0" }} />
+
+        {/* Subtotal */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 10,
+          }}
+        >
+          <Text>Subtotal</Text>
+          <Text>₹{base.toLocaleString()}</Text>
+        </div>
+
+        {/* Tax */}
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <Text>Tax {isIndia ? "18% (GST)" : "(exempt)"}</Text>
+          <Text>₹{gst.toLocaleString()}</Text>
+        </div>
+
+        <Divider style={{ margin: "16px 0" }} />
+
+        {/* Total due */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 20,
+          }}
+        >
+          <Text strong style={{ fontSize: 15 }}>
+            Total due today
+          </Text>
+          <Text strong style={{ fontSize: 15 }}>
+            ₹{total.toLocaleString()}
+          </Text>
+        </div>
+
+        {/* Country selector */}
+        <div style={{ marginBottom: 20 }}>
+          <Text
+            type="secondary"
+            style={{ fontSize: 13, display: "block", marginBottom: 6 }}
+          >
+            Billing Country
+          </Text>
+          <Select
+            value={country}
+            onChange={setCountry}
+            status={!country ? "Please Select This Field" : ""}
+            style={{ width: "100%" }}
+            options={COUNTRY_OPTIONS}
+          />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button
+            block
+            size="large"
+            onClick={() => setConfirmModal({ open: false, plan: null })}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            block
+            disabled={!country}
+            size="large"
+            loading={loadingPlan === plan.tier}
+            onClick={handleConfirmPay}
+          >
+            Pay now
+          </Button>
+        </div>
+
+        <Text
+          type="secondary"
+          style={{
+            display: "block",
+            textAlign: "center",
+            marginTop: 12,
+            fontSize: 12,
+          }}
+        >
+          Secure Razorpay checkout · Currency: INR
+        </Text>
+      </Modal>
+    );
+  };
+
   /* ===================== RENDER ===================== */
 
   return (
     <>
       {contextHolder}
+      <ConfirmModal />
+
+      {/* 🔐 Login Modal */}
+      <Modal
+        open={showLoginModal}
+        title="Login Required"
+        onCancel={() => setShowLoginModal(false)}
+        okText="Go to Login"
+        onOk={() => navigate("/login")}
+      >
+        <p>Please login to use this feature.</p>
+      </Modal>
 
       {/* Redirect Overlay */}
       {redirecting && (
@@ -272,14 +496,11 @@ export default function PricingPage() {
             inset: 0,
             background: "rgba(255,255,255,0.9)",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 9999,
           }}
-        >
-          {/* <Spin /> */}
-        </div>
+        />
       )}
 
       <div style={{ padding: "64px 24px", background: "#f5f5f5" }}>
@@ -288,7 +509,8 @@ export default function PricingPage() {
           <div style={{ textAlign: "center", marginBottom: 48 }}>
             <Title level={1}>Choose Your Perfect Plan</Title>
             <Paragraph style={{ fontSize: 18, color: "#666" }}>
-              Transparent pricing. No hidden charges. GST included.
+              Transparent pricing. No hidden charges. GST applies for Indian
+              billing.
             </Paragraph>
 
             <Space size="middle">
@@ -345,11 +567,6 @@ export default function PricingPage() {
                           </Text>
                         </Title>
 
-                        <Text type="secondary" style={{ fontSize: 13 }}>
-                          Base ₹{base.toLocaleString()} + GST ₹
-                          {calculateGST(base).toLocaleString()}
-                        </Text>
-
                         {billingCycle === "yearly" && (
                           <Text
                             type="success"
@@ -369,12 +586,7 @@ export default function PricingPage() {
                             <CheckCircleFilled style={{ color: "#52c41a" }} />
                             <div>
                               <Text strong>{FEATURE_LABELS[key] || key}</Text>
-                              <div
-                                style={{
-                                  fontSize: 13,
-                                  color: "#666",
-                                }}
-                              >
+                              <div style={{ fontSize: 13, color: "#666" }}>
                                 {list.map(formatFeatureValue).join(" • ")}
                               </div>
                             </div>
@@ -396,15 +608,9 @@ export default function PricingPage() {
                             max={100}
                             value={quantities[plan.tier]}
                             onChange={(v) =>
-                              setQuantities((p) => ({
-                                ...p,
-                                [plan.tier]: v,
-                              }))
+                              setQuantities((p) => ({ ...p, [plan.tier]: v }))
                             }
-                            style={{
-                              width: "100%",
-                              marginTop: 8,
-                            }}
+                            style={{ width: "100%", marginTop: 8 }}
                             size="large"
                           />
                         </>
@@ -414,27 +620,28 @@ export default function PricingPage() {
                         type={popular ? "primary" : "default"}
                         block
                         size="large"
-                        // loading={loading}
                         loading={loadingPlan === plan.tier}
                         style={{ marginTop: 24 }}
                         onClick={() => handlePurchase(plan)}
                       >
                         {plan.tier === "BASIC"
                           ? "Continue Free"
-                          : `Pay ₹${total.toLocaleString()}`}
+                          : "Upgrade Plan"}
                       </Button>
 
-                      <Text
-                        type="secondary"
-                        style={{
-                          display: "block",
-                          textAlign: "center",
-                          marginTop: 8,
-                          fontSize: 12,
-                        }}
-                      >
-                        Secure Razorpay checkout • GST included
-                      </Text>
+                      {plan.tier !== "BASIC" && (
+                        <Text
+                          type="secondary"
+                          style={{
+                            display: "block",
+                            textAlign: "center",
+                            marginTop: 8,
+                            fontSize: 12,
+                          }}
+                        >
+                          Secure Razorpay checkout
+                        </Text>
+                      )}
                     </Card>
                   </Badge.Ribbon>
                 </Col>

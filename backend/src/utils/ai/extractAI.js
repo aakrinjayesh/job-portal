@@ -54,7 +54,11 @@ export const extractAIText = async (text, role, extra = {}) => {
     try {
       result = await genAI.chat.completions.create({
         model: modelName,
-        messages: [{ role: "system", content: prompt }],
+        // messages: [{ role: "system", content: prompt }],
+        messages: [
+          { role: "system", content: prompt.system },
+          { role: "user", content: prompt.user },
+        ],
         temperature: 0.1,
         max_tokens: parseInt(process.env["GROQ_MAX_TOKENS"]),
       });
@@ -68,20 +72,6 @@ export const extractAIText = async (text, role, extra = {}) => {
 
       const finishReason = result?.choices?.[0]?.finish_reason;
       const usage = result?.usage;
-
-      const debugPayload = {
-        errorMessage: err.message,
-        stack: err.stack,
-        role,
-        model: modelName,
-        maxTokens: process.env.GROQ_MAX_TOKENS,
-        temperature: 0.1,
-        finishReason,
-        tokenUsage: usage,
-        promptLengthChars: prompt?.length,
-        promptPreview: prompt?.substring(0, 1000), // first 1000 chars only
-        extraData: extra,
-      };
 
       await sendEmail({
         to: process.env.EMAIL_LLM || "vsaijayesh94@gmail.com",
@@ -104,7 +94,7 @@ export const extractAIText = async (text, role, extra = {}) => {
           ${JSON.stringify(usage, null, 2)}
 
           Prompt Stats:
-          Length (chars): ${prompt?.length}
+          Length (chars): ${(prompt?.system?.length ?? 0) + (prompt?.user?.length ?? 0)}
 
           Prompt Preview (First 1000 chars):
           ${prompt?.substring(0, 1000)}
@@ -200,7 +190,7 @@ export const extractAIText = async (text, role, extra = {}) => {
         ${process.env.GROQ_MAX_TOKENS}
 
         Prompt Length (chars):
-        ${prompt?.length || "N/A"}
+        ${(prompt?.system?.length ?? 0) + (prompt?.user?.length ?? 0) || "N/A"}
 
         Extra Payload:
         ${JSON.stringify(extra, null, 2)}

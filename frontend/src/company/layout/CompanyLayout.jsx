@@ -23,6 +23,7 @@ import {
   ArrowLeftOutlined,
   ContactsOutlined,
   UserOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { logout } from "../../candidate/api/api";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -83,6 +84,7 @@ const CompanyLayout = ({ children }) => {
     chat: ["/company/chat"],
     profile: ["/company/profile"],
     pricing: ["/company/pricing"],
+    settings: ["/company/settings"],
     contact: ["/contact"],
     jobs: [
       "/company/jobs",
@@ -90,6 +92,8 @@ const CompanyLayout = ({ children }) => {
       // "/companys/candidates",
       "/company/candidate",
     ],
+    companyprofile: ["/company/public/"],
+    renew: ["/company/renew"],
   };
 
   const handleLogout = async () => {
@@ -164,14 +168,18 @@ const CompanyLayout = ({ children }) => {
     if (path.startsWith("/company/chat")) return "chat";
     if (path.startsWith("/company/profile")) return "profile";
     if (path.startsWith("/company/pricing")) return "pricing";
+    if (path.startsWith("/company/settings")) return "settings";
     if (path.startsWith("/company/dashboard")) return "dashboard";
     if (path.startsWith("/company/jobs")) return "jobs";
 
     // ✅ Public Company Profile (/company/:slug)
-    // if (path.match(/^\/company\/[^/]+$/)) {
-    //   if (highlight) return highlight;
-    //   return "companyprofile";
-    // }
+
+    if (path.startsWith("/company/public/")) {
+      if (highlight) return highlight;
+      return "companyprofile";
+    }
+
+    if (path.startsWith("/company/renew")) return "renew";
 
     return "dashboard";
   }, [location.pathname, location.state]);
@@ -237,7 +245,7 @@ const CompanyLayout = ({ children }) => {
 
     if (path.startsWith("/company/candidates")) return "View Candidates";
 
-    // if (path.match(/^\/company\/[^/]+$/)) return "Company Profile";
+    if (path.startsWith("/company/public/")) return "Company Profile";
 
     if (path.startsWith("/contact")) return "";
 
@@ -254,6 +262,9 @@ const CompanyLayout = ({ children }) => {
       chat: "Chats",
       profile: "Profile",
       pricing: "Pricing",
+      settings: "Settings",
+      companyprofile: "Company Profile",
+      renew: "Renew Subscription",
     };
 
     return pageTitleMap[selectedKey] || "Dashboard";
@@ -392,7 +403,17 @@ const CompanyLayout = ({ children }) => {
                       key: "pricing",
                       label: "Pricing",
                     },
+                    {
+                      key: "renew",
+                      label: "Renew Subscription",
+                      style: { display: "none" },
+                    },
                   ],
+                },
+                {
+                  key: "settings",
+                  icon: <SettingOutlined />,
+                  label: "Settings",
                 },
                 {
                   key: "contact",

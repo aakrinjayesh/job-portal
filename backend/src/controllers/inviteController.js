@@ -4,7 +4,7 @@ import crypto from "crypto";
 
 export const sendInvite = async (req, res) => {
   try {
-    const { name, email, role = "COMPANY_USER" } = req.body;
+    const { name, email, role = "COMPANY_USER", licenseId } = req.body;
     const organizationId = req.user.organizationId;
     const userId = req.user.id;
 
@@ -12,6 +12,13 @@ export const sendInvite = async (req, res) => {
       return res.status(400).json({
         status: "error",
         message: "User is not part of an organization",
+      });
+    }
+
+    if (!licenseId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Please select a license to assign to the invited member",
       });
     }
 
@@ -27,17 +34,22 @@ export const sendInvite = async (req, res) => {
       });
     }
 
-    // 🔥 Get ACTIVE subscription
+    // 🔥 Check admin's own license plan (not first DB result)
+    const adminLicense = await prisma.license.findUnique({
+      where: { assignedToId: orgMember.id },
+      include: { plan: true },
+    });
+
+    if (!adminLicense || adminLicense.plan.tier === "BASIC") {
+      return res.status(403).json({
+        status: "error",
+        message: "Invites are not available on Basic plan. Please upgrade.",
+      });
+    }
+
+    // 🔥 Validate selected license: must belong to org, be active, unassigned, not expired
     const subscription = await prisma.organizationSubscription.findFirst({
-      where: {
-        organizationId,
-        status: "ACTIVE",
-      },
-      include: {
-        licenses: {
-          include: { plan: true },
-        },
-      },
+      where: { organizationId, status: "ACTIVE" },
     });
 
     if (!subscription) {
@@ -47,38 +59,21 @@ export const sendInvite = async (req, res) => {
       });
     }
 
-    const activeLicenses = subscription.licenses.filter(
-      (l) => l.isActive && l.validUntil >= new Date(),
-    );
+    const selectedLicense = await prisma.license.findFirst({
+      where: {
+        id: licenseId,
+        subscriptionId: subscription.id,
+        isActive: true,
+        assignedToId: null,
+        validUntil: { gte: new Date() },
+      },
+    });
 
-    if (activeLicenses.length === 0) {
-      return res.status(403).json({
+    if (!selectedLicense) {
+      return res.status(400).json({
         status: "error",
-        message: "No active licenses found",
-      });
-    }
-
-    // 🔥 Check paid plan (exclude BASIC)
-    const planTier = activeLicenses[0].plan.tier;
-
-    if (planTier === "BASIC") {
-      return res.status(403).json({
-        status: "error",
-        message: "Invites are not available on Basic plan. Please upgrade.",
-      });
-    }
-
-    // 🔥 Check seat availability
-    const assignedSeats = activeLicenses.filter(
-      (l) => l.assignedToId !== null,
-    ).length;
-
-    const availableSeats = activeLicenses.length - assignedSeats;
-
-    if (availableSeats <= 0) {
-      return res.status(403).json({
-        status: "error",
-        message: "No available seats. Please purchase additional licenses.",
+        message:
+          "Selected license is invalid, expired, already assigned, or not in your organization",
       });
     }
 
@@ -129,17 +124,18 @@ export const sendInvite = async (req, res) => {
         permissions: "FULL_ACCESS",
         token,
         expiresAt,
+        licenseId,
       },
     });
 
-   const acceptLink = `${process.env.FRONTEND_URL}/createpassword?email=${encodeURIComponent(
-  email
-)}&role=company&token=${token}`;
+    const acceptLink = `${process.env.FRONTEND_URL}/createpassword?email=${encodeURIComponent(
+      email,
+    )}&role=company&token=${token}`;
 
-await sendEmail({
-  to: email,
-  subject: "You're Invited to Join FORCEHEAD 🚀",
-  html: `
+    await sendEmail({
+      to: email,
+      subject: "You're Invited to Join FORCEHEAD 🚀",
+      html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       
       <!-- Header -->
@@ -202,7 +198,7 @@ await sendEmail({
       </div>
     </div>
   `,
-});
+    });
 
     res.status(200).json({
       status: "success",
@@ -214,118 +210,5 @@ await sendEmail({
       status: "error",
       message: "Server Error",
     });
-  }
-};
-
-export const acceptInvite = async (req, res) => {
-  try {
-    const { token } = req.query;
-    const userId = req.user.id;
-
-    await prisma.$transaction(async (tx) => {
-      const invite = await tx.organizationInvite.findUnique({
-        where: { token },
-      });
-
-      if (!invite) {
-        throw new Error("Invalid or expired invite");
-      }
-
-      if (new Date() > invite.expiresAt) {
-        throw new Error("Invite expired");
-      }
-
-      // 🔥 Get ACTIVE subscription
-      const subscription = await tx.organizationSubscription.findFirst({
-        where: {
-          organizationId: invite.organizationId,
-          status: "ACTIVE",
-        },
-      });
-
-      if (!subscription) {
-        throw new Error("No active subscription found");
-      }
-
-      // 🔥 Find available seat
-      const freeLicense = await tx.license.findFirst({
-        where: {
-          subscriptionId: subscription.id,
-          isActive: true,
-          assignedToId: null,
-          validUntil: { gte: new Date() },
-        },
-        orderBy: {
-          validUntil: "asc",
-        },
-      });
-
-      if (!freeLicense) {
-        throw new Error("No available license seat");
-      }
-
-      // 🔥 Create org member
-      const newMember = await tx.organizationMember.create({
-        data: {
-          userId,
-          organizationId: invite.organizationId,
-          role: invite.role,
-          permissions: invite.permissions,
-        },
-      });
-
-      // 🔥 Assign seat
-      await tx.license.update({
-        where: { id: freeLicense.id },
-        data: {
-          assignedToId: newMember.id,
-        },
-      });
-
-      // 🔥 Delete invite
-      await tx.organizationInvite.delete({
-        where: { id: invite.id },
-      });
-    });
-
-    res.status(200).json({
-      status: "success",
-      message: "Invite accepted and license assigned",
-    });
-  } catch (error) {
-    console.error(error.message);
-    res.status(400).json({
-      status: "error",
-      message: error.message || "Server Error",
-    });
-  }
-};
-
-export const rejectInvite = async (req, res) => {
-  try {
-    const { token } = req.query;
-
-    const invite = await prisma.organizationInvite.findUnique({
-      where: { token },
-    });
-
-    if (!invite) {
-      return res.send("<h2>Invite already processed</h2>");
-    }
-
-    // Delete user
-    await prisma.users.delete({
-      where: { email: invite.email },
-    });
-
-    // Delete invite
-    await prisma.organizationInvite.delete({
-      where: { token },
-    });
-
-    res.send("<h2>Invitation rejected successfully</h2>");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("<h2>Server Error</h2>");
   }
 };

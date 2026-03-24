@@ -23,10 +23,12 @@ import todoRoutes from "./Routes/todoRoutes.js";
 import OrganizationRoutes from "./Routes/organizationRoutes.js";
 import cookieParser from "cookie-parser";
 import BillingRoute from "./Routes/billingRoutes.js";
+import RenewalRoute from "./Routes/renewalRoutes.js";
 import { featureLimitMiddleware } from "./Middleware/featureLimitMiddleware.js";
 import UsageRoute from "./Routes/usageRoutes.js";
 import seoRoute from "./Routes/seoRoutes.js";
 import SupportRoutes from "./Routes/supportRoutes.js";
+import { startLicenseReminderCron } from "./cron/licenseReminderCron.js";
 
 dotenv.config();
 
@@ -42,11 +44,16 @@ app.use(
     credentials: true,
   }),
 );
+
+// AUTO-PAY DISABLED — webhook raw body middleware disabled
+// app.use("/billing/webhook", express.raw({ type: "application/json" }));
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(apiLimiter);
 app.use(authLimiter, LoginRouters);
 app.use(BillingRoute);
+app.use(RenewalRoute);
 app.use(seoRoute);
 app.use("/api/activity", activityRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
@@ -70,4 +77,5 @@ app.listen(PORT || "3001", () => {
   logger.info(
     `server Started at ${process.env.BACKEND_URL || "http://localhost:"}:${PORT}`,
   );
+  startLicenseReminderCron();
 });

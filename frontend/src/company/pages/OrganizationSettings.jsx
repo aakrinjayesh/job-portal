@@ -14,6 +14,7 @@ import {
   Tooltip,
   Divider,
   Skeleton,
+  Dropdown,
 } from "antd";
 import {
   PlusOutlined,
@@ -22,12 +23,16 @@ import {
   LinkOutlined,
   CopyOutlined,
   EditOutlined,
+  MoreOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import {
   getOrganizationMembers,
   inviteOrganizationMember,
   removeOrganizationMember,
   revokeOrganizationInvite,
+  assignMemberLicense,
+  getOrgLicenses,
 } from "../api/api";
 import { GetUserProfileDetails } from "../api/api";
 import CompanyProfile from "./CompanyProfile"; // ← new component
@@ -38,21 +43,30 @@ const { Text, Link } = Typography;
 const OrganizationSettings = () => {
   const [members, setMembers] = useState([]);
   const [invites, setInvites] = useState([]);
+  const [licenses, setLicenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const [inviteLicenseId, setInviteLicenseId] = useState(null);
   const [isSiteModalVisible, setIsSiteModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [companySlug, setCompanySlug] = useState(null);
   const [slugLoading, setSlugLoading] = useState(true);
+  const [assignModal, setAssignModal] = useState({
+    open: false,
+    memberId: null,
+    memberName: "",
+  });
+  const [selectedLicenseId, setSelectedLicenseId] = useState(null);
+  const [assigning, setAssigning] = useState(false);
   const firstLoadRef = React.useRef(true);
 
   const [form] = Form.useForm();
 
   // ── derive public profile URL from slug ──
   const publicProfileUrl = companySlug
-    ? `${window.location.origin}/company/${companySlug}`
+    ? `${window.location.origin}/company/public/${companySlug}`
     : null;
 
   // ── fetch slug from profile ──
@@ -79,10 +93,16 @@ const OrganizationSettings = () => {
     setLoading(true);
 
     try {
-      const res = await getOrganizationMembers();
-      if (res.status === "success") {
-        setMembers(res.data.members || []);
-        setInvites(res.data.invites || []);
+      const [membersRes, licensesRes] = await Promise.all([
+        getOrganizationMembers(),
+        getOrgLicenses().catch(() => null),
+      ]);
+      if (membersRes.status === "success") {
+        setMembers(membersRes.data.members || []);
+        setInvites(membersRes.data.invites || []);
+      }
+      if (licensesRes?.status === "success") {
+        setLicenses(licensesRes.licenses || []);
       }
     } catch (error) {
       message.error("Failed to fetch organization data");
@@ -117,11 +137,18 @@ const OrganizationSettings = () => {
 
   // Invite Member
   const handleInvite = async (values) => {
+    if (!inviteLicenseId) {
+      message.warning(
+        "Please select a license to assign to the invited member",
+      );
+      return;
+    }
     setConfirmLoading(true);
     try {
       const payload = {
         name: values.name,
         email: values.email,
+        licenseId: inviteLicenseId,
       };
 
       const resp = await inviteOrganizationMember(payload);
@@ -129,6 +156,7 @@ const OrganizationSettings = () => {
       if (resp.status === "success") {
         message.success("Invite sent successfully");
         setIsInviteModalVisible(false);
+        setInviteLicenseId(null);
       }
 
       form.resetFields();
@@ -150,6 +178,88 @@ const OrganizationSettings = () => {
       message.error(error.response?.data?.message || "Failed to remove member");
     }
   };
+
+  // Open assign license picker
+  const handleAssignLicense = (record) => {
+    setSelectedLicenseId(null);
+    setAssignModal({
+      open: true,
+      memberId: record.id,
+      memberName: record.user?.name || "",
+    });
+  };
+
+  // Confirm assign license
+  const handleConfirmAssign = async () => {
+    if (!selectedLicenseId) {
+      message.warning("Please select a license");
+      return;
+    }
+    setAssigning(true);
+    try {
+      await assignMemberLicense(assignModal.memberId, selectedLicenseId);
+      message.success("License assigned successfully");
+      setAssignModal({ open: false, memberId: null, memberName: "" });
+      setSelectedLicenseId(null);
+      fetchData();
+    } catch (error) {
+      message.error(
+        error.response?.data?.message || "Failed to assign license",
+      );
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const currentUserId = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"))?.id || null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const isCurrentUserAdmin = members.some(
+    (m) => m.user?.id === currentUserId && m.role === "COMPANY_ADMIN",
+  );
+
+  const getMemberActions = (record) => ({
+    items: [
+      {
+        key: "assign",
+        label: "Assign License",
+        icon: <SafetyCertificateOutlined />,
+        disabled: !isCurrentUserAdmin,
+        onClick: () => handleAssignLicense(record),
+      },
+      // {
+      //   key: "delete",
+      //   label: (
+      //     <Popconfirm
+      //       title="Remove member?"
+      //       onConfirm={() => handleRemoveMember(record.id)}
+      //       onClick={(e) => e.stopPropagation()}
+      //     >
+      //       <span
+      //         style={{
+      //           color: record.role === "COMPANY_ADMIN" ? "#ccc" : "#ff4d4f",
+      //         }}
+      //       >
+      //         Remove Member
+      //       </span>
+      //     </Popconfirm>
+      //   ),
+      //   icon: (
+      //     <DeleteOutlined
+      //       style={{
+      //         color: record.role === "COMPANY_ADMIN" ? "#ccc" : "#ff4d4f",
+      //       }}
+      //     />
+      //   ),
+      //   disabled: !isCurrentUserAdmin || record.role === "COMPANY_ADMIN",
+      // },
+    ],
+  });
 
   // Revoke Invite
   const handleRevokeInvite = async (inviteId) => {
@@ -221,25 +331,42 @@ const OrganizationSettings = () => {
       ),
     },
     {
-      title: "Permissions",
-      dataIndex: "permissions",
-      key: "permissions",
+      title: "License",
+      key: "license",
+      render: (_, record) => {
+        const license = record.license;
+        if (!license) return <Tag color="default">Unassigned</Tag>;
+        const isExpired = new Date(license.validUntil) < new Date();
+        const tierColor = {
+          BASIC: "blue",
+          PROFESSIONAL: "purple",
+          ENTERPRISE: "gold",
+        };
+        return (
+          <Space size={4}>
+            <Tag
+              color={
+                isExpired ? "red" : tierColor[license.plan?.tier] || "default"
+              }
+            >
+              {license.plan?.tier || "Unknown"}
+            </Tag>
+            {isExpired && <Tag color="error">Expired</Tag>}
+          </Space>
+        );
+      },
     },
     {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        <Popconfirm
-          title="Remove member?"
-          onConfirm={() => handleRemoveMember(record.id)}
+        <Dropdown
+          menu={getMemberActions(record)}
+          trigger={["click"]}
+          placement="bottomRight"
         >
-          <Button
-            type="text"
-            danger
-            disabled={record.role === "COMPANY_ADMIN"}
-            icon={<DeleteOutlined />}
-          />
-        </Popconfirm>
+          <Button type="text" icon={<MoreOutlined />} />
+        </Dropdown>
       ),
     },
   ];
@@ -259,11 +386,6 @@ const OrganizationSettings = () => {
       title: "Role",
       dataIndex: "role",
       key: "role",
-    },
-    {
-      title: "Permissions",
-      dataIndex: "permissions",
-      key: "permissions",
     },
     {
       title: "Action",
@@ -299,7 +421,10 @@ const OrganizationSettings = () => {
         <Space wrap>
           {/* ── Company public profile URL ── */}
           {slugLoading ? (
-            <Skeleton.Input active style={{ width: 320, height: 32, borderRadius: 8 }} />
+            <Skeleton.Input
+              active
+              style={{ width: 320, height: 32, borderRadius: 8 }}
+            />
           ) : publicProfileUrl ? (
             <Space
               style={{
@@ -358,15 +483,51 @@ const OrganizationSettings = () => {
             </Button>
           )}
 
-          {/* ── Add Member button ── */}
-          <Button
-            icon={<PlusOutlined />}
-            onClick={() => setIsInviteModalVisible(true)}
-          >
-            Add Member
-          </Button>
+          {/* ── Add Member button — COMPANY_ADMIN only ── */}
+          {isCurrentUserAdmin && (
+            <Button
+              icon={<PlusOutlined />}
+              onClick={() => setIsInviteModalVisible(true)}
+            >
+              Add Member
+            </Button>
+          )}
         </Space>
       </div>
+
+      {/* ── License stats ── */}
+      {(() => {
+        const purchased = licenses.filter(
+          (l) => l.plan !== "BASIC" && l.isActive,
+        );
+        const assignedCount = purchased.filter(
+          (l) => l.isAssigned && l.assignedTo,
+        ).length;
+        if (!purchased.length) return null;
+        return (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: "12px 16px",
+              background: "#f6ffed",
+              border: "1px solid #b7eb8f",
+              borderRadius: 8,
+              display: "inline-flex",
+              gap: 24,
+            }}
+          >
+            <span>
+              <strong>{purchased.length}</strong> Purchased Licenses
+            </span>
+            <span>
+              <strong>{assignedCount}</strong> Assigned
+            </span>
+            <span>
+              <strong>{purchased.length - assignedCount}</strong> Available
+            </span>
+          </div>
+        );
+      })()}
 
       {/* ── Members table ── */}
       <h3>Members</h3>
@@ -399,7 +560,11 @@ const OrganizationSettings = () => {
         title="Invite New Member"
         open={isInviteModalVisible}
         onOk={form.submit}
-        onCancel={() => setIsInviteModalVisible(false)}
+        onCancel={() => {
+          setIsInviteModalVisible(false);
+          setInviteLicenseId(null);
+          form.resetFields();
+        }}
         confirmLoading={confirmLoading}
       >
         <Form form={form} onFinish={handleInvite} layout="vertical">
@@ -463,6 +628,117 @@ const OrganizationSettings = () => {
             <Input placeholder="Enter member email" />
           </Form.Item>
         </Form>
+
+        {/* ── License picker ── */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontWeight: 500, marginBottom: 8 }}>
+            Select License to Assign <span style={{ color: "#ff4d4f" }}>*</span>
+          </div>
+          {(() => {
+            const now = new Date();
+            const available = licenses.filter(
+              (l) =>
+                l.isActive && !l.isAssigned && new Date(l.validUntil) >= now,
+            );
+            if (!available.length) {
+              return (
+                <p style={{ color: "#ff4d4f" }}>
+                  No available licenses. Please purchase more.
+                </p>
+              );
+            }
+            const tierColor = {
+              BASIC: "blue",
+              PROFESSIONAL: "purple",
+              ORGANIZATION: "gold",
+              ENTERPRISE: "gold",
+            };
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {available.map((l) => (
+                  <div
+                    key={l.id}
+                    onClick={() => setInviteLicenseId(l.id)}
+                    style={{
+                      padding: "10px 14px",
+                      border: `2px solid ${inviteLicenseId === l.id ? "#1677ff" : "#d9d9d9"}`,
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      background: inviteLicenseId === l.id ? "#e6f4ff" : "#fff",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Tag color={tierColor[l.plan] || "default"}>{l.plan}</Tag>
+                    <span style={{ fontSize: 12, color: "#888" }}>
+                      Valid until {new Date(l.validUntil).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      </Modal>
+
+      {/* ════════ Assign License Modal ════════ */}
+      <Modal
+        title={`Assign License to ${assignModal.memberName}`}
+        open={assignModal.open}
+        onOk={handleConfirmAssign}
+        onCancel={() => {
+          setAssignModal({ open: false, memberId: null, memberName: "" });
+          setSelectedLicenseId(null);
+        }}
+        okText="Assign"
+        confirmLoading={assigning}
+        okButtonProps={{ disabled: !selectedLicenseId }}
+      >
+        {(() => {
+          const now = new Date();
+          const available = licenses.filter(
+            (l) => l.isActive && !l.isAssigned && new Date(l.validUntil) >= now,
+          );
+          if (!available.length) {
+            return (
+              <p style={{ color: "#ff4d4f" }}>
+                No available Active licenses. Please purchase more.
+              </p>
+            );
+          }
+          const tierColor = {
+            BASIC: "blue",
+            PROFESSIONAL: "purple",
+            ORGANIZATION: "gold",
+            ENTERPRISE: "gold",
+          };
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {available.map((l) => (
+                <div
+                  key={l.id}
+                  onClick={() => setSelectedLicenseId(l.id)}
+                  style={{
+                    padding: "10px 14px",
+                    border: `2px solid ${selectedLicenseId === l.id ? "#1677ff" : "#d9d9d9"}`,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    background: selectedLicenseId === l.id ? "#e6f4ff" : "#fff",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Tag color={tierColor[l.plan] || "default"}>{l.plan}</Tag>
+                  <span style={{ fontSize: 12, color: "#888" }}>
+                    Valid until {new Date(l.validUntil).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </Modal>
 
       {/* ════════ Create / Edit Site Modal ════════ */}

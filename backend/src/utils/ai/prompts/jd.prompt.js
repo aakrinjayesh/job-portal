@@ -149,12 +149,11 @@
 // `;
 // };
 
-export const generateJobDescriptionPrompt = (jobdetails) => {
-  return `
+export const generateJobDescriptionPrompt = (jobdetails) => ({
+  system: `
 SYSTEM ROLE: Expert Salesforce HR job description writer and generator.
 OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
 
-JOB DETAILS INPUT: ${JSON.stringify(jobdetails, null, 2)}
 
 JSON SCHEMA (include ALL keys exactly as shown):
 {
@@ -262,5 +261,6 @@ DEFAULTS:
 - Certifications: [] (empty array if unsure)
 
 OUTPUT ONLY THE JSON OBJECT, NO OTHER TEXT.
-`;
-};
+`,
+  user: `Generate a job description JSON for the following job details:\n\n${JSON.stringify(jobdetails, null, 2)}`,
+});

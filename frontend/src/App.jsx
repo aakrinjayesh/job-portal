@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./candidate/layouts/MainLayout";
 import UpdateUserProfile from "./candidate/pages/UpdateUserProfile";
 import CompanySettings from "./company/pages/Settings";
+import CompanySettingsPage from "./company/pages/CompanySettings";
 import Settings from "./candidate/pages/Settings";
 import FAQ from "./candidate/pages/FAQ";
 import DashBoard from "./company/pages/DashBoard";
@@ -35,6 +36,7 @@ import LandingRedirect from "./pages/LandingRedirect";
 import { useLocation } from "react-router-dom";
 import axiosInstance from "./candidate/api/axiosInstance";
 import PricingPage from "./pages/PricingPage";
+import RenewalPage from "./company/pages/RenewalPage";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PublicJobRedirect from "./pages/PublicJobRedirect";
 import LimitExceededAlert from "./components/alert/LimitExceededAlert";
@@ -104,13 +106,13 @@ function App() {
 
       if (user.role === "company") {
         if (!user.companyName && !user.phoneNumber) {
-          setPopupMessage("Please enter company name and phone number.");
+          setPopupMessage("Complete the Company and  Personal Profile");
           setShowCompanyPopup(true);
         } else if (!user.companyName) {
-          setPopupMessage("Please enter company name.");
+          setPopupMessage("Complete the Company Profile");
           setShowCompanyPopup(true);
         } else if (!user.phoneNumber) {
-          setPopupMessage("Please enter phone number.");
+          setPopupMessage("Complete the Personal Profile");
           setShowCompanyPopup(true);
         }
       }
@@ -391,7 +393,25 @@ function App() {
         />
 
         <Route
-          path="/company/:slug"
+          path="/company/renew"
+          element={
+            <CompanyLayout>
+              <RenewalPage />
+            </CompanyLayout>
+          }
+        />
+
+        <Route
+          path="/company/settings"
+          element={
+            <CompanyLayout>
+              <CompanySettingsPage />
+            </CompanyLayout>
+          }
+        />
+
+        <Route
+          path="/company/public/:slug"
           element={
             <CompanyLayout>
               <PublicCompanyProfile />

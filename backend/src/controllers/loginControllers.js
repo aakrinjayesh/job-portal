@@ -39,6 +39,7 @@ const userOtpGenerate = async (req, res) => {
     await sendEmail({
       to: email,
       subject: "Your OTP Code",
+      text: "Your OTP For Registration",
       html: getOtpEmailTemplate({
         otp: GenerateOtp,
         name,
@@ -188,441 +189,6 @@ const userOtpValidator = async (req, res) => {
   }
 };
 
-// const setPassword = async (req, res) => {
-//   const { email, password, role, token } = req.body;
-
-//   if (!email || !password || !role) {
-//     return res.status(400).json({
-//       status: "error",
-//       message: "Email, password, and role are required",
-//     });
-//   }
-
-//   try {
-//     let invite = null;
-
-//     /* ─────────────────────────────
-//        1️⃣ VALIDATE INVITE (IF EXISTS)
-//     ───────────────────────────── */
-//     if (token) {
-//       invite = await prisma.organizationInvite.findUnique({
-//         where: { token },
-//       });
-
-//       if (!invite)
-//         return res.status(400).json({
-//           status: "error",
-//           message: "Invalid or already used invite",
-//         });
-
-//       if (invite.expiresAt < new Date())
-//         return res.status(400).json({
-//           status: "error",
-//           message: "Invite has expired",
-//         });
-
-//       if (invite.email !== email)
-//         return res.status(400).json({
-//           status: "error",
-//           message: "Invite data mismatch",
-//         });
-//     }
-
-//     /* ─────────────────────────────
-//        2️⃣ FIND USER
-//     ───────────────────────────── */
-//     const user = await prisma.users.findUnique({ where: { email } });
-
-//     if (!user)
-//       return res.status(404).json({
-//         status: "error",
-//         message: "User not found. Please complete OTP verification first.",
-//       });
-
-//     if (user.role !== role)
-//       return res.status(400).json({
-//         status: "error",
-//         message: "Invalid role for this user",
-//       });
-
-//     /* ─────────────────────────────
-//        3️⃣ HASH PASSWORD
-//     ───────────────────────────── */
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     /* ─────────────────────────────
-//        4️⃣ TRANSACTION (USER + ORG)
-//     ───────────────────────────── */
-//     const result = await prisma.$transaction(async (tx) => {
-//       // Update password
-//       const updatedUser = await tx.users.update({
-//         where: { email },
-//         data: { password: hashedPassword },
-//       });
-
-//       // 🔹 INVITE FLOW → Join existing org
-//       if (invite) {
-//         await tx.organizationMember.create({
-//           data: {
-//             userId: updatedUser.id,
-//             organizationId: invite.organizationId,
-//             role: invite.role, // TRUST INVITE ROLE
-//             permissions: invite.permissions,
-//           },
-//         });
-
-//         await tx.organizationInvite.delete({
-//           where: { id: invite.id },
-//         });
-//       }
-
-//       // 🔹 NORMAL FLOW → Create org and lincence if company
-//       if (!invite && role === "company") {
-//         const existingMembership = await tx.organizationMember.findFirst({
-//           where: { userId: updatedUser.id },
-//         });
-
-//         if (!existingMembership) {
-//           // 1️⃣ Create organization
-//           const org = await tx.organization.create({
-//             data: {
-//               name:
-//                 updatedUser.companyName || `${updatedUser.name}'s Organization`,
-//             },
-//           });
-
-//           // 2️⃣ Create subscription (FREE / BASIC equivalent)
-//           const subscription = await tx.organizationSubscription.create({
-//             data: {
-//               organizationId: org.id,
-//               status: "ACTIVE",
-//               billingCycle: "MONTHLY",
-//               autoRenew: false,
-//               currentPeriodStart: new Date(),
-//               currentPeriodEnd: new Date(
-//                 new Date().setMonth(new Date().getMonth() + 1),
-//               ),
-//               nextBillingDate: new Date(
-//                 new Date().setMonth(new Date().getMonth() + 1),
-//               ),
-//             },
-//           });
-
-//           // 3️⃣ Create org member (ADMIN)
-//           const member = await tx.organizationMember.create({
-//             data: {
-//               userId: updatedUser.id,
-//               organizationId: org.id,
-//               role: "COMPANY_ADMIN",
-//             },
-//           });
-
-//           // 4️⃣ Create license and assign to admin
-//           await tx.license.create({
-//             data: {
-//               subscriptionId: subscription.id,
-//               planId: "9767d926-261d-4d48-a9b8-c805876ee341",
-//               assignedToId: member.id,
-//               validUntil: new Date(
-//                 new Date().setMonth(new Date().getMonth() + 1),
-//               ),
-//               isActive: true,
-//             },
-//           });
-//         }
-//       }
-
-//       return updatedUser;
-//     });
-
-//     /* ─────────────────────────────
-//        5️⃣ EXTERNAL CHAT REGISTRATION
-//     ───────────────────────────── */
-//     let externalUserId;
-
-//     try {
-//       const payload = {
-//         email,
-//         username: email.split("@")[0].toLowerCase(),
-//         password,
-//       };
-
-//       const registerResponse = await axios.post(
-//         `${external_backend_url}/api/v1/users/register`,
-//         payload,
-//         { headers: { "Content-Type": "application/json" } },
-//       );
-
-//       externalUserId = registerResponse?.data?.data?.user?._id;
-
-//       if (!externalUserId) throw new Error("Chat user id missing");
-//     } catch (err) {
-//       // HARD ROLLBACK USER
-//       await prisma.users.delete({ where: { email } });
-
-//       return res.status(500).json({
-//         status: "error",
-//         message: "External chat registration failed",
-//       });
-//     }
-
-//     /* ─────────────────────────────
-//        6️⃣ SYNC CHAT USER ID
-//     ───────────────────────────── */
-//     await prisma.users.update({
-//       where: { id: result.id },
-//       data: { chatuserid: externalUserId },
-//     });
-
-//     /* ─────────────────────────────
-//        7️⃣ SUCCESS
-//     ───────────────────────────── */
-//     return res.status(200).json({
-//       status: "success",
-//       message: invite
-//         ? "Password set & organization joined successfully"
-//         : "Password set & organization created successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error in setPassword:", error.message);
-//     return res.status(500).json({
-//       status: "error",
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
-// const setPassword = async (req, res) => {
-//   const { email, password, role, token } = req.body;
-
-//   if (!email || !password || !role) {
-//     return res.status(400).json({
-//       status: "error",
-//       message: "Email, password, and role are required",
-//     });
-//   }
-
-//   let invite = null;
-//   let externalUserId = null;
-
-//   try {
-//     /* ─────────────────────────────
-//        1️⃣ VALIDATE INVITE (IF EXISTS)
-//     ───────────────────────────── */
-//     if (token) {
-//       invite = await prisma.organizationInvite.findUnique({
-//         where: { token },
-//       });
-
-//       if (!invite)
-//         return res.status(400).json({
-//           status: "error",
-//           message: "Invalid or already used invite",
-//         });
-
-//       if (invite.expiresAt < new Date())
-//         return res.status(400).json({
-//           status: "error",
-//           message: "Invite has expired",
-//         });
-
-//       if (invite.email !== email)
-//         return res.status(400).json({
-//           status: "error",
-//           message: "Invite data mismatch",
-//         });
-//     }
-
-//     /* ─────────────────────────────
-//        2️⃣ FIND USER
-//     ───────────────────────────── */
-//     const user = await prisma.users.findUnique({ where: { email } });
-
-//     if (!user)
-//       return res.status(404).json({
-//         status: "error",
-//         message: "User not found. Please complete OTP verification first.",
-//       });
-
-//     if (user.role !== role)
-//       return res.status(400).json({
-//         status: "error",
-//         message: "Invalid role for this user",
-//       });
-
-//     /* ─────────────────────────────
-//        3️⃣ HASH PASSWORD
-//     ───────────────────────────── */
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     /* ─────────────────────────────
-//        4️⃣ REGISTER EXTERNAL CHAT USER FIRST
-//     ───────────────────────────── */
-//     try {
-//       const payload = {
-//         email,
-//         username: email.split("@")[0].toLowerCase(),
-//         password,
-//       };
-
-//       const registerResponse = await axios.post(
-//         `${external_backend_url}/api/v1/users/register`,
-//         payload,
-//         { headers: { "Content-Type": "application/json" } },
-//       );
-
-//       externalUserId = registerResponse?.data?.data?.user?._id;
-
-//       if (!externalUserId) throw new Error("Chat user id missing");
-//     } catch (err) {
-//       console.error("External chat registration failed:", err.message);
-
-//       return res.status(500).json({
-//         status: "error",
-//         message: "External chat registration failed",
-//       });
-//     }
-
-//     /* ─────────────────────────────
-//        5️⃣ MAIN DATABASE TRANSACTION
-//     ───────────────────────────── */
-//     const result = await prisma.$transaction(async (tx) => {
-//       // Update user password + chat id
-//       const updatedUser = await tx.users.update({
-//         where: { email },
-//         data: {
-//           password: hashedPassword,
-//           chatuserid: externalUserId,
-//         },
-//       });
-
-//       /* 🔹 INVITE FLOW */
-//       if (invite) {
-//         const subscription = await tx.organizationSubscription.findFirst({
-//           where: {
-//             organizationId: invite.organizationId,
-//             status: "ACTIVE",
-//           },
-//         });
-
-//         if (!subscription) {
-//           throw new Error("No active subscription found for organization");
-//         }
-
-//         const freeLicense = await tx.license.findFirst({
-//           where: {
-//             subscriptionId: subscription.id,
-//             isActive: true,
-//             assignedToId: null,
-//             validUntil: { gte: new Date() },
-//           },
-//           orderBy: { validUntil: "asc" },
-//         });
-
-//         if (!freeLicense) {
-//           throw new Error(
-//             "No available license seat. Please contact your admin.",
-//           );
-//         }
-
-//         const newMember = await tx.organizationMember.create({
-//           data: {
-//             userId: updatedUser.id,
-//             organizationId: invite.organizationId,
-//             role: invite.role,
-//             permissions: invite.permissions,
-//           },
-//         });
-
-//         await tx.license.update({
-//           where: { id: freeLicense.id },
-//           data: { assignedToId: newMember.id },
-//         });
-
-//         await tx.organizationInvite.delete({
-//           where: { id: invite.id },
-//         });
-//       }
-
-//       /* 🔹 NORMAL COMPANY FLOW */
-//       if (!invite && role === "company") {
-//         const existingMembership = await tx.organizationMember.findFirst({
-//           where: { userId: updatedUser.id },
-//         });
-
-//         if (!existingMembership) {
-//           const org = await tx.organization.create({
-//             data: {
-//               name:
-//                 updatedUser.companyName || `${updatedUser.name}'s Organization`,
-//             },
-//           });
-
-//           const subscription = await tx.organizationSubscription.create({
-//             data: {
-//               organizationId: org.id,
-//               status: "ACTIVE",
-//               billingCycle: "MONTHLY",
-//               autoRenew: false,
-//               currentPeriodStart: new Date(),
-//               currentPeriodEnd: new Date(
-//                 new Date().setMonth(new Date().getMonth() + 1),
-//               ),
-//               nextBillingDate: new Date(
-//                 new Date().setMonth(new Date().getMonth() + 1),
-//               ),
-//             },
-//           });
-
-//           const member = await tx.organizationMember.create({
-//             data: {
-//               userId: updatedUser.id,
-//               organizationId: org.id,
-//               role: "COMPANY_ADMIN",
-//             },
-//           });
-
-//           const plain = await tx.subscriptionPlan.findFirst({
-//             where: {
-//               tier: "BASIC",
-//             },
-//           });
-
-//           await tx.license.create({
-//             data: {
-//               subscriptionId: subscription.id,
-//               planId: plain.id,
-//               assignedToId: member.id,
-//               validUntil: new Date(
-//                 new Date().setMonth(new Date().getMonth() + 1),
-//               ),
-//               isActive: true,
-//             },
-//           });
-//         }
-//       }
-
-//       return updatedUser;
-//     });
-
-//     /* ─────────────────────────────
-//        6️⃣ SUCCESS RESPONSE
-//     ───────────────────────────── */
-//     return res.status(200).json({
-//       status: "success",
-//       message: invite
-//         ? "Password set, organization joined & license assigned successfully"
-//         : "Password set & organization created successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error in setPassword:", error.message);
-//     return res.status(500).json({
-//       status: "error",
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// };
-
 const setPassword = async (req, res) => {
   const { email: em, password, role, token } = req.body;
 
@@ -725,123 +291,175 @@ const setPassword = async (req, res) => {
     /* ─────────────────────────────
        5️⃣ MAIN DATABASE TRANSACTION
     ───────────────────────────── */
-    const result = await prisma.$transaction(async (tx) => {
-      // Update user password (+ chatuserid only if exists)
-      const updatedUser = await tx.users.update({
-        where: { email },
-        data: {
-          password: hashedPassword,
-          emailverified: true,
-          ...(externalUserId && { chatuserid: externalUserId }),
-        },
-      });
-
-      /* 🔹 INVITE FLOW */
-      if (invite) {
-        const subscription = await tx.organizationSubscription.findFirst({
-          where: {
-            organizationId: invite.organizationId,
-            status: "ACTIVE",
-          },
-        });
-
-        if (!subscription) {
-          throw new Error("No active subscription found for organization");
-        }
-
-        const freeLicense = await tx.license.findFirst({
-          where: {
-            subscriptionId: subscription.id,
-            isActive: true,
-            assignedToId: null,
-            validUntil: { gte: new Date() },
-          },
-          orderBy: { validUntil: "asc" },
-        });
-
-        if (!freeLicense) {
-          throw new Error(
-            "No available license seat. Please contact your admin.",
-          );
-        }
-
-        const newMember = await tx.organizationMember.create({
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Update user password (+ chatuserid only if exists)
+        const updatedUser = await tx.users.update({
+          where: { email },
           data: {
-            userId: updatedUser.id,
-            organizationId: invite.organizationId,
-            role: invite.role,
-            permissions: invite.permissions,
+            password: hashedPassword,
+            emailverified: true,
+            ...(externalUserId && { chatuserid: externalUserId }),
           },
         });
 
-        await tx.license.update({
-          where: { id: freeLicense.id },
-          data: { assignedToId: newMember.id },
-        });
+        /* 🔹 INVITE FLOW */
+        if (invite) {
+          if (!invite.licenseId) {
+            throw new Error("No license assigned to this invite");
+          }
 
-        await tx.organizationInvite.delete({
-          where: { id: invite.id },
-        });
-      }
-
-      /* 🔹 NORMAL COMPANY FLOW */
-      if (!invite && role === "company") {
-        const existingMembership = await tx.organizationMember.findFirst({
-          where: { userId: updatedUser.id },
-        });
-
-        if (!existingMembership) {
-          const org = await tx.organization.create({
-            data: {
-              name:
-                updatedUser.companyName || `${updatedUser.name}'s Organization`,
-            },
+          const licenseToAssign = await tx.license.findUnique({
+            where: { id: invite.licenseId },
           });
 
-          const subscription = await tx.organizationSubscription.create({
-            data: {
-              organizationId: org.id,
-              status: "ACTIVE",
-              billingCycle: "MONTHLY",
-              autoRenew: false,
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: new Date(
-                new Date().setMonth(new Date().getMonth() + 1),
-              ),
-              nextBillingDate: new Date(
-                new Date().setMonth(new Date().getMonth() + 1),
-              ),
-            },
-          });
+          if (
+            !licenseToAssign ||
+            !licenseToAssign.isActive ||
+            licenseToAssign.assignedToId !== null ||
+            licenseToAssign.validUntil < new Date()
+          ) {
+            throw new Error("The selected license is no longer available");
+          }
 
-          const member = await tx.organizationMember.create({
+          const newMember = await tx.organizationMember.create({
             data: {
               userId: updatedUser.id,
-              organizationId: org.id,
-              role: "COMPANY_ADMIN",
+              organizationId: invite.organizationId,
+              role: invite.role,
+              permissions: invite.permissions,
             },
           });
 
-          const plain = await tx.subscriptionPlan.findFirst({
-            where: { tier: "BASIC" },
+          await tx.license.update({
+            where: { id: licenseToAssign.id },
+            data: { assignedToId: newMember.id },
           });
 
-          await tx.license.create({
-            data: {
-              subscriptionId: subscription.id,
-              planId: plain.id,
-              assignedToId: member.id,
-              validUntil: new Date(
-                new Date().setMonth(new Date().getMonth() + 1),
-              ),
-              isActive: true,
-            },
+          await tx.organizationInvite.delete({
+            where: { id: invite.id },
           });
         }
-      }
+        /* 🔹 NORMAL COMPANY FLOW */
+        if (!invite && role === "company") {
+          const existingMembership = await tx.organizationMember.findFirst({
+            where: { userId: updatedUser.id },
+          });
 
-      return updatedUser;
-    });
+          if (!existingMembership) {
+            // Extract domain for auto-join logic
+            const domain = email.split("@")[1].toLowerCase();
+
+            // Check if an org already exists for this domain
+            const domainMember = await tx.organizationMember.findFirst({
+              where: {
+                user: {
+                  role: "company",
+                  email: { endsWith: `@${domain}`, mode: "insensitive" },
+                },
+              },
+              include: {
+                user: true,
+              },
+            });
+
+            if (domainMember) {
+              /* ── Domain org exists → join it + assign BASIC free license ── */
+              const newMember = await tx.organizationMember.create({
+                data: {
+                  userId: updatedUser.id,
+                  organizationId: domainMember.organizationId,
+                },
+              });
+
+              await tx.users.update({
+                where: { id: updatedUser.id },
+                data: {
+                  companyName: domainMember.user?.companyName || null,
+                },
+              });
+
+              const orgSubscription =
+                await tx.organizationSubscription.findFirst({
+                  where: { organizationId: domainMember.organizationId },
+                });
+
+              if (orgSubscription) {
+                const basicPlan = await tx.subscriptionPlan.findFirst({
+                  where: { tier: "BASIC" },
+                });
+
+                if (basicPlan) {
+                  await tx.license.create({
+                    data: {
+                      subscriptionId: orgSubscription.id,
+                      planId: basicPlan.id,
+                      assignedToId: newMember.id,
+                      validUntil: new Date(
+                        new Date().setMonth(new Date().getMonth() + 1),
+                      ),
+                      isActive: true,
+                    },
+                  });
+                }
+              }
+            } else {
+              /* ── No domain org → create new org (existing behavior) ── */
+              const dom = domain?.split(".")[0];
+              const org = await tx.organization.create({
+                data: {
+                  name:
+                    `${dom}'s Organization ` ||
+                    `${updatedUser.name}'s Organization`,
+                },
+              });
+
+              const subscription = await tx.organizationSubscription.create({
+                data: {
+                  organizationId: org.id,
+                  status: "ACTIVE",
+                  billingCycle: "MONTHLY",
+                  autoRenew: true,
+                  currentPeriodStart: new Date(),
+                  currentPeriodEnd: new Date(
+                    new Date().setMonth(new Date().getMonth() + 1),
+                  ),
+                  nextBillingDate: new Date(
+                    new Date().setMonth(new Date().getMonth() + 1),
+                  ),
+                },
+              });
+
+              const member = await tx.organizationMember.create({
+                data: {
+                  userId: updatedUser.id,
+                  organizationId: org.id,
+                },
+              });
+
+              const plain = await tx.subscriptionPlan.findFirst({
+                where: { tier: "BASIC" },
+              });
+
+              await tx.license.create({
+                data: {
+                  subscriptionId: subscription.id,
+                  planId: plain.id,
+                  assignedToId: member.id,
+                  validUntil: new Date(
+                    new Date().setMonth(new Date().getMonth() + 1),
+                  ),
+                  isActive: true,
+                },
+              });
+            }
+          }
+        }
+
+        return updatedUser;
+      },
+      { timeout: 15000 },
+    );
 
     /* ✅ SEND EMAIL HERE */
     try {
@@ -951,7 +569,7 @@ const login = async (req, res) => {
     if (role === "company") {
       const existingDefault = await prisma.taskTemplate.findFirst({
         where: {
-          recruiterId: user.id,
+          // recruiterId: user.id,
           organizationId: member?.organizationId,
           isDefault: true,
         },

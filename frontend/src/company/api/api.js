@@ -873,12 +873,74 @@ export async function cancelSubscription() {
   }
 }
 
-export async function reEnableAutoRenew() {
+// export async function reEnableAutoRenew() {
+//   try {
+//     const response = await axiosInstance.post("/billing/subscription/renew");
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error in reEnableAutoRenew:", error);
+//     throw error;
+//   }
+// }
+
+// export async function createRazorpaySubscription(invoiceId) {
+//   try {
+//     const res = await axiosInstance.post("/billing/razorpay/subscription", { invoiceId });
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error in createRazorpaySubscription:", error);
+//     throw error;
+//   }
+// }
+
+// export async function verifyRazorpaySubscriptionPayment(payload) {
+//   try {
+//     const res = await axiosInstance.post("/billing/razorpay/subscription/verify", payload);
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error in verifyRazorpaySubscriptionPayment:", error);
+//     throw error;
+//   }
+// }
+
+// export async function reduceSeats(licenseIds) {
+//   try {
+//     const res = await axiosInstance.post("/billing/reduce-seats", { licenseIds });
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error in reduceSeats:", error);
+//     throw error;
+//   }
+// }
+
+// ─── RENEWAL FLOW ────────────────────────────────────────────────────────────
+
+export async function getRenewalInfo() {
   try {
-    const response = await axiosInstance.post("/billing/subscription/renew");
-    return response.data;
+    const res = await axiosInstance.get("/billing/renew");
+    return res.data;
   } catch (error) {
-    console.error("Error in reEnableAutoRenew:", error);
+    console.error("Error in getRenewalInfo:", error);
+    throw error;
+  }
+}
+
+export async function createRenewalOrder(payload) {
+  try {
+    const res = await axiosInstance.post("/billing/renew/order", payload);
+    return res.data;
+  } catch (error) {
+    console.error("Error in createRenewalOrder:", error);
+    throw error;
+  }
+}
+
+export async function verifyRenewalPayment(payload) {
+  try {
+    const res = await axiosInstance.post("/billing/renew/verify", payload);
+    return res.data;
+  } catch (error) {
+    console.error("Error in verifyRenewalPayment:", error);
     throw error;
   }
 }

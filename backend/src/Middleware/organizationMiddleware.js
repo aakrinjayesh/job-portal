@@ -4,7 +4,7 @@ export const ensureCompanyAdmin = async (req, res, next) => {
   try {
     const user = req.user;
 
-    if (user.role !== "company") {
+    if (!user || user.role !== "company") {
       return res.status(403).json({
         status: "error",
         message: "Access denied: Not a company user",
@@ -15,7 +15,14 @@ export const ensureCompanyAdmin = async (req, res, next) => {
       where: { userId: user.id },
     });
 
-    if (!membership || membership.role !== "COMPANY_ADMIN") {
+    if (!membership) {
+      return res.status(403).json({
+        status: "error",
+        message: "User is not part of any organization",
+      });
+    }
+
+    if (membership.role !== "COMPANY_ADMIN") {
       return res.status(403).json({
         status: "error",
         message: "Only organization admins can perform this action",
@@ -24,14 +31,14 @@ export const ensureCompanyAdmin = async (req, res, next) => {
 
     next();
   } catch (err) {
+    console.error("ERROR company admin:", err);
     return res.status(500).json({
       status: "error",
       message: "Failed to verify admin permission",
+      metadata: err.message,
     });
   }
 };
-
-
 
 export const ensureCompanyMember = async (req, res, next) => {
   try {

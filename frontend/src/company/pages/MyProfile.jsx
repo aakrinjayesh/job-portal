@@ -1,16 +1,36 @@
-import { useState } from "react";
-import { Tabs, Card } from "antd";
+import { useState, useEffect, useRef } from "react";
+import { Tabs, Card, notification } from "antd";
 import { useLocation } from "react-router-dom";
 import PersonalProfile from "./PersonalProfile"; // 👈 your first component code
-import Settings from "./Settings"; // 👈 org settings + activity
 import SettingsTodoManager from "./SettingsTodoManager";
-import UsageDashboard from "../components/Profile/UsageDashboard";
+// import UsageDashboard from "../components/Profile/UsageDashboard";
 import OrganizationSettings from "./OrganizationSettings";
 
 const MyProfile = () => {
   const location = useLocation();
   const fromPopup = location.state?.fromPopup;
-  const [activeKey, setActiveKey] = useState("profile");
+  const popupMessage = location.state?.popupMessage;
+
+  const getInitialTab = () => {
+    if (!fromPopup || !popupMessage) return "profile";
+    if (popupMessage.toLowerCase().includes("company")) return "organization";
+    return "profile";
+  };
+
+  const [activeKey, setActiveKey] = useState(getInitialTab);
+  const [api, contextHolder] = notification.useNotification();
+  const notifiedRef = useRef(false);
+
+  useEffect(() => {
+    if (!fromPopup || !popupMessage || notifiedRef.current) return;
+    notifiedRef.current = true;
+    api.info({
+      message: "Complete Your Profile",
+      description: popupMessage,
+      placement: "topRight",
+      duration: 5,
+    });
+  }, []);
 
   const handleProfileSaveSuccess = () => {
     if (fromPopup) {
@@ -20,6 +40,7 @@ const MyProfile = () => {
 
   return (
     <div style={{ padding: 24, background: "#f5f7fb", minHeight: "100vh" }}>
+      {contextHolder}
       <Card
         style={{
           maxWidth: 1100,
@@ -43,7 +64,11 @@ const MyProfile = () => {
               label: "My Profile",
               children: (
                 <div style={{ padding: 24 }}>
-                  <PersonalProfile onSaveSuccess={fromPopup ? handleProfileSaveSuccess : undefined} />
+                  <PersonalProfile
+                    onSaveSuccess={
+                      fromPopup ? handleProfileSaveSuccess : undefined
+                    }
+                  />
                 </div>
               ),
             },
@@ -66,15 +91,15 @@ const MyProfile = () => {
                 </div>
               ),
             },
-            {
-              key: "usage",
-              label: "Usage Dashboard",
-              children: (
-                <div style={{ padding: 24 }}>
-                  <UsageDashboard />
-                </div>
-              ),
-            },
+            // {
+            //   key: "usage",
+            //   label: "Usage Dashboard",
+            //   children: (
+            //     <div style={{ padding: 24 }}>
+            //       <UsageDashboard />
+            //     </div>
+            //   ),
+            // },
           ]}
         />
       </Card>

@@ -23,9 +23,9 @@
 //    - "experience_match": True if candidate's years of exp >= job requirement.
 
 // ### OUTPUT INSTRUCTIONS
-// Return **ONLY** a raw JSON object.  
-// - DO NOT return markdown formatting (no \`\`\`json).  
-// - DO NOT return any introductory/explanatory text.  
+// Return **ONLY** a raw JSON object.
+// - DO NOT return markdown formatting (no \`\`\`json).
+// - DO NOT return any introductory/explanatory text.
 // - Ensure "total_experience_years" is a real number extracted from candidate data.
 
 // ### REQUIRED JSON STRUCTURE
@@ -51,7 +51,6 @@
 // }
 // `;
 // };
-
 
 // export const cvRankerPrompt = (jobDescription, candidate) => {
 //   // Minify JSON to save tokens and reduce parsing noise
@@ -93,7 +92,7 @@
 //      * Testing roles: "Tester", "QA", "Test Engineer", "Quality Assurance"
 //      * Admin roles: "Administrator", "Admin", "Consultant"
 //      * Architect roles: "Architect", "Solution Architect", "Technical Architect"
-   
+
 //    - Mismatched categories = SEVERE penalty (30-40% reduction):
 //      * Developer job + Tester candidate = Major mismatch
 //      * Tester job + Developer candidate = Possible match (developers can test)
@@ -106,7 +105,7 @@
 //    - Critical skills missing = DEAL BREAKERS (30% penalty each):
 //      * If job requires "Apex" and candidate has it as secondary with 0 exp = MISSING
 //      * If job requires "SOQL" and candidate doesn't have it = MISSING
-   
+
 //    - Testing skills ≠ Development skills:
 //      * "Regression", "SIT", "UAT" are TESTING skills
 //      * "Apex", "LWC", "Visualforce" are DEVELOPMENT skills
@@ -119,27 +118,27 @@
 
 // 4. FIT PERCENTAGE CALCULATION (TOP RECRUITER FORMULA):
 //    BASE SCORE = 0
-   
+
 //    A. ROLE CATEGORY MATCH (30 points max):
 //      - Exact category match: +30
 //      - Related category (Dev→Admin, Admin→Dev): +20
 //      - Partial mismatch (Tester→Dev): +10
 //      - Major mismatch (Dev→Tester for dev role): +0
-   
+
 //    B. CRITICAL SKILLS MATCH (40 points max):
 //      - Each required skill matched (primary with exp): +6.67
 //      - Each required skill missing: +0
 //      - Secondary skills with 0 exp: +0
 //      - Testing skills for dev role: +0 (different category)
-   
+
 //    C. CLOUDS MATCH (15 points max):
 //      - Each required cloud matched (primary with exp): +7.5
 //      - Each required cloud missing: +0
-   
+
 //    D. EXPERIENCE MATCH (10 points max):
 //      - Candidate exp ≥ Job req: +10
 //      - Candidate exp < Job req: proportionally reduced
-   
+
 //    E. CERTIFICATIONS (5 points max):
 //      - Each relevant certification: +2.5
 //      - Admin cert for Salesforce role: +5
@@ -195,12 +194,11 @@
 // `;
 // };
 
-
 // advanced prompt of cv ranker
 // export const cvRankerPrompt = (jobDescription, candidate) => {
 //   const jobStr = JSON.stringify(jobDescription);
 //   const candStr = JSON.stringify(candidate);
-  
+
 //   return `
 // SYSTEM ROLE: Expert Salesforce Technical Recruiter - Your evaluation determines hiring success.
 // MISSION: Provide brutally honest, accurate candidate evaluation. Truth over politeness.
@@ -239,7 +237,7 @@
 //     },
 //     "scoring_breakdown": {
 //       "required_skills_score": number,      // 0-40
-//       "required_clouds_score": number,      // 0-20  
+//       "required_clouds_score": number,      // 0-20
 //       "experience_match_score": number,     // 0-20
 //       "education_bonus_score": number,      // 0-10
 //       "certifications_bonus": number,       // 0-10
@@ -303,7 +301,7 @@
 //       IF candidate_experience < job_requirement × 0.8 → 0 points
 //       IF candidate_experience ≥ job_requirement → 20 points
 //       IF candidate_experience > job_requirement × 2 → 15 points (overqualified)
-      
+
 //       QUALITY MULTIPLIER:
 //       • Deep technical experience: ×1.0
 //       • Surface/functional only: ×0.7
@@ -355,16 +353,8 @@
 // `;
 // };
 
-
-
-
-
-export const cvRankerPrompt = (jobDescription, candidate) => {
-  // Minify JSON to save tokens and reduce parsing noise
-  const jobStr = JSON.stringify(jobDescription);
-  const candStr = JSON.stringify(candidate);
-
-  return `
+export const cvRankerPrompt = (jobDescription, candidate) => ({
+  system: `
 SYSTEM ROLE: Expert ATS (Applicant Tracking System) AI for Salesforce candidate evaluation.
 OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
 
@@ -498,6 +488,13 @@ DEFAULTS:
 - All count fields: 0
 
 OUTPUT ONLY THE JSON OBJECT, NO OTHER TEXT.
-`;
-};
+`,
 
+  user: `Evaluate this candidate against the job description and return the JSON.
+
+JOB DESCRIPTION:
+${JSON.stringify(jobDescription)}
+
+CANDIDATE PROFILE:
+${JSON.stringify(candidate)}`,
+});

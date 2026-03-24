@@ -2,10 +2,12 @@
 import prisma from "../config/prisma.js";
 import { razorpay } from "../config/razorpay.js";
 import crypto from "crypto";
+import sendEmail from "../utils/sendEmail.js";
+import { logger } from "../utils/logger.js";
 
 const createInvoice = async (req, res) => {
   const { organizationId } = req.user;
-  const { planTier, quantity, billingCycle } = req.body;
+  const { planTier, quantity, billingCycle, country } = req.body;
   const rawBillingCycle = billingCycle?.toUpperCase();
 
   if (!["MONTHLY", "YEARLY"].includes(rawBillingCycle)) {
@@ -20,11 +22,17 @@ const createInvoice = async (req, res) => {
     return res.status(400).json({ error: "Invalid plan" });
   }
 
+  const address = await prisma.address.findUnique({
+    where: { userId: req.user.id },
+  });
+
+  const detectedCountry = address?.country || country || "IN";
+
   const unitPrice =
     rawBillingCycle === "MONTHLY" ? plan.monthlyPrice : plan.yearlyPrice;
 
   const subtotal = unitPrice * quantity;
-  const tax = Math.round(subtotal * 0.18);
+  const tax = detectedCountry === "IN" ? Math.round(subtotal * 0.18) : 0;
   const total = subtotal + tax;
 
   const subscription = await prisma.organizationSubscription.findUnique({
@@ -32,7 +40,9 @@ const createInvoice = async (req, res) => {
   });
 
   if (!subscription) {
-    return res.status(404).json({ error: "Subscription not found" });
+    return res
+      .status(404)
+      .json({ status: "error", message: "Subscription not found" });
   }
 
   const now = new Date();
@@ -104,7 +114,7 @@ const verifyRazorpayPayment = async (req, res) => {
       invoiceId,
     } = req.body;
 
-    // 🔐 1️⃣ Verify Signature
+    // 🔐 1️⃣ Verify Signature — before touching DB
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -114,7 +124,7 @@ const verifyRazorpayPayment = async (req, res) => {
       return res.status(400).json({ error: "Invalid payment signature" });
     }
 
-    // 🔎 2️⃣ Fetch Invoice
+    // 🔎 2️⃣ Pre-fetch invoice & plan (read-only, outside tx is fine)
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
     });
@@ -124,11 +134,14 @@ const verifyRazorpayPayment = async (req, res) => {
     }
 
     if (invoice.status === "PAID") {
-      return res.json({ success: true });
+      return res
+        .status(200)
+        .json({ status: "success", message: "Already processed" });
     }
 
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { tier: invoice.planTier },
+      include: { limits: true },
     });
 
     if (!plan) {
@@ -138,118 +151,137 @@ const verifyRazorpayPayment = async (req, res) => {
     const now = new Date();
     const periodEnd = invoice.periodEnd;
 
-    await prisma.$transaction(async (tx) => {
-      // 🧾 3️⃣ Mark invoice paid
-      await tx.invoice.update({
-        where: { id: invoice.id },
-        data: { status: "PAID", paidAt: now },
-      });
+    // 🔒 3️⃣ Single transaction — all DB writes are atomic.
+    //         If anything throws, invoice stays PENDING and no partial state is written.
+    const { payingMemberEmail, payingMemberName } = await prisma.$transaction(
+      async (tx) => {
+        // 3a. Mark invoice PAID
+        await tx.invoice.update({
+          where: { id: invoice.id },
+          data: { status: "PAID", paidAt: now },
+        });
 
-      // 💳 4️⃣ Create payment record
-      await tx.payment.create({
-        data: {
-          subscriptionId: invoice.subscriptionId,
-          invoiceId: invoice.id,
-          amount: invoice.total,
-          currency: "INR",
-          status: "COMPLETED",
-          gateway: "RAZORPAY",
-          gatewayPaymentId: razorpay_payment_id,
-          gatewaySessionId: razorpay_order_id,
-        },
-      });
-
-      // 🔎 5️⃣ Fetch subscription
-      const subscription = await tx.organizationSubscription.findUnique({
-        where: { id: invoice.subscriptionId },
-      });
-
-      if (!subscription) {
-        throw new Error("Subscription not found");
-      }
-
-      // 👥 Count members
-      const memberCount = await tx.organizationMember.count({
-        where: { organizationId: subscription.organizationId },
-      });
-
-      // 🎟 Fetch active licenses
-      const activeLicenses = await tx.license.findMany({
-        where: {
-          subscriptionId: invoice.subscriptionId,
-          isActive: true,
-        },
-        include: {
-          plan: true,
-        },
-      });
-
-      // ==================================================
-      // 🟢 CASE 1: ONLY 1 MEMBER → PLAN UPGRADE
-      // ==================================================
-      if (
-        memberCount === 1 &&
-        activeLicenses.length === 1 &&
-        activeLicenses[0].planId !== plan.id
-      ) {
-        await tx.license.update({
-          where: { id: activeLicenses[0].id },
+        // 3b. Record payment
+        await tx.payment.create({
           data: {
-            planId: plan.id,
-            validFrom: now,
-            validUntil: periodEnd,
-            isActive: true,
+            subscriptionId: invoice.subscriptionId,
+            invoiceId: invoice.id,
+            amount: invoice.total,
+            currency: "INR",
+            status: "COMPLETED",
+            gateway: "RAZORPAY",
+            gatewayPaymentId: razorpay_payment_id,
+            gatewaySessionId: razorpay_order_id,
           },
         });
-      }
 
-      // ==================================================
-      // 🟢 CASE 2: MULTIPLE MEMBERS → ADD NEW SEATS
-      // ==================================================
-      else if (invoice.quantity > 0) {
-        await tx.license.createMany({
-          data: Array.from({ length: invoice.quantity }, () => ({
-            subscriptionId: invoice.subscriptionId,
-            planId: plan.id,
-            validFrom: now,
-            validUntil: periodEnd,
-            isActive: true,
-          })),
+        // 3c. Fetch subscription
+        const subscription = await tx.organizationSubscription.findUnique({
+          where: { id: invoice.subscriptionId },
         });
-      }
 
-      // 🔄 6️⃣ Update subscription period
-      await tx.organizationSubscription.update({
-        where: { id: invoice.subscriptionId },
-        data: {
-          status: "ACTIVE",
-          billingCycle: invoice.billingCycle,
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-          nextBillingDate: periodEnd,
-        },
-      });
-    });
+        if (!subscription) {
+          throw new Error("Subscription not found");
+        }
 
-    res.status(200).json({
-      status: "success",
-      message: "Payment Successful",
-    });
-    // After res.status(200).json({ status: "success" ... })
-    // Send upgrade email in background
-    const member = await prisma.organizationMember.findFirst({
-      where: { organizationId: invoice.organizationId },
-      include: { user: true },
-    });
+        // 3d. Count members & fetch active licenses
+        const memberCount = await tx.organizationMember.count({
+          where: { organizationId: subscription.organizationId },
+        });
 
-    if (member?.user?.email) {
-      const limits = plan.limits || [];
+        const activeLicenses = await tx.license.findMany({
+          where: { subscriptionId: invoice.subscriptionId, isActive: true },
+        });
 
+        // ==================================================
+        // 🟢 CASE 1: 1 member, 1 license → PLAN UPGRADE
+        // ==================================================
+        if (
+          memberCount === 1 &&
+          activeLicenses.length === 1 &&
+          activeLicenses[0].planId !== plan.id
+        ) {
+          await tx.license.update({
+            where: { id: activeLicenses[0].id },
+            data: {
+              planId: plan.id,
+              validFrom: now,
+              validUntil: periodEnd,
+              isActive: true,
+            },
+          });
+        }
+        // ==================================================
+        // 🟢 CASE 2: multiple members → ADD NEW SEATS
+        // ==================================================
+        else if (invoice.quantity > 0) {
+          await tx.license.createMany({
+            data: Array.from({ length: invoice.quantity }, () => ({
+              subscriptionId: invoice.subscriptionId,
+              planId: plan.id,
+              validFrom: now,
+              validUntil: periodEnd,
+              isActive: true,
+            })),
+          });
+        }
+
+        // 3e. Promote first paying user to COMPANY_ADMIN if no admin yet
+        const existingAdmin = await tx.organizationMember.findFirst({
+          where: {
+            organizationId: subscription.organizationId,
+            role: "COMPANY_ADMIN",
+          },
+        });
+
+        if (!existingAdmin) {
+          await tx.organizationMember.updateMany({
+            where: {
+              userId: req.user.id,
+              organizationId: subscription.organizationId,
+            },
+            data: { role: "COMPANY_ADMIN" },
+          });
+        }
+
+        // 3f. Update subscription period
+        await tx.organizationSubscription.update({
+          where: { id: invoice.subscriptionId },
+          data: {
+            status: "ACTIVE",
+            billingCycle: invoice.billingCycle,
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            nextBillingDate: periodEnd,
+          },
+        });
+
+        // 3g. Fetch paying user's info to return for the email (still inside tx)
+        const payingMember = await tx.organizationMember.findFirst({
+          where: {
+            userId: req.user.id,
+            organizationId: subscription.organizationId,
+          },
+          include: { user: { select: { name: true, email: true } } },
+        });
+
+        return {
+          payingMemberEmail: payingMember?.user?.email ?? null,
+          payingMemberName: payingMember?.user?.name ?? null,
+        };
+      },
+    );
+
+    // ✅ 4️⃣ Respond to client — transaction is committed at this point
+    res.status(200).json({ status: "success", message: "Payment Successful" });
+
+    // 📧 5️⃣ Send upgrade email in background (non-blocking)
+    if (payingMemberEmail) {
       sendEmail({
-        to: member.user.email,
+        to: payingMemberEmail,
         subject: `🚀 Your ForceHead Plan Has Been Upgraded to ${plan.tier}`,
         html: getPlanUpgradeEmailTemplate({
-          name: member.user.name,
+          name: payingMemberName,
           plan: plan.tier,
           billing: invoice.billingCycle,
           validUntil: new Date(periodEnd).toLocaleDateString("en-US", {
@@ -257,18 +289,184 @@ const verifyRazorpayPayment = async (req, res) => {
             month: "long",
             day: "numeric",
           }),
-          limits: limits,
+          limits: plan.limits,
         }),
       }).catch((err) =>
         logger.error("Plan upgrade email failed:", err.message),
       );
     }
   } catch (error) {
-    console.error("Payment verification failed:", error);
+    logger.error("Payment verification failed:", error.message);
     res.status(500).json({
       status: "error",
       message: "Payment verification failed",
     });
+  }
+};
+
+/**
+ * Assign an existing unassigned license to a member.
+ * Only COMPANY_ADMIN can call this.
+ */
+const assignLicense = async (req, res) => {
+  try {
+    const { organizationId } = req.user;
+    const { memberId, licenseId } = req.body;
+
+    if (!memberId) {
+      return res.status(400).json({
+        status: "error",
+        message: "memberId is required",
+      });
+    }
+
+    // Verify member belongs to admin's org
+    const member = await prisma.organizationMember.findUnique({
+      where: { id: memberId },
+    });
+
+    if (!member || member.organizationId !== organizationId) {
+      return res.status(404).json({
+        status: "error",
+        message: "Member not found in your organization",
+      });
+    }
+
+    // Find the org's active subscription
+    const subscription = await prisma.organizationSubscription.findFirst({
+      where: { organizationId, status: "ACTIVE" },
+    });
+
+    if (!subscription) {
+      return res.status(400).json({
+        status: "error",
+        message: "No active subscription found for your organization",
+      });
+    }
+
+    // If admin picked a specific license, validate it; otherwise auto-find
+    let availableLicense;
+    if (licenseId) {
+      availableLicense = await prisma.license.findFirst({
+        where: {
+          id: licenseId,
+          subscriptionId: subscription.id,
+          isActive: true,
+          validUntil: { gte: new Date() },
+        },
+      });
+      if (!availableLicense) {
+        return res.status(400).json({
+          status: "error",
+          message:
+            "Selected license is invalid, expired, or not in your organization",
+        });
+      }
+    } else {
+      availableLicense = await prisma.license.findFirst({
+        where: {
+          subscriptionId: subscription.id,
+          isActive: true,
+          assignedToId: null,
+          validUntil: { gte: new Date() },
+        },
+        orderBy: { validUntil: "asc" },
+      });
+    }
+
+    if (!availableLicense) {
+      return res.status(400).json({
+        status: "error",
+        message: "No available license seats. Please purchase more licenses.",
+      });
+    }
+
+    // If member already has a license, unassign it first
+    const existingLicense = await prisma.license.findFirst({
+      where: { assignedToId: memberId },
+    });
+
+    await prisma.$transaction(async (tx) => {
+      if (existingLicense) {
+        await tx.license.update({
+          where: { id: existingLicense.id },
+          data: { assignedToId: null },
+        });
+      }
+
+      await tx.license.update({
+        where: { id: availableLicense.id },
+        data: { assignedToId: memberId },
+      });
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "License assigned successfully",
+    });
+  } catch (error) {
+    console.error("assignLicense error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to assign license",
+    });
+  }
+};
+
+/**
+ * Get all licenses for the org with assignment info.
+ * Only COMPANY_ADMIN can call this.
+ */
+const getOrgLicenses = async (req, res) => {
+  try {
+    const { organizationId } = req.user;
+
+    const subscription = await prisma.organizationSubscription.findUnique({
+      where: { organizationId },
+    });
+
+    if (!subscription) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "No subscription found" });
+    }
+
+    const licenses = await prisma.license.findMany({
+      where: { subscriptionId: subscription.id, isActive: true },
+      include: {
+        plan: { select: { tier: true, name: true } },
+        assignedTo: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+      orderBy: { validUntil: "asc" },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      licenses: licenses.map((l) => ({
+        id: l.id,
+        plan: l.plan.tier,
+        planName: l.plan.name,
+        validUntil: l.validUntil,
+        isAssigned: !!l.assignedToId,
+        assignedTo: l.assignedTo
+          ? {
+              memberId: l.assignedTo.id,
+              userId: l.assignedTo.user.id,
+              name: l.assignedTo.user.name,
+              email: l.assignedTo.user.email,
+            }
+          : null,
+      })),
+    });
+  } catch (error) {
+    console.error("getOrgLicenses error:", error.message);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Failed to fetch licenses" });
   }
 };
 
@@ -483,9 +681,113 @@ const getPlanUpgradeEmailTemplate = ({
 </html>
 `;
 
+const getSubscriptionStatus = async (req, res) => {
+  try {
+    const { organizationId } = req.user;
+
+    const subscription = await prisma.organizationSubscription.findUnique({
+      where: { organizationId },
+      include: {
+        licenses: {
+          where: { isActive: true },
+          include: { plan: { select: { tier: true, name: true } } },
+          take: 1,
+        },
+      },
+    });
+
+    if (!subscription) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "No subscription found" });
+    }
+
+    const activeLicense = subscription.licenses[0];
+
+    return res.status(200).json({
+      status: "success",
+      subscription: {
+        id: subscription.id,
+        planTier: activeLicense?.plan?.tier || "BASIC",
+        planName: activeLicense?.plan?.name || "Basic",
+        billingCycle: subscription.billingCycle,
+        subscriptionStatus: subscription.status,
+        autoRenew: subscription.autoRenew,
+        // isPaused: subscription.isSubscriptionPaused,
+        status: subscription.status,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        nextBillingDate: subscription.nextBillingDate,
+      },
+    });
+  } catch (error) {
+    logger.error("getSubscriptionStatus error:", error.message);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Failed to fetch subscription" });
+  }
+};
+
+const cancelSubscription = async (req, res) => {
+  try {
+    const { organizationId } = req.user;
+
+    const subscription = await prisma.organizationSubscription.findUnique({
+      where: { organizationId },
+    });
+
+    if (!subscription) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "No subscription found" });
+    }
+
+    await prisma.organizationSubscription.update({
+      where: { organizationId },
+      data: { status: "CANCELLED" },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message:
+        "Subscription is Paused. Your plan remains active until the current period ends.",
+    });
+  } catch (error) {
+    logger.error("cancelSubscription error:", error.message);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Failed to cancel subscription" });
+  }
+};
+
+// const reEnableAutoRenew = async (req, res) => {
+//   try {
+//     const { organizationId } = req.user;
+
+//     await prisma.organizationSubscription.update({
+//       where: { organizationId },
+//       data: { autoRenew: true },
+//     });
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: "Auto-renewal re-enabled.",
+//     });
+//   } catch (error) {
+//     logger.error("reEnableAutoRenew error:", error.message);
+//     return res
+//       .status(500)
+//       .json({ status: "error", message: "Failed to re-enable auto-renewal" });
+//   }
+// };
+
 export {
   createInvoice,
   createRazorpayOrder,
   verifyRazorpayPayment,
   getSubscriptionPlans,
+  assignLicense,
+  getOrgLicenses,
+  getSubscriptionStatus,
+  cancelSubscription,
+  // reEnableAutoRenew,
 };

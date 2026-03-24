@@ -32,6 +32,7 @@ import {
   UpdateCompanyProfile,
 } from "../../company/api/api";
 import { uploadProfilePicture } from "../../candidate/api/api";
+import Address from "../components/Profile/Address";
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -314,13 +315,6 @@ const CompanyPreview = ({ data }) => (
 );
 
 // ─── main component ───────────────────────────────────────────────────────────
-/**
- * CompanyProfile
- *
- * Props (optional):
- *   onSaveSuccess?: () => void   — called after a successful save
- *   compact?: boolean            — when true, removes outer padding (e.g. inside a modal)
- */
 const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
   const [form] = Form.useForm();
   const [pageLoading, setPageLoading] = useState(true);
@@ -331,7 +325,6 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
   const [logoUrl, setLogoUrl] = useState(null);
   const [coverImageUrl, setCoverImageUrl] = useState(null);
 
-  // cached personal fields needed to re-send with update
   const [cachedPersonal, setCachedPersonal] = useState({});
 
   const [specialties, setSpecialties] = useState([]);
@@ -340,12 +333,10 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
-  // live form values for preview
   const [formValues, setFormValues] = useState({});
 
   const [messageApi, contextHolder] = message.useMessage();
 
-  // derived preview data
   const previewData = {
     companyName: formValues.companyName || "",
     tagline: formValues.tagline || "",
@@ -376,7 +367,6 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             companyProfile,
           } = res.data;
 
-          // cache personal fields so we can include them in the update payload
           setCachedPersonal({
             name: `${firstName} ${lastName}`.trim(),
             phoneNumber,
@@ -392,7 +382,7 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
 
           const fields = {
             companyName,
-            // address
+            // address fields — consumed by the <Address> component via form
             doorNumber: address?.doorNumber || "",
             street: address?.street || "",
             city: address?.city || "",
@@ -469,7 +459,6 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
       setSaving(true);
 
       const payload = {
-        // include cached personal fields so backend doesn't wipe them
         ...cachedPersonal,
         companyName: values.companyName,
         address: {
@@ -543,7 +532,10 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
     <Form
       form={form}
       layout="vertical"
-      onValuesChange={(_, all) => { setFormValues(all); setIsDirty(true); }}
+      onValuesChange={(_, all) => {
+        setFormValues(all);
+        setIsDirty(true);
+      }}
     >
       {/* ════════ 1. BRAND ASSETS ════════ */}
       <Card title="Brand Assets" style={{ marginBottom: 20 }}>
@@ -627,44 +619,13 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         </Form.Item>
       </Card>
 
-      {/* ════════ 2. COMPANY ADDRESS ════════ */}
+      {/* ════════ 2. COMPANY ADDRESS — using shared Address component ════════ */}
       <Card title="Company Address" style={{ marginBottom: 20 }}>
-        <Row gutter={16}>
-          <Col span={6}>
-            <Form.Item label="Door / Flat No." name="doorNumber">
-              <Input placeholder="12A" />
-            </Form.Item>
-          </Col>
-          <Col span={18}>
-            <Form.Item label="Street" name="street">
-              <Input placeholder="Tech Park Road" />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item label="City" name="city">
-              <Input placeholder="Bangalore" />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item label="State" name="state">
-              <Input placeholder="Karnataka" />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item label="Pin Code" name="pinCode">
-              <Input placeholder="560037" />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Country" name="country">
-              <Input placeholder="India" />
-            </Form.Item>
-          </Col>
-        </Row>
+        {/*
+          Pass `form` so Address can call form.getFieldValue() to preload states,
+          and pass `editable={true}` so all fields are enabled.
+        */}
+        <Address form={form} editable={true} />
       </Card>
 
       {/* ════════ 3. COMPANY OVERVIEW ════════ */}
@@ -799,7 +760,10 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         >
           <TagInput
             value={locations}
-            onChange={(v) => { setLocations(v); setIsDirty(true); }}
+            onChange={(v) => {
+              setLocations(v);
+              setIsDirty(true);
+            }}
             placeholder="e.g. India, USA"
           />
         </Form.Item>
@@ -812,7 +776,10 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         >
           <TagInput
             value={specialties}
-            onChange={(v) => { setSpecialties(v); setIsDirty(true); }}
+            onChange={(v) => {
+              setSpecialties(v);
+              setIsDirty(true);
+            }}
             placeholder="e.g. Salesforce, AI Hiring"
           />
         </Form.Item>

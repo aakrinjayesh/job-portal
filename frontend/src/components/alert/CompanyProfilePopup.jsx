@@ -6,17 +6,18 @@ const CompanyProfilePopup = ({ open, message: popupMessage, onClose }) => {
 
   const handleGoToProfile = () => {
     onClose();
-    navigate("/company/profile", { state: { fromPopup: true } });
+    navigate("/company/profile", { state: { fromPopup: true, popupMessage } });
   };
 
   return (
     <Modal
-      title="Complete Your Company Profile"
+      title="Complete Your Profile"
       open={open}
       footer={null}
       onCancel={onClose}
       closable={true}
     >
+      {popupMessage && <p style={{ marginBottom: 16 }}>{popupMessage}</p>}
       <Button type="primary" block onClick={handleGoToProfile}>
         Go to Profile
       </Button>

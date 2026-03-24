@@ -682,7 +682,7 @@ const CandidateDetails = () => {
                                 <span
                                   onClick={() =>
                                     navigate(
-                                      `/company/${profile.companyProfileSlug}`,
+                                      `/company/public/${profile.companyProfileSlug}`,
                                       {
                                         state: {
                                           highlight: location.state?.highlight,

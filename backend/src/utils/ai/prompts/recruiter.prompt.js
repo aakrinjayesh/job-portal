@@ -24,36 +24,36 @@
 
 // ### **Extraction & Normalization Rules**
 
-// 1. **Output Format:**  
+// 1. **Output Format:**
 //    - Return **only the JSON object**, no markdown, no explanation.
 
-// 2. **Default Values:**  
+// 2. **Default Values:**
 //    - Missing fields must use defaults defined above.
 
 // 3. ** ROLE (UPDATED RULE)**
-// - Extract the job title  
-// - **Remove all special characters**  
-// - Keep **only letters, numbers, spaces**  
-// - Collapse multiple spaces into a single space  
-// - Trim leading/trailing spaces 
+// - Extract the job title
+// - **Remove all special characters**
+// - Keep **only letters, numbers, spaces**
+// - Collapse multiple spaces into a single space
+// - Trim leading/trailing spaces
 
 // 4. **Experience Parsing (UPDATED):**
-//    - Extract experience like:  
+//    - Extract experience like:
 //      - "3 years" → \`{ "number": 3, "type": "year" }\`
 //      - "5 months" → \`{ "number": 5, "type": "month" }\`
 //      - "2-5 years" → number = lower bound → \`{ "number": 2, "type": "year" }\`
 //    - If unit not clear: default \`type = "year"\`
-//    - If nothing found:  
+//    - If nothing found:
 //      \`{ "number": 0, "type": null }\`
 
 // 5. **Responsibilities (UPDATED):**
-//    - **Extract the responsibilities block EXACTLY as found**  
+//    - **Extract the responsibilities block EXACTLY as found**
 //    - Preserve:
-//      - Bullet points  
-//      - New lines  
-//      - Hyphens  
-//      - Formatting  
-//      - Capitalization  
+//      - Bullet points
+//      - New lines
+//      - Hyphens
+//      - Formatting
+//      - Capitalization
 //    - No splitting, no merging, no cleaning.
 
 // 6. Extract only education-related requirements, such as:
@@ -72,42 +72,41 @@
 
 // 7. **Normalization Rules:**
 
-//    **employmentType:**  
-//    - "full time", "permanent", "regular", "ft" → **"FullTime"**  
-//    - "part time", "pt" → **"PartTime"**  
+//    **employmentType:**
+//    - "full time", "permanent", "regular", "ft" → **"FullTime"**
+//    - "part time", "pt" → **"PartTime"**
 //    - "contract", "contractual", "consultant", "temp" → **"Contract"**
 
-//    **experienceLevel:**  
-//    - "intern" → **Internship**  
-//    - "entry", "junior", "fresher", "<3 years" → **EntryLevel**  
-//    - "mid", "3-6 years" → **Mid**  
-//    - "senior", "7+ years" → **Senior**  
+//    **experienceLevel:**
+//    - "intern" → **Internship**
+//    - "entry", "junior", "fresher", "<3 years" → **EntryLevel**
+//    - "mid", "3-6 years" → **Mid**
+//    - "senior", "7+ years" → **Senior**
 //    - "lead", "principal" → **Lead**
 
-//    **jobType:**  
+//    **jobType:**
 //    Normalize to **"Onsite"**, **"Remote"**, or **"Hybrid"**
 
-//    **salary:**  
+//    **salary:**
 //    - Remove ₹, $, commas, "LPA", etc.
 //    - Extract digits only.
 
-//    **applicationDeadline:**  
-//    - If partial, convert to closest valid date  
+//    **applicationDeadline:**
+//    - If partial, convert to closest valid date
 //    - Else → null
 
-
-// 8. **Skills Extraction:**  
-//    - Extract all technical terms  
-//    - No duplicates  
+// 8. **Skills Extraction:**
+//    - Extract all technical terms
+//    - No duplicates
 //    - Clean array of strings
 
-// 9. **Status:**  
+// 9. **Status:**
 //    - Default = "Open"
 
 // ---
 
 // ### **STRICT OUTPUT RULE**
-// Return **only valid JSON**.  
+// Return **only valid JSON**.
 // No markdown. No commentary.
 
 // ---
@@ -116,11 +115,10 @@
 // ${text}
 // `;
 
-export const recruiterSysPrompt = (text) => `
+export const recruiterSysPrompt = (text) => ({
+  system: `
 SYSTEM ROLE: Expert recruiter job description parser and data normalizer.
 OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
-
-JOB DESCRIPTION TEXT TO PARSE: ${text}
 
 JSON SCHEMA (include ALL keys exactly as shown):
 {
@@ -272,4 +270,6 @@ DEFAULTS:
 
 IF UNCERTAIN: Use null for strings, [] for arrays, 0 for numbers.
 OUTPUT ONLY THE JSON OBJECT, NO OTHER TEXT.
-`;
+`,
+  user: `Parse the following job description and return the JSON:\n\n${text}`,
+});

@@ -1,8 +1,7 @@
-export const CandidateDetailsSysPrompt = (text) => `
+export const CandidateDetailsSysPrompt = (text) => ({
+  system: `
 SYSTEM ROLE: Expert resume parser and Salesforce data normalizer.
 OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
-
-RESUME TEXT TO PARSE: ${text}
 
 JSON SCHEMA (include ALL keys exactly as shown):
 {
@@ -136,4 +135,6 @@ IF UNCERTAIN → DO NOT ADD THE CLOUD.
 
 IF UNCERTAIN: Use null for strings, [] for arrays, 0 for numbers.
 OUTPUT ONLY THE JSON OBJECT, NO OTHER TEXT.
-`;
+`,
+  user: `Parse the following resume text and return the JSON:\n\n${text}`,
+});

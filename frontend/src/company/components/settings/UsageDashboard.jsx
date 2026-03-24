@@ -16,7 +16,6 @@ import {
   RobotOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
-import { Column } from "@ant-design/plots";
 import { getFeatureUsage, getAIUsage, getLicenseInfo } from "../../api/api";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
@@ -57,7 +56,7 @@ const FEATURE_ICONS = {
 const UsageDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [featureUsage, setFeatureUsage] = useState([]);
-  // const [aiUsage, setAIUsage] = useState(null);
+  const [planName, setPlanName] = useState();
   const [licenseInfo, setLicenseInfo] = useState(null);
 
   useEffect(() => {
@@ -70,6 +69,7 @@ const UsageDashboard = () => {
       // })
       .then(([usageRes, licenseRes]) => {
         setFeatureUsage(Array.isArray(usageRes?.usage) ? usageRes.usage : []);
+        setPlanName(usageRes.plan);
         setLicenseInfo(licenseRes || null);
       })
       .catch(() => message.error("Failed to load usage data"))
@@ -114,7 +114,9 @@ const UsageDashboard = () => {
         </Text>
 
         {/* ================= LICENSE SUMMARY ================= */}
-        {licenseInfo && <LicenseSummary licenseInfo={licenseInfo} />}
+        {licenseInfo && (
+          <LicenseSummary licenseInfo={licenseInfo} planName={planName} />
+        )}
 
         {/* ================= FEATURE CARDS ================= */}
         <Row gutter={[16, 16]} style={{ marginTop: 32 }}>
@@ -135,13 +137,30 @@ const UsageDashboard = () => {
 /* =====================================================
    LICENSE SUMMARY
 ===================================================== */
-const LicenseSummary = ({ licenseInfo }) => {
-  const activeLicense = licenseInfo.licenses?.find((l) => l.isActive);
+const LicenseSummary = ({ licenseInfo, planName }) => {
+  const currentUserId = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"))?.id;
+    } catch {
+      return null;
+    }
+  })();
+  const now = new Date();
+  const activeLicense =
+    licenseInfo.licenses?.find(
+      (l) =>
+        l.isActive &&
+        new Date(l.validUntil) >= now &&
+        l.assignedTo?.userId === currentUserId,
+    ) ||
+    licenseInfo.licenses?.find(
+      (l) => l.isActive && new Date(l.validUntil) >= now,
+    );
 
   return (
     <Card style={{ marginTop: 24 }}>
       <Space direction="vertical">
-        <Text strong>Plan: {activeLicense?.planTier || "N/A"}</Text>
+        <Text strong>Plan: {planName || "N/A"}</Text>
         {activeLicense?.validUntil && (
           <Text type="secondary">
             Valid until {dayjs(activeLicense.validUntil).format("MMM DD, YYYY")}

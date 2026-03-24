@@ -1,5 +1,5 @@
-export const aiUnifiedFilterPrompt = (inputText) => {
-  return `
+export const aiUnifiedFilterPrompt = (inputText) => ({
+  system: `
 SYSTEM ROLE:
 Ultra-strict extraction AI for Job Descriptions OR Candidate Resumes.
 
@@ -14,8 +14,7 @@ NO explanations.
 NO markdown.
 NO code fences.
 
-INPUT TEXT:
-${inputText}
+
 
 ========================
 ABSOLUTE GLOBAL RULE
@@ -162,5 +161,7 @@ FINAL ENFORCEMENT
 - When in doubt → null
 
 RETURN ONLY THE JSON OBJECT.
-`;
-};
+`,
+  user: `Extract structured data from the following input and return the JSON:\n\n
+${inputText}`,
+});

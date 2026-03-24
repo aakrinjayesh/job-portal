@@ -24,10 +24,7 @@ export const createTodo = async (req, res) => {
     const { title } = req.body;
 
     const last = await prisma.taskTemplate.findFirst({
-      where: {
-        recruiterId,
-        organizationId,
-      },
+      where: { organizationId },
       orderBy: { order: "desc" },
     });
 
@@ -170,74 +167,73 @@ export const getCandidateTasks = async (req, res) => {
       });
     }
 
-    // 🔍 1️⃣ First check if task list already exists
+    // 1️⃣ Fetch all active org-level templates
+    const templates = await prisma.taskTemplate.findMany({
+      where: { organizationId, isActive: true },
+      orderBy: { order: "asc" },
+    });
+
+    // 2️⃣ Look up task list scoped to org (not per-recruiter)
     let list = await prisma.candidateTaskList.findUnique({
       where: {
-        recruiterId_candidateId_jobId_organizationId: {
+        candidateId_jobId_organizationId: { candidateId, jobId, organizationId },
+      },
+      include: { tasks: { orderBy: { order: "asc" } } },
+    });
+
+    if (!list) {
+      // 3️⃣ First visit — create list seeded from all org templates
+      list = await prisma.candidateTaskList.create({
+        data: {
           recruiterId,
           candidateId,
           jobId,
           organizationId,
+          tasks: {
+            create: templates.map((t) => ({
+              title: t.title,
+              order: t.order,
+              createdFromId: t.id,
+              organizationId,
+            })),
+          },
         },
-      },
-      include: {
-        tasks: { orderBy: { order: "asc" } },
-      },
-    });
-
-    // ✅ 2️⃣ If exists → return directly
-    if (list) {
-      console.log("Task list already exists");
-      return res.json({
-        status: "success",
-        data: list.tasks,
+        include: { tasks: { orderBy: { order: "asc" } } },
       });
-    }
+      console.log("New task list created");
+    } else {
+      // 4️⃣ List exists — sync any new templates not yet in the list
+      const existingFromIds = new Set(
+        list.tasks.map((t) => t.createdFromId).filter(Boolean)
+      );
+      const existingTitles = new Set(list.tasks.map((t) => t.title));
+      const newTemplates = templates.filter(
+        (t) => !existingFromIds.has(t.id) && !existingTitles.has(t.title)
+      );
 
-    // 🆕 3️⃣ If not exists → fetch templates
-    const templates = await prisma.taskTemplate.findMany({
-      where: {
-        recruiterId,
-        organizationId,
-        isActive: true,
-      },
-      orderBy: { order: "asc" },
-    });
-
-    // 🆕 4️⃣ Create new candidate task list
-    list = await prisma.candidateTaskList.create({
-      data: {
-        recruiterId,
-        candidateId,
-        jobId,
-        organizationId,
-        tasks: {
-          create: templates.map((t) => ({
+      if (newTemplates.length > 0) {
+        await prisma.candidateTask.createMany({
+          data: newTemplates.map((t) => ({
+            taskListId: list.id,
             title: t.title,
             order: t.order,
             createdFromId: t.id,
             organizationId,
           })),
-        },
-      },
-      include: {
-        tasks: { orderBy: { order: "asc" } },
-      },
-    });
+        });
 
-    console.log("New task list created");
+        list = await prisma.candidateTaskList.findUnique({
+          where: { id: list.id },
+          include: { tasks: { orderBy: { order: "asc" } } },
+        });
+        console.log(`Synced ${newTemplates.length} new template(s) into existing list`);
+      }
+    }
 
-    return res.json({
-      status: "success",
-      data: list.tasks,
-    });
+    return res.json({ status: "success", data: list.tasks });
   } catch (err) {
     console.error("getCandidateTasks error:", err);
-
-    return res.status(500).json({
-      status: "error",
-      message: err.message,
-    });
+    return res.status(500).json({ status: "error", message: err.message });
   }
 };
 
