@@ -514,7 +514,15 @@ const getOrgLicenses = async (req, res) => {
     }
 
     const licenses = await prisma.license.findMany({
-      where: { subscriptionId: subscription.id, isActive: true },
+      where: {
+        subscriptionId: subscription.id,
+        isActive: true,
+        plan: {
+          tier: {
+            not: "BASIC",
+          },
+        },
+      },
       include: {
         plan: { select: { tier: true, name: true } },
         assignedTo: {

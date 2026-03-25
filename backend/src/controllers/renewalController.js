@@ -155,7 +155,7 @@ export const createRenewalOrder = async (req, res) => {
 
     // ── Detect country (same as createInvoice) ───────────────────────────────
     const address = await prisma.address.findUnique({
-      where: { userId: req.user.id },
+      where: { organizationId },
     });
     const detectedCountry = address?.country || country || "IN";
 
