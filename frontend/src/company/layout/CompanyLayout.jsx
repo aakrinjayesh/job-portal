@@ -400,10 +400,10 @@ const CompanyLayout = ({ children }) => {
                       key: "profile",
                       label: "Profile",
                     },
-                    {
-                      key: "pricing",
-                      label: "Pricing",
-                    },
+                    // {
+                    //   key: "pricing",
+                    //   label: "Pricing",
+                    // },
                     {
                       key: "renew",
                       label: "Renew Subscription",

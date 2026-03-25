@@ -97,7 +97,7 @@ export const extractAIText = async (text, role, extra = {}) => {
           Length (chars): ${(prompt?.system?.length ?? 0) + (prompt?.user?.length ?? 0)}
 
           Prompt Preview (First 1000 chars):
-          ${prompt?.substring(0, 1000)}
+          ${prompt?.system?.substring(0, 500) || ""}\n\n${prompt?.user?.substring(0, 500) || ""}
 
           Extra Payload:
           ${JSON.stringify(extra, null, 2)}
@@ -155,7 +155,7 @@ export const extractAIText = async (text, role, extra = {}) => {
           ${rawText}
 
           Prompt Preview:
-          ${prompt?.substring(0, 1000)}
+          ${prompt?.system?.substring(0, 500) || ""}\n\n${prompt?.user?.substring(0, 500) || ""}
           `,
       });
 

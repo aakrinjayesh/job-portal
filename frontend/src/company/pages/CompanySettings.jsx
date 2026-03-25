@@ -7,12 +7,12 @@ import UsageDashboard from "../components/settings/UsageDashboard";
 const { Text } = Typography;
 
 const SECTIONS = [
-  { key: "billing", label: "Billing & Plan", icon: <CreditCardOutlined /> },
+  // { key: "billing", label: "Billing & Plan", icon: <CreditCardOutlined /> },
   { key: "usage", label: "Usage", icon: <BarChartOutlined /> },
 ];
 
 export default function CompanySettings() {
-  const [activeSection, setActiveSection] = useState("billing");
+  const [activeSection, setActiveSection] = useState("usage");
 
   return (
     <div
