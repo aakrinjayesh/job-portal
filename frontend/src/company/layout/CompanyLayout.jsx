@@ -275,10 +275,10 @@ const CompanyLayout = ({ children }) => {
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      <Layout hasSider>
+     <Layout hasSider style={{ position: "relative" }}>
         {/* SIDEBAR */}
         <Sider
-          collapsible
+          // collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
           // trigger={null} // 👈 removes collapse icon below logout
@@ -289,16 +289,58 @@ const CompanyLayout = ({ children }) => {
             position: "sticky",
             top: 0,
             borderRight: "none",
+            overflow: "visible",
           }}
         >
+           {/* ✅ Floating edge toggle button */}
+  <div
+    onClick={() => setCollapsed((prev) => !prev)}
+    style={{
+      position: "absolute",
+      top: "50%",
+      right: -14,
+      transform: "translateY(-50%)",
+      zIndex: 200,
+      width: 28,
+      height: 28,
+      borderRadius: "50%",
+      background: "#1a2942",
+      border: "2px solid #2d4a7a",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+      transition: "all 0.2s",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.background = "#1677FF";
+      e.currentTarget.style.borderColor = "#1677FF";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.background = "#1a2942";
+      e.currentTarget.style.borderColor = "#2d4a7a";
+    }}
+  >
+    {collapsed ? (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+        <path d="M9 18l6-6-6-6" stroke="#ffffff" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ) : (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="#ffffff" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )}
+  </div>
           {/* 🧑 Company Info */}
           <div
             style={{
               display: "flex",
-              gap: collapsed ? 0 : 12,
-              padding: collapsed ? "24px 0" : 24,
+              gap: 12,
+              padding: 24,
               alignItems: "center",
-              justifyContent: collapsed ? "center" : "flex-start",
             }}
           >
             {/* <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
@@ -364,7 +406,7 @@ const CompanyLayout = ({ children }) => {
                       key: "savedjobs",
                       label: "Saved Jobs",
                     },
-                    //  { key: "appliedcandidatesbyjob", label: "Applied Jobs"},
+                     { key: "appliedcandidatesbyjob", label: "Applied Jobs"},
                   ],
                 },
                 {
@@ -400,21 +442,11 @@ const CompanyLayout = ({ children }) => {
                       key: "profile",
                       label: "Profile",
                     },
-                    // {
-                    //   key: "pricing",
-                    //   label: "Pricing",
-                    // },
                     {
-                      key: "renew",
-                      label: "Renew Subscription",
-                      style: { display: "none" },
+                      key: "pricing",
+                      label: "Pricing",
                     },
                   ],
-                },
-                {
-                  key: "settings",
-                  icon: <SettingOutlined />,
-                  label: "Settings",
                 },
                 {
                   key: "contact",
@@ -430,6 +462,7 @@ const CompanyLayout = ({ children }) => {
             />{" "}
           </ConfigProvider>
         </Sider>
+
 
         {/* MAIN */}
         <Layout>
