@@ -37,10 +37,10 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
         localStorage.setItem("token", resp?.token);
         localStorage.setItem("role", resp?.user?.role || "no role");
 
-        localStorage.setItem("astoken", resp?.chatmeatadata?.accessToken);
+        localStorage.setItem("astoken", resp?.chatmetadata?.accessToken);
         localStorage.setItem(
           "asuser",
-          JSON.stringify(resp?.chatmeatadata?.user),
+          JSON.stringify(resp?.chatmetadata?.user),
         );
 
         const profileRes = await GetUserProfile();
@@ -59,8 +59,8 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
           localStorage.setItem("user", JSON.stringify(loginUser));
         }
 
-        if (resp?.chatmeatadata?.user && resp?.chatmeatadata?.accessToken) {
-          login(resp.chatmeatadata.user, resp.chatmeatadata.accessToken);
+        if (resp?.chatmetadata?.user && resp?.chatmetadata?.accessToken) {
+          login(resp.chatmetadata.user, resp.chatmetadata.accessToken);
         }
 
         navigate("/candidate/jobs");
