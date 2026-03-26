@@ -435,7 +435,7 @@ const CompanyLayout = ({ children }) => {
                       key: "savedjobs",
                       label: "Saved Jobs",
                     },
-                    { key: "appliedcandidatesbyjob", label: "Applied Jobs" },
+                    // { key: "appliedcandidatesbyjob", label: "Applied Jobs" },
                   ],
                 },
                 {
@@ -468,12 +468,22 @@ const CompanyLayout = ({ children }) => {
                   label: "Profile",
                   children: [
                     {
+                      key: "renew",
+                      label: "Renew Subscription",
+                      style: { display: "none" },
+                    },
+                    {
                       key: "profile",
                       label: "Profile",
                     },
+                    // {
+                    //   key: "pricing",
+                    //   label: "Pricing",
+                    // },
                     {
-                      key: "pricing",
-                      label: "Pricing",
+                      key: "settings",
+                      icon: <SettingOutlined />,
+                      label: "Settings",
                     },
                   ],
                 },
