@@ -209,7 +209,7 @@ const cvEligibilityCheck = async (req, res) => {
     const candidateDetails = {
       // userId: profile.userId,
       title: profile.title || "",
-      name: profile.name || "",
+      // name: profile.name || "",
       // phoneNumber: profile.phoneNumber || "",
       // email: profile.email || "",
       summary: profile.summary || "",
@@ -227,8 +227,8 @@ const cvEligibilityCheck = async (req, res) => {
       certifications: profile.certifications || [],
       workExperience: profile.workExperience || [],
       education: profile.education || [],
-      linkedInUrl: profile.linkedInUrl,
-      trailheadUrl: profile.trailheadUrl,
+      // linkedInUrl: profile.linkedInUrl,
+      // trailheadUrl: profile.trailheadUrl,
     };
 
     // ✅ 6️⃣ Run AI Analysis
