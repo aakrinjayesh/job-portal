@@ -46,7 +46,7 @@ const OrganizationSettings = () => {
   const [licenses, setLicenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
-  const [inviteLicenseId, setInviteLicenseId] = useState(null);
+  const [inviteSelection, setInviteSelection] = useState({ seatId: null, licenseId: null });
   const [isSiteModalVisible, setIsSiteModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -137,7 +137,7 @@ const OrganizationSettings = () => {
 
   // Invite Member
   const handleInvite = async (values) => {
-    if (!inviteLicenseId) {
+    if (!inviteSelection.seatId) {
       message.warning(
         "Please select a license to assign to the invited member",
       );
@@ -148,7 +148,8 @@ const OrganizationSettings = () => {
       const payload = {
         name: values.name,
         email: values.email,
-        licenseId: inviteLicenseId,
+        seatId: inviteSelection.seatId,
+        licenseId: inviteSelection.licenseId,
       };
 
       const resp = await inviteOrganizationMember(payload);
@@ -156,7 +157,7 @@ const OrganizationSettings = () => {
       if (resp.status === "success") {
         message.success("Invite sent successfully");
         setIsInviteModalVisible(false);
-        setInviteLicenseId(null);
+        setInviteSelection({ seatId: null, licenseId: null });
       }
 
       form.resetFields();
@@ -560,7 +561,7 @@ const OrganizationSettings = () => {
         onOk={form.submit}
         onCancel={() => {
           setIsInviteModalVisible(false);
-          setInviteLicenseId(null);
+          setInviteSelection({ seatId: null, licenseId: null });
           form.resetFields();
         }}
         confirmLoading={confirmLoading}
@@ -655,13 +656,13 @@ const OrganizationSettings = () => {
                 {available.map((l) => (
                   <div
                     key={l.id}
-                    onClick={() => setInviteLicenseId(l.id)}
+                    onClick={() => setInviteSelection({ seatId: l.seatId, licenseId: l.licenseId })}
                     style={{
                       padding: "10px 14px",
-                      border: `2px solid ${inviteLicenseId === l.id ? "#1677ff" : "#d9d9d9"}`,
+                      border: `2px solid ${inviteSelection.seatId === l.seatId ? "#1677ff" : "#d9d9d9"}`,
                       borderRadius: 8,
                       cursor: "pointer",
-                      background: inviteLicenseId === l.id ? "#e6f4ff" : "#fff",
+                      background: inviteSelection.seatId === l.seatId ? "#e6f4ff" : "#fff",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",

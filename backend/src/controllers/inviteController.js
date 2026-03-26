@@ -4,7 +4,14 @@ import crypto from "crypto";
 
 export const sendInvite = async (req, res) => {
   try {
-    const { name, email, role = "COMPANY_USER", licenseId } = req.body;
+    const {
+      name,
+      email,
+      role = "COMPANY_USER",
+      seatId,
+      licenseId, // ✅ NEW
+    } = req.body;
+
     const organizationId = req.user.organizationId;
     const userId = req.user.id;
 
@@ -15,14 +22,22 @@ export const sendInvite = async (req, res) => {
       });
     }
 
+    if (!seatId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Please select a seat to assign to the invited member",
+      });
+    }
+
     if (!licenseId) {
       return res.status(400).json({
         status: "error",
-        message: "Please select a license to assign to the invited member",
+        message: "LicenseId is required",
       });
     }
 
     // 🔥 Check inviter is COMPANY_ADMIN
+    // 🔥 Get org member
     const orgMember = await prisma.organizationMember.findUnique({
       where: { userId },
     });
@@ -34,10 +49,19 @@ export const sendInvite = async (req, res) => {
       });
     }
 
-    // 🔥 Check admin's own license plan (not first DB result)
-    const adminLicense = await prisma.license.findUnique({
-      where: { assignedToId: orgMember.id },
-      include: { plan: true },
+    // 🔥 Get admin's ACTIVE license directly (NO blind indexing)
+    const adminLicense = await prisma.license.findFirst({
+      where: {
+        assignedToId: orgMember.id,
+        isActive: true,
+        validUntil: { gte: new Date() },
+      },
+      include: {
+        plan: true,
+      },
+      orderBy: {
+        validUntil: "desc", // ✅ pick latest valid license
+      },
     });
 
     if (!adminLicense || adminLicense.plan.tier === "BASIC") {
@@ -47,7 +71,7 @@ export const sendInvite = async (req, res) => {
       });
     }
 
-    // 🔥 Validate selected license: must belong to org, be active, unassigned, not expired
+    // 🔥 Validate subscription
     const subscription = await prisma.organizationSubscription.findFirst({
       where: { organizationId, status: "ACTIVE" },
     });
@@ -59,21 +83,29 @@ export const sendInvite = async (req, res) => {
       });
     }
 
-    const selectedLicense = await prisma.license.findFirst({
+    // 🔥 Validate seat + license together
+    const selectedSeat = await prisma.licenseSeat.findFirst({
       where: {
-        id: licenseId,
+        id: seatId,
         subscriptionId: subscription.id,
-        isActive: true,
         assignedToId: null,
-        validUntil: { gte: new Date() },
+      },
+      include: {
+        licenses: {
+          where: {
+            id: licenseId,
+            isActive: true,
+            validUntil: { gte: new Date() },
+          },
+        },
       },
     });
 
-    if (!selectedLicense) {
+    if (!selectedSeat || selectedSeat.licenses.length === 0) {
       return res.status(400).json({
         status: "error",
         message:
-          "Selected license is invalid, expired, already assigned, or not in your organization",
+          "Invalid seat or license. It may be expired, inactive, or not belong to this seat.",
       });
     }
 
@@ -116,6 +148,7 @@ export const sendInvite = async (req, res) => {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+    // 🔥 Create invite with seat + license
     await prisma.organizationInvite.create({
       data: {
         email,
@@ -124,7 +157,8 @@ export const sendInvite = async (req, res) => {
         permissions: "FULL_ACCESS",
         token,
         expiresAt,
-        licenseId,
+        seatId,
+        licenseId, // ✅ NEW
       },
     });
 
@@ -137,7 +171,7 @@ export const sendInvite = async (req, res) => {
       subject: "You're Invited to Join FORCEHEAD 🚀",
       html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      
+
       <!-- Header -->
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                   color: white; padding: 35px; border-radius: 12px 12px 0 0; text-align: center;">
@@ -149,7 +183,7 @@ export const sendInvite = async (req, res) => {
 
       <!-- Body -->
       <div style="background: #f9fafb; padding: 35px; border-radius: 0 0 12px 12px;">
-        
+
         <h2 style="color: #333; margin-top: 0;">You're Invited to Join an Organization</h2>
 
         <p style="color: #555; font-size: 15px; line-height: 1.6;">
@@ -175,7 +209,7 @@ export const sendInvite = async (req, res) => {
         <!-- Security Note -->
         <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-top: 25px;">
           <p style="margin: 0; font-size: 14px; color: #666;">
-            🔒 For security reasons, this link may expire. 
+            🔒 For security reasons, this link may expire.
             If you did not expect this invitation, you can safely ignore this email.
           </p>
         </div>

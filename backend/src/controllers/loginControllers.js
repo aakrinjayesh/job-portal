@@ -205,9 +205,7 @@ const setPassword = async (req, res) => {
   let externalUserId = null;
 
   try {
-    /* ─────────────────────────────
-       1️⃣ VALIDATE INVITE (IF EXISTS)
-    ───────────────────────────── */
+    /* 1️⃣ VALIDATE INVITE */
     if (token) {
       invite = await prisma.organizationInvite.findUnique({
         where: { token },
@@ -232,9 +230,7 @@ const setPassword = async (req, res) => {
         });
     }
 
-    /* ─────────────────────────────
-       2️⃣ FIND USER
-    ───────────────────────────── */
+    /* 2️⃣ FIND USER */
     const user = await prisma.users.findUnique({ where: { email } });
 
     if (!user)
@@ -249,14 +245,10 @@ const setPassword = async (req, res) => {
         message: "Invalid role for this user",
       });
 
-    /* ─────────────────────────────
-       3️⃣ HASH PASSWORD
-    ───────────────────────────── */
+    /* 3️⃣ HASH PASSWORD */
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    /* ─────────────────────────────
-       4️⃣ OPTIONAL EXTERNAL CHAT REGISTER
-    ───────────────────────────── */
+    /* 4️⃣ OPTIONAL EXTERNAL CHAT */
     try {
       if (external_backend_url) {
         const payload = {
@@ -268,10 +260,7 @@ const setPassword = async (req, res) => {
         const registerResponse = await axios.post(
           `${external_backend_url}/api/v1/users/register`,
           payload,
-          {
-            headers: { "Content-Type": "application/json" },
-            timeout: 3000, // prevents hanging
-          },
+          { headers: { "Content-Type": "application/json" }, timeout: 3000 },
         );
 
         externalUserId = registerResponse?.data?.data?.user?._id || null;
@@ -288,12 +277,9 @@ const setPassword = async (req, res) => {
       // Silent fail — DO NOT RETURN ERROR
     }
 
-    /* ─────────────────────────────
-       5️⃣ MAIN DATABASE TRANSACTION
-    ───────────────────────────── */
+    /* 5️⃣ MAIN TRANSACTION */
     const result = await prisma.$transaction(
       async (tx) => {
-        // Update user password (+ chatuserid only if exists)
         const updatedUser = await tx.users.update({
           where: { email },
           data: {
@@ -305,21 +291,28 @@ const setPassword = async (req, res) => {
 
         /* 🔹 INVITE FLOW */
         if (invite) {
-          if (!invite.licenseId) {
-            throw new Error("No license assigned to this invite");
+          if (!invite.seatId || !invite.licenseId) {
+            throw new Error("Invite missing seat or license");
           }
 
-          const licenseToAssign = await tx.license.findUnique({
+          const seat = await tx.licenseSeat.findUnique({
+            where: { id: invite.seatId },
+          });
+
+          const license = await tx.license.findUnique({
             where: { id: invite.licenseId },
           });
 
           if (
-            !licenseToAssign ||
-            !licenseToAssign.isActive ||
-            licenseToAssign.assignedToId !== null ||
-            licenseToAssign.validUntil < new Date()
+            !seat ||
+            seat.assignedToId !== null ||
+            !license ||
+            license.seatId !== seat.id || // 🔥 ensure correct mapping
+            !license.isActive ||
+            license.validUntil < new Date() ||
+            license.assignedToId !== null
           ) {
-            throw new Error("The selected license is no longer available");
+            throw new Error("The selected seat/license is no longer available");
           }
 
           const newMember = await tx.organizationMember.create({
@@ -331,8 +324,15 @@ const setPassword = async (req, res) => {
             },
           });
 
+          // Assign seat
+          await tx.licenseSeat.update({
+            where: { id: seat.id },
+            data: { assignedToId: newMember.id },
+          });
+
+          // 🔥 Assign EXACT license (FIX)
           await tx.license.update({
-            where: { id: licenseToAssign.id },
+            where: { id: license.id },
             data: { assignedToId: newMember.id },
           });
 
@@ -350,7 +350,6 @@ const setPassword = async (req, res) => {
             // Extract domain for auto-join logic
             const domain = email.split("@")[1].toLowerCase();
 
-            // Check if an org already exists for this domain
             const domainMember = await tx.organizationMember.findFirst({
               where: {
                 user: {
@@ -358,13 +357,11 @@ const setPassword = async (req, res) => {
                   email: { endsWith: `@${domain}`, mode: "insensitive" },
                 },
               },
-              include: {
-                user: true,
-              },
+              include: { user: true },
             });
 
             if (domainMember) {
-              /* ── Domain org exists → join it + assign BASIC free license ── */
+              /* JOIN EXISTING ORG */
               const newMember = await tx.organizationMember.create({
                 data: {
                   userId: updatedUser.id,
@@ -378,7 +375,6 @@ const setPassword = async (req, res) => {
                   companyName: domainMember.user?.companyName || null,
                 },
               });
-
               const orgSubscription =
                 await tx.organizationSubscription.findFirst({
                   where: { organizationId: domainMember.organizationId },
@@ -390,10 +386,18 @@ const setPassword = async (req, res) => {
                 });
 
                 if (basicPlan) {
+                  const seat = await tx.licenseSeat.create({
+                    data: {
+                      subscriptionId: orgSubscription.id,
+                      assignedToId: newMember.id,
+                    },
+                  });
+
                   await tx.license.create({
                     data: {
                       subscriptionId: orgSubscription.id,
                       planId: basicPlan.id,
+                      seatId: seat.id,
                       assignedToId: newMember.id,
                       validUntil: new Date(
                         new Date().setMonth(new Date().getMonth() + 1),
@@ -404,13 +408,10 @@ const setPassword = async (req, res) => {
                 }
               }
             } else {
-              /* ── No domain org → create new org (existing behavior) ── */
-              const dom = domain?.split(".")[0];
+              /* CREATE NEW ORG */
               const org = await tx.organization.create({
                 data: {
-                  name:
-                    `${dom}'s Organization ` ||
-                    `${updatedUser.name}'s Organization`,
+                  name: `${email.split("@")[1].split(".")[0]}'s Organization`,
                 },
               });
 
@@ -437,14 +438,22 @@ const setPassword = async (req, res) => {
                 },
               });
 
-              const plain = await tx.subscriptionPlan.findFirst({
+              const basicPlan = await tx.subscriptionPlan.findFirst({
                 where: { tier: "BASIC" },
+              });
+
+              const seat = await tx.licenseSeat.create({
+                data: {
+                  subscriptionId: subscription.id,
+                  assignedToId: member.id,
+                },
               });
 
               await tx.license.create({
                 data: {
                   subscriptionId: subscription.id,
-                  planId: plain.id,
+                  planId: basicPlan.id,
+                  seatId: seat.id,
                   assignedToId: member.id,
                   validUntil: new Date(
                     new Date().setMonth(new Date().getMonth() + 1),

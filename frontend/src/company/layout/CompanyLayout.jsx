@@ -480,22 +480,22 @@ const CompanyLayout = ({ children }) => {
                     //   key: "pricing",
                     //   label: "Pricing",
                     // },
-                    {
-                      key: "settings",
-                      icon: <SettingOutlined />,
-                      label: "Settings",
-                    },
                   ],
                 },
                 {
-                  key: "contact",
-                  icon: <ContactsOutlined />,
-                  label: "Contact & Support",
+                  key: "settings",
+                  icon: <SettingOutlined />,
+                  label: "Settings",
                 },
                 {
                   key: "logout",
                   icon: <LogoutOutlined />,
                   label: "Logout",
+                },
+                {
+                  key: "contact",
+                  icon: <ContactsOutlined />,
+                  label: "Contact & Support",
                 },
               ]}
             />{" "}

@@ -54,9 +54,10 @@ model OrganizationMember {
   role           OrgMemberRole @default(COMPANY_USER)
   permissions    OrgPermission @default(FULL_ACCESS)
 
-  user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  license      License?
+  user         Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  seats        LicenseSeat[]
+  licenses     License[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -83,6 +84,7 @@ model OrganizationInvite {
   role           OrgMemberRole @default(COMPANY_USER)
   permissions    OrgPermission @default(VIEW_ONLY)
   licenseId      String?
+  seatId         String?
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -848,6 +850,7 @@ model OrganizationSubscription {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  seats    LicenseSeat[]
   licenses License[]
   invoices Invoice[]
   payments Payment[]
@@ -857,18 +860,23 @@ model License {
   id             String   @id @default(uuid())
   subscriptionId String
   planId         String
-  assignedToId   String?  @unique
+  assignedToId   String?
+  seatId         String?
   validFrom      DateTime @default(now())
   validUntil     DateTime
   isActive       Boolean  @default(true)
   // isPendingRemoval Boolean  @default(false)
 
   subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
-  plan         SubscriptionPlan         @relation(fields: [planId], references: [id])
+  plan         SubscriptionPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  seat         LicenseSeat?             @relation(fields: [seatId], references: [id], onDelete: Cascade)
   assignedTo   OrganizationMember?      @relation(fields: [assignedToId], references: [id])
 
   usageRecords UsageRecord[]
   aiUsages     AITokenUsage[]
+
+  @@index([seatId, validFrom, validUntil])
+  @@index([assignedToId])
 }
 
 model SubscriptionPlan {
@@ -882,6 +890,25 @@ model SubscriptionPlan {
 
   licenses License[]
   limits   PlanLimit[]
+}
+
+model LicenseSeat {
+  id             String  @id @default(uuid())
+  subscriptionId String
+  assignedToId   String?
+
+  subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
+  assignedTo   OrganizationMember?      @relation(fields: [assignedToId], references: [id])
+
+  licenses     License[]
+  usageRecords UsageRecord[]
+  aiUsages     AITokenUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+  @@index([assignedToId])
 }
 
 model PlanLimit {
@@ -901,7 +928,8 @@ model PlanLimit {
 
 model UsageRecord {
   id        String       @id @default(uuid())
-  licenseId String
+  licenseId String?
+  seatId    String?
   feature   LimitFeature
   period    LimitPeriod
 
@@ -910,17 +938,20 @@ model UsageRecord {
   periodEnd    DateTime
   isExceeded   Boolean  @default(false)
 
-  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  seat    LicenseSeat? @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  license License?     @relation(fields: [licenseId], references: [id], onDelete: Cascade)
 
   @@unique([licenseId, feature, period, periodStart])
+  @@index([seatId])
   @@index([licenseId])
 }
 
 model AITokenUsage {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
   organizationId String
   userId         String
-  licenseId      String
+  licenseId      String?
+  seatId         String?
 
   inputTokens  Int
   outputTokens Int
@@ -931,7 +962,8 @@ model AITokenUsage {
 
   organization Organization @relation(fields: [organizationId], references: [id])
   user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  license      License      @relation(fields: [licenseId], references: [id])
+  seat         LicenseSeat? @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  license      License?     @relation(fields: [licenseId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {

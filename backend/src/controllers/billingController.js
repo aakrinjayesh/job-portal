@@ -214,14 +214,18 @@ const verifyRazorpayPayment = async (req, res) => {
           throw new Error("Buyer not part of organization");
         }
 
-        // 5️⃣ Existing license (WILL ALWAYS EXIST)
-        const existingLicense = await tx.license.findFirst({
-          where: {
-            assignedToId: buyerMember.id,
-            isActive: true,
+        // 5️⃣ Find buyer's current seat → active license
+        const buyerSeat = await tx.licenseSeat.findFirst({
+          where: { assignedToId: buyerMember.id },
+          include: {
+            licenses: {
+              where: { isActive: true },
+              include: { plan: true },
+            },
           },
-          include: { plan: true },
         });
+
+        const existingLicense = buyerSeat?.licenses[0];
 
         if (!existingLicense) {
           throw new Error("License invariant broken (BASIC missing)");
@@ -244,65 +248,85 @@ const verifyRazorpayPayment = async (req, res) => {
         const isDowngrade = PLAN_ORDER[newTier] < PLAN_ORDER[currentTier];
 
         // ==================================================
-        // 🟢 CASE 1: UPGRADE
+        // 🟢 CASE 1: UPGRADE — deactivate old, create new on same seat
         // ==================================================
         if (isUpgrade) {
           await tx.license.update({
             where: { id: existingLicense.id },
+            data: { isActive: false },
+          });
+
+          await tx.license.create({
             data: {
+              subscriptionId: invoice.subscriptionId,
               planId: plan.id,
+              seatId: buyerSeat.id,
+              assignedToId: buyerMember.id,
               validFrom: now,
               validUntil: periodEnd,
               isActive: true,
             },
           });
 
+          // Create additional seats + licenses for remaining quantity
           const remaining = invoice.quantity - 1;
-
-          if (remaining > 0) {
-            await tx.license.createMany({
-              data: Array.from({ length: remaining }, () => ({
+          for (let i = 0; i < remaining; i++) {
+            const newSeat = await tx.licenseSeat.create({
+              data: { subscriptionId: invoice.subscriptionId },
+            });
+            await tx.license.create({
+              data: {
                 subscriptionId: invoice.subscriptionId,
                 planId: plan.id,
+                seatId: newSeat.id,
                 validFrom: now,
                 validUntil: periodEnd,
                 isActive: true,
-                assignedToId: null,
-              })),
+              },
             });
           }
         }
 
         // ==================================================
-        // 🟢 CASE 2: SAME PLAN
+        // 🟢 CASE 2: SAME PLAN — create new seats + licenses
         // ==================================================
         else if (isSamePlan) {
-          await tx.license.createMany({
-            data: Array.from({ length: invoice.quantity }, () => ({
-              subscriptionId: invoice.subscriptionId,
-              planId: plan.id,
-              validFrom: now,
-              validUntil: periodEnd,
-              isActive: true,
-              assignedToId: null,
-            })),
-          });
+          for (let i = 0; i < invoice.quantity; i++) {
+            const newSeat = await tx.licenseSeat.create({
+              data: { subscriptionId: invoice.subscriptionId },
+            });
+            await tx.license.create({
+              data: {
+                subscriptionId: invoice.subscriptionId,
+                planId: plan.id,
+                seatId: newSeat.id,
+                validFrom: now,
+                validUntil: periodEnd,
+                isActive: true,
+              },
+            });
+          }
         }
 
         // ==================================================
-        // 🔴 CASE 3: DOWNGRADE (BLOCKED)
+        // 🔴 CASE 3: DOWNGRADE — create new seats + licenses
         // ==================================================
         else if (isDowngrade) {
-          await tx.license.createMany({
-            data: Array.from({ length: invoice.quantity }, () => ({
-              subscriptionId: invoice.subscriptionId,
-              planId: plan.id,
-              validFrom: now,
-              validUntil: periodEnd,
-              isActive: true,
-              assignedToId: null,
-            })),
-          });
+          for (let i = 0; i < invoice.quantity; i++) {
+            const newSeat = await tx.licenseSeat.create({
+              data: { subscriptionId: invoice.subscriptionId },
+            });
+            await tx.license.create({
+              data: {
+                subscriptionId: invoice.subscriptionId,
+                planId: plan.id,
+                seatId: newSeat.id,
+                validFrom: now,
+                validUntil: periodEnd,
+                isActive: true,
+              },
+            });
+          }
         }
 
         // 6️⃣ Admin assignment
@@ -349,6 +373,7 @@ const verifyRazorpayPayment = async (req, res) => {
           payingMemberName: payingMember?.user?.name ?? null,
         };
       },
+      { timeout: 20000 },
     );
 
     res.status(200).json({
@@ -393,7 +418,7 @@ const verifyRazorpayPayment = async (req, res) => {
 const assignLicense = async (req, res) => {
   try {
     const { organizationId } = req.user;
-    const { memberId, licenseId } = req.body;
+    const { memberId, seatId } = req.body;
 
     if (!memberId) {
       return res.status(400).json({
@@ -426,60 +451,82 @@ const assignLicense = async (req, res) => {
       });
     }
 
-    // If admin picked a specific license, validate it; otherwise auto-find
-    let availableLicense;
-    if (licenseId) {
-      availableLicense = await prisma.license.findFirst({
+    // If admin picked a specific seat, validate it; otherwise auto-find
+    let targetSeat;
+    if (seatId) {
+      targetSeat = await prisma.licenseSeat.findFirst({
         where: {
-          id: licenseId,
+          id: seatId,
           subscriptionId: subscription.id,
-          isActive: true,
-          validUntil: { gte: new Date() },
+          assignedToId: null,
+          licenses: {
+            some: { isActive: true, validUntil: { gte: new Date() } },
+          },
+        },
+        include: {
+          licenses: { where: { isActive: true } },
         },
       });
-      if (!availableLicense) {
+      if (!targetSeat) {
         return res.status(400).json({
           status: "error",
           message:
-            "Selected license is invalid, expired, or not in your organization",
+            "Selected seat is invalid, expired, already assigned, or not in your organization",
         });
       }
     } else {
-      availableLicense = await prisma.license.findFirst({
+      targetSeat = await prisma.licenseSeat.findFirst({
         where: {
           subscriptionId: subscription.id,
-          isActive: true,
           assignedToId: null,
-          validUntil: { gte: new Date() },
+          licenses: {
+            some: { isActive: true, validUntil: { gte: new Date() } },
+          },
         },
-        orderBy: { validUntil: "asc" },
+        include: {
+          licenses: { where: { isActive: true } },
+        },
+        orderBy: { createdAt: "asc" },
       });
     }
 
-    if (!availableLicense) {
+    if (!targetSeat) {
       return res.status(400).json({
         status: "error",
         message: "No available license seats. Please purchase more licenses.",
       });
     }
 
-    // If member already has a license, unassign it first
-    const existingLicense = await prisma.license.findFirst({
+    // If member already has a seat, unassign it first
+    const existingSeat = await prisma.licenseSeat.findFirst({
       where: { assignedToId: memberId },
+      include: { licenses: { where: { isActive: true } } },
     });
 
     await prisma.$transaction(async (tx) => {
-      if (existingLicense) {
-        await tx.license.update({
-          where: { id: existingLicense.id },
+      if (existingSeat) {
+        await tx.licenseSeat.update({
+          where: { id: existingSeat.id },
           data: { assignedToId: null },
         });
+        if (existingSeat.licenses[0]) {
+          await tx.license.update({
+            where: { id: existingSeat.licenses[0].id },
+            data: { assignedToId: null },
+          });
+        }
       }
 
-      await tx.license.update({
-        where: { id: availableLicense.id },
+      await tx.licenseSeat.update({
+        where: { id: targetSeat.id },
         data: { assignedToId: memberId },
       });
+      if (targetSeat.licenses[0]) {
+        await tx.license.update({
+          where: { id: targetSeat.licenses[0].id },
+          data: { assignedToId: memberId },
+        });
+      }
     });
 
     return res.status(200).json({
@@ -513,44 +560,52 @@ const getOrgLicenses = async (req, res) => {
         .json({ status: "error", message: "No subscription found" });
     }
 
-    const licenses = await prisma.license.findMany({
+    const seats = await prisma.licenseSeat.findMany({
       where: {
         subscriptionId: subscription.id,
-        isActive: true,
-        plan: {
-          tier: {
-            not: "BASIC",
+        licenses: {
+          some: {
+            isActive: true,
+            plan: { tier: { not: "BASIC" } },
           },
         },
       },
       include: {
-        plan: { select: { tier: true, name: true } },
+        licenses: {
+          where: { isActive: true },
+          include: { plan: { select: { tier: true, name: true } } },
+        },
         assignedTo: {
           include: {
             user: { select: { id: true, name: true, email: true } },
           },
         },
       },
-      orderBy: { validUntil: "asc" },
+      orderBy: { createdAt: "asc" },
     });
 
     return res.status(200).json({
       status: "success",
-      licenses: licenses.map((l) => ({
-        id: l.id,
-        plan: l.plan.tier,
-        planName: l.plan.name,
-        validUntil: l.validUntil,
-        isAssigned: !!l.assignedToId,
-        assignedTo: l.assignedTo
-          ? {
-              memberId: l.assignedTo.id,
-              userId: l.assignedTo.user.id,
-              name: l.assignedTo.user.name,
-              email: l.assignedTo.user.email,
-            }
-          : null,
-      })),
+      licenses: seats.map((seat) => {
+        const license = seat.licenses[0];
+        return {
+          id: seat.id,
+          seatId: seat.id,
+          licenseId: license?.id ?? null,
+          plan: license?.plan.tier,
+          planName: license?.plan.name,
+          validUntil: license?.validUntil,
+          isAssigned: !!seat.assignedToId,
+          assignedTo: seat.assignedTo
+            ? {
+                memberId: seat.assignedTo.id,
+                userId: seat.assignedTo.user.id,
+                name: seat.assignedTo.user.name,
+                email: seat.assignedTo.user.email,
+              }
+            : null,
+        };
+      }),
     });
   } catch (error) {
     console.error("getOrgLicenses error:", error.message);
@@ -812,21 +867,18 @@ const getSubscriptionStatus = async (req, res) => {
       });
     }
 
-    // 3️⃣ Get license assigned to this member
-    const activeLicense = await prisma.license.findFirst({
-      where: {
-        assignedToId: orgMember.id, // 👈 IMPORTANT FIX
-        isActive: true,
-      },
+    // 3️⃣ Resolve seat → active license
+    const activeSeat = await prisma.licenseSeat.findFirst({
+      where: { assignedToId: orgMember.id },
       include: {
-        plan: {
-          select: {
-            tier: true,
-            name: true,
-          },
+        licenses: {
+          where: { isActive: true },
+          include: { plan: { select: { tier: true, name: true } } },
         },
       },
     });
+
+    const activeLicense = activeSeat?.licenses[0] ?? null;
 
     return res.status(200).json({
       status: "success",
@@ -902,32 +954,28 @@ const getUserLicenseTier = async (req, res) => {
       });
     }
 
-    // 2️⃣ Get license assigned to this member
-    const license = await prisma.license.findFirst({
-      where: {
-        assignedToId: member.id,
-        isActive: true,
-      },
+    // 2️⃣ Resolve seat → active license
+    const activeSeat = await prisma.licenseSeat.findFirst({
+      where: { assignedToId: member.id },
       include: {
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            tier: true,
-          },
+        licenses: {
+          where: { isActive: true },
+          include: { plan: { select: { id: true, name: true, tier: true } } },
         },
       },
     });
 
-    // 4️⃣ Return plan tier
+    const license = activeSeat?.licenses[0] ?? null;
+
+    // 3️⃣ Return plan tier
     return res.status(200).json({
       success: true,
       data: {
-        hasLicense: true,
-        licenseId: license.id,
-        planId: license.plan.id,
-        planName: license.plan.name,
-        tier: license.plan.tier, // ✅ THIS IS WHAT YOU NEED
+        hasLicense: !!license,
+        seatId: activeSeat?.id ?? null,
+        planId: license?.plan.id ?? null,
+        planName: license?.plan.name ?? null,
+        tier: license?.plan.tier ?? null,
       },
     });
   } catch (error) {
