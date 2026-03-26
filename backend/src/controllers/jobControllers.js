@@ -5,6 +5,7 @@ import { logger } from "../utils/logger.js";
 import { applyFilters } from "../utils/applyFilters.js";
 import { queueJobEmails } from "../utils/BulkEmail/jobEmail.service.js";
 import { canCreate, canDelete, canEdit, canView } from "../utils/permission.js";
+// import { cvEligibilityCheckInternal } from "./cvRankerControllers.js";
 
 const userApplyJob = async (req, res) => {
   try {
@@ -1911,7 +1912,7 @@ const getApplicantsByJobId = async (req, res) => {
     }
 
     const applicants = await prisma.jobApplication.findMany({
-      where: { jobId },
+      where: { jobId, status: { not: "Clear" } },
       include: {
         candidateProfile: {
           include: {
@@ -2128,6 +2129,197 @@ const getJobQuestions = async (req, res) => {
     });
   }
 };
+const bulkFitScore = async (req, res) => {
+  try {
+    const { jobId, candidateIds } = req.body;
+
+    if (!jobId || !candidateIds?.length) {
+      return res.status(400).json({
+        status: "error",
+        message: "jobId and candidateIds are required",
+      });
+    }
+
+    // ✅ Fetch job
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      return res.status(404).json({
+        status: "error",
+        message: "Job not found",
+      });
+    }
+
+    // ✅ Fetch candidates
+    const candidates = await prisma.userProfile.findMany({
+      where: {
+        id: { in: candidateIds },
+      },
+    });
+
+    const results = [];
+
+    for (const candidate of candidates) {
+      // 🔥 CHECK IF ALREADY EXISTS (VERY IMPORTANT)
+      const existing = await prisma.candidateJobFit.findUnique({
+        where: {
+          jobId_candidateProfileId: {
+            jobId,
+            candidateProfileId: candidate.id,
+          },
+        },
+      });
+
+      if (existing) {
+        results.push(existing);
+        continue;
+      }
+
+      // ✅ Prepare AI data
+      // const jobDescription = {
+      //   role: job.role,
+      //   description: job.description,
+      //   skills: job.skills,
+      //   clouds: job.clouds,
+      // };
+
+      // const candidateDetails = {
+      //   skills: candidate.skillsJson || [],
+      //   experience: candidate.totalExperience,
+      //   location: candidate.currentLocation,
+      // };
+
+      const jobDescription = {
+        // job_id: job.id,
+        role: job.role,
+        description: job.description || "",
+        employmentType: job.employmentType,
+        skills: job.skills || [],
+        clouds: job.clouds || [],
+        salary: job.salary,
+        companyName: job.companyName,
+        responsibilities: job.responsibilities || "",
+        qualifications: job.certifications || [],
+        experience: job.experience || "",
+        experienceLevel: job.experienceLevel || "",
+        location: job.location || "",
+      };
+
+      // ✅ 5️⃣ Build Candidate Details (From UserProfile)
+      const candidateDetails = {
+        // userId: profile.userId,
+        title: candidate.title || "",
+        // name: candidate.name || "",
+        // phoneNumber: candidate.phoneNumber || "",
+        // email: candidate.email || "",
+        summary: candidate.summary || "",
+        currentLocation: candidate.currentLocation || "",
+        preferredLocation: candidate.preferredLocation || [],
+        preferredJobType: candidate.preferredJobType || [],
+        currentCTC: candidate.currentCTC || "",
+        expectedCTC: candidate.expectedCTC || "",
+        joiningPeriod: candidate.joiningPeriod || "",
+        totalExperience: candidate.totalExperience || "",
+        relevantSalesforceExperience:
+          candidate.relevantSalesforceExperience || "",
+        skills: candidate.skillsJson || [],
+        primaryClouds: candidate.primaryClouds || [],
+        secondaryClouds: candidate.secondaryClouds || [],
+        certifications: candidate.certifications || [],
+        workExperience: candidate.workExperience || [],
+        education: candidate.education || [],
+        // linkedInUrl: candidate.linkedInUrl,
+        // trailheadUrl: candidate.trailheadUrl,
+      };
+
+      let fitPercentage = 0;
+      let details = {};
+
+      try {
+        const aiResponse = await extractAIText("CV_RANKING", "cvranker", {
+          jobDescription,
+          candidateDetails,
+        });
+
+        if (aiResponse?.data) {
+          fitPercentage = aiResponse.data.fit_percentage || 0;
+          details = aiResponse.data;
+        }
+      } catch (err) {
+        console.log("AI error:", err.message);
+      }
+
+      // ✅ SAVE IN NEW MODEL
+      const fit = await prisma.candidateJobFit.create({
+        data: {
+          jobId,
+          candidateProfileId: candidate.id,
+          fitPercentage,
+          details,
+          status: "COMPLETED",
+        },
+      });
+
+      results.push(fit);
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Bulk fit score generated",
+      data: results,
+    });
+  } catch (error) {
+    console.error("bulkFitScore error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to generate bulk fit score",
+    });
+  }
+};
+// 🔥 GET CANDIDATES WITH FIT SCORE
+const getCandidatesWithFitScore = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    if (!jobId) {
+      return res.status(400).json({
+        status: "error",
+        message: "jobId is required",
+      });
+    }
+
+    const fits = await prisma.candidateJobFit.findMany({
+      where: { jobId },
+      include: {
+        candidateProfile: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            title: true,
+          },
+        },
+      },
+      orderBy: {
+        fitPercentage: "desc",
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      data: fits,
+    });
+  } catch (error) {
+    console.error("getCandidateFitScore error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch fit scores",
+    });
+  }
+};
 
 export {
   userApplyJob,
@@ -2147,4 +2339,6 @@ export {
   saveCandidateRating,
   closeJob,
   getJobQuestions,
+  bulkFitScore,
+  getCandidatesWithFitScore,
 };

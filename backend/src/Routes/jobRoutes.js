@@ -17,6 +17,8 @@ import {
   saveCandidateRating,
   closeJob,
   getJobQuestions,
+  bulkFitScore,
+  getCandidatesWithFitScore,
 } from "../controllers/jobControllers.js";
 import { validateInput } from "../Middleware/inputValidator.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -117,6 +119,23 @@ JobRouters.patch(
 );
 
 JobRouters.post("/job/applicants", authenticateToken, getApplicantsByJobId);
+// 🔥 FIT SCORE ROUTES
+
+// Generate fit score for selected candidates (BULK)
+JobRouters.post(
+  "/job/fit-score/bulk",
+  authenticateToken,
+  ensureCompanyMember,
+  bulkFitScore,
+);
+
+// Get candidates with fit score for a job
+JobRouters.get(
+  "/job/:jobId/candidates-fit-score",
+  authenticateToken,
+  ensureCompanyMember,
+  getCandidatesWithFitScore,
+);
 JobRouters.get("/job/questions/:jobId", authenticateToken, getJobQuestions);
 
 JobRouters.post(

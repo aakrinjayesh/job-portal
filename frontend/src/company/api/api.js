@@ -953,3 +953,28 @@ export async function verifyRenewalPayment(payload) {
     throw error;
   }
 }
+// 🔥 Generate Fit Score (Bulk)
+export async function GenerateFitScore(payload) {
+  try {
+    const response = await axiosInstance.post("/job/fit-score/bulk", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in GenerateFitScore:", error);
+    throw error;
+  }
+}
+
+// 🔥 Get Candidates Fit Score
+export async function GetCandidatesFitScore(jobId) {
+  try {
+    const response = await axiosInstance.get(
+      `/job/${jobId}/candidates-fit-score`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in GetCandidatesFitScore:", error);
+    throw error;
+  }
+}

@@ -1337,12 +1337,20 @@ const CandidateDetails = ({
               style={{
                 position: isModal ? "relative" : "sticky",
                 top: isModal ? "unset" : 20,
-                height: isModal ? "calc(100vh - 160px)" : "calc(100vh - 30px)",
+                // height: isModal ? "calc(100vh - 160px)" : "calc(100vh - 30px)",
+                height: isModal ? "100%" : "calc(100vh - 30px)",
                 overflow: "hidden",
                 borderRadius: 10,
               }}
             >
-              <div style={{ height: "100%", overflowY: "auto", padding: 24 }}>
+              <div
+                style={{
+                  height: "100%",
+                  overflowY: "auto",
+                  padding: 24,
+                  paddingBottom: 80,
+                }}
+              >
                 <CandidateActivity
                   candidateId={profile?.id || id} // 🔥 fallback
                   jobId={jobId && jobId}

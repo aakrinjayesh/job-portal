@@ -205,6 +205,7 @@ model UserProfile {
   joiningPeriod                String?
   totalExperience              String?
   relevantSalesforceExperience String?
+  jobFits                      CandidateJobFit[]
 
   skillsJson      Json?
   primaryClouds   Json?
@@ -291,7 +292,7 @@ enum JobStatus {
 }
 
 model Job {
-  id                  String           @id @default(uuid())
+  id                  String            @id @default(uuid())
   role                String
   description         String
   employmentType      EmploymentType
@@ -306,14 +307,15 @@ model Job {
   responsibilities    String
   certifications      String[]
   jobType             String
-  applicantSource     ApplicantSource  @default(Both)
-  status              JobStatus        @default(Open)
+  applicantSource     ApplicantSource   @default(Both)
+  status              JobStatus         @default(Open)
   applicationDeadline String?
-  isDeleted           Boolean          @default(false)
+  isDeleted           Boolean           @default(false)
   deletedReason       String?
   deletedAt           DateTime?
   ApplicationLimit    Int?
   companyLogo         String?
+  candidateFits       CandidateJobFit[]
 
   postedById String?
   postedBy   Users?  @relation("UserPostedJobs", fields: [postedById], references: [id])
@@ -1024,4 +1026,27 @@ enum LimitPeriod {
   DAILY
   MONTHLY
   YEARLY
+}
+
+model CandidateJobFit {
+  id String @id @default(uuid())
+
+  jobId              String
+  candidateProfileId String
+
+  fitPercentage Int
+  details       Json?
+
+  status AnalysisStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job              Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateProfile UserProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, candidateProfileId])
+  @@index([jobId])
+  @@index([candidateProfileId])
+  @@index([fitPercentage])
 }

@@ -1375,6 +1375,12 @@ const CandidateList = () => {
         );
       },
     },
+    {
+      title: "Title",
+      dataIndex: ["profile", "title"],
+      key: "title",
+      render: (text) => text || "N/A",
+    },
 
     {
       title: "Matched Skills",
@@ -1701,7 +1707,7 @@ const CandidateList = () => {
       {contextHolder}
 
       {/* HEADER CARD */}
-      <div
+      {/* <div
         style={{
           width: "100%",
           padding: 8,
@@ -1711,6 +1717,19 @@ const CandidateList = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          marginBottom: 12,
+        }}
+      > */}
+      <div
+        style={{
+          width: "100%",
+          padding: 8,
+          background: "#FFFFFF",
+          borderTopLeftRadius: 6,
+          borderTopRightRadius: 6,
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
           marginBottom: 12,
         }}
       >
@@ -1800,6 +1819,23 @@ const CandidateList = () => {
               </div>
             );
           })}
+        </div>
+
+        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          {showFilteredCount && (
+            <div
+              style={{
+                background: "#1677FF",
+                color: "#fff",
+                padding: "6px 16px",
+                borderRadius: 20,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {filteredCandidates.length} found
+            </div>
+          )}
         </div>
 
         {/* RIGHT — SEARCH + CREATE GROUP */}
@@ -2169,8 +2205,22 @@ const CandidateList = () => {
             width={420}
             destroyOnClose
             closable
+            // closeIcon={
+            //   <span style={{ fontSize: 18, fontWeight: 600, color: "#595959" ,}}>
+            //     ✕
+            //   </span>
+            // }
             closeIcon={
-              <span style={{ fontSize: 18, fontWeight: 600, color: "#595959" }}>
+              <span
+                style={{
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: "#595959",
+                  position: "relative",
+                  top: -6, // 🔥 move up
+                  right: 8, // 🔥 move away from scrollbar
+                }}
+              >
                 ✕
               </span>
             }
@@ -2262,8 +2312,23 @@ const CandidateList = () => {
             footer={null}
             width="80vw"
             style={{ top: 20, paddingBottom: 0 }}
+            closeIcon={
+              <span
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 0,
+                  fontSize: 18,
+                  // cursor: "pointer",
+                  zIndex: 1000,
+                }}
+              >
+                ✕
+              </span>
+            }
             styles={{
               content: {
+                paddingRight: 50,
                 maxHeight: "calc(100vh - 40px)",
                 overflow: "hidden",
                 display: "flex",
@@ -2293,7 +2358,7 @@ const CandidateList = () => {
         </>
       )}
       {/* ✅ Filter count popup */}
-      {showFilteredCount && (
+      {/* {showFilteredCount && (
         <div
           style={{
             position: "fixed",
@@ -2317,7 +2382,7 @@ const CandidateList = () => {
           🔍 {filteredCandidates.length} candidate
           {filteredCandidates.length !== 1 ? "s" : ""} found
         </div>
-      )}
+      )} */}
     </div>
   );
 };

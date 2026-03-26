@@ -275,7 +275,7 @@ const CompanyLayout = ({ children }) => {
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-     <Layout hasSider style={{ position: "relative" }}>
+      <Layout hasSider style={{ position: "relative" }}>
         {/* SIDEBAR */}
         <Sider
           // collapsible
@@ -292,69 +292,98 @@ const CompanyLayout = ({ children }) => {
             overflow: "visible",
           }}
         >
-           {/* ✅ Floating edge toggle button */}
-  <div
-    onClick={() => setCollapsed((prev) => !prev)}
-    style={{
-      position: "absolute",
-      top: "50%",
-      right: -14,
-      transform: "translateY(-50%)",
-      zIndex: 200,
-      width: 28,
-      height: 28,
-      borderRadius: "50%",
-      background: "#1a2942",
-      border: "2px solid #2d4a7a",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-      transition: "all 0.2s",
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = "#1677FF";
-      e.currentTarget.style.borderColor = "#1677FF";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.background = "#1a2942";
-      e.currentTarget.style.borderColor = "#2d4a7a";
-    }}
-  >
-    {collapsed ? (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-        <path d="M9 18l6-6-6-6" stroke="#ffffff" strokeWidth="2.5"
-          strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ) : (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-        <path d="M15 18l-6-6 6-6" stroke="#ffffff" strokeWidth="2.5"
-          strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )}
-  </div>
+          {/* ✅ Floating edge toggle button */}
+          <div
+            onClick={() => setCollapsed((prev) => !prev)}
+            style={{
+              position: "absolute",
+              top: "50%",
+              right: -14,
+              transform: "translateY(-50%)",
+              zIndex: 200,
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              background: "#1a2942",
+              border: "2px solid #2d4a7a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#1677FF";
+              e.currentTarget.style.borderColor = "#1677FF";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#1a2942";
+              e.currentTarget.style.borderColor = "#2d4a7a";
+            }}
+          >
+            {collapsed ? (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M9 18l6-6-6-6"
+                  stroke="#ffffff"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M15 18l-6-6 6-6"
+                  stroke="#ffffff"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+
           {/* 🧑 Company Info */}
           <div
             style={{
               display: "flex",
-              gap: 12,
-              padding: 24,
+              flexDirection: collapsed ? "column" : "row",
+              gap: collapsed ? 4 : 12,
+              padding: collapsed ? "20px 0" : 24,
               alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              transition: "all 0.3s",
             }}
           >
-            {/* <Avatar size={40} style={{ backgroundColor: "#1677FF" }}>
-              {user.name?.charAt(0)}
-            </Avatar> */}
             <Avatar
-              size={40}
+              size={collapsed ? 36 : 40}
               src={user.profileUrl}
-              style={{ backgroundColor: "#1677FF" }}
+              style={{
+                backgroundColor: "#1677FF",
+                flexShrink: 0,
+                border: "2px solid #2d4a7a",
+              }}
             >
               {!user.profileUrl && user.name?.charAt(0)}
             </Avatar>
 
-            {!collapsed && (
+            {collapsed ? (
+              <Text
+                style={{
+                  color: "#AAAAAA",
+                  fontSize: 10,
+                  textAlign: "center",
+                  maxWidth: 56,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user.name?.split(" ")[0]}
+              </Text>
+            ) : (
               <div>
                 <Text style={{ color: "#fff", fontWeight: 600 }}>
                   {user.name}
@@ -406,7 +435,7 @@ const CompanyLayout = ({ children }) => {
                       key: "savedjobs",
                       label: "Saved Jobs",
                     },
-                     { key: "appliedcandidatesbyjob", label: "Applied Jobs"},
+                    { key: "appliedcandidatesbyjob", label: "Applied Jobs" },
                   ],
                 },
                 {
@@ -462,7 +491,6 @@ const CompanyLayout = ({ children }) => {
             />{" "}
           </ConfigProvider>
         </Sider>
-
 
         {/* MAIN */}
         <Layout>

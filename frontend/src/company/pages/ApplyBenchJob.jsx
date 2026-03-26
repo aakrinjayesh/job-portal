@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Table, Spin, message, Button } from "antd";
-import { GetVendorCandidates, ApplyBenchCandidate } from "../api/api";
+import { Table, Spin, message, Button, Progress } from "antd";
+
+import {
+  GetVendorCandidates,
+  ApplyBenchCandidate,
+  GenerateFitScore,
+  GetCandidatesFitScore,
+} from "../api/api";
 import TableDesign from "./TableDesign";
 import { Tag } from "antd";
 import useScreeningQuestions from "../../utils/Usescreeningquestions";
@@ -95,8 +101,15 @@ const renderPinkTags = (items = [], max = 3) => {
 const ApplyBenchJob = ({ jobId, hasQuestions }) => {
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  // const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  // const [applyLoading, setApplyLoading] = useState(false);
+  const [applySelectedKeys, setApplySelectedKeys] = useState([]);
+  const [aiSelectedKeys, setAiSelectedKeys] = useState([]);
   const [applyLoading, setApplyLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSelected, setAiSelected] = useState(false);
+  const [actionType, setActionType] = useState(null);
+  // "AI" | "APPLY" | null
 
   // ── Shared screening hook ──────────────────────────────────────────────────
   // NOTE: jobId must be defined when this component mounts.
@@ -106,11 +119,18 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
   const { messageApi, contextHolder } = screening;
   // ──────────────────────────────────────────────────────────────────────────
 
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (newSelectedRowKeys, selectedRow) => {
-      // console.log("ids selected", newSelectedRowKeys);
-      setSelectedRowKeys(newSelectedRowKeys);
+  // const rowSelection = {
+  //   selectedRowKeys,
+  //   onChange: (newSelectedRowKeys, selectedRow) => {
+  //     // console.log("ids selected", newSelectedRowKeys);
+  //     setSelectedRowKeys(newSelectedRowKeys);
+  //   },
+  //   preserveSelectedRowKeys: true,
+  // };
+  const applyRowSelection = {
+    selectedRowKeys: applySelectedKeys,
+    onChange: (newKeys) => {
+      setApplySelectedKeys(newKeys);
     },
     preserveSelectedRowKeys: true,
   };
@@ -121,7 +141,9 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
 
     const payload = {
       jobId,
-      candidateProfileIds: selectedRowKeys,
+      // candidateProfileIds: selectedRowKeys,
+      candidateProfileIds: applySelectedKeys,
+
       answers,
     };
 
@@ -158,7 +180,9 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
             content: `Already applied for this job: ${names}`,
             duration: 5,
           });
-          setSelectedRowKeys([]);
+          // setSelectedRowKeys([]);
+          setApplySelectedKeys([]);
+          await loadCandidates();
           return;
         }
 
@@ -177,7 +201,8 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
           });
         }
 
-        setSelectedRowKeys([]);
+        // setSelectedRowKeys([]);
+        setApplySelectedKeys([]);
         return;
       }
 
@@ -194,11 +219,24 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
 
   // ── "Apply With Selected Bench" click ─────────────────────────────────────
   const handleApplyClick = async () => {
-    if (selectedRowKeys.length === 0) {
+    if (applySelectedKeys.length === 0) {
       messageApi.warning("Please select at least one candidate");
       return;
     }
+
+    // ❌ prevent mixing actions
+    if (actionType === "AI") {
+      messageApi.warning(
+        "You already selected AI action. Please clear selection.",
+      );
+      return;
+    }
+
+    setActionType("APPLY");
+
     await screening.initiateApply(hasQuestions, submitApplication);
+
+    setActionType(null); // reset after flow
   };
 
   // ── Modal OK: validate → build answers → submit ────────────────────────────
@@ -208,27 +246,157 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
     await submitApplication(answers);
   };
 
-  // ── Load candidates ────────────────────────────────────────────────────────
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
+  const loadCandidates = async () => {
+    setLoading(true);
+    try {
+      const res = await GetVendorCandidates();
+
+      const active = (res?.data || []).filter(
+        (x) => x.status === null || x.status?.toLowerCase() === "active",
+      );
+
+      let fitScoreMap = {};
+
       try {
-        const res = await GetVendorCandidates();
-        const active = (res?.data || []).filter(
-          (x) => x.status === null || x.status?.toLowerCase() === "active",
-        );
-        setCandidates(active || []);
-      } catch {
-        messageApi.error("Failed to load candidates");
-      } finally {
-        setLoading(false);
+        const fitRes = await GetCandidatesFitScore(jobId);
+
+        const fitData = fitRes.data || [];
+
+        fitScoreMap = fitData.reduce((acc, item) => {
+          acc[item.candidateProfileId] = {
+            fitPercentage: item.fitPercentage,
+            details: item.details,
+          };
+          return acc;
+        }, {});
+      } catch (err) {
+        console.log("Fit score fetch failed", err);
       }
-    };
-    load();
+
+      const merged = active.map((candidate) => ({
+        ...candidate,
+        analysis: fitScoreMap[candidate.id] || null,
+      }));
+
+      setCandidates(merged || []);
+    } catch {
+      messageApi.error("Failed to load candidates");
+    } finally {
+      setLoading(false);
+    }
+    setAiSelectedKeys([]);
+    setAiSelected(false);
+  };
+
+  useEffect(() => {
+    loadCandidates();
   }, []);
 
+  const handleAIButtonClick = async () => {
+    if (applySelectedKeys.length === 0) {
+      messageApi.warning("Please select at least one candidate");
+      return;
+    }
+
+    // ❌ prevent mixing actions
+    if (actionType === "APPLY") {
+      messageApi.warning(
+        "You already selected Apply action. Please clear selection.",
+      );
+      return;
+    }
+
+    setActionType("AI");
+
+    try {
+      setAiLoading(true);
+
+      await GenerateFitScore({
+        jobId,
+        candidateIds: applySelectedKeys,
+      });
+
+      messageApi.success("Fit score generated");
+
+      await loadCandidates();
+      setApplySelectedKeys([]);
+      setActionType(null); // reset
+    } catch {
+      messageApi.error("Fit score generation failed");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // const columns = [
+  //   { title: "Name", dataIndex: "name", width: 180 },
+  const aiSelectionColumn = aiSelected
+    ? [
+        {
+          title: "AI Select",
+          key: "aiSelect",
+          width: 80,
+          render: (_, record) => (
+            <input
+              type="checkbox"
+              checked={aiSelectedKeys.includes(record.id)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setAiSelectedKeys((prev) => [...prev, record.id]);
+                } else {
+                  setAiSelectedKeys((prev) =>
+                    prev.filter((k) => k !== record.id),
+                  );
+                }
+              }}
+            />
+          ),
+        },
+      ]
+    : [];
+
   const columns = [
-    { title: "Name", dataIndex: "name", width: 180 },
+    ...aiSelectionColumn,
+    // { title: "Name", dataIndex: "name", width: 180 },
+    {
+      title: "Name",
+      dataIndex: "name",
+      width: 180,
+      render: (text) => {
+        if (!text) return "-";
+        return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+      },
+    },
+    {
+      title: "Fit Score",
+      key: "fitScore",
+      width: 120,
+      render: (_, record) => {
+        if (!record.analysis) {
+          return (
+            <span style={{ color: "#aaa", fontSize: 12 }}>Not Generated</span>
+          );
+        }
+        const score = record.analysis.fitPercentage;
+        const color =
+          score >= 70 ? "#52c41a" : score >= 40 ? "#fa8c16" : "#f5222d";
+        return (
+          <span
+            style={{
+              background: `${color}20`,
+              color: color,
+              border: `1px solid ${color}`,
+              borderRadius: 6,
+              padding: "2px 10px",
+              fontWeight: 700,
+              fontSize: 13,
+            }}
+          >
+            {score}%
+          </span>
+        );
+      },
+    },
     {
       title: "Clouds",
       key: "clouds",
@@ -262,16 +430,24 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 16,
+          marginTop: 20,
         }}
       >
         <h3 style={{ margin: 0 }}>Candidate List</h3>
         <div>
           <Button
-            disabled
+            onClick={handleAIButtonClick}
+            loading={aiLoading}
+            // disabled={aiLoading || (aiSelected && aiSelectedKeys.length === 0)}
+            disabled={
+              applySelectedKeys.length === 0 ||
+              aiLoading ||
+              actionType === "APPLY"
+            }
             style={{
-              background: "#E6F0FF",
-              color: "#1D4ED8",
-              border: "1px solid #C7D2FE",
+              background: aiSelected ? "#FFF7E6" : "#E6F0FF",
+              color: aiSelected ? "#D46B08" : "#1D4ED8",
+              border: aiSelected ? "1px solid #FFC069" : "1px solid #C7D2FE",
               borderRadius: 20,
               padding: "4px 16px",
               height: 32,
@@ -280,13 +456,18 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
               marginRight: 5,
             }}
           >
-            AI Eligibility Check
+            Generate Fit Score
           </Button>
 
           <Button
             onClick={handleApplyClick}
             loading={applyLoading || screening.questionsLoading}
-            disabled={!selectedRowKeys.length || screening.questionsLoading}
+            disabled={
+              applySelectedKeys.length === 0 ||
+              applyLoading ||
+              screening.questionsLoading ||
+              actionType === "AI"
+            }
             style={{
               background: "#E6F0FF",
               color: "#1D4ED8",
@@ -296,7 +477,6 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
               height: 32,
               fontSize: 13,
               fontWeight: 500,
-              marginTop: 20,
             }}
           >
             Apply With Selected Bench
@@ -309,7 +489,8 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
         columns={columns}
         dataSource={candidates}
         rowKey="id"
-        rowSelection={rowSelection}
+        // rowSelection={rowSelection}
+        rowSelection={applyRowSelection}
         scroll={{ y: 400 }}
         emptyText="No bench candidates available"
         pagination={{
@@ -324,7 +505,8 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
         {...screening}
         applyLoading={applyLoading}
         onSubmit={handleScreeningSubmit}
-        selectedCount={selectedRowKeys.length}
+        // selectedCount={selectedRowKeys.length}
+        selectedCount={applySelectedKeys.length}
       />
     </Spin>
   );

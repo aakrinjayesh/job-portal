@@ -703,17 +703,46 @@ const vendorApplyCandidate = async (req, res) => {
     /* ─────────────────────────────
        3️⃣ FILTER DUPLICATES
     ───────────────────────────── */
+    // const existingApps = await prisma.jobApplication.findMany({
+    //   where: {
+    //     jobId,
+    //     candidateProfileId: { in: candidateProfileIds },
+    //   },
+    //   select: { candidateProfileId: true },
+    // });
+
+    // const alreadyAppliedIds = new Set(
+    //   existingApps.map((a) => a.candidateProfileId),
+    // );
     const existingApps = await prisma.jobApplication.findMany({
       where: {
         jobId,
         candidateProfileId: { in: candidateProfileIds },
+        status: { not: "Clear" }, // exclude fit-score-only records
       },
-      select: { candidateProfileId: true },
+      select: { candidateProfileId: true, id: true },
     });
 
     const alreadyAppliedIds = new Set(
       existingApps.map((a) => a.candidateProfileId),
     );
+
+    // Upgrade any "Clear" records to "Pending" so fit score is preserved
+    const clearApps = await prisma.jobApplication.findMany({
+      where: {
+        jobId,
+        candidateProfileId: { in: candidateProfileIds },
+        status: "Clear",
+      },
+      select: { id: true },
+    });
+
+    if (clearApps.length > 0) {
+      await prisma.jobApplication.updateMany({
+        where: { id: { in: clearApps.map((a) => a.id) } },
+        data: { status: "Pending" },
+      });
+    }
 
     const skippedCandidates = profiles
       .filter((p) => alreadyAppliedIds.has(p.id))
