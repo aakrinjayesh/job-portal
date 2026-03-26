@@ -59,10 +59,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
     const { id: userId, organizationId } = req.user;
     const { feature, usesAI } = route;
 
-    // ─── 1. Get the member's active license ───────────────────────────────────
-    // FIX: schema has License[] on OrganizationMember (not a singular `license`
-    // relation). We must query License directly, filtering by assignedToId and
-    // isActive, and join the plan ourselves.
+    // ─── 1. Get member ─────────────────────────────────────────
     const member = await prisma.organizationMember.findUnique({
       where: { userId },
     });
@@ -76,6 +73,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
       });
     }
 
+    // ─── 2. Get license ────────────────────────────────────────
     const license = await prisma.license.findFirst({
       where: {
         assignedToId: member.id,
@@ -95,7 +93,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
       });
     }
 
-    // ─── 2. Check expiry (skip for BASIC tier — it never expires) ─────────────
+    // ─── 3. Expiry check ───────────────────────────────────────
     const isBasicPlan = license.plan.tier === "BASIC";
 
     if (!isBasicPlan && license.validUntil < new Date()) {
@@ -111,20 +109,19 @@ export const featureLimitMiddleware = async (req, res, next) => {
       });
     }
 
-    // ─── 3. Load plan limits for this feature ─────────────────────────────────
+    // ─── 4. Load limits ────────────────────────────────────────
     const limits = await prisma.planLimit.findMany({
       where: { planId: license.planId, feature },
     });
 
-    // No limits configured for this feature → allow freely
     if (!limits.length) return next();
 
-    // ─── 4. Enforce each period limit ─────────────────────────────────────────
+    // ─── 5. Enforce limits ─────────────────────────────────────
     for (const limit of limits) {
       const { start, end } = getPeriodBounds(limit.period);
 
-      // Upsert the usage record so we always have a row to work with
-      let record = await prisma.usageRecord.upsert({
+      // STEP 1: Find record
+      let record = await prisma.usageRecord.findUnique({
         where: {
           licenseId_feature_period_periodStart: {
             licenseId: license.id,
@@ -133,21 +130,39 @@ export const featureLimitMiddleware = async (req, res, next) => {
             periodStart: start,
           },
         },
-        create: {
-          licenseId: license.id,
-          seatId: license.seatId,
-          feature,
-          period: limit.period,
-          periodStart: start,
-          periodEnd: end,
-          currentUsage: { increment: 1 },
-        },
-        update: {}, // no-op update; we only want the row to exist
       });
 
+      // STEP 2: Create if not exists (with race-condition handling)
+      if (!record) {
+        try {
+          record = await prisma.usageRecord.create({
+            data: {
+              licenseId: license.id,
+              seatId: license.seatId,
+              feature,
+              period: limit.period,
+              periodStart: start,
+              periodEnd: end,
+              currentUsage: 0, // IMPORTANT
+            },
+          });
+        } catch (err) {
+          // If another request created it
+          record = await prisma.usageRecord.findUnique({
+            where: {
+              licenseId_feature_period_periodStart: {
+                licenseId: license.id,
+                feature,
+                period: limit.period,
+                periodStart: start,
+              },
+            },
+          });
+        }
+      }
+
+      // ─── AI Routes (no increment here) ───────────────────────
       if (usesAI) {
-        // ── AI routes: gate only, increment happens in the controller after
-        //    the AI call succeeds so a failed call doesn't burn quota.
         if (
           limit.maxAllowed !== -1 &&
           record.currentUsage >= limit.maxAllowed
@@ -167,12 +182,11 @@ export const featureLimitMiddleware = async (req, res, next) => {
           });
         }
 
-        continue; // skip increment — controller handles it
+        continue;
       }
 
-      // ── Non-AI routes: increment atomically right here ────────────────────
+      // ─── Non-AI Routes: increment safely ─────────────────────
 
-      // Unlimited (-1) → increment without a ceiling check
       if (limit.maxAllowed === -1) {
         await prisma.usageRecord.update({
           where: { id: record.id },
@@ -181,8 +195,6 @@ export const featureLimitMiddleware = async (req, res, next) => {
         continue;
       }
 
-      // Limited → atomic conditional increment (prevents over-counting under
-      // concurrent requests without needing a transaction)
       const updated = await prisma.usageRecord.updateMany({
         where: {
           id: record.id,
@@ -208,7 +220,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
       }
     }
 
-    // ─── 5. Attach AI metadata for the controller to increment after success ──
+    // ─── 6. Attach AI metadata ────────────────────────────────
     if (usesAI) {
       req.aiLimitCheckPassed = true;
       req.aiLimitMeta = {
@@ -217,7 +229,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
         organizationId,
         userId,
         feature,
-        limits, // full PlanLimit objects so controller can call getPeriodBounds again
+        limits,
       };
     }
 
