@@ -410,6 +410,31 @@ const CompanyLayout = ({ children }) => {
               },
             }}
           >
+            {/* ✅ Scrollable wrapper */}
+  <div
+    style={{
+      overflowY: "auto",
+      maxHeight: "calc(100vh - 120px)",
+      scrollbarWidth: "thin",           // Firefox: thin scrollbar
+      scrollbarColor: "#2d4a7a #011026", // Firefox: thumb & track color
+    }}
+  >
+    <style>{`
+      .sidebar-scroll::-webkit-scrollbar {
+        width: 4px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-track {
+        background: #011026;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb {
+        background: #2d4a7a;
+        border-radius: 4px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background: #1677FF;
+      }
+    `}</style>
+             <div className="sidebar-scroll" style={{ height: "100%", overflowY: "auto" }}>
             <Menu
               mode="inline"
               theme="dark"
@@ -499,6 +524,8 @@ const CompanyLayout = ({ children }) => {
                 },
               ]}
             />{" "}
+              </div>
+              </div>
           </ConfigProvider>
         </Sider>
 
