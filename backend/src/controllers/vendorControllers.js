@@ -793,23 +793,38 @@ const vendorApplyCandidate = async (req, res) => {
     ───────────────────────────── */
     let aiAllowed = false;
     let recruiterLicense = null;
+    let recruiterSeatId = null;
     let limitConfigs = [];
 
     if (job.postedById) {
       const recruiterMember = await prisma.organizationMember.findUnique({
         where: { userId: job.postedById },
-        include: {
-          license: {
-            include: {
-              plan: { include: { limits: true } },
-            },
-          },
-        },
       });
 
-      recruiterLicense = recruiterMember?.license;
+      if (recruiterMember) {
+        recruiterLicense = await prisma.license.findFirst({
+          where: {
+            assignedToId: recruiterMember.id,
+            isActive: true,
+            validFrom: { lte: new Date() },
+            validUntil: { gte: new Date() },
+          },
+          orderBy: {
+            validUntil: "desc",
+          },
+          include: {
+            plan: {
+              include: {
+                limits: true,
+              },
+            },
+          },
+        });
 
-      if (recruiterLicense && recruiterLicense.isActive) {
+        recruiterSeatId = recruiterLicense?.seatId || null;
+      }
+
+      if (recruiterLicense) {
         limitConfigs = recruiterLicense.plan.limits.filter(
           (l) => l.feature === "AI_FIT_SCORE",
         );
@@ -1008,6 +1023,7 @@ const vendorApplyCandidate = async (req, res) => {
         job,
         aiAllowed,
         recruiterLicense,
+        recruiterSeatId,
         limitConfigs,
         organizationId,
         newProfiles,
@@ -1027,6 +1043,7 @@ const processInBackground = async ({
   job,
   aiAllowed,
   recruiterLicense,
+  recruiterSeatId,
   limitConfigs,
   organizationId,
   newProfiles,
@@ -1157,6 +1174,7 @@ const processInBackground = async ({
               },
               create: {
                 licenseId: recruiterLicense.id,
+                seatId: recruiterSeatId, // keep if neededs
                 feature: "AI_FIT_SCORE",
                 period: lim.period,
                 currentUsage: 1,
@@ -1170,7 +1188,8 @@ const processInBackground = async ({
             data: {
               organizationId,
               userId: job.postedById,
-              licenseId: recruiterLicense.id,
+              seatId: recruiterSeatId,
+              licenseId: recruiterLicense?.id ?? null,
               inputTokens: tokenUsage?.prompt || 0,
               outputTokens: tokenUsage?.completion || 0,
               totalTokens: tokenUsage?.total || 0,

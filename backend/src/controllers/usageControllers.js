@@ -3,33 +3,43 @@ import prisma from "../config/prisma.js";
 const getFeatureUsage = async (req, res) => {
   const { organizationId, id: userId } = req.user;
 
-  // 1. Find org member + license
   const member = await prisma.organizationMember.findFirst({
     where: { organizationId, userId },
+  });
+
+  if (!member) {
+    return res.status(200).json({
+      status: "success",
+      message: "No active license found",
+    });
+  }
+
+  // 🔥 DIRECT LICENSE FETCH (BEST)
+  const license = await prisma.license.findFirst({
+    where: {
+      assignedToId: member.id,
+      isActive: true,
+      validFrom: { lte: new Date() },
+      validUntil: { gte: new Date() },
+    },
+    orderBy: { validUntil: "desc" },
     include: {
-      license: {
-        include: {
-          plan: {
-            include: { limits: true },
-          },
-          usageRecords: true,
-        },
-      },
+      plan: { include: { limits: true } },
+      usageRecords: true, // ⚠️ this works only if relation exists
     },
   });
 
-  if (!member || !member.license) {
-    return res
-      .status(200)
-      .json({ status: "success", message: "No active license found" });
+  if (!license) {
+    return res.status(200).json({
+      status: "success",
+      message: "No active license found",
+    });
   }
 
-  const { plan, usageRecords } = member.license;
   const now = new Date();
 
-  // 2. Build usage response
-  const usage = plan.limits.map((limit) => {
-    const record = usageRecords.find(
+  const usage = license.plan.limits.map((limit) => {
+    const record = license.usageRecords?.find(
       (u) =>
         u.feature === limit.feature &&
         u.period === limit.period &&
@@ -52,7 +62,7 @@ const getFeatureUsage = async (req, res) => {
   });
 
   res.json({
-    plan: plan.tier,
+    plan: license.plan.tier,
     usage,
   });
 };
@@ -67,7 +77,7 @@ const getAIUsage = async (req, res) => {
       userId,
     },
     orderBy: { createdAt: "desc" },
-    take: 50, // last 50 requests
+    take: 50,
   });
 
   // 2. Aggregate totals
@@ -98,24 +108,30 @@ const getLicenseOverview = async (req, res) => {
   try {
     const { organizationId } = req.user;
 
-    // 1️⃣ Get active subscription with licenses
     const subscription = await prisma.organizationSubscription.findFirst({
       where: {
         organizationId,
         status: "ACTIVE",
       },
       include: {
-        licenses: {
+        seats: {
           include: {
-            plan: true,
+            licenses: {
+              where: {
+                isActive: true,
+                validFrom: { lte: new Date() },
+                validUntil: { gte: new Date() },
+              },
+              orderBy: {
+                validUntil: "desc",
+              },
+              take: 1, // 🔥 ONLY ONE
+              include: { plan: true },
+            },
             assignedTo: {
               include: {
                 user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
+                  select: { id: true, name: true, email: true },
                 },
               },
             },
@@ -131,39 +147,38 @@ const getLicenseOverview = async (req, res) => {
       });
     }
 
-    const totalLicenses = subscription.licenses.length;
-    const activeLicenses = subscription.licenses.filter(
-      (l) => l.isActive,
-    ).length;
+    const seats = subscription.seats;
+    const totalSeats = seats.length;
+    const activeSeats = seats.filter((s) => s.licenses.length > 0).length;
+    const assignedSeats = seats.filter((s) => !!s.assignedToId).length;
+    const unassignedSeats = totalSeats - assignedSeats;
 
-    const assignedLicenses = subscription.licenses.filter(
-      (l) => l.assignedToId,
-    ).length;
+    const licenseDetails = seats.map((seat) => {
+      const license = seat.licenses?.[0] || null;
 
-    const unassignedLicenses = totalLicenses - assignedLicenses;
-
-    const licenseDetails = subscription.licenses.map((license) => ({
-      licenseId: license.id,
-      planTier: license.plan.tier,
-      validFrom: license.validFrom,
-      validUntil: license.validUntil,
-      isActive: license.isActive,
-      assignedTo: license.assignedTo
-        ? {
-            memberId: license.assignedTo.id,
-            userId: license.assignedTo.user.id,
-            name: license.assignedTo.user.name,
-            email: license.assignedTo.user.email,
-          }
-        : null,
-    }));
+      return {
+        seatId: seat.id,
+        planTier: license?.plan.tier ?? null,
+        validFrom: license?.validFrom ?? null,
+        validUntil: license?.validUntil ?? null,
+        isActive: !!license,
+        assignedTo: seat.assignedTo
+          ? {
+              memberId: seat.assignedTo.id,
+              userId: seat.assignedTo.user.id,
+              name: seat.assignedTo.user.name,
+              email: seat.assignedTo.user.email,
+            }
+          : null,
+      };
+    });
 
     res.json({
       subscriptionId: subscription.id,
-      totalLicenses,
-      activeLicenses,
-      assignedLicenses,
-      unassignedLicenses,
+      totalSeats,
+      activeSeats,
+      assignedSeats,
+      unassignedSeats,
       licenses: licenseDetails,
     });
   } catch (error) {

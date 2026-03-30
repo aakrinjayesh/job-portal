@@ -6,12 +6,10 @@ export const getOrganizationMembers = async (req, res) => {
     const organizationId = req.user.organizationId;
 
     if (!organizationId) {
-      return res
-        .status(400)
-        .json({
-          status: "error",
-          message: "User is not part of an organization",
-        });
+      return res.status(400).json({
+        status: "error",
+        message: "User is not part of an organization",
+      });
     }
 
     const members = await prisma.organizationMember.findMany({
@@ -25,26 +23,72 @@ export const getOrganizationMembers = async (req, res) => {
             profileUrl: true,
           },
         },
-        license: {
+        seats: {
+          take: 1, // ✅ ensure only one seat (latest)
+          orderBy: {
+            createdAt: "desc", // optional but recommended
+          },
           include: {
-            plan: { select: { tier: true, name: true } },
+            licenses: {
+              where: {
+                isActive: true,
+                validFrom: {
+                  lte: new Date(), // ✅ already started
+                },
+                validUntil: {
+                  gte: new Date(), // ✅ not expired
+                },
+              },
+              orderBy: {
+                validUntil: "desc", // ✅ latest valid license
+              },
+              take: 1, // ✅ only one license
+              include: {
+                plan: {
+                  select: {
+                    tier: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
 
-    // Also fetch pending invites
+    // Normalize response
+    const normalizedMembers = members.map((m) => {
+      const seat = m.seats?.[0] || null;
+      const license = seat?.licenses?.[0] || null;
+
+      const { seats, ...rest } = m;
+
+      return {
+        ...rest,
+        seatId: seat?.id ?? null,
+        license,
+      };
+    });
+
+    // Fetch pending invites
     const invites = await prisma.organizationInvite.findMany({
       where: { organizationId },
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
-      data: { members, invites },
+      data: {
+        members: normalizedMembers,
+        invites,
+      },
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: "error", message: "Server Error" });
+    console.error("getOrganizationMembers Error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Server Error",
+    });
   }
 };
 
@@ -63,12 +107,10 @@ export const removeMember = async (req, res) => {
     });
 
     if (!memberToDelete || memberToDelete.organizationId !== organizationId) {
-      return res
-        .status(404)
-        .json({
-          status: "error",
-          message: "Member not found in your organization",
-        });
+      return res.status(404).json({
+        status: "error",
+        message: "Member not found in your organization",
+      });
     }
 
     if (memberToDelete.userId === currentUser.id) {
@@ -106,7 +148,20 @@ export const deleteInviteByAdmin = async (req, res) => {
         .json({ status: "error", message: "Invite not found" });
     }
 
-    await prisma.organizationInvite.delete({ where: { id: inviteId } });
+    // Delete the user stub created during invite (only if they haven't set a password yet)
+    const stubUser = await prisma.users.findUnique({
+      where: { email: invite.email },
+      select: { id: true, password: true },
+    });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.organizationInvite.delete({ where: { id: inviteId } });
+
+      // Only delete the user stub if they never set a password (invite not accepted)
+      if (stubUser && !stubUser.password) {
+        await tx.users.delete({ where: { id: stubUser.id } });
+      }
+    });
 
     res
       .status(200)
