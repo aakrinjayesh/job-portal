@@ -103,20 +103,29 @@ const userApplyJob = async (req, res) => {
     /* ───────── CHECK AI LICENSE ───────── */
     let aiAllowed = false;
     let recruiterLicense = null;
+    let recruiterSeatId = null;
     let limitConfigs = [];
     let recruiterMember = null;
 
     if (job.postedById) {
       recruiterMember = await prisma.organizationMember.findUnique({
         where: { userId: job.postedById },
-        include: {
-          license: {
-            include: { plan: { include: { limits: true } } },
-          },
-        },
       });
 
-      recruiterLicense = recruiterMember?.license;
+      if (recruiterMember) {
+        const recruiterSeat = await prisma.licenseSeat.findFirst({
+          where: { assignedToId: recruiterMember.id },
+          include: {
+            licenses: {
+              where: { isActive: true },
+              include: { plan: { include: { limits: true } } },
+            },
+          },
+        });
+
+        recruiterLicense = recruiterSeat?.licenses[0] ?? null;
+        recruiterSeatId = recruiterSeat?.id ?? null;
+      }
 
       if (recruiterLicense?.isActive) {
         limitConfigs = recruiterLicense.plan.limits.filter(
@@ -140,8 +149,8 @@ const userApplyJob = async (req, res) => {
 
           const usage = await prisma.usageRecord.findUnique({
             where: {
-              licenseId_feature_period_periodStart: {
-                licenseId: recruiterLicense.id,
+              seatId_feature_period_periodStart: {
+                seatId: recruiterSeatId,
                 feature: "AI_FIT_SCORE",
                 period: limit.period,
                 periodStart,
@@ -217,16 +226,17 @@ const userApplyJob = async (req, res) => {
         job,
         aiAllowed,
         recruiterLicense,
+        recruiterSeatId,
         recruiterMember,
         limitConfigs,
       });
     }
   } catch (error) {
-    logger.error("userApplyJob Error:", error.message);
-
+    console.error("userApplyJob Error:", error.message);
     return res.status(500).json({
       status: "error",
       message: "Failed to submit application",
+      metadata: error.message,
     });
   }
 };
@@ -238,6 +248,7 @@ const processCandidateApplicationInBackground = async ({
   job,
   aiAllowed,
   recruiterLicense,
+  recruiterSeatId,
   recruiterMember,
   limitConfigs,
 }) => {
@@ -308,7 +319,7 @@ const processCandidateApplicationInBackground = async ({
     }
 
     /* ───────── SAVE AI RESULT ───────── */
-    if (aiAllowed && aiAnalysisResult && recruiterLicense) {
+    if (aiAllowed && aiAnalysisResult && recruiterSeatId) {
       const now = new Date();
 
       await prisma.$transaction(async (tx) => {
@@ -338,8 +349,8 @@ const processCandidateApplicationInBackground = async ({
 
           await tx.usageRecord.upsert({
             where: {
-              licenseId_feature_period_periodStart: {
-                licenseId: recruiterLicense.id,
+              seatId_feature_period_periodStart: {
+                seatId: recruiterSeatId,
                 feature: "AI_FIT_SCORE",
                 period: limit.period,
                 periodStart,
@@ -349,7 +360,7 @@ const processCandidateApplicationInBackground = async ({
               currentUsage: { increment: 1 },
             },
             create: {
-              licenseId: recruiterLicense.id,
+              seatId: recruiterSeatId,
               feature: "AI_FIT_SCORE",
               period: limit.period,
               currentUsage: 1,
@@ -363,7 +374,8 @@ const processCandidateApplicationInBackground = async ({
           data: {
             organizationId: recruiterMember.organizationId,
             userId: job.postedById,
-            licenseId: recruiterLicense.id,
+            seatId: recruiterSeatId,
+            licenseId: recruiterLicense?.id ?? null,
             inputTokens: tokenUsage?.prompt || 0,
             outputTokens: tokenUsage?.completion || 0,
             totalTokens: tokenUsage?.total || 0,
