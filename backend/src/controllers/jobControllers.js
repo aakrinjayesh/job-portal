@@ -113,30 +113,42 @@ const userApplyJob = async (req, res) => {
       });
 
       if (recruiterMember) {
-        const recruiterSeat = await prisma.licenseSeat.findFirst({
-          where: { assignedToId: recruiterMember.id },
+        // 🔥 Correct license fetching (handles renewals + expiry)
+        recruiterLicense = await prisma.license.findFirst({
+          where: {
+            assignedToId: recruiterMember.id,
+            isActive: true,
+            validFrom: {
+              lte: new Date(),
+            },
+            validUntil: {
+              gte: new Date(),
+            },
+          },
+          orderBy: {
+            validUntil: "desc",
+          },
           include: {
-            licenses: {
-              where: { isActive: true },
-              include: { plan: { include: { limits: true } } },
+            plan: {
+              include: {
+                limits: true,
+              },
             },
           },
         });
 
-        recruiterLicense = recruiterSeat?.licenses[0] ?? null;
-        recruiterSeatId = recruiterSeat?.id ?? null;
+        recruiterSeatId = recruiterLicense?.seatId || null;
       }
 
-      if (recruiterLicense?.isActive) {
+      if (recruiterLicense) {
         limitConfigs = recruiterLicense.plan.limits.filter(
           (l) => l.feature === "AI_FIT_SCORE",
         );
+
         aiAllowed = true;
 
         for (const limit of limitConfigs) {
-          if (limit.period === "DAILY") {
-            continue;
-          }
+          if (limit.period === "DAILY") continue;
 
           const now = new Date();
           let periodStart;
@@ -149,8 +161,8 @@ const userApplyJob = async (req, res) => {
 
           const usage = await prisma.usageRecord.findUnique({
             where: {
-              seatId_feature_period_periodStart: {
-                seatId: recruiterSeatId,
+              licenseId_feature_period_periodStart: {
+                licenseId: recruiterLicense.id, // 🔥 IMPORTANT
                 feature: "AI_FIT_SCORE",
                 period: limit.period,
                 periodStart,
@@ -212,6 +224,8 @@ const userApplyJob = async (req, res) => {
         id: application.id,
       },
     });
+
+    /* ───────── BACKGROUND PROCESSING ───────── */
     const alreadyScoredCount = await prisma.applicationAnalysis.count({
       where: {
         jobApplication: { jobId },
@@ -349,8 +363,8 @@ const processCandidateApplicationInBackground = async ({
 
           await tx.usageRecord.upsert({
             where: {
-              seatId_feature_period_periodStart: {
-                seatId: recruiterSeatId,
+              licenseId_feature_period_periodStart: {
+                licenseId: recruiterLicense.id, // 🔥 FIX
                 feature: "AI_FIT_SCORE",
                 period: limit.period,
                 periodStart,
@@ -360,7 +374,8 @@ const processCandidateApplicationInBackground = async ({
               currentUsage: { increment: 1 },
             },
             create: {
-              seatId: recruiterSeatId,
+              licenseId: recruiterLicense.id, // 🔥 FIX
+              seatId: recruiterSeatId, // optional (keep for tracking)
               feature: "AI_FIT_SCORE",
               period: limit.period,
               currentUsage: 1,
@@ -480,7 +495,7 @@ const processCandidateApplicationInBackground = async ({
           `,
         });
       } catch (emailError) {
-        logger.error("Recruiter email failed:", emailError.message);
+        console.error("Recruiter email failed:", emailError.message);
       }
     }
 
@@ -579,10 +594,10 @@ const processCandidateApplicationInBackground = async ({
 `,
       });
     } catch (emailError) {
-      logger.error("Candidate email failed:", emailError.message);
+      console.error("Candidate email failed:", emailError.message);
     }
   } catch (error) {
-    logger.error("Background Processing Error:", error.message);
+    console.error("Background Processing Error:", error.message);
   }
 };
 
