@@ -148,6 +148,7 @@ const postJobValidator = z.object({
   jobType: z.string().optional(),
   status: z.enum(["Open", "Closed", "Draft"]).optional(),
   applicationDeadline: z.string().optional(),
+  applicantSource: z.string().optional(),
   companyLogo: z.string().nullable().optional(),
   ApplicationLimit: z.number().optional(),
   questions: z
@@ -243,6 +244,7 @@ const editJobValidator = z.object({
   jobType: z.string().optional(),
   status: z.enum(["Open", "Closed", "Draft"]).optional(),
   applicationDeadline: z.string().optional(),
+  applicantSource: z.string().optional(),
   // companyLogo: z.string().optional(),
   companyLogo: z.string().nullable().optional(),
 

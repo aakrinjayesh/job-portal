@@ -105,6 +105,7 @@ const RecruiterJobList = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [aiIsExperienceRange, setAiIsExperienceRange] = useState(false);
+  const [applicantSourceValue, setApplicantSourceValue] = useState("Both");
 
   const LIMIT = 10;
 
@@ -253,6 +254,7 @@ const RecruiterJobList = () => {
     form.resetFields();
     setCurrentStep(0);
     setScreeningQuestions([]); // reset questions
+    setApplicantSourceValue("Both"); // ✅ reset to default
     setIsModalVisible(true);
     setShowTenure(false);
   };
@@ -261,6 +263,7 @@ const RecruiterJobList = () => {
     setIsEditing(true);
     setEditingJob(job);
     setCurrentStep(0);
+    setApplicantSourceValue(job.applicantSource || "Both"); // ✅ load existing value
 
     if (job.jobType === "Remote") {
       setShowLocation(false);
@@ -348,6 +351,7 @@ const RecruiterJobList = () => {
     form.resetFields();
     setCurrentStep(0);
     setScreeningQuestions([]); // reset on cancel
+    setApplicantSourceValue("Both"); 
   };
   const handleJobClick = (jobId) => {
     const scrollTop = jobsContainerRef.current?.scrollTop || 0;
@@ -448,6 +452,7 @@ const RecruiterJobList = () => {
         "certifications",
         "applicationDeadline",
         "ApplicationLimit",
+         "applicantSource", 
       ],
     },
     {
@@ -561,6 +566,7 @@ const RecruiterJobList = () => {
         certifications: values.certifications || [],
         jobType: values.jobType,
         applicationDeadline: values?.applicationDeadline?.toISOString(),
+        applicantSource: values.applicantSource || applicantSourceValue || "Both", // ✅ form value first
         ApplicationLimit:
           values?.ApplicationLimit !== undefined &&
           values?.ApplicationLimit !== null
@@ -2061,6 +2067,77 @@ const RecruiterJobList = () => {
               {/* ── STEP 3: Other Details ── */}
               {currentStep === 3 && (
                 <>
+              {/* ── SHOW JOB TO ── */}
+<Form.Item name="applicantSource" label="Show Job To">
+  {/* ✅ Hidden input so AntD registers the form value */}
+  <Input type="hidden" />
+</Form.Item>
+
+{/* ✅ Your custom UI OUTSIDE the Form.Item */}
+<div style={{ display: "flex", gap: 10, marginTop: -24, marginBottom: 24 }}>
+  {[
+    { value: "Candidate", label: "Individual Candidates", icon: "👤", desc: "Direct job seekers only", color: "#6366f1", bg: "#eef2ff" },
+    { value: "Company",   label: "Vendor Candidates",     icon: "🏢", desc: "Staffing agencies & vendors", color: "#0ea5e9", bg: "#e0f2fe" },
+    { value: "Both",      label: "Both",                  icon: "🌐", desc: "All applicant sources",      color: "#10b981", bg: "#d1fae5" },
+  ].map((opt) => {
+    const isSelected = applicantSourceValue === opt.value;
+    return (
+      <div
+        key={opt.value}
+        onClick={() => {
+          form.setFieldsValue({ applicantSource: opt.value }); // ✅ updates form
+          setApplicantSourceValue(opt.value);                  // ✅ updates UI
+        }}
+        style={{
+          flex: 1,
+          padding: "12px 10px",
+          borderRadius: 12,
+          border: `2px solid ${isSelected ? opt.color : "#E5E7EB"}`,
+          background: isSelected ? opt.bg : "#fafafa",
+          cursor: "pointer",
+          textAlign: "left",
+          transition: "all 0.18s ease",
+          boxShadow: isSelected ? `0 0 0 3px ${opt.color}22` : "none",
+          position: "relative",
+        }}
+      >
+        {isSelected && (
+          <div style={{
+            position: "absolute", top: 7, right: 7,
+            width: 16, height: 16, borderRadius: "50%",
+            background: opt.color,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 9, color: "#fff", fontWeight: 700,
+          }}>✓</div>
+        )}
+       <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 3,
+  }}
+>
+  <div style={{ fontSize: 20 }}>{opt.icon}</div>
+
+  <div
+    style={{
+      fontSize: 12,
+      fontWeight: 700,
+      color: isSelected ? opt.color : "#374151",
+    }}
+  >
+    {opt.label}
+  </div>
+</div>
+
+<div style={{ fontSize: 11, color: "#9CA3AF" }}>
+  {opt.desc}
+</div>
+      </div>
+    );
+  })}
+</div>
                   <Form.Item
                     name="companyName"
                     label="Company Name"

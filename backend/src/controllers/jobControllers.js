@@ -1162,20 +1162,44 @@ const getJobList = async (req, res) => {
     const page = parseInt(req.body.page) || 1;
     const limit = parseInt(req.body.limit) || 10;
     const filters = req.body.filters || {};
-
+ 
     const userId = req.user?.id;
     const role = req.user?.role;
     const organizationId = req.user?.organizationId;
-
-    // --------------------------------------------
-    // STEP 1: FETCH ALL JOBS
-    // --------------------------------------------
+ 
+    // ----------------------------------------------------------
+    // ROLE-BASED applicantSource FILTER
+    // Prisma enum:  Candidate | Company | Both   (PascalCase!)
+    // ----------------------------------------------------------
+    let applicantSourceFilter = {};
+ 
+    if (role === "candidate") {
+      // Individual candidates see jobs posted for Candidate or Both
+      applicantSourceFilter = {
+        applicantSource: { in: ["Candidate", "Both"] },
+      };
+    }
+ 
+    if (role === "company") {
+      // Vendor / company users see jobs posted for Company or Both
+      applicantSourceFilter = {
+        applicantSource: { in: ["Company", "Both"] },
+      };
+    }
+    // admin → no filter (sees everything)
+ 
+    // ----------------------------------------------------------
+    // FETCH JOBS
+    // ----------------------------------------------------------
     const allJobs = await prisma.job.findMany({
       where: {
         isDeleted: false,
         status: "Open", // 🔥 add this
         // 🚨 THIS LINE IS IMPORTANT
         ...(role === "company" ? { postedById: { not: userId } } : {}),
+ 
+        // ✅ Correct PascalCase enum filter
+        ...applicantSourceFilter,
       },
       orderBy: { createdAt: "desc" },
       include: {
@@ -1192,7 +1216,7 @@ const getJobList = async (req, res) => {
         },
       },
     });
-
+ 
     // --------------------------------------------
     // STEP 2: ADD isSaved FLAG
     // --------------------------------------------
@@ -1200,12 +1224,12 @@ const getJobList = async (req, res) => {
       ...job,
       isSaved: job.savedBy && job.savedBy.length > 0,
     }));
-
+ 
     // --------------------------------------------
     // STEP 3: APPLY FILTERS (IN-MEMORY)
     // --------------------------------------------
     const filteredJobs = applyFilters(jobsWithSavedStatus, filters);
-
+ 
     // --------------------------------------------
     // STEP 4: PAGINATION
     // --------------------------------------------
@@ -1213,7 +1237,7 @@ const getJobList = async (req, res) => {
     const totalPages = Math.ceil(totalCount / limit);
     const skip = (page - 1) * limit;
     const paginatedJobs = filteredJobs.slice(skip, skip + limit);
-
+ 
     return res.status(200).json({
       status: "success",
       jobs: paginatedJobs,
@@ -1403,6 +1427,7 @@ const postJob = async (req, res) => {
       applicationDeadline,
       ApplicationLimit,
       companyLogo,
+      applicantSource,
       questions = [], // default empty array
     } = req.body;
 
@@ -1428,6 +1453,11 @@ const postJob = async (req, res) => {
       };
     }
 
+    const validSources = ["Candidate", "Company", "Both"];
+const normalizedSource = validSources.includes(applicantSource)
+  ? applicantSource
+  : "Both";
+
     const job = await prisma.job.create({
       data: {
         role,
@@ -1447,6 +1477,7 @@ const postJob = async (req, res) => {
         applicationDeadline,
         ApplicationLimit,
         companyLogo,
+        applicantSource: normalizedSource,
         postedById: recruiterId,
         organizationId,
       },
@@ -1643,9 +1674,15 @@ const editJob = async (req, res) => {
       status,
       applicationDeadline,
       ApplicationLimit,
+      applicantSource,
       companyLogo,
       questions = [],
     } = req.body;
+
+    const validSources = ["Candidate", "Company", "Both"];
+    const normalizedSource = validSources.includes(applicantSource)
+      ? applicantSource
+      : "Both"; // ✅ normalize it
 
     // Check if job exists first
     const existingJob = await prisma.job.findUnique({
@@ -1710,6 +1747,7 @@ const editJob = async (req, res) => {
         status,
         applicationDeadline,
         ApplicationLimit,
+        applicantSource: normalizedSource,  // ← ADD THIS
         companyLogo,
       },
     });
