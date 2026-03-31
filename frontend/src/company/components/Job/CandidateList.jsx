@@ -157,58 +157,6 @@ const CandidateList = () => {
     return true;
   };
 
-  // useEffect(() => {
-  //   const fetchCandidates = async () => {
-  //     try {
-  //       setLoading(true);
-  //       setProgress(10);
-
-  //       const interval = setInterval(() => {
-  //         setProgress((prev) => {
-  //           if (prev >= 90) return prev;
-  //           return prev + 10;
-  //         });
-  //       }, 200);
-
-  //       const payload = { jobId };
-  //       const response = await GetCandidateList(payload);
-
-  //       clearInterval(interval);
-  //       setProgress(100);
-
-  //       setTimeout(() => {
-  //         setLoading(false);
-  //       }, 400);
-
-  //       if (response?.data && response.data.length > 0) {
-  //         const map = {};
-  //         const savedIds = new Set();
-  //         response.data.forEach((c) => {
-  //           map[c.applicationId] = c.status || "Pending";
-  //           // if (c?.profile?.isSaved) {
-  //           //   savedIds.add(c.profile.id);
-  //           // }
-  //           // ✅ CHANGE TO
-  //           if (c?.profile?.isSaved === true && c?.status === "BookMark") {
-  //             savedIds.add(c.profile.id);
-  //           }
-  //         });
-
-  //         setStatusMap(map);
-  //         setCandidates(response.data);
-  //         setTotal(response.total || response.data.length);
-  //       } else {
-  //         setCandidates([]);
-  //         messageAPI.warning("No candidates found for this job.");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching candidates:", error);
-  //       messageAPI.error("Failed to load candidates.");
-  //     }
-  //   };
-
-  //   if (jobId) fetchCandidates();
-  // }, [jobId]);
   useEffect(() => {
     const fetchLicense = async () => {
       try {
@@ -268,14 +216,7 @@ const CandidateList = () => {
     if (jobId) fetchCandidates();
     // }, [jobId, page, pageSize]); // ✅ KEEP THIS
   }, [jobId]);
-  // ✅ ADD THIS useEffect — clears filters when leaving the page
-  // useEffect(() => {
-  //   return () => {
-  //     sessionStorage.removeItem("candidateActiveFilters");
-  //     sessionStorage.removeItem("candidateFilterOpen");
-  //   };
-  // }, []);
-  // ✅ REPLACE the existing cleanup useEffect with this
+
   useEffect(() => {
     return () => {
       if (!isNavigatingToCandidate.current) {
@@ -289,46 +230,6 @@ const CandidateList = () => {
       isNavigatingToCandidate.current = false;
     };
   }, []);
-
-  // useEffect(() => {
-  //   const fetchCandidates = async () => {
-  //     try {
-  //       setLoading(true);
-  //       const payload = { jobId };
-  //       const response = await GetCandidateList(payload);
-
-  //       if (response?.data && response.data.length > 0) {
-  //         const map = {};
-  //         const savedIds = new Set();
-  //         response.data.forEach((c) => {
-  //           map[c.applicationId] = c.status || "Pending";
-  //           // if (c?.profile?.isSaved) {
-  //           //   savedIds.add(c.profile.id);
-  //           // }
-  //           // ✅ CHANGE TO
-  //           if (c?.profile?.isSaved === true && c?.status === "BookMark") {
-  //             savedIds.add(c.profile.id);
-  //           }
-  //         });
-
-  //         setStatusMap(map);
-  //         setSavedCandidateIds(savedIds);
-  //         setCandidates(response.data);
-  //         setTotal(response.total || response.data.length);
-  //       } else {
-  //         setCandidates([]);
-  //         messageAPI.warning("No candidates found for this job.");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching candidates:", error);
-  //       messageAPI.error("Failed to load candidates.");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   if (jobId) fetchCandidates();
-  // }, [jobId, page, pageSize]);
 
   const filteredCandidates = candidates
     .filter((c) => {
@@ -411,21 +312,7 @@ const CandidateList = () => {
         ),
       );
     })
-    // .filter((c) => {
-    //   if (!activeFilters?.location?.length) return true;
-    //   const loc = c?.profile?.currentLocation || "";
-    //   return activeFilters.location.some((l) =>
-    //     loc.toLowerCase().includes(l.toLowerCase()),
-    //   );
-    // })
-    // .filter((c) => {
-    //   if (!activeFilters?.skills?.length) return true;
-    //   const candidateSkills =
-    //     c?.profile?.skillsJson?.map((s) => s.name.toLowerCase()) || [];
-    //   return activeFilters.skills.every((s) =>
-    //     candidateSkills.some((cs) => cs.includes(s.toLowerCase())),
-    //   );
-    // })
+
     .filter((c) => {
       if (!activeFilters?.skills?.length) return true;
       const candidateSkills =
@@ -436,18 +323,7 @@ const CandidateList = () => {
         return candidateSkills.some((cs) => cs.includes(cleanSkill));
       });
     })
-    // .filter((c) => {
-    //   if (!activeFilters?.clouds?.length) return true;
-    //   const candidateClouds = [
-    //     ...(c?.profile?.primaryClouds?.map((cl) => cl.name.toLowerCase()) ||
-    //       []),
-    //     ...(c?.profile?.secondaryClouds?.map((cl) => cl.name.toLowerCase()) ||
-    //       []),
-    //   ];
-    //   return activeFilters.clouds.every((cl) =>
-    //     candidateClouds.some((cc) => cc.includes(cl.toLowerCase())),
-    //   );
-    // })
+
     .filter((c) => {
       if (!activeFilters?.clouds?.length) return true;
       const candidateClouds = [
@@ -462,13 +338,7 @@ const CandidateList = () => {
         return candidateClouds.some((cc) => cc.includes(cleanCloud));
       });
     })
-    // .filter((c) => {
-    //   if (!activeFilters?.preferredLocation?.length) return true;
-    //   const preferred = c?.profile?.preferredLocation || [];
-    //   return activeFilters.preferredLocation.some((sel) =>
-    //     preferred.some((l) => l.toLowerCase().includes(sel.toLowerCase())),
-    //   );
-    // })
+
     .filter((c) => {
       const hasRange =
         activeFilters?.expectedCTCMin != null ||
@@ -494,13 +364,7 @@ const CandidateList = () => {
         .toLowerCase()
         .includes(activeFilters.expectedCTC.toLowerCase().trim());
     })
-    // .filter((c) => {
-    //   if (!
-    //     activeFilters?.joiningPeriod?.trim()
-    //   ) return true;
-    //   const jp = c?.profile?.joiningPeriod?.toLowerCase() || "";
-    //   return jp.includes(activeFilters.joiningPeriod.toLowerCase().trim());
-    // })
+
     .filter((c) => {
       if (!activeFilters?.joiningPeriod?.length) return true;
 
@@ -627,16 +491,7 @@ const CandidateList = () => {
       setSelectedCandidates(rows);
     },
   };
-  // useEffect(() => {
-  //   // ✅ Show count whenever filtered results change (covers all filters including screening)
-  //   if (candidates.length > 0) {
-  //     setShowFilteredCount(true);
-  //     if (filterCountTimer.current) clearTimeout(filterCountTimer.current);
-  //     filterCountTimer.current = setTimeout(() => {
-  //       setShowFilteredCount(false);
-  //     }, 2500);
-  //   }
-  // }, [filteredCandidates.length]);
+
   useEffect(() => {
     const hasActiveFilter =
       Object.values(activeFilters).some((v) => {
@@ -712,37 +567,6 @@ const CandidateList = () => {
                 }
 
                 try {
-                  // if (finalStatus === "BookMark") {
-                  //   // ⭐ NEW CHECK (added)
-                  //   if (savedCandidateIds.has(record.profile.id)) {
-                  //     messageAPI.warning("Candidate already saved");
-
-                  //     setStatusMap((prev) => ({
-                  //       ...prev,
-                  //       [record.applicationId]: "BookMark",
-                  //     }));
-
-                  //     return;
-                  //   }
-                  //   await MarkCandidateBookmark({
-                  //     jobApplicationId: record.applicationId,
-                  //   });
-                  //   await SaveCandidate({
-                  //     candidateProfileId: record.profile.id,
-                  //   });
-                  //   // ⭐ store saved candidate locally
-                  //   setSavedCandidateIds((prev) =>
-                  //     new Set(prev).add(record.profile.id),
-                  //   );
-
-                  //   // ⭐ Update UI immediately
-                  //   setStatusMap((prev) => ({
-                  //     ...prev,
-                  //     [record.applicationId]: "BookMark",
-                  //   }));
-
-                  //   return; // ⭐ important - stop here
-                  // }
                   if (finalStatus === "BookMark") {
                     // ⭐ Check if candidate already saved
                     if (
@@ -823,21 +647,6 @@ const CandidateList = () => {
           );
         })}
         <div
-          // onClick={async () => {
-          //   try {
-          //     await UpdateVendorCandidateStatus({
-          //       jobApplicationId: record.applicationId,
-          //       status: "Pending",
-          //     });
-          //     setStatusMap((prev) => ({
-          //       ...prev,
-          //       [record.applicationId]: "Pending",
-          //     }));
-          //   } catch {
-          //     messageAPI.error("Failed to clear status");
-          //   }
-          //   closePopover();
-          // }}
           onClick={async () => {
             const previousStatus = statusMap[record.applicationId] || "Pending";
 
@@ -942,97 +751,6 @@ const CandidateList = () => {
       setGeneratingMap((prev) => ({ ...prev, [record.applicationId]: false }));
     }
   };
-  // const generateBulkFitScore = async () => {
-  //   const targets =
-  //     selectedCandidates.length > 0
-  //       ? selectedCandidates.slice(0, 10)
-  //       : candidates.filter((c) => c.matchScore == null).slice(0, 5);
-
-  //   if (!targets.length) {
-  //     messageAPI.warning("No candidates available for bulk generation.");
-  //     return;
-  //   }
-
-  //   setBulkGenerating(true);
-  //   messageAPI.loading({
-  //     content: "Generating Fit Scores in bulk...",
-  //     key: "bulk",
-  //     duration: 0,
-  //   });
-
-  //   let successCount = 0;
-  //   let failCount = 0;
-  //   let limitReached = false;
-
-  //   for (const record of targets) {
-  //     try {
-  //       const payload = {
-  //         jobApplicationId: record.applicationId,
-  //         jobId: jobId,
-  //         candidateProfileId: record.profile.id,
-  //         force: false,
-  //       };
-
-  //       const response = await CVEligibility(payload);
-
-  //       if (response?.status === "success") {
-  //         setCandidates((prev) =>
-  //           prev.map((c) =>
-  //             c.applicationId === record.applicationId
-  //               ? {
-  //                   ...c,
-  //                   matchScore: response.data.fitPercentage,
-  //                   aiAnalysis: response.data.analysis,
-  //                 }
-  //               : c,
-  //           ),
-  //         );
-  //         successCount++;
-  //       }
-  //     } catch (err) {
-  //       // ✅ Check if it's a limit error from the API
-  //       const errMsg = err?.response?.data?.message || err?.message || "";
-
-  //       const isLimitError =
-  //         errMsg.toLowerCase().includes("limit") ||
-  //         errMsg.toLowerCase().includes("quota") ||
-  //         errMsg.toLowerCase().includes("exceeded") ||
-  //         errMsg.toLowerCase().includes("daily") ||
-  //         err?.response?.status === 429;
-
-  //       if (isLimitError) {
-  //         limitReached = true;
-  //         break; // ✅ Stop the loop immediately
-  //       }
-
-  //       failCount++;
-  //     }
-  //   }
-
-  //   setBulkGenerating(false);
-  //   messageAPI.destroy("bulk");
-
-  //   // ✅ Show appropriate message based on what happened
-  //   if (limitReached && successCount > 0) {
-  //     messageAPI.warning({
-  //       content: `${successCount} fit score${successCount > 1 ? "s" : ""} generated. Daily limit reached — remaining candidates were skipped.`,
-  //       duration: 5,
-  //     });
-  //   } else if (limitReached && successCount === 0) {
-  //     messageAPI.error({
-  //       content:
-  //         "Daily AI Fit Score limit reached. No scores were generated. Please try again tomorrow.",
-  //       duration: 5,
-  //     });
-  //   } else if (successCount > 0) {
-  //     messageAPI.success({
-  //       content: `Bulk complete: ${successCount} fit score${successCount > 1 ? "s" : ""} generated${failCount > 0 ? `, ${failCount} failed` : ""}.`,
-  //       duration: 4,
-  //     });
-  //   } else {
-  //     messageAPI.error("Failed to generate fit scores. Please try again.");
-  //   }
-  // };
 
   const handleBulkFitScoreClick = async () => {
     if (licenseTier === "BASIC") {
@@ -1263,44 +981,6 @@ const CandidateList = () => {
             </div>
           }
         >
-          {/* <span
-            onClick={async (e) => {
-              e.stopPropagation();
-              try {
-                await MarkCandidateReviewed({
-                  jobApplicationId: record.applicationId,
-                });
-              } catch {}
-              setCandidates((prev) =>
-                prev.map((c) =>
-                  c.applicationId === record.applicationId
-                    ? { ...c, status: "Reviewed" }
-                    : c,
-                ),
-              );
-              sessionStorage.setItem("candidateListPage", page);
-              sessionStorage.setItem("candidateListPageSize", pageSize);
-              sessionStorage.setItem(
-                "candidateFilterOpen",
-                String(isFilterOpen),
-              );
-              isNavigatingToCandidate.current = true;
-              navigate(`/company/candidate/${record.profile.id}`, {
-                state: {
-                  candidate: { ...record, status: "Reviewed" },
-                  jobId,
-                  highlight: highlight || "findbench",
-                },
-              });
-            }}
-            style={{ color: "#1677ff", cursor: "pointer" }}
-          >
-            {text}
-          </span> */}
-          {/* <span style={{ color: "#1A1A2E", cursor: "default" }}>{text}</span> */}
-          {/* <span style={{ color: "#1A1A2E", cursor: "default" }}>
-            {formatName(text)}
-          </span> */}
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -1534,15 +1214,6 @@ const CandidateList = () => {
       },
     },
 
-    // {
-    //   title: "Status",
-    //   key: "status",
-    //   render: (_, record) => {
-    //     const currentStatus = statusMap[record.applicationId] || "Pending";
-    //     return currentStatus;
-    //   },
-    // },
-
     {
       title: "Applied On",
       dataIndex: "appliedAt",
@@ -1550,12 +1221,6 @@ const CandidateList = () => {
       render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
     },
 
-    // {
-    //   title: "Location",
-    //   dataIndex: ["profile", "currentLocation"],
-    //   key: "currentLocation",
-    //   render: (text) => text || "N/A",
-    // },
     {
       title: "Preferred Location",
       dataIndex: ["profile", "preferredLocation"],
@@ -1709,20 +1374,6 @@ const CandidateList = () => {
     >
       {contextHolder}
 
-      {/* HEADER CARD */}
-      {/* <div
-        style={{
-          width: "100%",
-          padding: 8,
-          background: "#FFFFFF",
-          borderTopLeftRadius: 6,
-          borderTopRightRadius: 6,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      > */}
       <div
         style={{
           width: "100%",
@@ -1767,11 +1418,6 @@ const CandidateList = () => {
             )}
           </div>
           {["ALL", "NORMAL", "VENDOR"].map((type) => {
-            // const labels = {
-            //   ALL: `All (${candidates.length})`,
-            //   NORMAL: `Individual Candidates (${candidates.filter((c) => c?.profile?.vendorId == null).length})`,
-            //   VENDOR: `Vendor Candidates (${candidates.filter((c) => c?.profile?.vendorId != null).length})`,
-            // };
             const labels = {
               // ✅ ALL shows total unfiltered count
               ALL: `All (${candidates.length})`,
@@ -1854,27 +1500,7 @@ const CandidateList = () => {
             }}
             style={{ width: 200, height: 36, borderRadius: 20, fontSize: 13 }}
           />
-          {/* ✅ BULK FIT SCORE BUTTON */}
-          {/* <div
-            
-            onClick={() => {
-              if (licenseTier === "BASIC") {
-                messageAPI.warning("Upgrade required for Bulk Fit Score");
-                return;
-              }
-              !bulkGenerating && handleBulkFitScoreClick();
-            }}
-            style={{
-              height: 36,
-              borderRadius: 20,
-              padding: "6px 18px",
-              background: bulkGenerating ? "#EBEBEB" : "#722ED1",
-              display: "flex",
-              alignItems: "center",
-              cursor: bulkGenerating ? "not-allowed" : "pointer",
-              gap: 6,
-            }}
-          > */}
+
           <div
             onClick={() => {
               if (licenseTier === "BASIC") {
@@ -1912,12 +1538,6 @@ const CandidateList = () => {
                 fontWeight: 500,
               }}
             >
-              {/* {bulkGenerating ? "⏳ Generating..." : "🤖 Bulk Fit Score"} */}
-              {/* {bulkGenerating
-                ? "⏳ Generating..."
-                : isSelectionMode
-                  ? "⚡ Generate Fit Score"
-                  : "🤖 Bulk Fit Score"} */}
               {licenseTier === "BASIC"
                 ? "🔒 Upgrade Plan"
                 : bulkGenerating
@@ -2008,13 +1628,6 @@ const CandidateList = () => {
                       "candidateActiveFilters",
                       JSON.stringify(filters),
                     );
-                    // ✅ Show count popup
-                    // setShowFilteredCount(true);
-                    // if (filterCountTimer.current)
-                    //   clearTimeout(filterCountTimer.current);
-                    // filterCountTimer.current = setTimeout(() => {
-                    //   setShowFilteredCount(false);
-                    // }, 2500);
                   }}
                   showCandidateType={false}
                   isFilterOpen={isFilterOpen}
@@ -2208,11 +1821,6 @@ const CandidateList = () => {
             width={420}
             destroyOnClose
             closable
-            // closeIcon={
-            //   <span style={{ fontSize: 18, fontWeight: 600, color: "#595959" ,}}>
-            //     ✕
-            //   </span>
-            // }
             closeIcon={
               <span
                 style={{
@@ -2314,16 +1922,13 @@ const CandidateList = () => {
             onCancel={() => setIsCandidateModalOpen(false)}
             footer={null}
             width="80vw"
-            style={{ top: 20, paddingBottom: 0 }}
+            style={{ top: 20 }}
             closeIcon={
               <span
                 style={{
-                  position: "absolute",
-                  top: 10,
-                  right: 0,
                   fontSize: 18,
-                  // cursor: "pointer",
-                  zIndex: 1000,
+                  color: "#555",
+                  cursor: "pointer",
                 }}
               >
                 ✕
@@ -2361,32 +1966,6 @@ const CandidateList = () => {
           </Modal>
         </>
       )}
-      {/* ✅ Filter count popup */}
-      {/* {showFilteredCount && (
-        <div
-          style={{
-            position: "fixed",
-            top: 100,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "#1677ff",
-            color: "#fff",
-            padding: "10px 20px",
-            borderRadius: 24,
-            fontSize: 13,
-            fontWeight: 500,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            pointerEvents: "none",
-          }}
-        >
-          🔍 {filteredCandidates.length} candidate
-          {filteredCandidates.length !== 1 ? "s" : ""} found
-        </div>
-      )} */}
     </div>
   );
 };

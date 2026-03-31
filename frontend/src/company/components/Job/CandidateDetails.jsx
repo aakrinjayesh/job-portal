@@ -163,7 +163,8 @@ const CandidateDetails = ({
         });
 
         if (resp?.status !== "success") throw new Error();
-        messageApi.success("Candidate removed!");
+        // messageApi.success("Candidate removed!");
+        messageApi.error("Candidate removed!");
       }
     } catch (error) {
       console.error("Save error:", error);
@@ -171,31 +172,6 @@ const CandidateDetails = ({
     }
   };
 
-  // useEffect(() => {
-  //   if (!loadingCandidate) return;
-
-  //   const interval = setInterval(() => {
-  //     setProgress((prev) => (prev < 90 ? prev + 5 : prev));
-  //   }, 250);
-
-  //   return () => clearInterval(interval);
-  // }, [loadingCandidate]);
-
-  // const reloadCandidate = async () => {
-  //   try {
-  //     setAddReviewLoading(true);
-  //     // const profileId = candidate?.profile?.id || candidate?.id; // ← CHANGE
-  //     const profileId = candidate?.profile?.id;
-
-  //     const res = await SaveCandidateRating({
-  //       // candidateProfileId: candidate.profile.id,
-  //       // candidateProfileId: candidate.id,
-  //       // candidateProfileId: candidate?.id,
-  //       candidateProfileId: profileId,
-
-  //       rating: ratingValue,
-  //       comment: tempReview,
-  //     });
   const reloadCandidate = async () => {
     try {
       const profileId = candidate?.profile?.id;
@@ -221,8 +197,7 @@ const CandidateDetails = ({
       if (res.status === "success") {
         messageApi.success(res.message || "Review Submitted!");
         // 🔥 REFETCH UPDATED DATA
-        // const updated = await getCandidateDetails(id);
-        // const updated = await getCandidateDetails(finalId);
+
         const updated = await getCandidateDetails(candidate?.id);
 
         if (updated.status === "success") {
@@ -683,30 +658,6 @@ const CandidateDetails = ({
                       >
                         {/* ROW 1 */}
 
-                        {/* <div style={{ display: "flex", gap: 28 }}>
-                          {profile.isVendor ? (
-                            <>
-                              <InfoItem
-                                label="POC Email"
-                                value={profile.vendor?.email}
-                              />
-                              <InfoItem
-                                label="POC Phone"
-                                value={profile.vendor?.phoneNumber}
-                              />
-                            </>
-                          ) : (
-                            <>
-                              <InfoItem label="Email" value={profile.email} />
-                              <InfoItem
-                                label="Phone"
-                                value={profile.phoneNumber}
-                              />
-                            </>
-                          )}
-
-                          <InfoItem label="Title" value={profile.title} />
-                        </div> */}
                         <div style={{ display: "flex", gap: 28 }}>
                           {profile.isVendor ? (
                             <>
@@ -816,14 +767,6 @@ const CandidateDetails = ({
 
                         {/* ROW 3 */}
                         <div style={{ display: "flex", gap: 28 }}>
-                          {/* <InfoItem
-                            label="Expected CTC"
-                            value={
-                              profile.expectedCTC
-                                ? `${profile.expectedCTC} LPA`
-                                : "-"
-                            }
-                          /> */}
                           <InfoItem
                             label="Expected CTC"
                             value={
@@ -834,16 +777,7 @@ const CandidateDetails = ({
                                   : "-"
                             }
                           />
-                          {/* {!profile.isVendor && (
-                            <InfoItem
-                              label="Expected CTC"
-                              value={
-                                profile.expectedCTC
-                                  ? `${profile.expectedCTC} LPA`
-                                  : "-"
-                              }
-                            />
-                          )} */}
+
                           <InfoItem
                             label="Rate Card"
                             value={
@@ -852,10 +786,7 @@ const CandidateDetails = ({
                                 : "-"
                             }
                           />
-                          {/* <InfoItem
-                            label="LinkedIn"
-                            value={profile.linkedInUrl}
-                          /> */}
+
                           <InfoItem
                             label="Joining Period"
                             value={profile.joiningPeriod}
@@ -872,10 +803,7 @@ const CandidateDetails = ({
                             label="Trailhead"
                             value={profile.trailheadUrl}
                           />
-                          {/* <InfoItem
-                            label="Joining Period (in days)"
-                            value={profile.joiningPeriod}
-                          /> */}
+
                           <InfoItem
                             label="LinkedIn"
                             value={profile.linkedInUrl}
@@ -1365,27 +1293,6 @@ const CandidateDetails = ({
         {/* {source !== "bench" && ( */}
         {(isModal || source !== "bench") && (
           <Col span={8}>
-            {/* <Card
-              bordered={false}
-              bodyStyle={{
-                padding: 0,
-                height: "100%",
-              }}
-              style={{
-                position: "sticky",
-                top: 20,
-                height: "calc(100vh - 30px)",
-                overflow: "hidden",
-                borderRadius: 10,
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  overflowY: "auto",
-                  padding: 24,
-                }}
-              > */}
             <Card
               bordered={false}
               bodyStyle={{ padding: 0 }}
