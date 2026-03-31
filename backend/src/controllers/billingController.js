@@ -4,6 +4,7 @@ import { razorpay } from "../config/razorpay.js";
 import crypto from "crypto";
 import sendEmail from "../utils/sendEmail.js";
 import { logger } from "../utils/logger.js";
+import { handleError } from "../utils/handleError.js";
 
 const createInvoice = async (req, res) => {
   try {
@@ -76,6 +77,7 @@ const createInvoice = async (req, res) => {
     });
   } catch (error) {
     console.log("error create invoice", error.message);
+    handleError(error, req, res);
     res.status(500).json({
       status: "error",
       message: "Payment verification failed",
@@ -115,6 +117,7 @@ const createRazorpayOrder = async (req, res) => {
     });
   } catch (error) {
     console.log("error razorpay order", error.message);
+    handleError(error, req, res);
     res.status(500).json({
       status: "error",
       message: "Payment verification failed",
@@ -402,7 +405,7 @@ const verifyRazorpayPayment = async (req, res) => {
     }
   } catch (error) {
     console.log("Payment verification failed:", error.message);
-
+    handleError(error, req, res);
     res.status(500).json({
       status: "error",
       message: "Payment verification failed",
@@ -535,6 +538,7 @@ const assignLicense = async (req, res) => {
     });
   } catch (error) {
     console.error("assignLicense error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to assign license",
@@ -609,6 +613,7 @@ const getOrgLicenses = async (req, res) => {
     });
   } catch (error) {
     console.error("getOrgLicenses error:", error.message);
+    handleError(error, req, res);
     return res
       .status(500)
       .json({ status: "error", message: "Failed to fetch licenses" });
@@ -642,6 +647,7 @@ const getSubscriptionPlans = async (req, res) => {
     res.json(formatted);
   } catch (error) {
     console.log("error getsubscription", error.message);
+    handleError(error, req, res);
     res.status(500).json({
       status: "error",
       message: "Payment verification failed",
@@ -896,6 +902,7 @@ const getSubscriptionStatus = async (req, res) => {
     });
   } catch (error) {
     logger.error("getSubscriptionStatus error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to fetch subscription",
@@ -930,6 +937,7 @@ const cancelSubscription = async (req, res) => {
     });
   } catch (error) {
     logger.error("cancelSubscription error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to cancel subscription",
@@ -980,6 +988,7 @@ const getUserLicenseTier = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching user license tier:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       success: false,
       message: "Internal server error",

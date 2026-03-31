@@ -2,6 +2,7 @@ import prisma from "../config/prisma.js";
 import dotenv from "dotenv";
 import sendEmail from "../utils/sendEmail.js";
 import { logger } from "../utils/logger.js";
+import { handleError } from "../utils/handleError.js";
 
 // Generate random 6-digit OTP
 const generateOtp = () =>
@@ -60,6 +61,7 @@ export const sendOtpController = async (req, res) => {
       "Error in sendOtpController:",
       JSON.stringify(err.message, null, 2),
     );
+    handleError(err, req, res);
     return res
       .status(500)
       .json({ status: "failed", message: "Failed to send OTP" });
@@ -107,6 +109,7 @@ export const verifyOtpController = async (req, res) => {
       "Error in verifyOtpController:",
       JSON.stringify(err.message, null, 2),
     );
+    handleError(err, req, res);
     return res
       .status(500)
       .json({ status: "failed", message: "Verification failed" });

@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import { handleError } from "../utils/handleError.js";
 
 export const getAllTodo = async (req, res) => {
   try {
@@ -13,7 +14,10 @@ export const getAllTodo = async (req, res) => {
 
     res.json({ status: "success", data: tasks });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    handleError(err, req, res);
+    res
+      .status(500)
+      .json({ status: "error", message: err.message, metadata: err.message });
   }
 };
 
@@ -40,6 +44,7 @@ export const createTodo = async (req, res) => {
 
     res.json({ status: "success", data: task });
   } catch (err) {
+    handleError(err, req, res);
     res.status(500).json({ status: "error", message: err.message });
   }
 };
@@ -59,6 +64,7 @@ export const editTodo = async (req, res) => {
 
     res.json({ status: "success", data: task });
   } catch (err) {
+    handleError(err, req, res);
     res.status(500).json({ status: "error", message: err.message });
   }
 };
@@ -77,6 +83,7 @@ export const deleteTodo = async (req, res) => {
 
     res.json({ status: "success", message: "Task deleted" });
   } catch (err) {
+    handleError(err, req, res);
     res.status(500).json({ status: "error", message: err.message });
   }
 };
@@ -106,6 +113,7 @@ export const toggleActiveTodo = async (req, res) => {
 
     res.json({ status: "success", data: task });
   } catch (err) {
+    handleError(err, req, res);
     res.status(500).json({ status: "error", message: err.message });
   }
 };
@@ -176,7 +184,11 @@ export const getCandidateTasks = async (req, res) => {
     // 2️⃣ Look up task list scoped to org (not per-recruiter)
     let list = await prisma.candidateTaskList.findUnique({
       where: {
-        candidateId_jobId_organizationId: { candidateId, jobId, organizationId },
+        candidateId_jobId_organizationId: {
+          candidateId,
+          jobId,
+          organizationId,
+        },
       },
       include: { tasks: { orderBy: { order: "asc" } } },
     });
@@ -204,11 +216,11 @@ export const getCandidateTasks = async (req, res) => {
     } else {
       // 4️⃣ List exists — sync any new templates not yet in the list
       const existingFromIds = new Set(
-        list.tasks.map((t) => t.createdFromId).filter(Boolean)
+        list.tasks.map((t) => t.createdFromId).filter(Boolean),
       );
       const existingTitles = new Set(list.tasks.map((t) => t.title));
       const newTemplates = templates.filter(
-        (t) => !existingFromIds.has(t.id) && !existingTitles.has(t.title)
+        (t) => !existingFromIds.has(t.id) && !existingTitles.has(t.title),
       );
 
       if (newTemplates.length > 0) {
@@ -226,13 +238,16 @@ export const getCandidateTasks = async (req, res) => {
           where: { id: list.id },
           include: { tasks: { orderBy: { order: "asc" } } },
         });
-        console.log(`Synced ${newTemplates.length} new template(s) into existing list`);
+        console.log(
+          `Synced ${newTemplates.length} new template(s) into existing list`,
+        );
       }
     }
 
     return res.json({ status: "success", data: list.tasks });
   } catch (err) {
     console.error("getCandidateTasks error:", err);
+    handleError(err, req, res);
     return res.status(500).json({ status: "error", message: err.message });
   }
 };
@@ -252,6 +267,7 @@ export const checkUpdate = async (req, res) => {
 
     res.json({ status: "success", data: task });
   } catch (err) {
+    handleError(err, req, res);
     res.status(500).json({ status: "error", message: err.message });
   }
 };

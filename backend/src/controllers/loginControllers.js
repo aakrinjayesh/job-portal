@@ -6,6 +6,7 @@ import axios from "axios";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger.js";
+import { handleError } from "../utils/handleError.js";
 
 const otpStore = new Map();
 
@@ -55,6 +56,7 @@ const userOtpGenerate = async (req, res) => {
     //   "Error in userOtpGenerate:",
     //   JSON.stringify(err.message, null, 2),
     // );
+    handleError(err, req, res);
     return res.status(500).json({
       status: "error",
       message: err.message || "Something went wrong",
@@ -182,6 +184,7 @@ const userOtpValidator = async (req, res) => {
       "❌ OTP validation error:",
       JSON.stringify(err.message, null, 2),
     );
+    handleError(err, req, res);
     return res.status(500).json({
       status: "error",
       message: "An error occurred during validation:" + err.message,
@@ -497,6 +500,7 @@ const setPassword = async (req, res) => {
   } catch (error) {
     console.error("Error in setPassword:", error.message);
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
@@ -696,6 +700,7 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.log("error", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error" + error.message,
@@ -753,6 +758,7 @@ const forgotPassword = async (req, res) => {
       "Forgot password error:",
       JSON.stringify(error.message, null, 2),
     );
+    handleError(error, req, res);
     res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
@@ -827,6 +833,7 @@ const resetPassword = async (req, res) => {
       JSON.stringify(error.message, null, 2),
     );
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error" + error.message,
@@ -861,6 +868,7 @@ const checkUserExists = async (req, res) => {
       message: "User not registered. You can generate OTP.",
     });
   } catch (err) {
+    handleError(err, req, res);
     return res.status(500).json({
       status: "error",
       message: err.message || "Something went wrong",
@@ -1007,6 +1015,7 @@ const refreshAccessToken = async (req, res) => {
     });
   } catch (error) {
     console.log("refresh error", error.message);
+    handleError(error, req, res);
     return res.status(403).json({
       message: "Refresh token expired or invalid",
     });
@@ -1036,6 +1045,7 @@ const logout = async (req, res) => {
       message: "Logged out successfully",
     });
   } catch (error) {
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Logout failed",
@@ -1079,6 +1089,7 @@ const getActiveDevices = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Failed to fetch active devices:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to fetch active devices",
@@ -1124,6 +1135,7 @@ const logoutSingleDevice = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Failed to logout device:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to logout device",
@@ -1156,6 +1168,7 @@ const logoutAll = async (req, res) => {
       message: "Logged out from all devices",
     });
   } catch (error) {
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Logout from all devices failed",

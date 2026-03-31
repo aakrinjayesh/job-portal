@@ -5,6 +5,7 @@ import { logger } from "../utils/logger.js";
 import { applyFilters } from "../utils/applyFilters.js";
 import { queueJobEmails } from "../utils/BulkEmail/jobEmail.service.js";
 import { canCreate, canDelete, canEdit, canView } from "../utils/permission.js";
+import { handleError } from "../utils/handleError.js";
 // import { cvEligibilityCheckInternal } from "./cvRankerControllers.js";
 
 const userApplyJob = async (req, res) => {
@@ -247,6 +248,7 @@ const userApplyJob = async (req, res) => {
     }
   } catch (error) {
     console.error("userApplyJob Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to submit application",
@@ -597,6 +599,7 @@ const processCandidateApplicationInBackground = async ({
       console.error("Candidate email failed:", emailError.message);
     }
   } catch (error) {
+    handleError(error);
     console.error("Background Processing Error:", error.message);
   }
 };
@@ -667,6 +670,7 @@ const userAllApplyedJobs = async (req, res) => {
       "userAllAppliedJobs Error:",
       JSON.stringify(error.message, null, 2),
     );
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to fetch applied jobs" + error.message,
@@ -886,6 +890,7 @@ const userSaveJob = async (req, res) => {
     });
   } catch (error) {
     logger.error("userSaveJob Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error: " + error.message,
@@ -959,6 +964,7 @@ const userUnsaveJob = async (req, res) => {
     });
   } catch (error) {
     logger.error("userUnsaveJob Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error: " + error.message,
@@ -1119,6 +1125,7 @@ const userAllSavedJobs = async (req, res) => {
     });
   } catch (error) {
     logger.error("userAllSavedJobs Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to fetch saved jobs: " + error.message,
@@ -1142,6 +1149,7 @@ const userWithdrawJob = async (req, res) => {
       "userWithdrawJob Error:",
       JSON.stringify(error.message, null, 2),
     );
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       error: error.message || "Internal server error",
@@ -1215,6 +1223,7 @@ const getJobList = async (req, res) => {
     });
   } catch (error) {
     console.error("getJobList Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       error: error.message || "Internal server error",
@@ -1517,6 +1526,7 @@ const postJob = async (req, res) => {
   } catch (error) {
     console.error("postJob Error:", error.message);
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       error: error.message || "Internal server error",
@@ -1593,6 +1603,7 @@ const postedJobs = async (req, res) => {
       JSON.stringify(error.message, null, 2),
     );
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       error: error.message || "Internal server error",
@@ -1743,6 +1754,7 @@ const editJob = async (req, res) => {
     });
   } catch (error) {
     logger.error("editJob Error:", JSON.stringify(error.message, null, 2));
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
@@ -1783,6 +1795,7 @@ const deleteJob = async (req, res) => {
     }
   } catch (error) {
     logger.error("deleteJob Error:", JSON.stringify(error.message, null, 2));
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
@@ -1838,6 +1851,7 @@ const closeJob = async (req, res) => {
     });
   } catch (error) {
     logger.error("closeJob Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to close job",
@@ -1908,6 +1922,7 @@ const getJobDetails = async (req, res) => {
     });
   } catch (error) {
     logger.error("getJobDetails Error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -2030,6 +2045,7 @@ const getApplicantsByJobId = async (req, res) => {
     });
   } catch (error) {
     logger.error("Error fetching applicants:", JSON.stringify(error, null, 2));
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error: " + error.message,
@@ -2068,6 +2084,7 @@ const getUserAppliedJobsId = async (req, res) => {
     logger.error(
       `getUserAppliedJobsId Error: ${JSON.stringify(error.message, null, 2)}`,
     );
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: `Something went wrong!${error.message}`,
@@ -2113,6 +2130,7 @@ const saveCandidateRating = async (req, res) => {
     });
   } catch (error) {
     console.error("saveCandidateRating error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to save rating",
@@ -2150,6 +2168,7 @@ const getJobQuestions = async (req, res) => {
     });
   } catch (error) {
     logger.error("getJobQuestions Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error: " + error.message,
@@ -2299,6 +2318,7 @@ const bulkFitScore = async (req, res) => {
     });
   } catch (error) {
     console.error("bulkFitScore error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to generate bulk fit score",
@@ -2341,6 +2361,7 @@ const getCandidatesWithFitScore = async (req, res) => {
     });
   } catch (error) {
     console.error("getCandidateFitScore error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to fetch fit scores",

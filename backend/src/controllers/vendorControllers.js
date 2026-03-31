@@ -9,6 +9,7 @@ import sendEmail from "../utils/sendEmail.js";
 // ✅ Get all candidates for a vendor
 import { applyCandidateFilters } from "../utils/applyFilters.js";
 import { canCreate, canDelete, canEdit } from "../utils/permission.js";
+import { handleError } from "../utils/handleError.js";
 
 const getVendorCandidates = async (req, res) => {
   try {
@@ -39,6 +40,7 @@ const getVendorCandidates = async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching vendor candidates:", err);
+    handleError(err, req, res);
     return res.status(500).json({
       status: "failed",
       message: "Error fetching vendor candidates.",
@@ -110,6 +112,7 @@ const createVendorCandidate = async (req, res) => {
     });
   } catch (err) {
     console.error("Error creating vendor candidate:", err);
+    handleError(err, req, res);
     return res.status(500).json({
       status: "failed",
       message: "Error creating vendor candidate.",
@@ -172,6 +175,7 @@ const updateVendorCandidate = async (req, res) => {
     });
   } catch (err) {
     console.error("Error updating vendor candidate:", err);
+    handleError(err, req, res);
     return res.status(500).json({
       status: "failed",
       message: "Error updating vendor candidate.",
@@ -225,6 +229,7 @@ const deleteVendorCandidate = async (req, res) => {
     });
   } catch (err) {
     console.error("Error deleting vendor candidate:", err);
+    handleError(err, req, res);
     return res.status(500).json({
       status: "failed",
       message: "Error deleting vendor candidate.",
@@ -335,6 +340,7 @@ const updateCandidateStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("updateCandidateStatus error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "failed",
       message: "Internal server error",
@@ -390,6 +396,7 @@ const markCandidateReviewed = async (req, res) => {
     });
   } catch (error) {
     console.error("markCandidateReviewed error:", error);
+    handleError(error, req, res);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -478,6 +485,7 @@ const getAllCandidates = async (req, res) => {
     });
   } catch (error) {
     console.error("getAllCandidates Error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
@@ -610,6 +618,7 @@ const getCandidateDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("getCandidateDetails Error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: error.message || "Internal server error",
@@ -1031,6 +1040,7 @@ const vendorApplyCandidate = async (req, res) => {
     }
   } catch (error) {
     logger.error("Vendor Apply Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "failed",
       message: error?.message || "Vendor Apply failed",
@@ -1328,6 +1338,7 @@ href="${process.env.FRONTEND_URL}/company/candidate/${c.profile.id}"
       `,
       });
     } catch (emailError) {
+      handleError(emailError);
       logger.error("[Background] Recruiter email failed:", emailError.message);
     }
   }
@@ -1402,6 +1413,7 @@ const saveCandidate = async (req, res) => {
     });
   } catch (error) {
     console.error("saveCandidate error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: error.message,
@@ -1451,6 +1463,7 @@ const unsaveCandidate = async (req, res) => {
     });
   } catch (error) {
     logger.error("unsaveCandidate Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to unsave candidate",
@@ -1503,6 +1516,7 @@ const getSavedCandidates = async (req, res) => {
     });
   } catch (error) {
     console.error("getSavedCandidates Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to fetch saved candidates" + error.message,
@@ -1620,6 +1634,7 @@ const markCandidateBookmark = async (req, res) => {
     });
   } catch (error) {
     console.error("markCandidateBookmark error:", error);
+    handleError(error, req, res);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

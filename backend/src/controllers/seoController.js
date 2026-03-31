@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import { handleError } from "../utils/handleError.js";
 
 function mapEmploymentType(type) {
   const map = {
@@ -109,6 +110,7 @@ const getJobSEOMeta = async (req, res) => {
     });
   } catch (error) {
     console.error("getJobSEOMeta Error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -181,6 +183,7 @@ const sitemap = async (req, res) => {
     res.status(200).send(xml);
   } catch (error) {
     console.error("Sitemap generation error:", error);
+    handleError(error, req, res);
     res.status(500).send("Error generating sitemap");
   }
 };

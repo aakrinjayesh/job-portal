@@ -3,6 +3,7 @@ import prisma from "../config/prisma.js";
 import generateToken from "../utils/generateToken.js";
 import axios from "axios";
 import { logger } from "../utils/logger.js";
+import { handleError } from "../utils/handleError.js";
 
 const client = new OAuth2Client();
 const external_backend_url = process.env.EXTERNAL_BACKEND_URL;
@@ -176,6 +177,7 @@ const googleAuth = async (req, res) => {
   } catch (err) {
     logger.error("Google auth error:", JSON.stringify(err.message, null, 2));
 
+    handleError(err, req, res);
     return res.status(500).json({
       status: "error",
       message: err.message || "Google authentication failed",

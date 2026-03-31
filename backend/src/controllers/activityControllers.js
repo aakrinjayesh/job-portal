@@ -1,5 +1,6 @@
 import prisma from "../config/prisma.js";
 import { canCreate, canView, canDelete, canEdit } from "../utils/permission.js";
+import { handleError } from "../utils/handleError.js";
 
 export const createActivity = async (req, res) => {
   try {
@@ -120,6 +121,7 @@ export const createActivity = async (req, res) => {
     return res.status(201).json({ status: "success", data: result });
   } catch (error) {
     console.error("Create Activity Error:", error);
+    handleError(error, req, res);
     return res
       .status(500)
       .json({ status: "error", message: "Internal server error" });
@@ -324,6 +326,7 @@ export const getMyActivity = async (req, res) => {
     });
   } catch (error) {
     console.error("My Activity Error:", error);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -359,6 +362,7 @@ export const getCandidateActivities = async (req, res) => {
     return res.status(200).json({ status: "success", data: activities });
   } catch (error) {
     console.error("Candidate Activity Error:", error);
+    handleError(error, req, res);
     return res
       .status(500)
       .json({ status: "error", message: "Internal server error" });
@@ -447,6 +451,7 @@ export const deleteActivity = async (req, res) => {
     });
   } catch (error) {
     console.error("Delete Activity Error:", error);
+    handleError(error, req, res);
     return res
       .status(500)
       .json({ status: "error", message: "Internal server error" });

@@ -1,7 +1,11 @@
 import prisma from "../config/prisma.js";
 import extractTextFromBase64 from "../utils/extractText.js";
+import { handleError } from "../utils/handleError.js";
 // import { extractResumeSections } from '../utils/llmTextExtractor.js'
 import { extractAIText } from "../utils/ai/extractAI.js";
+import { extractTextWithOCR } from "../utils/ai/ocr.js";
+import { chunkText } from "../utils/ai/chunk.js";
+import { mergeResumeChunks } from "../utils/ai/merge.js";
 import fs from "fs";
 import path from "path";
 import { logger } from "../utils/logger.js";
@@ -32,7 +36,19 @@ const UploadResume = async (req, res) => {
     // ✅ PDF handling
     if (mimetype === "application/pdf") {
       extractedText = await extractTextFromBase64(buffer);
-      logger.info("Extracted text from PDF");
+      logger.info(`PDF text extracted. Characters: ${extractedText.length}`);
+
+      // Fallback to OCR if PDF yields no/too little text (scanned PDF)
+      if (!extractedText || extractedText.trim().length < 50) {
+        logger.warn("PDF text too short — falling back to OCR");
+        try {
+          extractedText = await extractTextWithOCR(buffer);
+          logger.info(`OCR extracted ${extractedText.length} characters`);
+        } catch (ocrErr) {
+          logger.error("OCR fallback failed:", ocrErr.message);
+          extractedText = "";
+        }
+      }
     }
 
     // ✅ DOCX handling
@@ -53,24 +69,50 @@ const UploadResume = async (req, res) => {
       });
     }
 
-    if (!extractedText || extractedText.trim().length === 0) {
+    // Clean whitespace
+    extractedText = extractedText.replace(/\s+/g, " ").trim();
+
+    if (!extractedText || extractedText.length === 0) {
       return res.status(400).json({
         status: "error",
         message: "Unable to extract text from the uploaded file",
       });
     }
 
-    const structuredData = await extractAIText(extractedText, role);
+    // Chunk → process each chunk → merge
+    const chunks = chunkText(extractedText, 3000);
+    logger.info(`Resume split into ${chunks.length} chunk(s)`);
+
+    const parsedChunks = [];
+    for (let i = 0; i < chunks.length; i++) {
+      logger.info(`Processing chunk ${i + 1}/${chunks.length}`);
+      const result = await extractAIText(chunks[i], role);
+      if (result?.data) {
+        parsedChunks.push(result.data);
+      } else {
+        logger.warn(`Chunk ${i + 1} returned null — skipping`);
+      }
+    }
+
+    if (parsedChunks.length === 0) {
+      return res.status(422).json({
+        status: "error",
+        message: "AI failed to parse the resume. Please try again.",
+      });
+    }
+
+    const merged = mergeResumeChunks(parsedChunks);
 
     return res.status(200).json({
       message: "File received successfully",
       fileName: originalname,
       mimeType: mimetype,
       size,
-      extracted: structuredData.data,
+      extracted: merged,
     });
   } catch (err) {
     logger.error("Error in UploadResume:", err);
+    handleError(err, req, res);
     return res.status(500).json({
       status: "error",
       message: "Something went wrong while uploading",
@@ -194,6 +236,7 @@ const updateProfiledetails = async (req, res) => {
     return res.status(200).json({ status: "success", data: upserted.userId });
   } catch (err) {
     console.error("Error saving user profile:", err.message);
+    handleError(err, req, res);
     return res.status(500).json({
       status: "failed",
       message: "Could not save profile" + err.message,
@@ -233,6 +276,7 @@ const getUserProfileDetails = async (req, res) => {
       "Error fetching profile:",
       JSON.stringify(error.message, null, 2),
     );
+    handleError(error, req, res);
     return res
       .status(200)
       .json({ status: "error", message: "Internal server error" });
@@ -268,6 +312,7 @@ const uploadProfilePicture = async (req, res) => {
   } catch (error) {
     console.error("Profile Picture Upload Error:", error);
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Upload failed",
@@ -349,6 +394,7 @@ const getCompanyProfileDetails = async (req, res) => {
       "Error fetching profile:",
       JSON.stringify(error.message, null, 2),
     );
+    handleError(error, req, res);
     return res
       .status(500)
       .json({ status: "error", message: "Internal server error" });
@@ -466,6 +512,7 @@ const getPublicCompanyProfile = async (req, res) => {
   } catch (error) {
     console.error("Public company fetch error:", error);
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -596,6 +643,7 @@ const updateCompanyProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating company profile:", error.message);
+    handleError(error, req, res);
     return res
       .status(500)
       .json({ status: "error", message: "Internal server error" });
@@ -644,6 +692,7 @@ const updateCompanyPersonalProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating personal profile:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -664,6 +713,7 @@ const getCountriesWithStates = async (req, res) => {
       data: countries,
     });
   } catch (error) {
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Unable to fetch countries",
@@ -708,6 +758,7 @@ const toggleCandidateStatus = async (req, res) => {
     });
   } catch (error) {
     logger.error("Error toggling candidate status:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
@@ -745,6 +796,7 @@ const updateCandidateStatusProfile = async (req, res) => {
   } catch (error) {
     console.error("updateCandidateProfile Error:", error);
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: error.message,

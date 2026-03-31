@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import { handleError } from "../utils/handleError.js";
 
 // Get all members of the organization
 export const getOrganizationMembers = async (req, res) => {
@@ -85,6 +86,7 @@ export const getOrganizationMembers = async (req, res) => {
     });
   } catch (error) {
     console.error("getOrganizationMembers Error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Server Error",
@@ -127,6 +129,7 @@ export const removeMember = async (req, res) => {
       .json({ status: "success", message: "Member removed successfully" });
   } catch (error) {
     console.error(error);
+    handleError(error, req, res);
     res.status(500).json({ status: "error", message: "Server Error" });
   }
 };
@@ -168,6 +171,7 @@ export const deleteInviteByAdmin = async (req, res) => {
       .json({ status: "success", message: "Invite revoked successfully" });
   } catch (error) {
     console.error(error);
+    handleError(error, req, res);
     res.status(500).json({ status: "error", message: "Server Error" });
   }
 };

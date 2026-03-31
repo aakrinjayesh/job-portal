@@ -1,5 +1,6 @@
 import prisma from "../config/prisma.js";
 import sendEmail from "../utils/sendEmail.js";
+import { handleError } from "../utils/handleError.js";
 
 export const createSupportMessage = async (req, res) => {
   try {
@@ -64,6 +65,7 @@ export const createSupportMessage = async (req, res) => {
   } catch (error) {
     console.error("Support error:", error);
 
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to send support message",

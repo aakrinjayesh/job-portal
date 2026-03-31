@@ -3,6 +3,7 @@ import prisma from "../config/prisma.js";
 import { extractAIText } from "../utils/ai/extractAI.js";
 import { incrementAIUsage } from "../utils/incrementAIUsage.js";
 import { logger } from "../utils/logger.js";
+import { handleError } from "../utils/handleError.js";
 
 // const cvEligibilityCheck = async (req, res) => {
 //   const { jobId } = req.body;
@@ -266,6 +267,7 @@ const cvEligibilityCheck = async (req, res) => {
       },
     });
   } catch (error) {
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Could not analyze eligibility",
@@ -309,6 +311,7 @@ const generateJobDescription = async (req, res) => {
       JSON.stringify({ error: error.message }, null, 2),
     );
 
+    handleError(error, req, res);
     return res.status(500).json({
       success: "error",
       message: "Internal server error",
@@ -355,6 +358,7 @@ const AICandidateSearch = async (req, res) => {
   } catch (error) {
     logger.error("AISearch Error", JSON.stringify(error.message, null, 2));
 
+    handleError(error, req, res);
     return res.status(500).json({
       success: "error",
       message: "Failed to process AI search",
@@ -397,6 +401,7 @@ const AIJobSearch = async (req, res) => {
   } catch (error) {
     logger.error("AISearch Error", JSON.stringify(error.message, null, 2));
 
+    handleError(error, req, res);
     return res.status(500).json({
       success: "error",
       message: "Failed to process AI search",
