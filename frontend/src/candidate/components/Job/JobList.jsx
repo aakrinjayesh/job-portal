@@ -79,6 +79,14 @@ const formatSalary = (salary) => {
 
   return "Not Disclosed";
 };
+// ✅ ADD HERE
+const formatLocation = (location) => {
+  if (!location) return "";
+
+  const parts = location.split(",").map((l) => l.trim());
+
+  return parts.slice(0, 3).join(", ");
+};
 
 // ✅ detect mobile
 const useIsMobile = () => {
@@ -565,27 +573,27 @@ const JobList = ({
                       gap: 4,
                     }}
                   >
-<div
-  style={{
-    fontSize: isMobile ? 13 : 16,
-    fontWeight: 600,
-    color: "#212121",
-    lineHeight: "20px",
-    flex: 1,
-    minWidth: 0,
-    // ✅ mobile: show full title, desktop: 1-line clamp
-    ...(isMobile
-      ? {}
-      : {
-          display: "-webkit-box",
-          WebkitLineClamp: 1,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }),
-  }}
->
-  {job.role || job.title}
-</div>
+                    <div
+                      style={{
+                        fontSize: isMobile ? 13 : 16,
+                        fontWeight: 600,
+                        color: "#212121",
+                        lineHeight: "20px",
+                        flex: 1,
+                        minWidth: 0,
+                        // ✅ mobile: show full title, desktop: 1-line clamp
+                        ...(isMobile
+                          ? {}
+                          : {
+                              display: "-webkit-box",
+                              WebkitLineClamp: 1,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }),
+                      }}
+                    >
+                      {job.role || job.title}
+                    </div>
                     {job.status === "Closed" && (
                       <Tag color="red" style={{ flexShrink: 0, marginTop: 1 }}>
                         Closed
@@ -650,7 +658,9 @@ const JobList = ({
                 }}
               >
                 <span>
-                  <EnvironmentOutlined /> {job.location}
+                  <EnvironmentOutlined />
+                  {/* {job.location} */}
+                  {formatLocation(job.location)}
                 </span>
                 <Divider type="vertical" style={{ margin: "0 2px" }} />
                 <span>₹ {formatSalary(job.salary)}</span>

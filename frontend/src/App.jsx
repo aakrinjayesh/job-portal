@@ -156,7 +156,7 @@ function App() {
           element={
             <>
               <PublicJobRedirect />
-              <JobDetails mode="candidate" />
+              <JobDetails mode="candidate" isPublic={true} />
             </>
           }
         />

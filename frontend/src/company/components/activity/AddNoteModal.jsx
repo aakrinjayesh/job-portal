@@ -66,8 +66,10 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
     <Modal
       title="Add Note"
       open={open}
+      style={{ top: 20 }}
       onOk={() => form.submit()}
       confirmLoading={loading}
+      maskClosable={false}
       onCancel={() => {
         form.resetFields();
         onClose();
@@ -193,6 +195,9 @@ const AddNoteModal = ({ open, onClose, candidateId, onSuccess, jobId }) => {
                 use12Hours
                 format="DD MMM YYYY, h:mm a"
                 style={{ width: "100%" }}
+                disabledDate={(current) =>
+                  current && current < dayjs().startOf("day")
+                }
               />
             </Form.Item>
           </div>

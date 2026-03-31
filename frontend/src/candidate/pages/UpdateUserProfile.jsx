@@ -432,12 +432,31 @@ const UpdateUserProfile = ({
         form.setFieldsValue({ education: extracted?.education });
       }
 
+      // if (
+      //   extracted?.workExperience &&
+      //   Array.isArray(extracted?.workExperience)
+      // ) {
+      //   setExperienceList(extracted?.workExperience);
+      //   form.setFieldsValue({ workExperience: extracted?.workExperience });
+      // }
       if (
         extracted?.workExperience &&
         Array.isArray(extracted?.workExperience)
       ) {
-        setExperienceList(extracted?.workExperience);
-        form.setFieldsValue({ workExperience: extracted?.workExperience });
+        const formattedExperience = extracted.workExperience.map((exp) => {
+          return {
+            ...exp,
+            projects: (exp.projects || []).map((proj) => ({
+              ...proj,
+
+              // ✅ MAIN FIX: inject role if missing
+              role: proj.role || exp.role || "",
+            })),
+          };
+        });
+
+        setExperienceList(formattedExperience);
+        form.setFieldsValue({ workExperience: formattedExperience });
       }
       const storedUser = localStorage.getItem("user");
       let parsedUser = {};

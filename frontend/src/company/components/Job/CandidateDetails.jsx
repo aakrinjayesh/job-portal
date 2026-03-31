@@ -49,7 +49,8 @@ const CandidateDetails = ({
   // const { candidate, jobId } = location.state || {};
   const navigate = useNavigate();
   const { id } = useParams(); // userId in URL
-  const finalId = idFromModal || id;
+  // const finalId = idFromModal || id;
+  const finalId = candidateFromList?.id || idFromModal || id;
   const [messageApi, contextHolder] = message.useMessage();
   const location = useLocation();
   // 🔹 Review state (per candidate)
@@ -126,7 +127,11 @@ const CandidateDetails = ({
     };
 
     // if (id) fetchCandidate();
-    if (!candidateFromList && finalId) {
+    // if (!candidateFromList && finalId)
+    if (finalId) {
+      fetchCandidate();
+    }
+    {
       fetchCandidate();
     }
   }, [candidateFromList, finalId]);
@@ -134,6 +139,9 @@ const CandidateDetails = ({
   const handleSaveToggle = async (e) => {
     e.stopPropagation();
 
+    // const profileId = candidate?.profile?.id || candidate?.id;
+    // const profileId = candidate?.id;
+    const profileId = candidate?.profile?.id;
     if (!candidate?.id) return;
 
     const willBeSaved = !saved;
@@ -142,14 +150,16 @@ const CandidateDetails = ({
     try {
       if (willBeSaved) {
         const resp = await SaveCandidate({
-          candidateProfileId: candidate.id,
+          // candidateProfileId: candidate.id,
+          candidateProfileId: profileId,
         });
 
         if (resp?.status !== "success") throw new Error();
         messageApi.success("Candidate saved!");
       } else {
         const resp = await UnsaveCandidate({
-          candidateProfileId: candidate.id,
+          // candidateProfileId: candidate.id,
+          candidateProfileId: candidate.profile.id,
         });
 
         if (resp?.status !== "success") throw new Error();
@@ -171,12 +181,39 @@ const CandidateDetails = ({
   //   return () => clearInterval(interval);
   // }, [loadingCandidate]);
 
+  // const reloadCandidate = async () => {
+  //   try {
+  //     setAddReviewLoading(true);
+  //     // const profileId = candidate?.profile?.id || candidate?.id; // ← CHANGE
+  //     const profileId = candidate?.profile?.id;
+
+  //     const res = await SaveCandidateRating({
+  //       // candidateProfileId: candidate.profile.id,
+  //       // candidateProfileId: candidate.id,
+  //       // candidateProfileId: candidate?.id,
+  //       candidateProfileId: profileId,
+
+  //       rating: ratingValue,
+  //       comment: tempReview,
+  //     });
   const reloadCandidate = async () => {
     try {
+      const profileId = candidate?.profile?.id;
+
+      if (!profileId) {
+        messageApi.error("Candidate profile ID missing");
+        return;
+      }
+
+      if (!ratingValue || ratingValue === 0) {
+        messageApi.error("Please select rating");
+        return;
+      }
+
       setAddReviewLoading(true);
 
       const res = await SaveCandidateRating({
-        candidateProfileId: candidate.profile.id,
+        candidateProfileId: profileId,
         rating: ratingValue,
         comment: tempReview,
       });
@@ -185,7 +222,8 @@ const CandidateDetails = ({
         messageApi.success(res.message || "Review Submitted!");
         // 🔥 REFETCH UPDATED DATA
         // const updated = await getCandidateDetails(id);
-        const updated = await getCandidateDetails(finalId);
+        // const updated = await getCandidateDetails(finalId);
+        const updated = await getCandidateDetails(candidate?.id);
 
         if (updated.status === "success") {
           setCandidate(updated.candidate); // ✅ update state
@@ -350,8 +388,25 @@ const CandidateDetails = ({
 
     html2pdf().set(options).from(element).save();
   };
-  const shareLink = candidate
-    ? `${window.location.origin}/company/candidate/${candidate.id}?role=${candidate.role}&orgId=${candidate.organizationId}`
+
+  // const shareLink = candidate
+  //   ? `${window.location.origin}/company/candidate/${candidate.id}?role=${candidate.role}&orgId=${candidate.organizationId}`
+  //   : "";
+  // Fix 3: share link — derive values that work in both modal and page mode
+  // const candidateProfileId = candidate?.profile?.id || candidate?.id;
+  // const candidateProfileId = candidate?.id;
+  // const candidateRole = candidate?.role || candidate?.profile?.title || "";
+  // const candidateOrgId =
+  //   candidate?.organizationId || candidate?.profile?.organizationId || "";
+  const candidateProfileId = candidate?.profile?.id || candidate?.id;
+
+  const candidateRole = candidate?.profile?.title || "-";
+
+  const candidateOrgId =
+    candidate?.profile?.organizationId || candidate?.organizationId || "-";
+
+  const shareLink = candidateProfileId
+    ? `${window.location.origin}/company/candidate/${candidateProfileId}?role=${candidateRole}&orgId=${candidateOrgId}`
     : "";
 
   return (
@@ -676,7 +731,7 @@ const CandidateDetails = ({
                                 label="Phone"
                                 value={
                                   profile.phoneNumber
-                                    ? `+91 ${profile.phoneNumber}`
+                                    ? ` ${profile.phoneNumber}`
                                     : "-"
                                 }
                               />
@@ -1352,7 +1407,8 @@ const CandidateDetails = ({
                 }}
               >
                 <CandidateActivity
-                  candidateId={profile?.id || id} // 🔥 fallback
+                  // candidateId={profile?.id || id} // 🔥 fallback
+                  candidateId={candidate?.id}
                   jobId={jobId && jobId}
                   defaultTab={defaultTab}
                 />

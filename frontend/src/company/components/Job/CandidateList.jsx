@@ -1305,8 +1305,11 @@ const CandidateList = () => {
             onClick={(e) => {
               e.stopPropagation();
               // setSelectedCandidateId(record.profile.id);
+              // setSelectedCandidateId(record.id);
+              setSelectedCandidateId(record.profile?.id);
               setSelectedCandidate({
                 ...record,
+                id: record.profile?.id,
                 profile: record.profile || {},
               });
               setIsCandidateModalOpen(true);
@@ -1403,7 +1406,7 @@ const CandidateList = () => {
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff",
+                  // color: "#1677ff",
                   // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
@@ -1440,7 +1443,7 @@ const CandidateList = () => {
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff",
+                  // color: "#1677ff",
                   // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
@@ -1477,7 +1480,7 @@ const CandidateList = () => {
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff",
+                  // color: "#1677ff",
                   // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
@@ -1514,7 +1517,7 @@ const CandidateList = () => {
             {remainingCount > 0 && (
               <span
                 style={{
-                  color: "#1677ff",
+                  // color: "#1677ff",
                   // cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 500,
@@ -2140,7 +2143,7 @@ const CandidateList = () => {
                 pagination={{
                   current: page,
                   pageSize,
-                  total: filteredCandidates.length,
+                  // total: filteredCandidates.length,
                   total,
                   showSizeChanger: true,
                   // onChange: (p, ps) => {
@@ -2348,6 +2351,7 @@ const CandidateList = () => {
           >
             {selectedCandidate && (
               <CandidateDetails
+                idFromModal={selectedCandidateId}
                 candidateFromList={selectedCandidate}
                 jobIdFromList={jobId}
                 isModal={true}
