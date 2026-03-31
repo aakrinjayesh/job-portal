@@ -1821,20 +1821,12 @@ const CandidateList = () => {
             width={420}
             destroyOnClose
             closable
-            closeIcon={
-              <span
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: "#595959",
-                  position: "relative",
-                  top: -6, // 🔥 move up
-                  right: 8, // 🔥 move away from scrollbar
-                }}
-              >
-                ✕
-              </span>
-            }
+            maskClosable={false}
+            styles={{
+              content: {
+                paddingRight: 50, // 🔥 THIS moves space from scrollbar
+              },
+            }}
             onCancel={() => setActivityModalOpen(false)}
           >
             {activityCandidate && (
@@ -1922,6 +1914,7 @@ const CandidateList = () => {
             onCancel={() => setIsCandidateModalOpen(false)}
             footer={null}
             width="80vw"
+            maskClosable={false}
             style={{ top: 20 }}
             closeIcon={
               <span

@@ -669,7 +669,11 @@ ${generatedUrl}
         </Card>
 
         {isCompany && source !== "myjobs" && show !== "jobdetails" && (
-          <ApplyBenchJob jobId={job?.id} hasQuestions={job?.hasQuestions} />
+          <ApplyBenchJob
+            jobId={job?.id}
+            hasQuestions={job?.hasQuestions}
+            jobStatus={job.status}
+          />
         )}
       </div>
 

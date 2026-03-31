@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Spin, message, Button, Progress } from "antd";
+import { Table, Spin, message, Button, Progress, Tooltip } from "antd";
 
 import {
   GetVendorCandidates,
@@ -98,7 +98,7 @@ const renderPinkTags = (items = [], max = 3) => {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-const ApplyBenchJob = ({ jobId, hasQuestions }) => {
+const ApplyBenchJob = ({ jobId, hasQuestions, jobStatus }) => {
   const [loading, setLoading] = useState(false);
   const [candidates, setCandidates] = useState([]);
   // const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -219,6 +219,10 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
 
   // ── "Apply With Selected Bench" click ─────────────────────────────────────
   const handleApplyClick = async () => {
+    if (jobStatus?.toLowerCase() !== "open") {
+      messageApi.warning("Job is closed, you cannot perform any action");
+      return;
+    }
     if (applySelectedKeys.length === 0) {
       messageApi.warning("Please select at least one candidate");
       return;
@@ -293,6 +297,10 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
   }, []);
 
   const handleAIButtonClick = async () => {
+    if (jobStatus?.toLowerCase() !== "open") {
+      messageApi.warning("Job is closed, you cannot perform any action");
+      return;
+    }
     if (applySelectedKeys.length === 0) {
       messageApi.warning("Please select at least one candidate");
       return;
@@ -435,52 +443,76 @@ const ApplyBenchJob = ({ jobId, hasQuestions }) => {
       >
         <h3 style={{ margin: 0 }}>Candidate List</h3>
         <div>
-          <Button
-            onClick={handleAIButtonClick}
-            loading={aiLoading}
-            // disabled={aiLoading || (aiSelected && aiSelectedKeys.length === 0)}
-            disabled={
-              applySelectedKeys.length === 0 ||
-              aiLoading ||
-              actionType === "APPLY"
+          <Tooltip
+            title={
+              jobStatus?.toLowerCase() !== "open"
+                ? "Job is closed, you cannot perform any action"
+                : ""
             }
-            style={{
-              background: aiSelected ? "#FFF7E6" : "#E6F0FF",
-              color: aiSelected ? "#D46B08" : "#1D4ED8",
-              border: aiSelected ? "1px solid #FFC069" : "1px solid #C7D2FE",
-              borderRadius: 20,
-              padding: "4px 16px",
-              height: 32,
-              fontSize: 13,
-              fontWeight: 500,
-              marginRight: 5,
-            }}
           >
-            Generate Fit Score
-          </Button>
+            <span>
+              <Button
+                onClick={handleAIButtonClick}
+                loading={aiLoading}
+                // disabled={aiLoading || (aiSelected && aiSelectedKeys.length === 0)}
+                disabled={
+                  applySelectedKeys.length === 0 ||
+                  aiLoading ||
+                  actionType === "APPLY" ||
+                  jobStatus?.toLowerCase() !== "open"
+                }
+                style={{
+                  background: aiSelected ? "#FFF7E6" : "#E6F0FF",
+                  color: aiSelected ? "#D46B08" : "#1D4ED8",
+                  border: aiSelected
+                    ? "1px solid #FFC069"
+                    : "1px solid #C7D2FE",
+                  borderRadius: 20,
+                  padding: "4px 16px",
+                  height: 32,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  marginRight: 5,
+                }}
+              >
+                Generate Fit Score
+              </Button>
+            </span>
+          </Tooltip>
 
-          <Button
-            onClick={handleApplyClick}
-            loading={applyLoading || screening.questionsLoading}
-            disabled={
-              applySelectedKeys.length === 0 ||
-              applyLoading ||
-              screening.questionsLoading ||
-              actionType === "AI"
+          <Tooltip
+            title={
+              jobStatus?.toLowerCase() !== "open"
+                ? "Job is closed, you cannot perform any action"
+                : ""
             }
-            style={{
-              background: "#E6F0FF",
-              color: "#1D4ED8",
-              border: "1px solid #C7D2FE",
-              borderRadius: 20,
-              padding: "4px 16px",
-              height: 32,
-              fontSize: 13,
-              fontWeight: 500,
-            }}
           >
-            Apply With Selected Bench
-          </Button>
+            <span>
+              <Button
+                onClick={handleApplyClick}
+                loading={applyLoading || screening.questionsLoading}
+                disabled={
+                  applySelectedKeys.length === 0 ||
+                  applyLoading ||
+                  screening.questionsLoading ||
+                  actionType === "AI" ||
+                  jobStatus?.toLowerCase() !== "open"
+                }
+                style={{
+                  background: "#E6F0FF",
+                  color: "#1D4ED8",
+                  border: "1px solid #C7D2FE",
+                  borderRadius: 20,
+                  padding: "4px 16px",
+                  height: 32,
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                Apply With Selected Bench
+              </Button>
+            </span>
+          </Tooltip>
         </div>
       </div>
 
