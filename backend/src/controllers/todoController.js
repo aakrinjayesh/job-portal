@@ -54,13 +54,16 @@ export const editTodo = async (req, res) => {
     const { id, title } = req.body;
     const organizationId = req.user.organizationId;
 
-    const task = await prisma.taskTemplate.updateMany({
-      where: {
-        id,
-        organizationId,
-      },
-      data: { title },
-    });
+    const [task] = await prisma.$transaction([
+      prisma.taskTemplate.updateMany({
+        where: { id, organizationId },
+        data: { title },
+      }),
+      prisma.candidateTask.updateMany({
+        where: { createdFromId: id, organizationId },
+        data: { title },
+      }),
+    ]);
 
     res.json({ status: "success", data: task });
   } catch (err) {
@@ -74,12 +77,14 @@ export const deleteTodo = async (req, res) => {
     const { id } = req.body;
     const organizationId = req.user.organizationId;
 
-    await prisma.taskTemplate.deleteMany({
-      where: {
-        id,
-        organizationId,
-      },
-    });
+    await prisma.$transaction([
+      prisma.candidateTask.deleteMany({
+        where: { createdFromId: id, organizationId },
+      }),
+      prisma.taskTemplate.deleteMany({
+        where: { id, organizationId },
+      }),
+    ]);
 
     res.json({ status: "success", message: "Task deleted" });
   } catch (err) {

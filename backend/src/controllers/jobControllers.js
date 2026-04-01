@@ -1,5 +1,6 @@
 import prisma from "../config/prisma.js";
 import sendEmail from "../utils/sendEmail.js";
+import { getNewApplicationRecruiterEmailTemplate, getApplicationConfirmationCandidateEmailTemplate } from "../utils/emailTemplates/JobTemplates.js";
 import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
 import { applyFilters } from "../utils/applyFilters.js";
@@ -408,93 +409,7 @@ const processCandidateApplicationInBackground = async ({
         await sendEmail({
           to: job.postedBy.email,
           subject: `New Application for ${job.role} - ${user.name}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-                <h1 style="margin: 0;">New Job Application Received! 🎉</h1>
-              </div>
-              
-              <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-                <h2 style="color: #333; margin-top: 0;">Application Details</h2>
-                
-                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                  <p style="margin: 10px 0;"><strong>Job Position:</strong> ${
-                    job.role
-                  }</p>
-                  <p style="margin: 10px 0;"><strong>Company:</strong> ${
-                    job.companyName
-                  }</p>
-                  <p style="margin: 10px 0;"><strong>Candidate Name:</strong> ${
-                    user.name
-                  }</p>
-                 
-                  <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString(
-                    "en-US",
-                    { year: "numeric", month: "long", day: "numeric" },
-                  )}</p>
-                </div>
-
-                ${
-                  user.CandidateProfile
-                    ? `
-                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                  <h3 style="color: #667eea; margin-top: 0;">Quick Summary</h3>
-                  ${
-                    user.CandidateProfile.title
-                      ? `<p><strong>Current Role:</strong> ${user.CandidateProfile.title}</p>`
-                      : ""
-                  }
-                  ${
-                    user.CandidateProfile.totalExperience
-                      ? `<p><strong>Experience:</strong> ${user.CandidateProfile.totalExperience}</p>`
-                      : ""
-                  }
-                  ${
-                    user.CandidateProfile.currentLocation
-                      ? `<p><strong>Location:</strong> ${user.CandidateProfile.currentLocation}</p>`
-                      : ""
-                  }
-                  ${
-                    user.CandidateProfile.expectedCTC
-                      ? `<p><strong>Expected CTC:</strong> ₹${user.CandidateProfile.expectedCTC}</p>`
-                      : ""
-                  }
-                  ${
-                    user.CandidateProfile.joiningPeriod
-                      ? `<p><strong>Notice Period:</strong> ${user.CandidateProfile.joiningPeriod}</p>`
-                      : ""
-                  }
-                </div>
-                `
-                    : ""
-                }
-                 <div style="text-align: center; margin: 30px 0;">
-  <a href="${process.env.FRONTEND_URL}/company/candidate/${user.id}"
-     style="
-        display: inline-block;
-        padding: 14px 28px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #ffffff;
-        text-decoration: none;
-        font-weight: bold;
-        border-radius: 8px;
-        font-size: 15px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-     ">
-     👁️ View Full Application Details
-  </a>
-</div>
-
-                <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                  📎 Please find the detailed resume attached to this email.
-                </p>
-                
-                <p style="color: #666; font-size: 14px; margin-top: 20px;">
-                  <em>This is an automated notification from the Job Portal.</em>
-                </p>
-              </div>
-            </div>
-          `,
+          html: getNewApplicationRecruiterEmailTemplate({ job, user }),
         });
       } catch (emailError) {
         console.error("Recruiter email failed:", emailError.message);
@@ -506,94 +421,7 @@ const processCandidateApplicationInBackground = async ({
       await sendEmail({
         to: user.email,
         subject: `Application Submitted - ${job.role} at ${job.companyName}`,
-        html: `
-  <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
-    <div style="background: linear-gradient(135deg, #2196F3 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-      <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
-    </div>
-    
-    <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-      <p style="color: #333; font-size: 16px;">Hi ${user.name},</p>
-      
-      <p style="color: #666;">
-        Your application has been successfully submitted for the following position:
-      </p>
-      
-      <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <p><strong>Position:</strong> ${job.role}</p>
-        <p><strong>Company:</strong> ${job.companyName}</p>
-        <p><strong>Location:</strong> ${job.location || "Not specified"}</p>
-        <p><strong>Employment Type:</strong> ${job.employmentType || "N/A"}</p>
-        <p><strong>Experience Required:</strong> ${job.experience || "N/A"}</p>
-        <p><strong>Experience Level:</strong> ${job.experienceLevel || "N/A"}</p>
-        <p><strong>Salary:</strong> ${
-          job.salary ? `₹${job.salary}` : "Not disclosed"
-        }</p>
-        <p><strong>Job Type:</strong> ${job.jobType || "N/A"}</p>
-        <p><strong>Application Deadline:</strong> ${
-          job.applicationDeadline
-            ? new Date(job.applicationDeadline).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            : "Not specified"
-        }</p>
-        <p><strong>Application Date:</strong> ${new Date().toLocaleDateString(
-          "en-US",
-          { year: "numeric", month: "long", day: "numeric" },
-        )}</p>
-      </div>
-
-      ${
-        job.skills && job.skills.length
-          ? `
-      <div style="margin-bottom: 20px;">
-        <h3 style="color:#2196F3; margin-bottom:5px;">Required Skills</h3>
-        <p style="color:#555;">${job.skills.join(", ")}</p>
-      </div>
-      `
-          : ""
-      }
-
-      ${
-        job.clouds && job.clouds.length
-          ? `
-      <div style="margin-bottom: 20px;">
-        <h3 style="color:#2196F3; margin-bottom:5px;">Required Clouds</h3>
-        <p style="color:#555;">${job.clouds.join(", ")}</p>
-      </div>
-      `
-          : ""
-      }
-
-      <div style="text-align:center; margin: 30px 0;">
-        <a href="${process.env.FRONTEND_URL}/job/${job.id}"
-           style="
-              display:inline-block;
-              padding:12px 26px;
-              background:#2196F3;
-              color:#fff;
-              text-decoration:none;
-              font-weight:bold;
-              border-radius:8px;
-              font-size:14px;
-           ">
-           🔎 View Job Details
-        </a>
-      </div>
-      <p style="color: #666;">
-        The employer will review your application and contact you if your profile matches their requirements.
-      </p>
-      
-      <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
-      
-      <p style="color: #999; font-size: 14px; margin-top: 30px;">
-        <em>This is an automated confirmation from the Job Portal.</em>
-      </p>
-    </div>
-  </div>
-`,
+        html: getApplicationConfirmationCandidateEmailTemplate({ job, user }),
       });
     } catch (emailError) {
       console.error("Candidate email failed:", emailError.message);

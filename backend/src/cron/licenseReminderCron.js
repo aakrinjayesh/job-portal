@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import prisma from "../config/prisma.js";
 import sendEmail from "../utils/sendEmail.js";
+import { getRenewalReminderEmailTemplate } from "../utils/emailTemplates/LicenseTemplates.js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
@@ -10,33 +11,6 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 const BATCH_SIZE = 20;
 let isRunning = false;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// EMAIL TEMPLATE
-// ─────────────────────────────────────────────────────────────────────────────
-
-const getRenewalReminderEmailTemplate = ({
-  name,
-  orgName,
-  expiryDate,
-  licenseCount,
-  daysText,
-  renewUrl,
-}) => `
-<!DOCTYPE html>
-<html>
-<body style="font-family: Arial;">
-  <h2>⏰ License Renewal Reminder</h2>
-  <p>Hi <strong>${name}</strong>,</p>
-  <p>
-    Your <strong>${licenseCount} license${licenseCount > 1 ? "s" : ""}</strong>
-    for <strong>${orgName}</strong> ${daysText}.
-  </p>
-  <p><strong>Expiry Date:</strong> ${expiryDate}</p>
-  <a href="${renewUrl}">Renew Now</a>
-</body>
-</html>
-`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORE JOB

@@ -1,6 +1,7 @@
 import prisma from "../config/prisma.js";
 import sendEmail from "../utils/sendEmail.js";
 import { handleError } from "../utils/handleError.js";
+import { getSupportEmailTemplate } from "../utils/emailTemplates/SupportTemplates.js";
 
 export const createSupportMessage = async (req, res) => {
   try {
@@ -34,26 +35,11 @@ export const createSupportMessage = async (req, res) => {
       },
     });
 
-    // mail content
-    const mailSubject = `Support Request: ${subject}`;
-
-    const mailHTML = `
-      <h3>New Support Request</h3>
-      <p><b>Name:</b> ${name}</p>
-      <p><b>Email:</b> ${email}</p>
-      <p><b>Phone:</b> ${phone}</p>
-      <p><b>Role:</b> ${role || "-"}</p>
-      <p><b>Subject:</b> ${subject}</p>
-      <p><b>Message:</b></p>
-      <p>${message}</p>
-    `;
-
-    // send mail
     await sendEmail({
       from: process.env.EMAIL_SENDEREMAIL,
       to: "akshat.shah@aakrin.com",
-      subject: mailSubject,
-      html: mailHTML,
+      subject: `Support Request: ${subject}`,
+      html: getSupportEmailTemplate({ name, email, phone, role, subject, message }),
     });
 
     return res.status(201).json({

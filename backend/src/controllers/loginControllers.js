@@ -1,6 +1,10 @@
 import generateOtp from "../utils/generateOtp.js";
 import sendEmail from "../utils/sendEmail.js";
 import prisma from "../config/prisma.js";
+import {
+  getOtpEmailTemplate,
+  getWelcomePasswordEmailTemplate,
+} from "../utils/emailTemplates/LoginTemplates.js";
 import generateToken, { generateRefreshToken } from "../utils/generateToken.js";
 import axios from "axios";
 import bcrypt from "bcrypt";
@@ -63,71 +67,6 @@ const userOtpGenerate = async (req, res) => {
     });
   }
 };
-
-const getOtpEmailTemplate = ({ otp, name }) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Your OTP Code</title>
-</head>
-<body style="margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0">
-    <tr>
-      <td align="center" style="padding:40px 0;">
-        <table width="420" cellpadding="0" cellspacing="0"
-          style="background:#ffffff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-
-          <tr>
-            <td style="background:#2196F3; color:#ffffff; padding:20px; text-align:center;">
-              <h2 style="margin:0;">ForceHead</h2>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:30px; color:#333;">
-              <p style="font-size:16px;">Hi <strong>${name || "there"}</strong>,</p>
-
-              <p style="font-size:14px;">
-                Welcome to <strong>ForceHead</strong>.  
-                Use the verification code below:
-              </p>
-
-              <div style="text-align:center; margin:30px 0;">
-                <span style="
-                  font-size:26px;
-                  letter-spacing:6px;
-                  font-weight:bold;
-                  background:#f1f5f9;
-                  padding:14px 24px;
-                  border-radius:6px;
-                  display:inline-block;">
-                  ${otp}
-                </span>
-              </div>
-
-              <p style="font-size:13px; color:#6b7280;">
-                This OTP is valid for a short time.  
-                Please do not share it with anyone.
-              </p>
-
-              <p>— <strong>ForceHead Team</strong></p>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="background:#f9fafb; padding:12px; text-align:center; font-size:12px; color:#9ca3af;">
-              © ${new Date().getFullYear()} ForceHead
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-`;
 
 /**
  * Validate OTP
@@ -445,6 +384,13 @@ const setPassword = async (req, res) => {
                 where: { tier: "BASIC" },
               });
 
+              if (!basicPlan) {
+                return res.status(500).json({
+                  status: "error",
+                  message: "Basic Plan is not Defined In DB",
+                });
+              }
+
               const seat = await tx.licenseSeat.create({
                 data: {
                   subscriptionId: subscription.id,
@@ -499,7 +445,7 @@ const setPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in setPassword:", error.message);
-
+    console.log("error stack", error.stack);
     handleError(error, req, res);
     return res.status(500).json({
       status: "error",
@@ -1175,185 +1121,6 @@ const logoutAll = async (req, res) => {
     });
   }
 };
-
-// const getWelcomePasswordEmailTemplate = ({ name, role }) => `
-// <!DOCTYPE html>
-// <html>
-// <head>
-//   <meta charset="UTF-8" />
-//   <title>Welcome to ForceHead</title>
-// </head>
-// <body style="margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, sans-serif;">
-//   <table width="100%" cellpadding="0" cellspacing="0">
-//     <tr>
-//       <td align="center" style="padding:40px 0;">
-//         <table width="420" cellpadding="0" cellspacing="0"
-//           style="background:#ffffff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-
-//           <!-- Header -->
-//           <tr>
-//             <td style="background:#2196F3; color:#ffffff; padding:20px; text-align:center;">
-//               <h2 style="margin:0;">ForceHead</h2>
-//             </td>
-//           </tr>
-
-//           <!-- Body -->
-//           <tr>
-//             <td style="padding:30px; color:#333;">
-
-//               <p style="font-size:16px;">
-//                 Hi <strong>${name || "there"}</strong>,
-//               </p>
-
-//               <p style="font-size:14px;">
-//                 🎉 Welcome to <strong>ForceHead</strong>!
-//               </p>
-
-//               <p style="font-size:14px;">
-//                 Your password has been created successfully and your account is now ready to use.
-//               </p>
-
-//               <div style="text-align:center; margin:30px 0;">
-//                 <span style="
-//                   font-size:16px;
-//                   font-weight:bold;
-//                   background:#f1f5f9;
-//                   padding:12px 20px;
-//                   border-radius:6px;
-//                   display:inline-block;">
-//                   Role: ${role || "User"}
-//                 </span>
-//               </div>
-
-//               <p style="font-size:14px;">
-//                 You can now securely login and start using ForceHead.
-//               </p>
-
-//               <p style="font-size:13px; color:#6b7280;">
-//                 If you did not create this password, please contact support immediately.
-//               </p>
-
-//               <p>— <strong>ForceHead Team</strong></p>
-
-//             </td>
-//           </tr>
-
-//           <!-- Footer -->
-//           <tr>
-//             <td style="background:#f9fafb; padding:12px; text-align:center; font-size:12px; color:#9ca3af;">
-//               © ${new Date().getFullYear()} ForceHead. All rights reserved.
-//             </td>
-//           </tr>
-
-//         </table>
-//       </td>
-//     </tr>
-//   </table>
-// </body>
-// </html>
-// `;
-const getWelcomePasswordEmailTemplate = ({ name, role }) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Welcome to ForceHead</title>
-</head>
-<body style="margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0">
-    <tr>
-      <td align="center" style="padding:40px 0;">
-        <table width="500" cellpadding="0" cellspacing="0"
-          style="background:#ffffff; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.08); overflow:hidden;">
-
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color:#ffffff; padding:30px; text-align:center;">
-              <h1 style="margin:0; font-size:24px;">Welcome to ForceHead 🚀</h1>
-              <p style="margin:8px 0 0; font-size:14px; opacity:0.9;">
-                AI Powered Salesforce B2B Network
-              </p>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding:30px; color:#333;">
-
-              <p style="font-size:16px;">
-                Hi <strong>${name || "there"}</strong>,
-              </p>
-
-              <p style="font-size:14px; line-height:1.6;">
-                🎉 Your account has been successfully activated! 
-                You’re now part of an intelligent Salesforce B2B ecosystem.
-              </p>
-
-              <div style="text-align:center; margin:25px 0;">
-                <span style="
-                  font-size:15px;
-                  font-weight:bold;
-                  background:#eff6ff;
-                  color:#1e40af;
-                  padding:12px 24px;
-                  border-radius:8px;
-                  display:inline-block;">
-                  Role: ${role === "vendor" ? "Company" : role || "User"}
-                </span>
-              </div>
-
-              <!-- Platform Features -->
-              <div style="margin-top:30px;">
-                <h3 style="margin-bottom:15px; color:#1e3a8a;">🌐 Platform Features</h3>
-
-                <ul style="padding-left:18px; font-size:14px; line-height:1.8; color:#374151;">
-                  <li><strong>Bench Resources</strong> – Manage and showcase available Salesforce talent.</li>
-                  <li><strong>Find Resources for Your Projects</strong> – Discover skilled professionals instantly.</li>
-                  <li><strong>Track Your Activity</strong> – Monitor connections, applications & engagements.</li>
-                  <li><strong>Connect with the Right Partner</strong> – Expand your trusted B2B network.</li>
-                </ul>
-              </div>
-
-              <!-- AI Features -->
-              <div style="margin-top:25px;">
-                <h3 style="margin-bottom:15px; color:#1e3a8a;">🤖 AI Powered Features</h3>
-
-                <ul style="padding-left:18px; font-size:14px; line-height:1.8; color:#374151;">
-                  <li><strong>AI Smart Matching</strong> – Instantly match projects with ideal Salesforce experts.</li>
-                 <li><strong>Salesforce B2B Connect</strong> – Instantly connect with verified Salesforce vendors and bench resources.</li>
-                  <li><strong>Resume & Skill Intelligence</strong> – Automated skill extraction and profiling.</li>
-                </ul>
-              </div>
-
-              <p style="font-size:14px; margin-top:25px;">
-                You can now securely log in and start exploring the platform.
-              </p>
-
-              <p style="font-size:13px; color:#6b7280;">
-                If you did not create this password, please contact support immediately.
-              </p>
-
-              <p style="margin-top:30px;">
-                — <strong>ForceHead Team</strong>
-              </p>
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f9fafb; padding:15px; text-align:center; font-size:12px; color:#9ca3af;">
-              © ${new Date().getFullYear()} ForceHead. All rights reserved.
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-`;
 
 export {
   userOtpGenerate,

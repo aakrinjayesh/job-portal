@@ -6,6 +6,7 @@ import { logger } from "../utils/logger.js";
 import puppeteer from "puppeteer";
 import { generateResumeHTML } from "../utils/resumeTemplate.js";
 import sendEmail from "../utils/sendEmail.js";
+import { getVendorApplicationConfirmationEmailTemplate, getVendorApplicationRecruiterEmailTemplate } from "../utils/emailTemplates/VendorTemplates.js";
 // ✅ Get all candidates for a vendor
 import { applyCandidateFilters } from "../utils/applyFilters.js";
 import { canCreate, canDelete, canEdit } from "../utils/permission.js";
@@ -960,39 +961,7 @@ const vendorApplyCandidate = async (req, res) => {
       sendEmail({
         to: vendor.email,
         subject: `Application Submitted - ${job.role} at ${job.companyName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-              <h1 style="margin: 0;">Application Submitted Successfully! ✅</h1>
-            </div>
-            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-              <p style="color: #333; font-size: 16px;">Hi ${vendor.name},</p>
-              <p style="color: #666;">Your applications have been successfully submitted for the following position:</p>
-              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 10px 0;"><strong>Position:</strong> ${job.role}</p>
-                <p style="margin: 10px 0;"><strong>Company:</strong> ${job.companyName}</p>
-                <p style="margin: 10px 0;"><strong>Location:</strong> ${job.location || "Not specified"}</p>
-                <p style="margin: 10px 0;"><strong>Employment Type:</strong> ${job.employmentType || "Not specified"}</p>
-                <p style="margin: 10px 0;"><strong>Experience Required:</strong> ${job.experience || "Not specified"}</p>
-                <p style="margin: 10px 0;"><strong>Salary:</strong> ${job.salary || "Not disclosed"}</p>
-                <p style="margin: 10px 0;"><strong>Application Date:</strong> ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
-                <p style="margin: 10px 0;"><strong>Total Candidates Submitted:</strong> ${appliedCandidates.length}</p>
-                ${job.skills?.length ? `<p style="margin: 10px 0;"><strong>Required Skills:</strong> ${job.skills.join(", ")}</p>` : ""}
-                ${job.clouds?.length ? `<p style="margin: 10px 0;"><strong>Required Clouds:</strong> ${job.clouds.join(", ")}</p>` : ""}
-                <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;" />
-                <p style="margin: 10px 0 8px 0; font-size: 15px; font-weight: 800; color: #111;">
-  Submitted Candidates:
-</p>
-                ${appliedCandidates.map((c) => `<p style="margin: 5px 0; color: #333; font-size: 14px;">• ${c.candidateName}</p>`).join("")}
-              </div>
-              <p style="color: #666;">The employer will review the applications and get back to you if profiles match their requirements.</p>
-              <p style="color: #666; margin-top: 20px;">Good luck! 🍀</p>
-              <p style="color: #999; font-size: 14px; margin-top: 30px;">
-                <em>This is an automated confirmation from the Job Portal.</em>
-              </p>
-            </div>
-          </div>
-        `,
+        html: getVendorApplicationConfirmationEmailTemplate({ job, vendor, appliedCandidates }),
       }).catch((emailError) => {
         logger.error(
           "Error sending confirmation email to vendor:",
@@ -1228,114 +1197,7 @@ const processInBackground = async ({
       await sendEmail({
         to: job.postedBy.email,
         subject: `New Vendor Applications – ${job.role}`,
-        html: `
-      <div style="font-family: Arial, sans-serif; max-width: 720px; margin: 0 auto;">
-
-        <!-- HEADER -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-          <h1 style="margin: 0;">New Applications Received 🎉</h1>
-          <p style="margin-top: 6px; font-size: 15px;">
-            ${job.role} at ${job.companyName}
-          </p>
-        </div>
-
-        <!-- BODY -->
-        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-
-          <!-- JOB DETAILS -->
-          <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <p><strong>Position:</strong> ${job.role}</p>
-            <p><strong>Company:</strong> ${job.companyName}</p>
-            <p><strong>Location:</strong> ${job.location || "Not specified"}</p>
-            <p><strong>Employment Type:</strong> ${job.employmentType || "Not specified"}</p>
-            <p><strong>Experience Level:</strong> ${job.experienceLevel || "Not specified"}</p>
-            <p><strong>Job Type:</strong> ${job.jobType || "Not specified"}</p>
-            <p><strong>Salary:</strong> ${
-              job.salary ? `₹ ${job.salary}` : "Not disclosed"
-            }</p>
-            <p><strong>Application Deadline:</strong> ${
-              job.applicationDeadline
-                ? new Date(job.applicationDeadline).toLocaleDateString(
-                    "en-US",
-                    {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    },
-                  )
-                : "Not specified"
-            }</p>
-            <p><strong>Total Candidates Submitted:</strong> ${processedCandidates.length}</p>
-            <p><strong>AI Ranking:</strong> ${aiAllowed ? "Enabled" : "Disabled"}</p>
-          </div>
-
-          ${
-            job.skills?.length
-              ? `
-              <div style="background:white; padding:15px; border-radius:8px; margin-bottom:15px;">
-                <h3 style="color:#667eea; margin-top:0;">Required Skills</h3>
-                <p style="color:#555;">${job.skills.join(", ")}</p>
-              </div>
-              `
-              : ""
-          }
-
-          ${
-            job.clouds?.length
-              ? `
-              <div style="background:white; padding:15px; border-radius:8px; margin-bottom:15px;">
-                <h3 style="color:#667eea; margin-top:0;">Required Clouds</h3>
-                <p style="color:#555;">${job.clouds.join(", ")}</p>
-              </div>
-              `
-              : ""
-          }
-
-          <!-- CANDIDATE LIST -->
-          <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
-            <h3 style="color: #667eea; margin-top: 0;">Submitted Candidates</h3>
-
-            ${processedCandidates
-              .map(
-                (c) => `
-                <div style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
-                  
-                  <div style="font-size: 16px; margin-bottom: 6px;">
-                    <strong>${c.candidateName}</strong>
-                  </div>
-
-                    <a
-
-href="${process.env.FRONTEND_URL}/company/candidate/${c.profile.id}"
-                     style="display:inline-block;
-                            padding:8px 14px;
-                            background:#667eea;
-                            color:#ffffff;
-                            text-decoration:none;
-                            border-radius:6px;
-                            font-size:14px;">
-                    View Full Candidate Details
-                  </a>
-
-                </div>
-              `,
-              )
-              .join("")}
-          </div>
-
-          <p style="color:#666; font-size:14px; margin-top:25px;">
-            Click on any candidate to view complete profile details including experience,
-            certifications, work history and skills.
-          </p>
-
-          <p style="color:#999; font-size:13px; margin-top:25px;">
-            <em>This is an automated notification from the Job Portal.</em>
-          </p>
-
-        </div>
-      </div>
-      `,
+        html: getVendorApplicationRecruiterEmailTemplate({ job, processedCandidates, aiAllowed }),
       });
     } catch (emailError) {
       handleError(emailError);
