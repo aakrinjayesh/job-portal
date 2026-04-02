@@ -8,6 +8,8 @@ import {
   authLimiter,
   aiLimiter,
 } from "./Middleware/rateLimiter.js";
+import adminRoutes from "./admin/routes/adminRoutes.js";
+// import adminRoutes from "../src/admin/routes/adminRoutes.js";
 import { aiUserLimiter } from "./Middleware/aiRateLimiter.js";
 
 import userRouter from "./Routes/profileRoutes.js";
@@ -50,6 +52,7 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
+app.use("/admin", adminRoutes);
 app.use(apiLimiter);
 app.use(authLimiter, LoginRouters);
 app.use(BillingRoute);
