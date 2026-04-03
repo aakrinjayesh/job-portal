@@ -54,10 +54,11 @@ model OrganizationMember {
   role           OrgMemberRole @default(COMPANY_USER)
   permissions    OrgPermission @default(FULL_ACCESS)
 
-  user         Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  seats        LicenseSeat[]
-  licenses     License[]
+  user              Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  seats             LicenseSeat[]
+  licenses          License[]
+  purchasedLicenses License[]     @relation("PurchasedLicenses")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,6 +153,8 @@ model Users {
   taskTemplate        TaskTemplate[]
   candidateTaskList   CandidateTaskList[]
   aiTokenUsages       AITokenUsage[]
+  promoCodes          PromoCode[]         @relation("AdminCreatedPromoCodes")
+  promoUsages         PromoCodeUsage[]
 }
 
 model UserSession {
@@ -789,6 +792,7 @@ model CandidateTask {
   taskList     CandidateTaskList @relation(fields: [taskListId], references: [id], onDelete: Cascade)
   organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  @@unique([taskListId, createdFromId])
   @@index([taskListId])
   @@index([organizationId])
 }
@@ -862,6 +866,8 @@ model License {
   planId         String
   assignedToId   String?
   seatId         String?
+  purchasedById  String?
+  paymentId      String?
   validFrom      DateTime @default(now())
   validUntil     DateTime
   isActive       Boolean  @default(true)
@@ -871,12 +877,16 @@ model License {
   plan         SubscriptionPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
   seat         LicenseSeat?             @relation(fields: [seatId], references: [id], onDelete: Cascade)
   assignedTo   OrganizationMember?      @relation(fields: [assignedToId], references: [id])
+  purchasedBy  OrganizationMember?      @relation("PurchasedLicenses", fields: [purchasedById], references: [id], onDelete: SetNull)
+  payment      Payment?                 @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
   usageRecords UsageRecord[]
   aiUsages     AITokenUsage[]
 
   @@index([seatId, validFrom, validUntil])
   @@index([assignedToId])
+  @@index([purchasedById])
+  @@index([paymentId])
 }
 
 model SubscriptionPlan {
@@ -967,10 +977,10 @@ model AITokenUsage {
 }
 
 model Invoice {
-  id             String           @id @default(uuid())
+  id             String                   @id @default(uuid())
   subscriptionId String
-  invoiceNumber  String           @unique
-  status         InvoiceStatus    @default(PENDING)
+  invoiceNumber  String                   @unique
+  status         InvoiceStatus            @default(PENDING)
   billingCycle   BillingCycle
   planTier       SubscriptionTier
   subtotal       Int
@@ -981,9 +991,9 @@ model Invoice {
   periodEnd      DateTime?
   dueDate        DateTime
   paidAt         DateTime?
-
-  subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
-  payments     Payment[]
+  promoCode      String?
+  subscription   OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
+  payments       Payment[]
 }
 
 model Payment {
@@ -1001,6 +1011,8 @@ model Payment {
 
   subscription OrganizationSubscription @relation(fields: [subscriptionId], references: [id])
   invoice      Invoice                  @relation(fields: [invoiceId], references: [id])
+  licenses     License[]
+  promoUsages  PromoCodeUsage[]
 }
 
 enum SubscriptionStatus {
@@ -1081,4 +1093,65 @@ model CandidateJobFit {
   @@index([jobId])
   @@index([candidateProfileId])
   @@index([fitPercentage])
+}
+
+enum DiscountType {
+  PERCENTAGE // e.g. 20% off
+  FLAT // e.g. ₹500 off
+}
+
+model PromoCode {
+  id   String @id @default(uuid())
+  code String @unique // e.g. "INDIA75" — auto-generated or custom
+
+  discountType  DiscountType
+  discountValue Float // percent (0-100) OR flat amount in INR
+
+  // Which plans this code applies to. Empty array = ALL plans.
+  applicablePlans SubscriptionTier[]
+
+  validFrom DateTime
+  validTo   DateTime
+
+  // Global cap: how many total times the code can be redeemed across ALL users.
+  // -1 = unlimited
+  maxTotalUsages Int @default(-1)
+
+  // Convenience counter — incremented atomically on each redemption
+  totalUsages Int @default(0)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Who created it (admin user)
+  createdById String?
+  createdBy   Users?  @relation("AdminCreatedPromoCodes", fields: [createdById], references: [id])
+
+  usages PromoCodeUsage[]
+}
+
+// Tracks which user used which promo code — enforces 1 use per user per code.
+model PromoCodeUsage {
+  id          String @id @default(uuid())
+  promoCodeId String
+  userId      String
+
+  // Snapshot of discount applied at time of use
+  discountType     DiscountType
+  discountValue    Float
+  discountedAmount Float // final rupee amount saved
+
+  invoiceId String? // link back to the invoice this was applied to
+  paymentId String? // link back to the payment that settled this invoice
+
+  usedAt DateTime @default(now())
+
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  user      Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment   Payment?  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, userId]) // One use per user per code
+  @@index([promoCodeId])
+  @@index([userId])
 }
