@@ -32,7 +32,7 @@ import { requestHandler } from "../../utils";
 
 const { Text, Title } = Typography;
 
-const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
+const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onParticipantsUpdate }) => {
   const { user } = useAuth();
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [renamingGroup, setRenamingGroup] = useState(false);
@@ -112,6 +112,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete }) => {
         ...groupDetails,
         participants: res.data.participants,
       });
+      onParticipantsUpdate?.(res.data.participants);
       setAddingParticipant(false);
       setParticipantsToBeAdded([]);
       messageApi.success("Participants added");

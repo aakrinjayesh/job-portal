@@ -20,6 +20,7 @@ const ChatItem = ({
   isActive,
   unreadCount = 0,
   onChatDelete,
+  onParticipantsUpdate,
 }) => {
   const { user } = useAuth();
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
@@ -43,6 +44,7 @@ const ChatItem = ({
         onClose={() => setOpenGroupInfo(false)}
         chatId={chat._id}
         onGroupDelete={onChatDelete}
+        onParticipantsUpdate={onParticipantsUpdate}
       />
 
       <div

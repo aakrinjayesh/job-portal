@@ -625,6 +625,23 @@ useEffect(() => {
                   onChatDelete={(id) =>
                     setChats((prev) => prev.filter((c) => c._id !== id))
                   }
+                  onParticipantsUpdate={(participants) => {
+                    setChats((prev) =>
+                      prev.map((c) =>
+                        c._id === chat._id ? { ...c, participants } : c,
+                      ),
+                    );
+                    if (currentChat.current?._id === chat._id) {
+                      currentChat.current = {
+                        ...currentChat.current,
+                        participants,
+                      };
+                      localStorage.setItem(
+                        "currentChat",
+                        JSON.stringify(currentChat.current),
+                      );
+                    }
+                  }}
                 />
               ))
             )}
