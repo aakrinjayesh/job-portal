@@ -804,6 +804,47 @@ const updateCandidateStatusProfile = async (req, res) => {
   }
 };
 
+const getNotificationPreferences = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: { notificationsEnabled: true, notificationType: true },
+    });
+    return res.status(200).json({ status: "success", data: user });
+  } catch (error) {
+    handleError(error, req, res);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+const updateNotificationPreferences = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const { notificationsEnabled, notificationType } = req.body;
+
+    const validTypes = ["DAILY", "WEEKLY"];
+    if (notificationType !== undefined && !validTypes.includes(notificationType)) {
+      return res.status(400).json({ status: "error", message: "Invalid notificationType" });
+    }
+
+    const data = {};
+    if (notificationsEnabled !== undefined) data.notificationsEnabled = notificationsEnabled;
+    if (notificationType !== undefined) data.notificationType = notificationType;
+
+    const user = await prisma.users.update({
+      where: { id: userId },
+      data,
+      select: { notificationsEnabled: true, notificationType: true },
+    });
+
+    return res.status(200).json({ status: "success", data: user });
+  } catch (error) {
+    handleError(error, req, res);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
 export {
   UploadResume,
   updateProfiledetails,
@@ -816,4 +857,6 @@ export {
   getCompanyProfileDetails,
   toggleCandidateStatus,
   updateCandidateStatusProfile,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 };
