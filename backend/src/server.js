@@ -30,6 +30,7 @@ import UsageRoute from "./Routes/usageRoutes.js";
 import seoRoute from "./Routes/seoRoutes.js";
 import SupportRoutes from "./Routes/supportRoutes.js";
 import { startLicenseReminderCron } from "./cron/licenseReminderCron.js";
+import { startJobNotificationCron } from "./cron/jobNotificationCron.js";
 import AdminRoutes from "./admin.js";
 
 dotenv.config();
@@ -82,4 +83,5 @@ app.listen(PORT || "3001", () => {
     `server Started at ${process.env.BACKEND_URL || "http://localhost:"}:${PORT}`,
   );
   startLicenseReminderCron();
+  startJobNotificationCron();
 });

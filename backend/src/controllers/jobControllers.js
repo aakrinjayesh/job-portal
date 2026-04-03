@@ -1,10 +1,12 @@
 import prisma from "../config/prisma.js";
 import sendEmail from "../utils/sendEmail.js";
-import { getNewApplicationRecruiterEmailTemplate, getApplicationConfirmationCandidateEmailTemplate } from "../utils/emailTemplates/JobTemplates.js";
+import {
+  getNewApplicationRecruiterEmailTemplate,
+  getApplicationConfirmationCandidateEmailTemplate,
+} from "../utils/emailTemplates/JobTemplates.js";
 import { extractAIText } from "../utils/ai/extractAI.js";
 import { logger } from "../utils/logger.js";
 import { applyFilters } from "../utils/applyFilters.js";
-import { queueJobEmails } from "../utils/BulkEmail/jobEmail.service.js";
 import { canCreate, canDelete, canEdit, canView } from "../utils/permission.js";
 import { handleError } from "../utils/handleError.js";
 // import { cvEligibilityCheckInternal } from "./cvRankerControllers.js";
@@ -990,24 +992,24 @@ const getJobList = async (req, res) => {
     const page = parseInt(req.body.page) || 1;
     const limit = parseInt(req.body.limit) || 10;
     const filters = req.body.filters || {};
- 
+
     const userId = req.user?.id;
     const role = req.user?.role;
     const organizationId = req.user?.organizationId;
- 
+
     // ----------------------------------------------------------
     // ROLE-BASED applicantSource FILTER
     // Prisma enum:  Candidate | Company | Both   (PascalCase!)
     // ----------------------------------------------------------
     let applicantSourceFilter = {};
- 
+
     if (role === "candidate") {
       // Individual candidates see jobs posted for Candidate or Both
       applicantSourceFilter = {
         applicantSource: { in: ["Candidate", "Both"] },
       };
     }
- 
+
     if (role === "company") {
       // Vendor / company users see jobs posted for Company or Both
       applicantSourceFilter = {
@@ -1015,7 +1017,7 @@ const getJobList = async (req, res) => {
       };
     }
     // admin → no filter (sees everything)
- 
+
     // ----------------------------------------------------------
     // FETCH JOBS
     // ----------------------------------------------------------
@@ -1025,7 +1027,7 @@ const getJobList = async (req, res) => {
         status: "Open", // 🔥 add this
         // 🚨 THIS LINE IS IMPORTANT
         ...(role === "company" ? { postedById: { not: userId } } : {}),
- 
+
         // ✅ Correct PascalCase enum filter
         ...applicantSourceFilter,
       },
@@ -1044,7 +1046,7 @@ const getJobList = async (req, res) => {
         },
       },
     });
- 
+
     // --------------------------------------------
     // STEP 2: ADD isSaved FLAG
     // --------------------------------------------
@@ -1052,12 +1054,12 @@ const getJobList = async (req, res) => {
       ...job,
       isSaved: job.savedBy && job.savedBy.length > 0,
     }));
- 
+
     // --------------------------------------------
     // STEP 3: APPLY FILTERS (IN-MEMORY)
     // --------------------------------------------
     const filteredJobs = applyFilters(jobsWithSavedStatus, filters);
- 
+
     // --------------------------------------------
     // STEP 4: PAGINATION
     // --------------------------------------------
@@ -1065,7 +1067,7 @@ const getJobList = async (req, res) => {
     const totalPages = Math.ceil(totalCount / limit);
     const skip = (page - 1) * limit;
     const paginatedJobs = filteredJobs.slice(skip, skip + limit);
- 
+
     return res.status(200).json({
       status: "success",
       jobs: paginatedJobs,
@@ -1282,9 +1284,9 @@ const postJob = async (req, res) => {
     }
 
     const validSources = ["Candidate", "Company", "Both"];
-const normalizedSource = validSources.includes(applicantSource)
-  ? applicantSource
-  : "Both";
+    const normalizedSource = validSources.includes(applicantSource)
+      ? applicantSource
+      : "Both";
 
     const job = await prisma.job.create({
       data: {
@@ -1340,48 +1342,11 @@ const normalizedSource = validSources.includes(applicantSource)
 
     console.log(`Job posted successfully - jobId: ${job.id}`);
 
-    res.status(201).json({
+    return res.status(201).json({
       status: "success",
       message: "Job posted successfully",
       job,
     });
-
-    (async () => {
-      try {
-        const recruiters = await prisma.users.findMany({
-          where: { role: "company" },
-          select: { email: true },
-        });
-
-        const candidates = await prisma.userProfile.findMany({
-          where: { isVerified: true },
-          select: {
-            user: {
-              select: { email: true },
-            },
-          },
-        });
-
-        const recruiterEmails = recruiters.map((r) => r.email);
-
-        const candidateEmails = candidates
-          .map((c) => c.user?.email)
-          .filter(Boolean);
-
-        if (!recruiterEmails.length && !candidateEmails.length) {
-          console.log("No recipients found for job email notification");
-          return;
-        }
-
-        await queueJobEmails({
-          recruiterEmails,
-          candidateEmails,
-          job,
-        });
-      } catch (emailError) {
-        console.log("Failed to queue job emails", emailError.message);
-      }
-    })();
   } catch (error) {
     console.error("postJob Error:", error.message);
 
@@ -1575,7 +1540,7 @@ const editJob = async (req, res) => {
         status,
         applicationDeadline,
         ApplicationLimit,
-        applicantSource: normalizedSource,  // ← ADD THIS
+        applicantSource: normalizedSource, // ← ADD THIS
         companyLogo,
       },
     });
