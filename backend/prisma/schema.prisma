@@ -129,7 +129,9 @@ model Users {
   phoneNumber      String?
   companyName      String?
   profileUrl       String?
-  role             Role             @default(candidate)
+  role                  Role             @default(candidate)
+  notificationsEnabled  Boolean          @default(true)
+  notificationType      NotificationType @default(WEEKLY)
   password         String?
   emailverified    Boolean?
   // refreshToken     String?
@@ -176,6 +178,11 @@ enum Role {
   candidate
   company
   admin
+}
+
+enum NotificationType {
+  DAILY
+  WEEKLY
 }
 
 enum JobType {

@@ -14,6 +14,8 @@ import {
   updateCompanyProfile,
   updateCompanyPersonalProfile,
   updateCandidateStatusProfile,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 } from "../controllers/profileControllers.js";
 
 import multer from "multer";
@@ -95,5 +97,8 @@ userRouter.patch(
 );
 
 userRouter.get("/public/company/:slug", getPublicCompanyProfile);
+
+userRouter.get("/profile/notifications", authenticateToken, getNotificationPreferences);
+userRouter.patch("/profile/notifications", authenticateToken, updateNotificationPreferences);
 
 export default userRouter;

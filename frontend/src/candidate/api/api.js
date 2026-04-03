@@ -548,3 +548,13 @@ export async function UpdateCandidateDomains(payload) {
     throw error;
   }
 }
+
+export async function GetNotificationPreferences() {
+  const response = await axiosInstance.get("/profile/notifications");
+  return response.data;
+}
+
+export async function UpdateNotificationPreferences(payload) {
+  const response = await axiosInstance.patch("/profile/notifications", payload);
+  return response.data;
+}

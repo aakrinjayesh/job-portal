@@ -1,14 +1,20 @@
 import { useState } from "react";
 import { Typography, Card } from "antd";
-import { CreditCardOutlined, BarChartOutlined } from "@ant-design/icons";
+import {
+  CreditCardOutlined,
+  BarChartOutlined,
+  BellOutlined,
+} from "@ant-design/icons";
 import BillingSection from "../components/settings/BillingSection";
 import UsageDashboard from "../components/settings/UsageDashboard";
+import NotificationPreferences from "../../components/NotificationPreferences";
 
 const { Text } = Typography;
 
 const SECTIONS = [
   // { key: "billing", label: "Billing & Plan", icon: <CreditCardOutlined /> },
   { key: "usage", label: "Usage", icon: <BarChartOutlined /> },
+  { key: "notifications", label: "Notifications", icon: <BellOutlined /> },
 ];
 
 export default function CompanySettings() {
@@ -155,6 +161,20 @@ export default function CompanySettings() {
           >
             <UsageDashboard />
           </div>
+        )}
+
+        {activeSection === "notifications" && (
+          <Card
+            style={{
+              borderRadius: 14,
+              minHeight: "100%",
+              border: "1px solid #e8eaf0",
+              boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+            }}
+            styles={{ body: { padding: "28px 32px" } }}
+          >
+            <NotificationPreferences />
+          </Card>
         )}
       </div>
     </div>

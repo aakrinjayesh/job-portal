@@ -108,3 +108,79 @@ export const getNewJobEmailTemplate = ({ job, jobUrl }) =>
       <p style="font-size:13px; color:#6b7280;">A new job has been posted on ForceHead.</p>
     `,
   });
+
+// ── Daily job digest ──────────────────────────────────────────────────────────
+export const getDailyJobsTemplate = ({ jobs }) => {
+  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+  const jobCards = jobs
+    .map(
+      (job) => `
+    <div style="background:#f8faff; border:1px solid #e0e7ff; border-radius:10px; padding:18px; margin-bottom:16px;">
+      <h3 style="margin:0 0 8px; color:#1e3a8a; font-size:16px;">${job.role}</h3>
+      ${job.companyName ? `<p style="margin:4px 0; font-size:13px; color:#374151;"><strong>Company:</strong> ${job.companyName}</p>` : ""}
+      ${job.location ? `<p style="margin:4px 0; font-size:13px; color:#374151;"><strong>Location:</strong> ${job.location}</p>` : ""}
+      ${job.salary ? `<p style="margin:4px 0; font-size:13px; color:#374151;"><strong>Salary:</strong> ${job.salary}</p>` : ""}
+      <a href="${FRONTEND_URL}/job/${job.id}" target="_blank"
+         style="display:inline-block; margin-top:10px; padding:8px 18px; background:#2563eb; color:#fff; text-decoration:none; border-radius:6px; font-size:13px; font-weight:600;">
+        View Job
+      </a>
+    </div>`,
+    )
+    .join("");
+
+  return baseTemplate({
+    title: `🚀 ${jobs.length} New Job${jobs.length === 1 ? "" : "s"} Posted Today`,
+    body: `
+      <p style="color:#374151; margin-bottom:20px;">Here are the latest jobs posted on ForceHead today:</p>
+      ${jobCards}
+      <div style="text-align:center; margin-top:24px;">
+        <a href="${FRONTEND_URL}/jobs" target="_blank"
+           style="display:inline-block; padding:12px 28px; background:linear-gradient(135deg,#1e3a8a,#2563eb); color:#fff; text-decoration:none; border-radius:8px; font-size:14px; font-weight:600;">
+          Browse All Jobs
+        </a>
+      </div>
+      <p style="font-size:12px; color:#9ca3af; margin-top:24px; text-align:center;">
+        You're receiving this because you have daily job notifications enabled.<br/>
+        Update your preferences in <a href="${FRONTEND_URL}/settings" style="color:#2563eb;">Settings</a>.
+      </p>
+    `,
+  });
+};
+
+// ── Weekly job digest ─────────────────────────────────────────────────────────
+export const getWeeklyJobsTemplate = ({ jobs }) => {
+  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+  const jobCards = jobs
+    .map(
+      (job) => `
+    <div style="background:#f8faff; border:1px solid #e0e7ff; border-radius:10px; padding:18px; margin-bottom:16px;">
+      <h3 style="margin:0 0 8px; color:#1e3a8a; font-size:16px;">${job.role}</h3>
+      ${job.companyName ? `<p style="margin:4px 0; font-size:13px; color:#374151;"><strong>Company:</strong> ${job.companyName}</p>` : ""}
+      ${job.location ? `<p style="margin:4px 0; font-size:13px; color:#374151;"><strong>Location:</strong> ${job.location}</p>` : ""}
+      ${job.salary ? `<p style="margin:4px 0; font-size:13px; color:#374151;"><strong>Salary:</strong> ${job.salary}</p>` : ""}
+      <a href="${FRONTEND_URL}/job/${job.id}" target="_blank"
+         style="display:inline-block; margin-top:10px; padding:8px 18px; background:#2563eb; color:#fff; text-decoration:none; border-radius:6px; font-size:13px; font-weight:600;">
+        View Job
+      </a>
+    </div>`,
+    )
+    .join("");
+
+  return baseTemplate({
+    title: `🔥 Weekly Job Digest — ${jobs.length} Job${jobs.length === 1 ? "" : "s"} This Week`,
+    body: `
+      <p style="color:#374151; margin-bottom:20px;">Here's your weekly roundup of new jobs posted on ForceHead:</p>
+      ${jobCards}
+      <div style="text-align:center; margin-top:24px;">
+        <a href="${FRONTEND_URL}/jobs" target="_blank"
+           style="display:inline-block; padding:12px 28px; background:linear-gradient(135deg,#1e3a8a,#2563eb); color:#fff; text-decoration:none; border-radius:8px; font-size:14px; font-weight:600;">
+          Browse All Jobs
+        </a>
+      </div>
+      <p style="font-size:12px; color:#9ca3af; margin-top:24px; text-align:center;">
+        You're receiving this because you have weekly job notifications enabled.<br/>
+        Update your preferences in <a href="${FRONTEND_URL}/settings" style="color:#2563eb;">Settings</a>.
+      </p>
+    `,
+  });
+};
