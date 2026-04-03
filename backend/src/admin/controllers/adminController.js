@@ -34,9 +34,9 @@ const adminLogin = async (req, res) => {
 
   // 3️⃣ Sign JWT
   const token = jwt.sign(
-    { email },             // payload — no role
+    { email }, // payload — no role
     process.env.SECRETKEY, // secret
-    { expiresIn: "8h" }    // options
+    { expiresIn: "8h" }, // options
   );
 
   return res.status(200).json({
@@ -46,9 +46,6 @@ const adminLogin = async (req, res) => {
     admin: { email },
   });
 };
-
-const adminCreateUser = async (req, res) => {};
-
 
 const getAdminStats = async (req, res) => {
   try {
@@ -116,4 +113,4 @@ const getAdminStats = async (req, res) => {
   }
 };
 
-export { adminLogin, adminCreateUser, getAdminStats };
+export { adminLogin, getAdminStats };

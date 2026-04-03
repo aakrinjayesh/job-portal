@@ -8,8 +8,7 @@ import {
   authLimiter,
   aiLimiter,
 } from "./Middleware/rateLimiter.js";
-import adminRoutes from "./admin/routes/adminRoutes.js";
-// import adminRoutes from "../src/admin/routes/adminRoutes.js";
+
 import { aiUserLimiter } from "./Middleware/aiRateLimiter.js";
 
 import userRouter from "./Routes/profileRoutes.js";
@@ -31,6 +30,7 @@ import UsageRoute from "./Routes/usageRoutes.js";
 import seoRoute from "./Routes/seoRoutes.js";
 import SupportRoutes from "./Routes/supportRoutes.js";
 import { startLicenseReminderCron } from "./cron/licenseReminderCron.js";
+import AdminRoutes from "./admin.js";
 
 dotenv.config();
 
@@ -52,7 +52,6 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/admin", adminRoutes);
 app.use(apiLimiter);
 app.use(authLimiter, LoginRouters);
 app.use(BillingRoute);
@@ -72,6 +71,8 @@ app.use(authenticateToken, featureLimitMiddleware, CVRouters);
 app.use("/api/todos", todoRoutes);
 app.use("/organization", OrganizationRoutes);
 // app.use(authenticateToken, featureLimitMiddleware); // there are few api with no authentication look
+
+app.use("/admin", AdminRoutes);
 
 const PORT = process.env.PORT;
 

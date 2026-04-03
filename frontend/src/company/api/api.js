@@ -978,3 +978,13 @@ export async function GetCandidatesFitScore(jobId) {
     throw error;
   }
 }
+
+export async function validatePromoCode({ code, planTier, quantity, billingCycle }) {
+  const res = await axiosInstance.post("/billing/promo/validate", {
+    code,
+    planTier,
+    quantity,
+    billingCycle,
+  });
+  return res.data;
+}

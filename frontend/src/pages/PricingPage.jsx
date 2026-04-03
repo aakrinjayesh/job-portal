@@ -14,6 +14,8 @@ import {
   Modal,
   message,
   Progress,
+  Input,
+  Alert,
 } from "antd";
 import {
   InfoCircleOutlined,
@@ -21,14 +23,18 @@ import {
   RocketOutlined,
   TeamOutlined,
   GlobalOutlined,
+  LoadingOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   getSubscriptionPlans,
   createInvoice,
   createRazorpayOrder,
   verifyRazorpayPayment,
+  validatePromoCode,
 } from "../company/api/api";
 import { loadRazorpay } from "../utils/loadRazorpay";
 
@@ -64,6 +70,94 @@ const PLAN_ICONS = {
   ORGANIZATION: <GlobalOutlined />,
 };
 
+function PromoCodeInput({ planTier, quantity, billingCycle, onApplied, onRemoved }) {
+  const [code, setCode] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [errorMsg, setErrorMsg] = useState("");
+  const debounceRef = useRef(null);
+
+  // Clean up debounce on unmount
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  const validate = async (val) => {
+    if (!val) {
+      setStatus("idle");
+      onRemoved();
+      return;
+    }
+    setStatus("loading");
+    try {
+      const result = await validatePromoCode({ code: val, planTier, quantity, billingCycle });
+      if (result.valid) {
+        setStatus("success");
+        setErrorMsg("");
+        onApplied({ code: val, discount: result.discount });
+      } else {
+        setStatus("error");
+        setErrorMsg(result.error || "Invalid promo code");
+        onRemoved();
+      }
+    } catch {
+      setStatus("error");
+      setErrorMsg("Failed to validate promo code");
+      onRemoved();
+    }
+  };
+
+  const handleChange = (e) => {
+    const val = e.target.value.toUpperCase();
+    setCode(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => validate(val), 600);
+  };
+
+  const handleRemove = () => {
+    setCode("");
+    setStatus("idle");
+    setErrorMsg("");
+    onRemoved();
+  };
+
+  const suffix =
+    status === "loading" ? (
+      <LoadingOutlined spin />
+    ) : status === "success" ? (
+      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+    ) : status === "error" ? (
+      <CloseCircleOutlined style={{ color: "#ff4d4f" }} />
+    ) : null;
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <Text type="secondary" style={{ fontSize: 13, display: "block", marginBottom: 6 }}>
+        Promo Code
+      </Text>
+      <Input
+        value={code}
+        onChange={handleChange}
+        placeholder="Enter promo code"
+        suffix={suffix}
+      />
+      {status === "error" && errorMsg && (
+        <Text type="danger" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+          {errorMsg}
+        </Text>
+      )}
+      {status === "success" && (
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+          <Text style={{ fontSize: 12, color: "#52c41a" }}>Code applied!</Text>
+          <Text
+            style={{ fontSize: 12, color: "#1677ff", cursor: "pointer" }}
+            onClick={handleRemove}
+          >
+            Remove
+          </Text>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PricingPage() {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
@@ -82,6 +176,7 @@ export default function PricingPage() {
   const [readyToShow, setReadyToShow] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ open: false, plan: null });
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState(null);
 
   /* ===================== FETCH PLANS ===================== */
 
@@ -181,6 +276,7 @@ export default function PricingPage() {
       return;
     }
 
+    setAppliedPromo(null);
     setConfirmModal({ open: true, plan });
   };
 
@@ -248,6 +344,7 @@ export default function PricingPage() {
         quantity,
         billingCycle,
         country,
+        promoCode: appliedPromo?.code || null,
       });
 
       const order = await createRazorpayOrder(invoice.invoiceId);
@@ -341,8 +438,10 @@ export default function PricingPage() {
       billingCycle === "monthly"
         ? plan.monthlyPrice * qty
         : plan.yearlyPrice * qty;
-    const gst = isIndia ? Math.round(base * GST_RATE) : 0;
-    const total = base + gst;
+    const promoSaving = appliedPromo?.discount?.savedAmount || 0;
+    const discountedBase = base - promoSaving;
+    const gst = isIndia ? Math.round(discountedBase * GST_RATE) : 0;
+    const total = discountedBase + gst;
 
     return (
       <Modal
@@ -352,7 +451,10 @@ export default function PricingPage() {
           </Text>
         }
         open={confirmModal.open}
-        onCancel={() => setConfirmModal({ open: false, plan: null })}
+        onCancel={() => {
+          setConfirmModal({ open: false, plan: null });
+          setAppliedPromo(null);
+        }}
         footer={null}
         width={420}
         centered
@@ -393,6 +495,24 @@ export default function PricingPage() {
           <Text>₹{base.toLocaleString()}</Text>
         </div>
 
+        {/* Promo discount */}
+        {promoSaving > 0 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ color: "#52c41a" }}>
+              Promo ({appliedPromo.code})
+            </Text>
+            <Text style={{ color: "#52c41a" }}>
+              −₹{promoSaving.toLocaleString()}
+            </Text>
+          </div>
+        )}
+
         {/* Tax */}
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <Text>Tax {isIndia ? "18% (GST)" : "(exempt)"}</Text>
@@ -416,6 +536,28 @@ export default function PricingPage() {
             ₹{total.toLocaleString()}
           </Text>
         </div>
+
+        {/* Promo Code Input */}
+        <PromoCodeInput
+          planTier={plan.tier}
+          quantity={quantities[plan.tier] || 1}
+          billingCycle={billingCycle}
+          onApplied={(promo) => setAppliedPromo(promo)}
+          onRemoved={() => setAppliedPromo(null)}
+        />
+
+        {appliedPromo && (
+          <Alert
+            type="success"
+            message={`🎉 Code applied! You save ₹${promoSaving.toLocaleString()} (${
+              appliedPromo.discount.type === "PERCENTAGE"
+                ? `${appliedPromo.discount.value}% off`
+                : `₹${appliedPromo.discount.value} off`
+            })`}
+            style={{ marginBottom: 16 }}
+            showIcon={false}
+          />
+        )}
 
         {/* Country selector */}
         <div style={{ marginBottom: 20 }}>

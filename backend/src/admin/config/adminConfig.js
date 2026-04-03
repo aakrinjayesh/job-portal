@@ -2,9 +2,10 @@
 
 export const ADMIN_EMAILS = [
   "shruthi.danamma@aakrin.com",
-  "admin2@yourcompany.com",
-  "admin3@yourcompany.com",
-  "admin4@yourcompany.com",
+  "sai.jayesh@aakrin.com",
+  "hari.babu@aakrin.com",
+  "akshat.shah@aakrin.com",
+  "krishna@aakrin.com",
 ];
 
 export const ADMIN_PASSWORD = "Aakrin@123"; // hashed in real case

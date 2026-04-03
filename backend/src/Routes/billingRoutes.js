@@ -9,6 +9,7 @@ import {
   getSubscriptionStatus,
   cancelSubscription,
   getUserLicenseTier,
+  validatePromoCode,
   // reEnableAutoRenew,
 } from "../controllers/billingController.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -69,5 +70,11 @@ BillingRoute.get(
 //   ensureCompanyAdmin,
 //   reEnableAutoRenew,
 // );
+
+BillingRoute.post(
+  "/billing/promo/validate",
+  authenticateToken,
+  validatePromoCode,
+);
 
 export default BillingRoute;
