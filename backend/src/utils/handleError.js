@@ -92,6 +92,14 @@ const sendErrorEmail = async ({
 export const handleError = async (err, req, res) => {
   console.error("🔥 GLOBAL ERROR:", err);
 
+  if (
+    err instanceof TypeError &&
+    err.message?.includes("Cannot destructure property") &&
+    err.message?.includes("req.user")
+  ) {
+    return;
+  }
+
   if (process.env.NODE_ENV === "production") {
     try {
       let fullUser = null;
