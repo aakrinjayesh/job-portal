@@ -458,22 +458,44 @@ ${generatedUrl}
                 </>
               )}
               {!isPublic && (
+                // <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
+                //   <div onClick={handleSaveToggle} style={{ cursor: "pointer" }}>
+                //     {job?.isSaved ? (
+                //       <LuBookmarkCheck size={20} color="#1677ff" />
+                //     ) : (
+                //       <LuBookmark size={20} color="#9CA3AF" />
+                //     )}
+                //   </div>
+                // </Tooltip>
                 <Tooltip title={!job?.isSaved ? "Save Job" : "Unsave Job"}>
-                  <div onClick={handleSaveToggle} style={{ cursor: "pointer" }}>
-                    {job?.isSaved ? (
-                      <LuBookmarkCheck size={20} color="#1677ff" />
-                    ) : (
-                      <LuBookmark size={20} color="#9CA3AF" />
-                    )}
-                  </div>
+                  <Button
+                    type="text"
+                    disabled={job.status === "Closed"}
+                    onClick={handleSaveToggle}
+                    icon={
+                      job?.isSaved ? (
+                        <LuBookmarkCheck size={18} color="#1677ff" />
+                      ) : (
+                        <LuBookmark size={18} color="#9CA3AF" />
+                      )
+                    }
+                  />
                 </Tooltip>
               )}
 
               <Tooltip title="Share Job">
-                <ShareAltOutlined
+                {/* <ShareAltOutlined
                   style={{ fontSize: 18, cursor: "pointer", color: "#6B7280" }}
                   onClick={handleShare}
-                />
+                /> */}
+                <Tooltip title="Share Job">
+                  <Button
+                    type="text"
+                    disabled={job.status === "Closed"}
+                    icon={<ShareAltOutlined style={{ fontSize: 18 }} />}
+                    onClick={handleShare}
+                  />
+                </Tooltip>
               </Tooltip>
 
               <Tag color={job.status === "Closed" ? "error" : "success"}>

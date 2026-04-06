@@ -131,6 +131,26 @@ const MessageItem = ({
   const hasImages = images.length > 0;
   const hasFiles = files.length > 0;
 
+  const handleDownload = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+
+      // Extract filename from URL
+      const fileName = url.split("/").pop().split("?")[0];
+      link.download = decodeURIComponent(fileName);
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+
   return (
     <Image.PreviewGroup
       preview={{
@@ -308,7 +328,11 @@ const MessageItem = ({
                               ? "#CBF4C9"
                               : "#F0F0F0",
                       }}
-                      onClick={() => window.open(file.url, "_blank")}
+                      // onClick={() => window.open(file.url, "_blank")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(file.url);
+                      }}
                       onMouseEnter={() => setHoveredFile(file._id)}
                       onMouseLeave={() => setHoveredFile(null)}
                     >
@@ -363,7 +387,7 @@ const MessageItem = ({
                       </div>
 
                       {/* Download Button */}
-                      <a
+                      {/* <a
                         href={file.url}
                         download
                         target="_blank"
@@ -376,7 +400,18 @@ const MessageItem = ({
                             color: "#667781",
                           }}
                         />
-                      </a>
+                      </a> */}
+                      <DownloadOutlined
+                        style={{
+                          fontSize: 20,
+                          color: "#667781",
+                          cursor: "pointer",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(file.url);
+                        }}
+                      />
                     </div>
                   ))}
                 </Space>

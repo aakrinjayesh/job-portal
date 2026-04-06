@@ -6,7 +6,10 @@ import { logger } from "../utils/logger.js";
 import puppeteer from "puppeteer";
 import { generateResumeHTML } from "../utils/resumeTemplate.js";
 import sendEmail from "../utils/sendEmail.js";
-import { getVendorApplicationConfirmationEmailTemplate, getVendorApplicationRecruiterEmailTemplate } from "../utils/emailTemplates/VendorTemplates.js";
+import {
+  getVendorApplicationConfirmationEmailTemplate,
+  getVendorApplicationRecruiterEmailTemplate,
+} from "../utils/emailTemplates/VendorTemplates.js";
 // ✅ Get all candidates for a vendor
 import { applyCandidateFilters } from "../utils/applyFilters.js";
 import { canCreate, canDelete, canEdit } from "../utils/permission.js";
@@ -579,6 +582,7 @@ const getCandidateDetails = async (req, res) => {
       where: {
         organizationId: organizationId,
         candidateProfileId: id,
+        // recruiterId: userAuth.id,
       },
       select: { id: true },
     });
@@ -961,7 +965,11 @@ const vendorApplyCandidate = async (req, res) => {
       sendEmail({
         to: vendor.email,
         subject: `Application Submitted - ${job.role} at ${job.companyName}`,
-        html: getVendorApplicationConfirmationEmailTemplate({ job, vendor, appliedCandidates }),
+        html: getVendorApplicationConfirmationEmailTemplate({
+          job,
+          vendor,
+          appliedCandidates,
+        }),
       }).catch((emailError) => {
         logger.error(
           "Error sending confirmation email to vendor:",
@@ -1197,7 +1205,11 @@ const processInBackground = async ({
       await sendEmail({
         to: job.postedBy.email,
         subject: `New Vendor Applications – ${job.role}`,
-        html: getVendorApplicationRecruiterEmailTemplate({ job, processedCandidates, aiAllowed }),
+        html: getVendorApplicationRecruiterEmailTemplate({
+          job,
+          processedCandidates,
+          aiAllowed,
+        }),
       });
     } catch (emailError) {
       handleError(emailError);

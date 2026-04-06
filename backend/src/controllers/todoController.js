@@ -218,35 +218,76 @@ export const getCandidateTasks = async (req, res) => {
         include: { tasks: { orderBy: { order: "asc" } } },
       });
       console.log("New task list created");
+      // } else {
+      //   // 4️⃣ List exists — sync any new templates not yet in the list
+      //   const existingFromIds = new Set(
+      //     list.tasks.map((t) => t.createdFromId).filter(Boolean),
+      //   );
+      //   const existingTitles = new Set(list.tasks.map((t) => t.title));
+      //   const newTemplates = templates.filter(
+      //     (t) => !existingFromIds.has(t.id) && !existingTitles.has(t.title),
+      //   );
+
+      //   if (newTemplates.length > 0) {
+      //     await prisma.candidateTask.createMany({
+      //       data: newTemplates.map((t) => ({
+      //         taskListId: list.id,
+      //         title: t.title,
+      //         order: t.order,
+      //         createdFromId: t.id,
+      //         organizationId,
+      //       })),
+      //     });
+
+      //     list = await prisma.candidateTaskList.findUnique({
+      //       where: { id: list.id },
+      //       include: { tasks: { orderBy: { order: "asc" } } },
+      //     });
+      //     console.log(
+      //       `Synced ${newTemplates.length} new template(s) into existing list`,
+      //     );
+      //   }
+      // }
     } else {
-      // 4️⃣ List exists — sync any new templates not yet in the list
-      const existingFromIds = new Set(
-        list.tasks.map((t) => t.createdFromId).filter(Boolean),
-      );
-      const existingTitles = new Set(list.tasks.map((t) => t.title));
-      const newTemplates = templates.filter(
-        (t) => !existingFromIds.has(t.id) && !existingTitles.has(t.title),
-      );
-
-      if (newTemplates.length > 0) {
-        await prisma.candidateTask.createMany({
-          data: newTemplates.map((t) => ({
-            taskListId: list.id,
-            title: t.title,
-            order: t.order,
-            createdFromId: t.id,
-            organizationId,
-          })),
+      // 4️⃣ List exists — sync new templates inside a serialized transaction
+      await prisma.$transaction(async (tx) => {
+        // Re-fetch tasks INSIDE transaction to get latest state
+        const currentTasks = await tx.candidateTask.findMany({
+          where: { taskListId: list.id },
+          select: { createdFromId: true, title: true },
         });
 
-        list = await prisma.candidateTaskList.findUnique({
-          where: { id: list.id },
-          include: { tasks: { orderBy: { order: "asc" } } },
-        });
-        console.log(
-          `Synced ${newTemplates.length} new template(s) into existing list`,
+        const existingFromIds = new Set(
+          currentTasks.map((t) => t.createdFromId).filter(Boolean),
         );
-      }
+        const existingTitles = new Set(currentTasks.map((t) => t.title));
+
+        const newTemplates = templates.filter(
+          (t) => !existingFromIds.has(t.id) && !existingTitles.has(t.title),
+        );
+
+        if (newTemplates.length > 0) {
+          await tx.candidateTask.createMany({
+            data: newTemplates.map((t) => ({
+              taskListId: list.id,
+              title: t.title,
+              order: t.order,
+              createdFromId: t.id,
+              organizationId,
+            })),
+            skipDuplicates: true, // ✅ extra safety
+          });
+          console.log(
+            `Synced ${newTemplates.length} new template(s) into existing list`,
+          );
+        }
+      });
+
+      // Re-fetch the final list after transaction
+      list = await prisma.candidateTaskList.findUnique({
+        where: { id: list.id },
+        include: { tasks: { orderBy: { order: "asc" } } },
+      });
     }
 
     return res.json({ status: "success", data: list.tasks });

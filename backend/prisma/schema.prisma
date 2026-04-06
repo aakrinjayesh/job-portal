@@ -122,31 +122,32 @@ model CompanyProfile {
 }
 
 model Users {
-  id               String           @id @default(uuid())
-  name             String
-  email            String           @unique
-  chatuserid       String?
-  phoneNumber      String?
-  companyName      String?
-  profileUrl       String?
-  role                  Role             @default(candidate)
-  notificationsEnabled  Boolean          @default(true)
-  notificationType      NotificationType @default(WEEKLY)
-  password         String?
-  emailverified    Boolean?
+  id                           String           @id @default(uuid())
+  name                         String
+  email                        String           @unique
+  chatuserid                   String?
+  phoneNumber                  String?
+  companyName                  String?
+  profileUrl                   String?
+  role                         Role             @default(candidate)
+  notificationsEnabled         Boolean          @default(true)
+  notificationType             NotificationType @default(WEEKLY)
+  reminderNotificationsEnabled Boolean          @default(true)
+  password                     String?
+  emailverified                Boolean?
   // refreshToken     String?
-  isactive         Boolean?
-  createdAt        DateTime         @default(now())
-  CandidateProfile UserProfile?     @relation("CandidateUserProfile")
-  VendorProfiles   UserProfile[]    @relation("VendorUserProfiles")
-  savedCandidates  SavedCandidate[] @relation("RecruiterSavedCandidates")
-  Job              Job[]            @relation("UserPostedJobs")
-  JobApplications  JobApplication[] @relation("UserAsCandidate")
-  AppliedJobs      JobApplication[] @relation("AppliedByUser")
-  SavedJobs        SavedJob[]
-  courses          Course[]
-  reviews          Review[]
-  dashboards       Dashboard[]
+  isactive                     Boolean?
+  createdAt                    DateTime         @default(now())
+  CandidateProfile             UserProfile?     @relation("CandidateUserProfile")
+  VendorProfiles               UserProfile[]    @relation("VendorUserProfiles")
+  savedCandidates              SavedCandidate[] @relation("RecruiterSavedCandidates")
+  Job                          Job[]            @relation("UserPostedJobs")
+  JobApplications              JobApplication[] @relation("UserAsCandidate")
+  AppliedJobs                  JobApplication[] @relation("AppliedByUser")
+  SavedJobs                    SavedJob[]
+  courses                      Course[]
+  reviews                      Review[]
+  dashboards                   Dashboard[]
 
   recruiterActivities Activity[]          @relation("RecruiterActivities")
   candidateRatings    CandidateRating[]
@@ -698,9 +699,9 @@ model ActivityNote {
   interactedAt DateTime
   startTime    DateTime?
   endTime      DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  reminderSent Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model ActivitySchedule {

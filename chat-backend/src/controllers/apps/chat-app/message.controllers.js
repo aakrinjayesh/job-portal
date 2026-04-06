@@ -6,6 +6,7 @@ import { emitSocketEvent } from "../../../socket/index.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { ApiResponse } from "../../../utils/ApiResponse.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
+import sendEmail from "../../../utils/mail.js";
 import {
   getLocalPath,
   getStaticFilePath,
@@ -126,6 +127,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     content: content || "",
     chat: chatId,
     attachments: messageFiles,
+    status: "SENT",
   });
 
   // ==============================
@@ -164,6 +166,42 @@ const sendMessage = asyncHandler(async (req, res) => {
       receivedMessage,
     );
   });
+  // ==============================
+  // ⏱️ SEND EMAIL AFTER 2 MIN IF NOT DELIVERED
+  // ==============================
+  setTimeout(
+    async () => {
+      try {
+        const msg = await ChatMessage.findById(message._id);
+
+        // If still not delivered/read
+        if (msg && (!msg.status || msg.status === "SENT")) {
+          const chatData = await Chat.findById(chatId).populate("participants");
+
+          for (const user of chatData.participants) {
+            // Skip sender
+            if (user._id.toString() === req.user._id.toString()) continue;
+
+            if (user.email) {
+              await sendEmail({
+                to: user.email,
+                subject: "New Message Received",
+                text: `You received a message from ${req.user.username}. Please check.`,
+                html: `
+              <p>Hello,</p>
+              <p>You received a message from <b>${req.user.username}</b>.</p>
+              <p>Please login and check your chat.</p>
+            `,
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Delayed email error:", error.message);
+      }
+    },
+    2 * 60 * 1000,
+  ); // ⏱️ 2 minutes
 
   return res
     .status(201)

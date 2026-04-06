@@ -14,6 +14,7 @@ export default function NotificationPreferences() {
   const [prefs, setPrefs] = useState({
     notificationsEnabled: true,
     notificationType: "WEEKLY",
+    // reminderNotificationsEnabled: true,
   });
 
   useEffect(() => {
@@ -85,11 +86,41 @@ export default function NotificationPreferences() {
           onChange={(checked) => update({ notificationsEnabled: checked })}
         />
       </div>
+      {/* Reminder toggle */}
+      {/* <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "14px 0",
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
+        <div>
+          <Text strong style={{ fontSize: 14 }}>
+            Reminder emails
+          </Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Receive reminders before scheduled activities
+          </Text>
+        </div>
+
+        <Switch
+          checked={prefs.reminderNotificationsEnabled}
+          onChange={(checked) =>
+            update({ reminderNotificationsEnabled: checked })
+          }
+        />
+      </div> */}
 
       {/* Frequency selector — only visible when enabled */}
       {prefs.notificationsEnabled && (
         <div style={{ paddingTop: 18 }}>
-          <Text strong style={{ fontSize: 14, display: "block", marginBottom: 12 }}>
+          <Text
+            strong
+            style={{ fontSize: 14, display: "block", marginBottom: 12 }}
+          >
             Notification frequency
           </Text>
           <Radio.Group

@@ -1010,14 +1010,16 @@ const Bench = () => {
 
           <Popconfirm
             open={deleteOpenId === record.id}
+            trigger="click"
             placement="left"
             icon={null}
             title={null}
+            overlayClassName="no-close-popconfirm"
             okButtonProps={{ style: { display: "none" } }}
             cancelButtonProps={{ style: { display: "none" } }}
-            onOpenChange={(open) => {
-              if (!open) setDeleteOpenId(null);
-            }}
+            // onOpenChange={(open) => {
+            //   if (!open) setDeleteOpenId(null);
+            // }}
             description={
               <div
                 style={{
@@ -1033,7 +1035,6 @@ const Bench = () => {
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* HEADER */}
                 <div
                   style={{
                     display: "flex",
@@ -1058,7 +1059,6 @@ const Bench = () => {
                     </div>
                   </div>
 
-                  {/* ✕ CLOSE ICON */}
                   <div
                     onClick={() => setDeleteOpenId(null)}
                     style={{
@@ -1070,13 +1070,13 @@ const Bench = () => {
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
+                      transform: "translateY(-2px)",
                     }}
                   >
                     ✕
                   </div>
                 </div>
 
-                {/* ACTION BUTTONS */}
                 <div
                   style={{
                     display: "flex",
@@ -1084,7 +1084,6 @@ const Bench = () => {
                     gap: 16,
                   }}
                 >
-                  {/* CANCEL */}
                   <Button
                     onClick={() => setDeleteOpenId(null)}
                     style={{
@@ -1101,7 +1100,6 @@ const Bench = () => {
                     Cancel
                   </Button>
 
-                  {/* DELETE */}
                   <Button
                     onClick={() => {
                       handleDelete(record); // ✅ SAME FUNCTION

@@ -46,10 +46,10 @@ const CandidateDetails = ({
   matchScore,
 }) => {
   console.log("candidates details page");
-  // const { candidate, jobId } = location.state || {};
+
   const navigate = useNavigate();
   const { id } = useParams(); // userId in URL
-  // const finalId = idFromModal || id;
+
   const finalId = candidateFromList?.id || idFromModal || id;
   const [messageApi, contextHolder] = message.useMessage();
   const location = useLocation();
@@ -58,7 +58,6 @@ const CandidateDetails = ({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // const [reviewsByCandidate, setReviewsByCandidate] = useState({});
   const [tempReview, setTempReview] = useState("");
 
   const [ratingValue, setRatingValue] = useState(0);
@@ -66,7 +65,6 @@ const CandidateDetails = ({
   const [progress, setProgress] = useState(0);
   const [readyToShow, setReadyToShow] = useState(false);
 
-  // const { jobId, source } = location.state || {};
   const {
     jobId: jobIdFromRoute,
     source,
@@ -84,18 +82,49 @@ const CandidateDetails = ({
   const defaultTab = location?.state?.defaultTab;
   const [loadingCandidate, setLoadingCandidate] = useState(true);
   const [isViewReviewsModalOpen, setIsViewReviewsModalOpen] = useState(false);
+  const hasFetched = useRef(false);
 
   console.log("sourcw", source);
   console.log("location", location);
-  useEffect(() => {
-    if (candidateFromList) {
-      console.log("SETTING DATA FROM LIST", candidateFromList);
+  // useEffect(() => {
+  //   if (candidateFromList) {
+  //     console.log("SETTING DATA FROM LIST", candidateFromList);
 
-      setCandidate(candidateFromList);
-      setLoadingCandidate(false);
-      setReadyToShow(true);
-    }
-  }, [candidateFromList]);
+  //     setCandidate(candidateFromList);
+  //     setLoadingCandidate(false);
+  //     setReadyToShow(true);
+  //   }
+  // }, [candidateFromList]);
+
+  // useEffect(() => {
+  //   const fetchCandidate = async () => {
+  //     try {
+  //       setProgress(10);
+  //       setReadyToShow(false);
+  //       setLoadingCandidate(true);
+
+  //       // const res = await getCandidateDetails(id);
+  //       const res = await getCandidateDetails(finalId);
+
+  //       if (res.status === "success") {
+  //         setCandidate(res.candidate);
+  //         // setSaved(res.candidate?.isSaved || false); // 👈 important
+  //         setSaved(res.candidate?.profile?.isSaved ?? false);
+  //       }
+  //     } catch (err) {
+  //       message.error("Failed to load candidate details");
+  //     } finally {
+  //       setProgress(100);
+
+  //       setLoadingCandidate(false);
+  //       setReadyToShow(true);
+  //     }
+  //   };
+
+  //   if (finalId) {
+  //     fetchCandidate();
+  //   }
+  // }, [candidateFromList, finalId]);
 
   useEffect(() => {
     const fetchCandidate = async () => {
@@ -104,71 +133,88 @@ const CandidateDetails = ({
         setReadyToShow(false);
         setLoadingCandidate(true);
 
-        // const res = await getCandidateDetails(id);
         const res = await getCandidateDetails(finalId);
 
         if (res.status === "success") {
           setCandidate(res.candidate);
-          // setSaved(res.candidate?.isSaved || false); // 👈 important
           setSaved(res.candidate?.profile?.isSaved ?? false);
         }
       } catch (err) {
         message.error("Failed to load candidate details");
       } finally {
         setProgress(100);
-
-        // setTimeout(() => {
-        //   setLoadingCandidate(false);
-        //   setReadyToShow(true);
-        // }, 300);
         setLoadingCandidate(false);
         setReadyToShow(true);
       }
     };
 
-    // if (id) fetchCandidate();
-    // if (!candidateFromList && finalId)
-    if (finalId) {
+    // ✅ ONLY CALL ONCE
+    if (finalId && !hasFetched.current) {
+      hasFetched.current = true;
       fetchCandidate();
     }
-    {
-      fetchCandidate();
-    }
-  }, [candidateFromList, finalId]);
+  }, [finalId]);
+
+  // const handleSaveToggle = async (e) => {
+  //   e.stopPropagation();
+
+  //   const profileId = candidate?.profile?.id;
+  //   if (!candidate?.id) return;
+
+  //   const willBeSaved = !saved;
+  //   setSaved(willBeSaved);
+
+  //   try {
+  //     if (willBeSaved) {
+  //       const resp = await SaveCandidate({
+  //         // candidateProfileId: candidate.id,
+  //         candidateProfileId: profileId,
+  //       });
+
+  //       if (resp?.status !== "success") throw new Error();
+  //       messageApi.success("Candidate saved!");
+  //     } else {
+  //       const resp = await UnsaveCandidate({
+  //         // candidateProfileId: candidate.id,
+  //         candidateProfileId: candidate.profile.id,
+  //       });
+
+  //       if (resp?.status !== "success") throw new Error();
+  //       // messageApi.success("Candidate removed!");
+  //       messageApi.error("Candidate removed!");
+  //     }
+  //   } catch (error) {
+  //     console.error("Save error:", error);
+  //     setSaved(!willBeSaved); // rollback
+  //   }
+  // };
 
   const handleSaveToggle = async (e) => {
     e.stopPropagation();
-
-    // const profileId = candidate?.profile?.id || candidate?.id;
-    // const profileId = candidate?.id;
     const profileId = candidate?.profile?.id;
-    if (!candidate?.id) return;
-
-    const willBeSaved = !saved;
-    setSaved(willBeSaved);
+    if (!profileId) return;
 
     try {
-      if (willBeSaved) {
-        const resp = await SaveCandidate({
-          // candidateProfileId: candidate.id,
-          candidateProfileId: profileId,
-        });
-
-        if (resp?.status !== "success") throw new Error();
-        messageApi.success("Candidate saved!");
+      if (saved) {
+        const resp = await UnsaveCandidate({ candidateProfileId: profileId });
+        if (resp?.status !== "success") throw new Error(resp?.message);
+        setSaved(false);
+        messageApi.warning("Candidate removed!");
       } else {
-        const resp = await UnsaveCandidate({
-          // candidateProfileId: candidate.id,
-          candidateProfileId: candidate.profile.id,
-        });
-
-        if (resp?.status !== "success") throw new Error();
-        // messageApi.success("Candidate removed!");
-        messageApi.error("Candidate removed!");
+        const resp = await SaveCandidate({ candidateProfileId: profileId });
+        if (resp?.status !== "success") throw new Error(resp?.message);
+        setSaved(true);
+        messageApi.success("Candidate saved!");
       }
     } catch (error) {
-      console.error("Save error:", error);
-      setSaved(!willBeSaved); // rollback
+      console.error("Save toggle error:", error);
+      // ✅ If unsave says "not found", treat as already unsaved
+      if (error?.message?.includes("not found")) {
+        setSaved(false);
+        messageApi.warning("Already removed");
+      } else {
+        messageApi.error("Something went wrong");
+      }
     }
   };
 
@@ -391,13 +437,7 @@ const CandidateDetails = ({
       {/* Back Button */}
 
       <Row gutter={16}>
-        {/* <Col span={16}> */}
-        {/* <Col span={16} style={{ position: "relative" }}> */}
         {!activityOnly && (
-          // <Col
-          //   span={source === "bench" ? 24 : 16}
-          //   style={{ position: "relative" }}
-          // >
           <Col
             span={isModal ? 16 : source === "bench" ? 24 : 16}
             style={{ position: "relative" }}

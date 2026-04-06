@@ -74,6 +74,7 @@ export const uploadToS3 = async (file) => {
       Key: uniqueFileName,
       Body: fileBuffer,
       ContentType: mimeType,
+      ContentDisposition: "attachment",
     });
 
     const response = await s3.send(command);
