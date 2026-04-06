@@ -74,7 +74,7 @@ const runDailyJobNotifications = async () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WEEKLY — runs every Sunday at 9 AM IST, sends jobs from last 7 days
+// WEEKLY — runs every Friday at 9 AM IST, sends jobs from last 7 days
 // ─────────────────────────────────────────────────────────────────────────────
 const runWeeklyJobNotifications = async () => {
   console.log("📆 Weekly job notification cron: STARTED");
@@ -118,10 +118,10 @@ export const startJobNotificationCron = () => {
     timezone: "Asia/Kolkata",
   });
 
-  // Weekly every Sunday at 9 AM IST
-  cron.schedule("0 9 * * 0", runWeeklyJobNotifications, {
+  // Weekly every Friday at 9 AM IST
+  cron.schedule("0 9 * * 5", runWeeklyJobNotifications, {
     timezone: "Asia/Kolkata",
   });
 
-  console.log("🕒 Job notification crons registered: daily 9 AM & weekly Sunday 9 AM IST");
+  console.log("🕒 Job notification crons registered: daily 9 AM & weekly Friday 9 AM IST");
 };
