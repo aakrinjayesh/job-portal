@@ -39,6 +39,7 @@ import PricingPage from "./pages/PricingPage";
 import RenewalPage from "./company/pages/RenewalPage";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PublicJobRedirect from "./pages/PublicJobRedirect";
+import SettingsRedirect from "./pages/SettingsRedirect";
 import LimitExceededAlert from "./components/alert/LimitExceededAlert";
 import { subscribeToLimit, unsubscribeFromLimit } from "./utils/limitEventBus";
 import { useState, useRef } from "react";
@@ -141,6 +142,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/createpassword" element={<CreatePassword />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+        <Route path="/settings" element={<SettingsRedirect />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/contact" element={<ContactSupport />} />
         <Route
