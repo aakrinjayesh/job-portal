@@ -162,11 +162,19 @@ const CompanyLayout = ({ children }) => {
       // Default: coming from My Jobs
       return "jobs";
     }
+    if (path.startsWith("/company/profile")) {
+      const tab = location.state?.activeTab;
+
+      if (tab === "org") return "org-settings-tab";
+      if (tab === "activity") return "my-activity-tab";
+
+      return "profile-tab";
+    }
 
     // ✅ Direct Matches
     if (path.startsWith("/company/my-activity")) return "myactivity";
     if (path.startsWith("/company/chat")) return "chat";
-    if (path.startsWith("/company/profile")) return "profile";
+    // if (path.startsWith("/company/profile")) return "profile";
     if (path.startsWith("/company/pricing")) return "pricing";
     if (path.startsWith("/company/settings")) return "settings";
     if (path.startsWith("/company/dashboard")) return "dashboard";
@@ -186,6 +194,29 @@ const CompanyLayout = ({ children }) => {
 
   /* 🧠 Menu Click */
   const onMenuClick = ({ key }) => {
+    if (key === "profile-group") return;
+
+    // ✅ Profile tabs navigation (same path)
+    if (key === "profile-tab") {
+      navigate("/company/profile", {
+        state: { activeTab: "profile" },
+      });
+      return;
+    }
+
+    if (key === "org-settings-tab") {
+      navigate("/company/profile", {
+        state: { activeTab: "org" },
+      });
+      return;
+    }
+
+    if (key === "my-activity-tab") {
+      navigate("/company/profile", {
+        state: { activeTab: "activity" },
+      });
+      return;
+    }
     const protectedPages = [
       "dashboard",
       "myactivity",
@@ -233,6 +264,14 @@ const CompanyLayout = ({ children }) => {
   const getPageTitle = () => {
     const path = location.pathname;
     const highlight = location.state?.highlight;
+    if (path.startsWith("/company/profile")) {
+      const tab = location.state?.activeTab;
+
+      if (tab === "org") return "Organization Settings";
+      if (tab === "activity") return "My Activity";
+
+      return "My Profile";
+    }
 
     if (path.startsWith("/company/job/find")) return "Find Jobs";
 
@@ -411,15 +450,15 @@ const CompanyLayout = ({ children }) => {
             }}
           >
             {/* ✅ Scrollable wrapper */}
-  <div
-    style={{
-      overflowY: "auto",
-      maxHeight: "calc(100vh - 120px)",
-      scrollbarWidth: "thin",           // Firefox: thin scrollbar
-      scrollbarColor: "#2d4a7a #011026", // Firefox: thumb & track color
-    }}
-  >
-    <style>{`
+            <div
+              style={{
+                overflowY: "auto",
+                maxHeight: "calc(100vh - 120px)",
+                scrollbarWidth: "thin", // Firefox: thin scrollbar
+                scrollbarColor: "#2d4a7a #011026", // Firefox: thumb & track color
+              }}
+            >
+              <style>{`
       .sidebar-scroll::-webkit-scrollbar {
         width: 4px;
       }
@@ -434,98 +473,114 @@ const CompanyLayout = ({ children }) => {
         background: #1677FF;
       }
     `}</style>
-             <div className="sidebar-scroll" style={{ height: "100%", overflowY: "auto" }}>
-            <Menu
-              mode="inline"
-              theme="dark"
-              selectedKeys={[selectedKey]}
-              onClick={onMenuClick}
-              defaultOpenKeys={["jobs-group"]}
-              style={{ background: "transparent", border: "none" }}
-              items={[
-                {
-                  key: "jobs-group",
-                  icon: <FileTextOutlined />,
-                  label: "Jobs",
-                  children: [
+              <div
+                className="sidebar-scroll"
+                style={{ height: "100%", overflowY: "auto" }}
+              >
+                <Menu
+                  mode="inline"
+                  theme="dark"
+                  selectedKeys={[selectedKey]}
+                  onClick={onMenuClick}
+                  defaultOpenKeys={["jobs-group"]}
+                  style={{ background: "transparent", border: "none" }}
+                  items={[
                     {
-                      key: "jobs",
-                      label: "My Jobs",
+                      key: "jobs-group",
+                      icon: <FileTextOutlined />,
+                      label: "Jobs",
+                      children: [
+                        {
+                          key: "jobs",
+                          label: "My Jobs",
+                        },
+                        {
+                          key: "findjob",
+                          label: "Find Jobs",
+                        },
+                        {
+                          key: "savedjobs",
+                          label: "Saved Jobs",
+                        },
+                        // { key: "appliedcandidatesbyjob", label: "Applied Jobs" },
+                      ],
                     },
                     {
-                      key: "findjob",
-                      label: "Find Jobs",
+                      key: "myactivity",
+                      icon: <AppstoreOutlined />,
+                      label: "My Activity",
                     },
-                    {
-                      key: "savedjobs",
-                      label: "Saved Jobs",
-                    },
-                    // { key: "appliedcandidatesbyjob", label: "Applied Jobs" },
-                  ],
-                },
-                {
-                  key: "myactivity",
-                  icon: <AppstoreOutlined />,
-                  label: "My Activity",
-                },
 
-                { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
-                {
-                  key: "candidates-group",
-                  icon: <TeamOutlined />,
-                  label: "Candidates",
-                  children: [
+                    { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
                     {
-                      key: "findbench",
-                      label: "Find Candidates",
+                      key: "candidates-group",
+                      icon: <TeamOutlined />,
+                      label: "Candidates",
+                      children: [
+                        {
+                          key: "findbench",
+                          label: "Find Candidates",
+                        },
+                        {
+                          key: "savedcandidates",
+                          label: "Saved Candidates",
+                        },
+                      ],
                     },
-                    {
-                      key: "savedcandidates",
-                      label: "Saved Candidates",
-                    },
-                  ],
-                },
-                { key: "chat", icon: <MessageOutlined />, label: "Chat" },
+                    { key: "chat", icon: <MessageOutlined />, label: "Chat" },
 
-                {
-                  key: "profile-group",
-                  icon: <UserOutlined />,
-                  label: "Profile",
-                  children: [
-                    {
-                      key: "renew",
-                      label: "Renew Subscription",
-                      style: { display: "none" },
-                    },
-                    {
-                      key: "profile",
-                      label: "Profile",
-                    },
                     // {
-                    //   key: "pricing",
-                    //   label: "Pricing",
+                    //   key: "profile-group",
+                    //   icon: <UserOutlined />,
+                    //   label: "Profile",
+                    //   children: [
+                    //     {
+                    //       key: "renew",
+                    //       label: "Renew Subscription",
+                    //       style: { display: "none" },
+                    //     },
+                    //     {
+                    //       key: "profile",
+                    //       label: "Profile",
+                    //     },
+                    //     // {
+                    //     //   key: "pricing",
+                    //     //   label: "Pricing",
+                    //     // },
+                    //   ],
                     // },
-                  ],
-                },
-                {
-                  key: "settings",
-                  icon: <SettingOutlined />,
-                  label: "Settings",
-                },
-                {
-                  key: "logout",
-                  icon: <LogoutOutlined />,
-                  label: "Logout",
-                },
-                {
-                  key: "contact",
-                  icon: <ContactsOutlined />,
-                  label: "Contact & Support",
-                },
-              ]}
-            />{" "}
+                    {
+                      key: "profile-group",
+                      icon: <UserOutlined />,
+                      label: "Profile",
+                      children: [
+                        { key: "profile-tab", label: "My Profile" },
+                        {
+                          key: "org-settings-tab",
+                          label: "Organization Settings",
+                        },
+                        { key: "my-activity-tab", label: "My Activity" },
+                      ],
+                    },
+                    {
+                      key: "settings",
+                      icon: <SettingOutlined />,
+                      label: "Settings",
+                    },
+                    {
+                      key: "logout",
+                      icon: <LogoutOutlined />,
+                      label: "Logout",
+                    },
+                    {
+                      key: "contact",
+                      icon: <ContactsOutlined />,
+                      label: "Contact & Support",
+                    },
+                  ]}
+                />{" "}
               </div>
-              </div>
+            </div>
           </ConfigProvider>
         </Sider>
 

@@ -27,6 +27,18 @@ const UploadResume = async (req, res) => {
     const { role } = req.body;
     const { buffer, mimetype, originalname, size } = req.file;
 
+    // 🔥 Upload resume to S3
+    const uploadedFile = await uploadToCloudinary(req.file);
+
+    if (!uploadedFile || !uploadedFile.url) {
+      return res.status(500).json({
+        status: "error",
+        message: "Resume upload failed",
+      });
+    }
+
+    const originalFileUrl = uploadedFile.url;
+
     logger.info(
       `File received: ${originalname}, Type: ${mimetype}, Role: ${role}`,
     );
@@ -108,6 +120,7 @@ const UploadResume = async (req, res) => {
       fileName: originalname,
       mimeType: mimetype,
       size,
+      originalFileUrl,
       extracted: merged,
     });
   } catch (err) {
@@ -148,6 +161,7 @@ const updateProfiledetails = async (req, res) => {
       name = null,
       phoneNumber = null,
       portfolioLink = null,
+      originalFileUrl,
       email = null,
       preferredLocation = [],
       preferredJobType = [],
@@ -175,6 +189,8 @@ const updateProfiledetails = async (req, res) => {
       where: { userId: user.id },
       update: {
         profilePicture,
+        originalFileUrl, // ✅ ADD
+
         name,
         phoneNumber,
         portfolioLink,
@@ -203,6 +219,7 @@ const updateProfiledetails = async (req, res) => {
       create: {
         userId: user.id,
         profilePicture,
+        originalFileUrl,
         name,
         phoneNumber,
         portfolioLink,
@@ -383,6 +400,8 @@ const getCompanyProfileDetails = async (req, res) => {
         specialties: companyProfile?.specialties || [],
         logoUrl: companyProfile?.logoUrl || null,
         coverImage: companyProfile?.coverImage || null,
+        clouds: companyProfile?.clouds || [],
+        certifications: companyProfile?.certifications || [],
         socialLinks: companyProfile?.socialLinks || null,
         slug: companyProfile?.slug || null,
       },
@@ -824,13 +843,20 @@ const updateNotificationPreferences = async (req, res) => {
     const { notificationsEnabled, notificationType } = req.body;
 
     const validTypes = ["DAILY", "WEEKLY"];
-    if (notificationType !== undefined && !validTypes.includes(notificationType)) {
-      return res.status(400).json({ status: "error", message: "Invalid notificationType" });
+    if (
+      notificationType !== undefined &&
+      !validTypes.includes(notificationType)
+    ) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid notificationType" });
     }
 
     const data = {};
-    if (notificationsEnabled !== undefined) data.notificationsEnabled = notificationsEnabled;
-    if (notificationType !== undefined) data.notificationType = notificationType;
+    if (notificationsEnabled !== undefined)
+      data.notificationsEnabled = notificationsEnabled;
+    if (notificationType !== undefined)
+      data.notificationType = notificationType;
 
     const user = await prisma.users.update({
       where: { id: userId },

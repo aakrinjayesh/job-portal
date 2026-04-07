@@ -156,6 +156,7 @@ const MessageItem = ({
       preview={{
         visible: previewVisible,
         onVisibleChange: setPreviewVisible,
+        maskClosable: false,
       }}
     >
       <div

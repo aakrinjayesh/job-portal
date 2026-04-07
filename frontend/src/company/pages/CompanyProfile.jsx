@@ -311,6 +311,38 @@ const CompanyPreview = ({ data }) => (
         </div>
       </Card>
     )}
+    {data.clouds?.length > 0 && (
+      <Card
+        size="small"
+        title={<span style={{ fontSize: 13 }}>Clouds</span>}
+        style={{ marginBottom: 8, borderRadius: 8 }}
+        styles={{ body: { padding: "10px 14px" } }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {data.clouds.map((c) => (
+            <Tag key={c} color="purple" style={{ fontSize: 11, margin: 0 }}>
+              {c}
+            </Tag>
+          ))}
+        </div>
+      </Card>
+    )}
+    {data.certifications?.length > 0 && (
+      <Card
+        size="small"
+        title={<span style={{ fontSize: 13 }}>Certifications</span>}
+        style={{ marginBottom: 8, borderRadius: 8 }}
+        styles={{ body: { padding: "10px 14px" } }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {data.certifications.map((c) => (
+            <Tag key={c} color="green" style={{ fontSize: 11, margin: 0 }}>
+              {c}
+            </Tag>
+          ))}
+        </div>
+      </Card>
+    )}
   </div>
 );
 
@@ -329,7 +361,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
 
   const [specialties, setSpecialties] = useState([]);
   const [locations, setLocations] = useState([]);
-
+  const [clouds, setClouds] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
@@ -349,6 +382,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
     coverImage: coverImageUrl,
     specialties,
     locations,
+    clouds, // ✅ ADD
+    certifications,
   };
 
   // ── load profile data ──
@@ -378,6 +413,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             setCoverImageUrl(companyProfile.coverImage || null);
             setSpecialties(companyProfile.specialties || []);
             setLocations(companyProfile.locations || []);
+            setClouds(companyProfile.clouds || []);
+            setCertifications(companyProfile.certifications || []);
           }
 
           const fields = {
@@ -480,6 +517,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         specialties,
         logoUrl,
         coverImage: coverImageUrl,
+        clouds,
+        certifications,
         socialLinks: {
           linkedin: values.linkedin || null,
           twitter: values.twitter || null,
@@ -671,7 +710,12 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             <Form.Item
               label="Headquarters"
               name="headquarters"
-              rules={[{ required: true, message: "Headquarters is required" }]}
+              rules={[
+                {
+                  // required: true,
+                  message: "Headquarters is required",
+                },
+              ]}
             >
               <Input placeholder="Bangalore" />
             </Form.Item>
@@ -679,7 +723,7 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          {/* <Col span={8}>
             <Form.Item
               label="Industry"
               name="industry"
@@ -706,7 +750,7 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
                 ))}
               </Select>
             </Form.Item>
-          </Col>
+          </Col> */}
           <Col span={8}>
             <Form.Item
               label="Company Size"
@@ -735,7 +779,12 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             <Form.Item
               label="Founded Year"
               name="foundedYear"
-              rules={[{ required: true, message: "Founded year is required" }]}
+              rules={[
+                {
+                  // required: true,
+                  message: "Founded year is required",
+                },
+              ]}
             >
               <InputNumber
                 placeholder="2024"
@@ -753,7 +802,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         <Form.Item
           label={
             <span>
-              Office Locations <span style={{ color: "#ff4d4f" }}>*</span>
+              Office Locations
+              {/* <span style={{ color: "#ff4d4f" }}>*</span> */}
             </span>
           }
           extra="Add all countries / regions your company operates in"
@@ -781,6 +831,38 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
               setIsDirty(true);
             }}
             placeholder="e.g. Salesforce, AI Hiring"
+          />
+        </Form.Item>
+      </Card>
+      {/* ════════ 5. CLOUDS & CERTIFICATIONS ════════ */}
+      <Card title="Clouds & Certifications" style={{ marginBottom: 20 }}>
+        <Form.Item
+          label="Clouds"
+          extra="Salesforce clouds your company specializes in"
+        >
+          <TagInput
+            value={clouds}
+            onChange={(v) => {
+              setClouds(v);
+              setIsDirty(true);
+            }}
+            placeholder="e.g. Sales Cloud, Service Cloud"
+          />
+        </Form.Item>
+
+        <Divider style={{ margin: "16px 0" }} />
+
+        <Form.Item
+          label="Certifications"
+          extra="Certifications your team holds or promotes"
+        >
+          <TagInput
+            value={certifications}
+            onChange={(v) => {
+              setCertifications(v);
+              setIsDirty(true);
+            }}
+            placeholder="e.g. Salesforce Administrator, Platform Developer I"
           />
         </Form.Item>
       </Card>

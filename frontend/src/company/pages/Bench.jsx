@@ -329,13 +329,13 @@ const Bench = () => {
           message.success("Candidate added successfully!");
 
           await fetchCandidates();
-          if (res?.data) {
-            if (res.data.isVerified) {
-              setVerifiedCount((v) => v + 1);
-            } else {
-              setUnverifiedCount((u) => u + 1);
-            }
-          }
+          // if (res?.data) {
+          //   if (res.data.isVerified) {
+          //     setVerifiedCount((v) => v + 1);
+          //   } else {
+          //     setUnverifiedCount((u) => u + 1);
+          //   }
+          // }
         } else {
           message.error(res?.message || "Failed to add candidate");
         }
@@ -435,9 +435,10 @@ const Bench = () => {
             c.id === verifyCandidate.id ? { ...c, isVerified: true } : c,
           ),
         );
+        await fetchCandidates();
         // Update counters immediately:
-        setVerifiedCount((v) => v + 1);
-        setUnverifiedCount((u) => (u > 0 ? u - 1 : 0));
+        // setVerifiedCount((v) => v + 1);
+        // setUnverifiedCount((u) => (u > 0 ? u - 1 : 0));
         setVerifyModalVisible(false);
       }
       //  else {

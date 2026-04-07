@@ -79,7 +79,7 @@ const UpdateUserProfile = ({
   const [secondaryClouds, setSecondaryClouds] = useState([]);
   const [educationList, setEducationList] = useState([]);
   const [experienceList, setExperienceList] = useState([]);
-
+  const [resumeUrl, setResumeUrl] = useState(null);
   const [isCandidate, setIsCandidate] = useState(false);
   const [isActive, setIsActive] = useState();
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
@@ -378,6 +378,7 @@ const UpdateUserProfile = ({
     try {
       const response = await UploadPdf(uploadFormData);
       const extracted = response?.extracted || {};
+      const originalFileUrl = response?.originalFileUrl;
       // const extracted = response?.data?.extracted || {};
       // const extracted = response?.data?.extracted || {};
       // const extracted = response?.extracted || {};
@@ -718,6 +719,7 @@ const UpdateUserProfile = ({
         email: values?.email,
         portfolioLink: values?.portfolioLink,
         profilePicture: profilePicUrl, // <---- SAVED
+        originalFileUrl: resumeUrl, // ✅ ADD THIS
         title: values?.title || null,
         // summary: values.summary,
         summary: values?.summary ?? form.getFieldValue("summary") ?? "",

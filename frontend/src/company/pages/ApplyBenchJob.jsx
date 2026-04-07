@@ -375,19 +375,61 @@ const ApplyBenchJob = ({ jobId, hasQuestions, jobStatus }) => {
         return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
       },
     },
+    // {
+    //   title: "Fit Score",
+    //   key: "fitScore",
+    //   width: 120,
+    //   render: (_, record) => {
+    //     if (!record.analysis) {
+    //       return (
+    //         <span style={{ color: "#aaa", fontSize: 12 }}>Not Generated</span>
+    //       );
+    //     }
+    //     const score = record.analysis.fitPercentage;
+    //     const color =
+    //       score >= 70 ? "#52c41a" : score >= 40 ? "#fa8c16" : "#f5222d";
+    //     return (
+    //       <span
+    //         style={{
+    //           background: `${color}20`,
+    //           color: color,
+    //           border: `1px solid ${color}`,
+    //           borderRadius: 6,
+    //           padding: "2px 10px",
+    //           fontWeight: 700,
+    //           fontSize: 13,
+    //         }}
+    //       >
+    //         {score}%
+    //       </span>
+    //     );
+    //   },
+    // },
     {
       title: "Fit Score",
       key: "fitScore",
       width: 120,
+
+      // ✅ ADD THIS
+      sorter: (a, b) => {
+        const scoreA = a.analysis?.fitPercentage || 0;
+        const scoreB = b.analysis?.fitPercentage || 0;
+        return scoreA - scoreB;
+      },
+      sortDirections: ["ascend", "descend"],
+
       render: (_, record) => {
         if (!record.analysis) {
           return (
             <span style={{ color: "#aaa", fontSize: 12 }}>Not Generated</span>
           );
         }
+
         const score = record.analysis.fitPercentage;
+
         const color =
           score >= 70 ? "#52c41a" : score >= 40 ? "#fa8c16" : "#f5222d";
+
         return (
           <span
             style={{

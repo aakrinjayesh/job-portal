@@ -100,23 +100,22 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-useEffect(() => {
-  if (loadingChats || loadingMessages) {
-    setProgress(0);
+  useEffect(() => {
+    if (loadingChats || loadingMessages) {
+      setProgress(0);
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 95) return prev; // stop at 95%
-        return prev + 5;
-      });
-    }, 200);
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 95) return prev; // stop at 95%
+          return prev + 5;
+        });
+      }, 200);
 
-    return () => clearInterval(interval);
-  } else {
-    setProgress(100);
-  }
-}, [loadingChats, loadingMessages]);
-
+      return () => clearInterval(interval);
+    } else {
+      setProgress(100);
+    }
+  }, [loadingChats, loadingMessages]);
 
   const updateChatLastMessage = (chatToUpdateId, message) => {
     const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId);
@@ -206,29 +205,29 @@ useEffect(() => {
           attachedFiles,
         ),
       null,
-     (res) => {
-  setMessage("");
-  setAttachedFiles([]);
-  setUploadFileList([]);
+      (res) => {
+        setMessage("");
+        setAttachedFiles([]);
+        setUploadFileList([]);
 
-  const newMessage = res.data;
+        const newMessage = res.data;
 
-  // If multiple attachments → split into multiple message objects
-  if (newMessage.attachments?.length > 1) {
-    const splitMessages = newMessage.attachments.map((file) => ({
-      ...newMessage,
-      _id: newMessage._id + "_" + file._id, // unique key
-      attachments: [file], // only one file per message
-    }));
+        // If multiple attachments → split into multiple message objects
+        if (newMessage.attachments?.length > 1) {
+          const splitMessages = newMessage.attachments.map((file) => ({
+            ...newMessage,
+            _id: newMessage._id + "_" + file._id, // unique key
+            attachments: [file], // only one file per message
+          }));
 
-    setMessages((prev) => [...prev, ...splitMessages]);
-  } else {
-    setMessages((prev) => [...prev, newMessage]);
-  }
+          setMessages((prev) => [...prev, ...splitMessages]);
+        } else {
+          setMessages((prev) => [...prev, newMessage]);
+        }
 
-  updateChatLastMessage(currentChat.current?._id || "", newMessage);
-},
-    (error) => {
+        updateChatLastMessage(currentChat.current?._id || "", newMessage);
+      },
+      (error) => {
         console.error("Failed to send message:", error);
         alertMessage.error(error || "Failed to send message");
       },
@@ -253,7 +252,7 @@ useEffect(() => {
               ? msg._id.split("_")[0]
               : msg._id;
             return msgRealId !== realMessageId;
-          })
+          }),
         );
         updateChatLastMessageOnDeletion(message.chat, message);
       },
@@ -297,19 +296,17 @@ useEffect(() => {
       setUnreadMessages((prev) => [message, ...prev]);
     } else {
       // Add new message at the end (bottom) of the array
-    if (message.attachments?.length > 1) {
-  const splitMessages = message.attachments.map((file) => ({
-    ...message,
-    _id: message._id + "_" + file._id,
-    attachments: [file],
-  }));
+      if (message.attachments?.length > 1) {
+        const splitMessages = message.attachments.map((file) => ({
+          ...message,
+          _id: message._id + "_" + file._id,
+          attachments: [file],
+        }));
 
-  setMessages((prev) => [...prev, ...splitMessages]);
-} else {
-  setMessages((prev) => [...prev, message]);
-}
-
-
+        setMessages((prev) => [...prev, ...splitMessages]);
+      } else {
+        setMessages((prev) => [...prev, message]);
+      }
     }
     updateChatLastMessage(message.chat || "", message);
   };
@@ -350,17 +347,17 @@ useEffect(() => {
     updateChatLastMessageOnDeletion(message.chat, message);
   };
 
- const handleFileChange = (info) => {
-  if (info.fileList.length > 3) {
-    alertMessage.error("Only 3 files allowed per message.");
-    return;
-  }
+  const handleFileChange = (info) => {
+    if (info.fileList.length > 3) {
+      alertMessage.error("Only 3 files allowed per message.");
+      return;
+    }
 
-  const files = info.fileList.map((file) => file.originFileObj);
-  setPreviewFiles(files);
-  setCaption("");
-  setPreviewOpen(true);
-};
+    const files = info.fileList.map((file) => file.originFileObj);
+    setPreviewFiles(files);
+    setCaption("");
+    setPreviewOpen(true);
+  };
 
   const removeAttachment = (index) => {
     setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
@@ -572,26 +569,25 @@ useEffect(() => {
               // // background: "#FFFFFF",
             }}
           >
-           {loadingChats ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "100%",
-      minHeight: "80vh", // match sidebar scroll height
-      gap: 16,
-    }}
-  >
-
+            {loadingChats ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  minHeight: "80vh", // match sidebar scroll height
+                  gap: 16,
+                }}
+              >
                 <Progress
                   type="circle"
                   percent={progress}
                   width={80}
                   strokeColor={{
-                   "0%": "#4F63F6",
-        "100%": "#7C8CFF",
+                    "0%": "#4F63F6",
+                    "100%": "#7C8CFF",
                   }}
                   trailColor="#E5E7EB"
                   showInfo={false}
@@ -727,7 +723,7 @@ useEffect(() => {
                       width={80}
                       strokeColor={{
                         "0%": "#4F63F6",
-        "100%": "#7C8CFF",
+                        "100%": "#7C8CFF",
                       }}
                       trailColor="#E5E7EB"
                       showInfo={false}
@@ -907,25 +903,26 @@ useEffect(() => {
                     borderRadius: 24,
                   }}
                 >
-               <Upload
-  multiple
-  fileList={uploadFileList}
-  showUploadList={false}
-  beforeUpload={(file, fileList) => {
-    if (fileList.length > 3) {
-      if (file === fileList[0]) {
-        alertMessage.error("You can send maximum 3 files at once.");
-      }
-      return Upload.LIST_IGNORE;
-    }
-    return false;
-  }}
-  onChange={(info) => {
-    setUploadFileList(info.fileList);
-    handleFileChange(info);
-  }}
->
-
+                  <Upload
+                    multiple
+                    fileList={uploadFileList}
+                    showUploadList={false}
+                    beforeUpload={(file, fileList) => {
+                      if (fileList.length > 3) {
+                        if (file === fileList[0]) {
+                          alertMessage.error(
+                            "You can send maximum 3 files at once.",
+                          );
+                        }
+                        return Upload.LIST_IGNORE;
+                      }
+                      return false;
+                    }}
+                    onChange={(info) => {
+                      setUploadFileList(info.fileList);
+                      handleFileChange(info);
+                    }}
+                  >
                     <Button
                       type="text"
                       icon={<PlusOutlined />}
@@ -965,7 +962,9 @@ useEffect(() => {
                     icon={<SendOutlined />}
                     onClick={sendChatMessage}
                     loading={sending}
-                    disabled={sending || (!message.trim() && attachedFiles.length === 0)}
+                    disabled={
+                      sending || (!message.trim() && attachedFiles.length === 0)
+                    }
                     style={{
                       background: "#25D366",
                       borderColor: "#25D366",
@@ -1147,7 +1146,7 @@ useEffect(() => {
                 setPreviewOpen(false);
                 setPreviewFiles([]);
                 setCaption("");
-                setUploadFileList([]); 
+                setUploadFileList([]);
               }}
               style={{
                 borderRadius: 8,

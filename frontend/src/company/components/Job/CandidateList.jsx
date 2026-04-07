@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Progress, message, Button, Table, Tag, Modal, Input } from "antd";
+import {
+  Progress,
+  message,
+  Button,
+  Table,
+  Tag,
+  Modal,
+  Input,
+  Select,
+} from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GetCandidateList, CVEligibility } from "../../api/api";
@@ -37,6 +46,7 @@ const CandidateList = () => {
     const saved = sessionStorage.getItem("candidateListPageSize");
     return saved ? parseInt(saved) : 10;
   });
+  const pageSizeOptions = [10, 20, 50, 100];
   const [messageAPI, contextHolder] = message.useMessage();
   const [total, setTotal] = useState(0);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -836,6 +846,42 @@ const CandidateList = () => {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
+  const totalCount = filteredCandidates.length;
+
+  const renderSizeChanger = (current, onChange) => (
+    <Select
+      value={current}
+      style={{ width: 120 }}
+      onChange={(value) => onChange(Number(value))}
+    >
+      {[10, 20, 50, 100].map((size) => (
+        <Select.Option
+          key={size}
+          value={size}
+          disabled={size > totalCount} // 🔥 MAIN LOGIC
+        >
+          {size} / page
+        </Select.Option>
+      ))}
+    </Select>
+  );
+  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+    <Select
+      value={pageSize}
+      style={{ width: 120 }}
+      onChange={(value) => setPageSize(value)}
+    >
+      {[10, 20, 50, 100].map((size) => (
+        <Select.Option
+          key={size}
+          value={size}
+          disabled={size > filteredCandidates.length}
+        >
+          {size} / page
+        </Select.Option>
+      ))}
+    </Select>
+  </div>;
 
   // TABLE COLUMNS
   const columns = [
@@ -1360,6 +1406,26 @@ const CandidateList = () => {
       },
     },
   ];
+  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+    <Select
+      value={pageSize}
+      style={{ width: 120 }}
+      onChange={(value) => {
+        setPageSize(value);
+        sessionStorage.setItem("candidateListPageSize", value);
+      }}
+    >
+      {[10, 20, 50, 100].map((size) => (
+        <Select.Option
+          key={size}
+          value={size}
+          disabled={size > filteredCandidates.length}
+        >
+          {size} / page
+        </Select.Option>
+      ))}
+    </Select>
+  </div>;
 
   return (
     // <div style={{ padding: 0 }}>
@@ -1418,23 +1484,32 @@ const CandidateList = () => {
             )}
           </div>
           {["ALL", "NORMAL", "VENDOR"].map((type) => {
+            // const labels = {
+
+            //   ALL: `All (${candidates.length})`,
+
+            //   NORMAL: `Individual Candidates (${
+            //     candidateType === "NORMAL"
+            //       ? filteredCandidates.length // already filtered to NORMAL
+            //       : filteredCandidates.filter(
+            //           (c) => c?.profile?.vendorId == null,
+            //         ).length
+            //   })`,
+            //   VENDOR: `Vendor Candidates (${
+            //     candidateType === "VENDOR"
+            //       ? filteredCandidates.length // already filtered to VENDOR
+            //       : filteredCandidates.filter(
+            //           (c) => c?.profile?.vendorId != null,
+            //         ).length
+            //   })`,
+            // };
             const labels = {
-              // ✅ ALL shows total unfiltered count
               ALL: `All (${candidates.length})`,
-              // ✅ NORMAL and VENDOR show filtered counts when filters are active
               NORMAL: `Individual Candidates (${
-                candidateType === "NORMAL"
-                  ? filteredCandidates.length // already filtered to NORMAL
-                  : filteredCandidates.filter(
-                      (c) => c?.profile?.vendorId == null,
-                    ).length
+                candidates.filter((c) => c?.profile?.vendorId == null).length
               })`,
               VENDOR: `Vendor Candidates (${
-                candidateType === "VENDOR"
-                  ? filteredCandidates.length // already filtered to VENDOR
-                  : filteredCandidates.filter(
-                      (c) => c?.profile?.vendorId != null,
-                    ).length
+                candidates.filter((c) => c?.profile?.vendorId != null).length
               })`,
             };
             return (
@@ -1753,22 +1828,40 @@ const CandidateList = () => {
                 bordered
                 // scroll={{ x: "max-content" }}
                 scroll={{ x: "max-content", y: "calc(100vh - 280px)" }}
+                // pagination={{
+                //   current: page,
+                //   pageSize,
+
+                //   total,
+                //   showSizeChanger: true,
+
+                //   onChange: (p, ps) => {
+                //     setPage(p);
+                //     setPageSize(ps);
+                //     sessionStorage.setItem("candidateListPage", p);
+                //     sessionStorage.setItem("candidateListPageSize", ps);
+                //   },
+                // }}
                 pagination={{
                   current: page,
                   pageSize,
-                  // total: filteredCandidates.length,
-                  total,
-                  showSizeChanger: true,
-                  // onChange: (p, ps) => {
-                  //   setPage(p);
-                  //   setPageSize(ps);
-                  // },
+                  total: filteredCandidates.length,
+
+                  showSizeChanger: false,
+
+                  // ❌ remove default options
+                  pageSizeOptions: [],
+
                   onChange: (p, ps) => {
                     setPage(p);
                     setPageSize(ps);
                     sessionStorage.setItem("candidateListPage", p);
                     sessionStorage.setItem("candidateListPageSize", ps);
                   },
+
+                  // 🔥 THIS IS THE FIX
+                  showSizeChanger: true,
+                  sizeChangerRender: renderSizeChanger, // ✅ ADD THIS
                 }}
               />
             </div>

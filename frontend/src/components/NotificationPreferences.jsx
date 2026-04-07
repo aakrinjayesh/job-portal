@@ -142,7 +142,7 @@ export default function NotificationPreferences() {
                   <Text strong>Weekly</Text>
                   <br />
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    Get a Sunday digest with all jobs from the past week
+                    Get a Friday digest with all jobs from the past week
                   </Text>
                 </div>
               </Radio>

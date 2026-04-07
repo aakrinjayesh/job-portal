@@ -98,22 +98,24 @@ model OrganizationInvite {
 model CompanyProfile {
   id String @id @default(uuid())
 
-  name         String
-  slug         String   @unique
-  tagline      String?
-  description  String?
-  website      String
-  industry     String
-  companySize  String
-  foundedYear  Int
-  logoUrl      String?
-  coverImage   String?
-  headquarters String
-  locations    String[]
-  specialties  String[] @default([])
-  socialLinks  Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  name           String
+  slug           String   @unique
+  tagline        String?
+  description    String?
+  website        String
+  industry       String
+  companySize    String
+  foundedYear    Int
+  logoUrl        String?
+  coverImage     String?
+  clouds         String[] @default([])
+  certifications String[] @default([])
+  headquarters   String
+  locations      String[]
+  specialties    String[] @default([])
+  socialLinks    Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organizationId String       @unique
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -201,6 +203,7 @@ model UserProfile {
   vendor                       Users?            @relation("VendorUserProfiles", fields: [vendorId], references: [id], onDelete: Cascade)
   savedByRecruiters            SavedCandidate[]  @relation("CandidateSavedByRecruiters")
   profilePicture               String?
+  originalFileUrl              String?
   title                        String?
   summary                      String            @default("")
   CandidateRating              CandidateRating[]

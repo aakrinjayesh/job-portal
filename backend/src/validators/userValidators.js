@@ -26,6 +26,7 @@ const jobTypeEnum = z.enum(["FullTime", "Contract", "Freelancer"]);
 
 const userProfileValidator = z.object({
   profilePicture: z.string().trim().or(z.null()),
+  originalFileUrl: z.string().optional().nullable(),
   title: z
     .string()
     .trim()

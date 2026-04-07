@@ -13,6 +13,7 @@ const CompanyProfilePopup = ({ open, message: popupMessage, onClose }) => {
     <Modal
       title="Complete Your Profile"
       open={open}
+      maskClosable={false}
       footer={null}
       onCancel={onClose}
       closable={true}

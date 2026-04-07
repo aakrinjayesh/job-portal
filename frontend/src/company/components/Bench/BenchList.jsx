@@ -166,9 +166,9 @@ const BenchList = ({
                 {sortOrder === "asc"
                   ? "Posted Time (Oldest)"
                   : sortOrder === "exp"
-                    ? "Experience"
+                    ? "Experience (High to Low)"
                     : sortOrder === "rate"
-                      ? "Rate"
+                      ? "Rate (High to Low)"
                       : "Posted Time"}
               </span>{" "}
               <DownOutlined />
