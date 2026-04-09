@@ -129,7 +129,7 @@ import {
   Badge,
   Spin,
   ConfigProvider,
-  Form
+  Form,
 } from "antd";
 import {
   PlusOutlined,
@@ -276,73 +276,73 @@ const SettingsTodoManager = () => {
           </div>
 
           {/* Create */}
-      <Card style={{ ...cardStyle, marginBottom: 24 }}>
- <Form
-  form={form}
-  layout="inline"
-  style={{ width: "100%" }}
-  onFinish={async (values) => {
-    setCreating(true);
+          <Card style={{ ...cardStyle, marginBottom: 24 }}>
+            <Form
+              form={form}
+              layout="inline"
+              style={{ width: "100%" }}
+              onFinish={async (values) => {
+                setCreating(true);
 
-    await CreateTodoTemplate({ title: values.title.trim() });
+                await CreateTodoTemplate({ title: values.title.trim() });
 
-    message.success({
-      content: "Todo template created!",
-      icon: <ThunderboltOutlined style={{ color: "#22c55e" }} />,
-    });
+                message.success({
+                  content: "Todo template created!",
+                  icon: <ThunderboltOutlined style={{ color: "#22c55e" }} />,
+                });
 
-    form.resetFields();   // 👈 THIS IS THE FIX
+                form.resetFields(); // 👈 THIS IS THE FIX
 
-    setCreating(false);
-    loadTodos();
-  }}
->
- <Form.Item
-      name="title"
-      style={{ flex: 1 }}
-      rules={[
-        {
-          required: true,
-          message: "Todo title is required",
-        },
-        {
-          pattern: /^[A-Za-z ]+$/,
-          message: "Only letters and spaces are allowed",
-        },
-        {
-          validator: (_, value) =>
-            value?.trim()
-              ? Promise.resolve()
-              : Promise.reject("Title cannot be empty"),
-        },
-      ]}
-    >
-      <Input
-        placeholder="New todo template"
-        size="large"
-        onPressEnter={(e) => e.preventDefault()}
-      />
-    </Form.Item>
+                setCreating(false);
+                loadTodos();
+              }}
+            >
+              <Form.Item
+                name="title"
+                style={{ flex: 1 }}
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      if (!value || !value.trim()) {
+                        return Promise.reject("Todo title is required");
+                      }
 
-    <Form.Item>
-      <Button
-        type="primary"
-        htmlType="submit"
-        loading={creating}
-        icon={<PlusOutlined />}
-        size="large"
-        style={{
-          backgroundColor: "#1677FF",
-          border: "none",
-          boxShadow: "0 6px 18px rgba(59,130,246,.35)",
-        }}
-      >
-        Add
-      </Button>
-    </Form.Item>
-  </Form>
-</Card>
+                      if (!/^[A-Za-z ]+$/.test(value)) {
+                        return Promise.reject(
+                          "Only letters and spaces are allowed",
+                        );
+                      }
 
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="New todo template"
+                  size="large"
+                  onPressEnter={(e) => e.preventDefault()}
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={creating}
+                  icon={<PlusOutlined />}
+                  size="large"
+                  style={{
+                    backgroundColor: "#1677FF",
+                    border: "none",
+                    boxShadow: "0 6px 18px rgba(59,130,246,.35)",
+                  }}
+                >
+                  Add
+                </Button>
+              </Form.Item>
+            </Form>
+          </Card>
 
           {/* List */}
           <Card style={cardStyle}>
@@ -373,6 +373,7 @@ const SettingsTodoManager = () => {
                               icon={<CheckOutlined />}
                               loading={savingId === item.id}
                               onClick={() => saveEdit(item.id)}
+                              disabled={!item.isActive}
                             />
                             <Button
                               icon={<CloseOutlined />}
@@ -380,13 +381,18 @@ const SettingsTodoManager = () => {
                             />
                           </Space>
                         ) : (
-                          <Button
-                            icon={<EditOutlined />}
-                            onClick={() => {
-                              setEditingId(item.id);
-                              setEditingTitle(item.title);
-                            }}
-                          />
+                          <Tooltip
+                            title={!item.isActive ? "Activate to edit" : "Edit"}
+                          >
+                            <Button
+                              icon={<EditOutlined />}
+                              disabled={!item.isActive}
+                              onClick={() => {
+                                setEditingId(item.id);
+                                setEditingTitle(item.title);
+                              }}
+                            />
+                          </Tooltip>
                         ),
                         <Popconfirm
                           title="Delete?"

@@ -46,7 +46,10 @@ const OrganizationSettings = () => {
   const [licenses, setLicenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
-  const [inviteSelection, setInviteSelection] = useState({ seatId: null, licenseId: null });
+  const [inviteSelection, setInviteSelection] = useState({
+    seatId: null,
+    licenseId: null,
+  });
   const [isSiteModalVisible, setIsSiteModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -656,13 +659,21 @@ const OrganizationSettings = () => {
                 {available.map((l) => (
                   <div
                     key={l.id}
-                    onClick={() => setInviteSelection({ seatId: l.seatId, licenseId: l.licenseId })}
+                    onClick={() =>
+                      setInviteSelection({
+                        seatId: l.seatId,
+                        licenseId: l.licenseId,
+                      })
+                    }
                     style={{
                       padding: "10px 14px",
                       border: `2px solid ${inviteSelection.seatId === l.seatId ? "#1677ff" : "#d9d9d9"}`,
                       borderRadius: 8,
                       cursor: "pointer",
-                      background: inviteSelection.seatId === l.seatId ? "#e6f4ff" : "#fff",
+                      background:
+                        inviteSelection.seatId === l.seatId
+                          ? "#e6f4ff"
+                          : "#fff",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
@@ -752,6 +763,7 @@ const OrganizationSettings = () => {
         onCancel={() => setIsSiteModalVisible(false)}
         footer={null} // CompanyProfile renders its own Save button
         width={900}
+        maskClosable={false}
         style={{ marginLeft: 120 }}
         styles={{
           body: { maxHeight: "75vh", overflowY: "auto", padding: "12px 24px" },

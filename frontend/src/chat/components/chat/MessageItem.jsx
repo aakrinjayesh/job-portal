@@ -131,24 +131,37 @@ const MessageItem = ({
   const hasImages = images.length > 0;
   const hasFiles = files.length > 0;
 
-  const handleDownload = async (url) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
+  // const handleDownload = async (url) => {
+  //   try {
+  //     const response = await fetch(url);
+  //     const blob = await response.blob();
 
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
+  //     const link = document.createElement("a");
+  //     link.href = window.URL.createObjectURL(blob);
 
-      // Extract filename from URL
-      const fileName = url.split("/").pop().split("?")[0];
-      link.download = decodeURIComponent(fileName);
+  //     // Extract filename from URL
+  //     const fileName = url.split("/").pop().split("?")[0];
+  //     link.download = decodeURIComponent(fileName);
 
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error("Download failed:", error);
-    }
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //   } catch (error) {
+  //     console.error("Download failed:", error);
+  //   }
+  // };
+  const handleDownload = (url) => {
+    const link = document.createElement("a");
+    link.href = url;
+
+    // extract filename
+    const fileName = url.split("/").pop().split("?")[0];
+    link.setAttribute("download", decodeURIComponent(fileName));
+
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (

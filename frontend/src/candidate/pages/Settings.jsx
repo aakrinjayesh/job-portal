@@ -15,15 +15,20 @@ import {
   InfoCircleOutlined,
   BellOutlined,
   EyeInvisibleOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { UpdateCandidateDomains, GetUserProfile } from "../api/api";
 import NotificationPreferences from "../../components/NotificationPreferences";
 
 const { Title, Text } = Typography;
 
+// const SECTIONS = [
+//   { key: "notifications", label: "Notifications", icon: <BellOutlined /> },
+//   { key: "privacy", label: "Privacy", icon: <EyeInvisibleOutlined /> },
+// ];
 const SECTIONS = [
-  { key: "notifications", label: "Notifications", icon: <BellOutlined /> },
-  { key: "privacy", label: "Privacy", icon: <EyeInvisibleOutlined /> },
+  { key: "notifications", label: "Notifications" },
+  { key: "privacy", label: "Privacy" },
 ];
 
 function HideProfileSection() {
@@ -73,7 +78,9 @@ function HideProfileSection() {
           placement="right"
           title="If you enter a company domain name that matches a recruiter's company domain name, your profile will not be visible to that company."
         >
-          <InfoCircleOutlined style={{ fontSize: 18, color: "#888", cursor: "pointer" }} />
+          <InfoCircleOutlined
+            style={{ fontSize: 18, color: "#888", cursor: "pointer" }}
+          />
         </Tooltip>
       </Space>
 
@@ -92,24 +99,40 @@ function HideProfileSection() {
           {(fields, { add, remove }) => (
             <>
               {fields.map(({ key, name, ...restField }) => (
-                <Space key={key} style={{ display: "flex", marginBottom: 8 }} align="baseline">
-                  <Form.Item label={name === 0 ? "Current Company Domain Name" : ""}>
+                <Space
+                  key={key}
+                  style={{ display: "flex", marginBottom: 8 }}
+                  align="baseline"
+                >
+                  <Form.Item
+                    label={name === 0 ? "Current Company Domain Name" : ""}
+                  >
                     <Form.Item
                       {...restField}
                       name={name}
                       noStyle
                       rules={[
-                        { required: true, message: "Enter company domain name" },
+                        {
+                          required: true,
+                          message: "Enter company domain name",
+                        },
                         {
                           validator(_, value) {
                             if (!value) return Promise.resolve();
-                            const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                            const emailRegex = /^[^\s@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                            if (domainRegex.test(value) || emailRegex.test(value)) {
+                            const domainRegex =
+                              /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                            const emailRegex =
+                              /^[^\s@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                            if (
+                              domainRegex.test(value) ||
+                              emailRegex.test(value)
+                            ) {
                               return Promise.resolve();
                             }
                             return Promise.reject(
-                              new Error("Enter a valid domain (e.g. company.com) or email (e.g. user@company.com)"),
+                              new Error(
+                                "Enter a valid domain (e.g. company.com) or email (e.g. user@company.com)",
+                              ),
                             );
                           },
                         },
@@ -138,7 +161,12 @@ function HideProfileSection() {
 
               {fields.length < 10 && (
                 <Form.Item>
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    block
+                    icon={<PlusOutlined />}
+                  >
                     Add Company Email
                   </Button>
                 </Form.Item>
@@ -148,7 +176,12 @@ function HideProfileSection() {
         </Form.List>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading} disabled={!hasValue}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            disabled={!hasValue}
+          >
             Save
           </Button>
         </Form.Item>
@@ -206,6 +239,12 @@ function Settings() {
 
           {SECTIONS.map((s) => {
             const isActive = activeSection === s.key;
+            let icon;
+            if (s.key === "notifications") {
+              icon = <BellOutlined />;
+            } else if (s.key === "privacy") {
+              icon = isActive ? <EyeOutlined /> : <EyeInvisibleOutlined />;
+            }
             return (
               <div
                 key={s.key}
@@ -237,8 +276,12 @@ function Settings() {
                   fontSize: 13.5,
                   transition: "all 0.18s ease",
                   marginBottom: 2,
-                  borderLeft: isActive ? "3px solid #3b82f6" : "3px solid transparent",
-                  boxShadow: isActive ? "0 1px 4px rgba(59,130,246,0.12)" : "none",
+                  borderLeft: isActive
+                    ? "3px solid #3b82f6"
+                    : "3px solid transparent",
+                  boxShadow: isActive
+                    ? "0 1px 4px rgba(59,130,246,0.12)"
+                    : "none",
                 }}
               >
                 <span
@@ -250,7 +293,8 @@ function Settings() {
                     alignItems: "center",
                   }}
                 >
-                  {s.icon}
+                  {/* {s.icon} */}
+                  {icon}
                 </span>
                 {s.label}
               </div>

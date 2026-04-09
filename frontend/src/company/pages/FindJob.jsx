@@ -13,13 +13,18 @@ function FindJob() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   // const [currentFilters, setCurrentFilters] = useState({});
+  // const [currentFilters, setCurrentFilters] = useState(() => {
+  //   const isReturning = sessionStorage.getItem("isReturning");
+  //   if (isReturning) {
+  //     const saved = sessionStorage.getItem("savedFilters");
+  //     return saved ? JSON.parse(saved) : {};
+  //   }
+  //   return {};
+  // });
+  // REPLACE:
   const [currentFilters, setCurrentFilters] = useState(() => {
-    const isReturning = sessionStorage.getItem("isReturning");
-    if (isReturning) {
-      const saved = sessionStorage.getItem("savedFilters");
-      return saved ? JSON.parse(saved) : {};
-    }
-    return {};
+    const saved = sessionStorage.getItem("savedFilters");
+    return saved ? JSON.parse(saved) : {};
   });
   const [totalCount, setTotalCount] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -31,11 +36,15 @@ function FindJob() {
 
   // ⭐ filter open / close
   // const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // const [isFilterOpen, setIsFilterOpen] = useState(() => {
+  //   const isReturning = sessionStorage.getItem("isReturning");
+  //   return isReturning
+  //     ? sessionStorage.getItem("filterOpen") === "true"
+  //     : false;
+  // });
+  // REPLACE:
   const [isFilterOpen, setIsFilterOpen] = useState(() => {
-    const isReturning = sessionStorage.getItem("isReturning");
-    return isReturning
-      ? sessionStorage.getItem("filterOpen") === "true"
-      : false;
+    return sessionStorage.getItem("filterOpen") === "true";
   });
   const handleJobClick = (jobId) => {
     const scrollTop = cardRef.current?.scrollTop || 0;
@@ -118,8 +127,13 @@ function FindJob() {
   }, [location.pathname]);
 
   // Initial fetch
+  // useEffect(() => {
+  //   fetchJobs(1, currentFilters);
+  // }, []);
   useEffect(() => {
-    fetchJobs(1, currentFilters);
+    const saved = sessionStorage.getItem("savedFilters");
+    const filters = saved ? JSON.parse(saved) : {};
+    fetchJobs(1, filters);
   }, []);
 
   useEffect(() => {

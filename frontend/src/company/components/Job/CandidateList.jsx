@@ -848,23 +848,43 @@ const CandidateList = () => {
   };
   const totalCount = filteredCandidates.length;
 
-  const renderSizeChanger = (current, onChange) => (
-    <Select
-      value={current}
-      style={{ width: 120 }}
-      onChange={(value) => onChange(Number(value))}
-    >
-      {[10, 20, 50, 100].map((size) => (
-        <Select.Option
-          key={size}
-          value={size}
-          disabled={size > totalCount} // 🔥 MAIN LOGIC
-        >
-          {size} / page
-        </Select.Option>
-      ))}
-    </Select>
-  );
+  // const renderSizeChanger = (current, onChange) => (
+  //   <Select
+  //     value={current}
+  //     style={{ width: 120 }}
+  //     onChange={(value) => onChange(Number(value))}
+  //   >
+  //     {[10, 20, 50, 100].map((size) => (
+  //       <Select.Option
+  //         key={size}
+  //         value={size}
+  //         disabled={size > totalCount} // 🔥 MAIN LOGIC
+  //       >
+  //         {size} / page
+  //       </Select.Option>
+  //     ))}
+  //   </Select>
+  // );
+  const renderSizeChanger = (current, onChange) => {
+    const validOptions = [10, 20, 50, 100].filter((size, index, arr) => {
+      const prev = arr[index - 1];
+      return prev === undefined || prev < totalCount;
+    });
+
+    return (
+      <Select
+        value={current}
+        style={{ width: 120 }}
+        onChange={(value) => onChange(Number(value))}
+      >
+        {validOptions.map((size) => (
+          <Select.Option key={size} value={size}>
+            {size} / page
+          </Select.Option>
+        ))}
+      </Select>
+    );
+  };
   <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
     <Select
       value={pageSize}
@@ -1861,7 +1881,18 @@ const CandidateList = () => {
 
                   // 🔥 THIS IS THE FIX
                   showSizeChanger: true,
-                  sizeChangerRender: renderSizeChanger, // ✅ ADD THIS
+                  // sizeChangerRender: renderSizeChanger, // ✅ ADD THIS
+                  pageSize: pageSize,
+                  onShowSizeChange: (current, size) => {
+                    setPageSize(size);
+                    sessionStorage.setItem("candidateListPageSize", size);
+                  },
+                  pageSizeOptions: [10, 20, 50, 100]
+                    .filter((size, index, arr) => {
+                      const prev = arr[index - 1];
+                      return prev === undefined || prev < totalCount;
+                    })
+                    .map(String),
                 }}
               />
             </div>

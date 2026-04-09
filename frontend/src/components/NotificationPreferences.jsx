@@ -32,7 +32,32 @@ export default function NotificationPreferences() {
     setSaving(true);
     try {
       await UpdateNotificationPreferences(patch);
-      message.success("Preferences saved");
+      // message.success("Preferences saved");
+      // if (patch.notificationsEnabled !== undefined) {
+      //   message.success(
+      //     patch.notificationsEnabled
+      //       ? "Notifications enabled successfully"
+      //       : "Notifications disabled successfully",
+      //   );
+      // } else if (patch.notificationType) {
+      //   message.success("Notification frequency updated");
+      // }
+      if (patch.notificationsEnabled !== undefined) {
+        if (patch.notificationsEnabled) {
+          const type = (
+            patch.notificationType || prefs.notificationType
+          ).toLowerCase();
+          message.success(
+            `${type.charAt(0).toUpperCase() + type.slice(1)} notifications enabled`,
+          );
+        } else {
+          message.success("Notifications turned OFF");
+        }
+      } else if (patch.notificationType) {
+        message.success(
+          `${patch.notificationType === "DAILY" ? "Daily" : "Weekly"} notifications enabled`,
+        );
+      }
     } catch {
       message.error("Failed to save preferences");
       setPrefs(prefs); // revert
@@ -54,11 +79,20 @@ export default function NotificationPreferences() {
       style={{ maxWidth: 560, borderRadius: 12 }}
       styles={{ body: { padding: "24px 28px" } }}
     >
-      <Space align="center" style={{ marginBottom: 20 }}>
+      {/* <Space align="center" style={{ marginBottom: 20 }}>
         <BellOutlined style={{ fontSize: 20, color: "#2563eb" }} />
         <Title level={4} style={{ margin: 0 }}>
           Job Notifications
         </Title>
+        {saving && <Spin size="small" />}
+      </Space> */}
+      <Space align="center" style={{ marginBottom: 20 }}>
+        <BellOutlined style={{ fontSize: 20, color: "#2563eb" }} />
+
+        <Text strong style={{ fontSize: 18 }}>
+          Job Notifications
+        </Text>
+
         {saving && <Spin size="small" />}
       </Space>
 

@@ -710,12 +710,12 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             <Form.Item
               label="Headquarters"
               name="headquarters"
-              rules={[
-                {
-                  // required: true,
-                  message: "Headquarters is required",
-                },
-              ]}
+              // rules={[
+              //   {
+              //     // required: true,
+              //     message: "Headquarters is required",
+              //   },
+              // ]}
             >
               <Input placeholder="Bangalore" />
             </Form.Item>
@@ -779,12 +779,12 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             <Form.Item
               label="Founded Year"
               name="foundedYear"
-              rules={[
-                {
-                  // required: true,
-                  message: "Founded year is required",
-                },
-              ]}
+              // rules={[
+              //   {
+              //     // required: true,
+              //     message: "Founded year is required",
+              //   },
+              // ]}
             >
               <InputNumber
                 placeholder="2024"
@@ -869,9 +869,19 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
 
       {/* ════════ 5. SOCIAL LINKS ════════ */}
       <Card title="Social Links" style={{ marginBottom: 20 }}>
-        <Row gutter={16}>
+        {/* <Row gutter={16}>
           <Col span={8}>
-            <Form.Item label="LinkedIn" name="linkedin">
+            <Form.Item
+              label="LinkedIn"
+              name="linkedin"
+              rules={[
+                {
+                  pattern: /^https:\/\/.+$/,
+                  message:
+                    "Only HTTPS links are allowed (must start with https://)",
+                },
+              ]}
+            >
               <Input placeholder="https://linkedin.com/company/…" />
             </Form.Item>
           </Col>
@@ -882,6 +892,52 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
           </Col>
           <Col span={8}>
             <Form.Item label="Instagram" name="instagram">
+              <Input placeholder="https://instagram.com/…" />
+            </Form.Item>
+          </Col>
+        </Row> */}
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item
+              label="LinkedIn"
+              name="linkedin"
+              rules={[
+                {
+                  pattern: /^https:\/\/.+$/,
+                  message: "Please enter a valid URL (include https://)",
+                },
+              ]}
+            >
+              <Input placeholder="https://linkedin.com/company/…" />
+            </Form.Item>
+          </Col>
+
+          <Col span={8}>
+            <Form.Item
+              label="Twitter / X"
+              name="twitter"
+              rules={[
+                {
+                  pattern: /^https:\/\/.+$/,
+                  message: "Please enter a valid URL (include https://)",
+                },
+              ]}
+            >
+              <Input placeholder="https://twitter.com/…" />
+            </Form.Item>
+          </Col>
+
+          <Col span={8}>
+            <Form.Item
+              label="Instagram"
+              name="instagram"
+              rules={[
+                {
+                  pattern: /^https:\/\/.+$/,
+                  message: "Please enter a valid URL (include https://)",
+                },
+              ]}
+            >
               <Input placeholder="https://instagram.com/…" />
             </Form.Item>
           </Col>

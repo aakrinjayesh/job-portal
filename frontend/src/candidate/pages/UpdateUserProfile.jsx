@@ -889,6 +889,7 @@ const UpdateUserProfile = ({
                 showUploadList={false}
                 accept=".pdf,.doc,.docx"
                 maxCount={1}
+                disabled={loading}
                 beforeUpload={(file) => {
                   const allowedTypes = [
                     "application/pdf",
@@ -909,6 +910,7 @@ const UpdateUserProfile = ({
                   icon={<UploadOutlined />}
                   size="large"
                   loading={loading}
+                  disabled={loading}
                 >
                   Extract Details from Resume (PDF / DOC / DOCX)
                 </Button>
@@ -1983,7 +1985,7 @@ const UpdateUserProfile = ({
                     {/* Portfolio, LinkedIn, Trailhead */}
                     <Row gutter={16}>
                       <Col xs={24} sm={8}>
-                        <Form.Item
+                        {/* <Form.Item
                           label="Portfolio Link"
                           name="portfolioLink"
                           rules={[
@@ -1991,6 +1993,45 @@ const UpdateUserProfile = ({
                               pattern: /^https:\/\/.+$/,
                               message:
                                 "Portfolio link must start with https://",
+                            },
+                          ]}
+                        >
+                          <Input placeholder="https://yourportfolio.com (optional)" />
+                        </Form.Item> */}
+                        <Form.Item
+                          label="Portfolio Link"
+                          name="portfolioLink"
+                          rules={[
+                            {
+                              validator: (_, value) => {
+                                if (!value) return Promise.resolve(); // optional field
+
+                                // must start with https://
+                                if (!/^https:\/\/.+$/.test(value)) {
+                                  return Promise.reject(
+                                    "Portfolio link must start with https://",
+                                  );
+                                }
+
+                                // block unwanted domains
+                                const blockedDomains = [
+                                  "linkedin.com",
+                                  "trailhead.salesforce.com",
+                                ];
+
+                                const isBlocked = blockedDomains.some(
+                                  (domain) =>
+                                    value.toLowerCase().includes(domain),
+                                );
+
+                                if (isBlocked) {
+                                  return Promise.reject(
+                                    "Enter portfolio link only",
+                                  );
+                                }
+
+                                return Promise.resolve();
+                              },
                             },
                           ]}
                         >

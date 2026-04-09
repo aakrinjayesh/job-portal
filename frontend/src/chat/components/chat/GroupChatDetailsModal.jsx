@@ -32,11 +32,17 @@ import { requestHandler } from "../../utils";
 
 const { Text, Title } = Typography;
 
-const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onParticipantsUpdate }) => {
+const GroupChatDetailsModal = ({
+  open,
+  onClose,
+  chatId,
+  onGroupDelete,
+  onParticipantsUpdate,
+}) => {
   const { user } = useAuth();
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [renamingGroup, setRenamingGroup] = useState(false);
- const [participantsToBeAdded, setParticipantsToBeAdded] = useState([]);
+  const [participantsToBeAdded, setParticipantsToBeAdded] = useState([]);
   const [newGroupName, setNewGroupName] = useState("");
   const [groupDetails, setGroupDetails] = useState(null);
   const [users, setUsers] = useState([]);
@@ -57,7 +63,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
         setNewGroupName(data.name);
         setRenamingGroup(false);
         messageApi.success("Group name updated");
-      }
+      },
     );
   };
 
@@ -65,7 +71,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
     requestHandler(
       async () => await getAvailableUsers(),
       null,
-      (res) => setUsers(res.data || [])
+      (res) => setUsers(res.data || []),
     );
   };
 
@@ -79,7 +85,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
       () => {
         onGroupDelete(chatId);
         handleClose();
-      }
+      },
     );
   };
 
@@ -91,35 +97,33 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
         setGroupDetails({
           ...groupDetails,
           participants: groupDetails.participants.filter(
-            (p) => p._id !== participantId
+            (p) => p._id !== participantId,
           ),
         });
         messageApi.success("Participant removed");
-      }
+      },
     );
   };
 
- const addParticipant = async () => {
-  if (participantsToBeAdded.length === 0)
-    return messageApi.error("Please select participants");
+  const addParticipant = async () => {
+    if (participantsToBeAdded.length === 0)
+      return messageApi.error("Please select participants");
 
-  await requestHandler(
-    async () =>
-      await addParticipantToGroup(chatId, participantsToBeAdded),
-    null,
-    (res) => {
-      setGroupDetails({
-        ...groupDetails,
-        participants: res.data.participants,
-      });
-      onParticipantsUpdate?.(res.data.participants);
-      setAddingParticipant(false);
-      setParticipantsToBeAdded([]);
-      messageApi.success("Participants added");
-    }
-  );
-};
-
+    await requestHandler(
+      async () => await addParticipantToGroup(chatId, participantsToBeAdded),
+      null,
+      (res) => {
+        setGroupDetails({
+          ...groupDetails,
+          participants: res.data.participants,
+        });
+        onParticipantsUpdate?.(res.data.participants);
+        setAddingParticipant(false);
+        setParticipantsToBeAdded([]);
+        messageApi.success("Participants added");
+      },
+    );
+  };
 
   const fetchGroupInformation = async () => {
     requestHandler(
@@ -128,7 +132,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
       (res) => {
         setGroupDetails(res.data);
         setNewGroupName(res.data?.name || "");
-      }
+      },
     );
   };
 
@@ -157,7 +161,15 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
     >
       {contextHolder}
 
-      <div style={{ padding: 32, background: "#fff", height: "100%" }}>
+      <div
+        style={{
+          padding: 32,
+          background: "#fff",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {/* Header */}
         <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
           <Avatar size={48} />
@@ -197,6 +209,7 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
         <List
           itemLayout="horizontal"
           dataSource={groupDetails?.participants || []}
+          style={{ flex: 1, overflowY: "auto", marginBottom: 16 }}
           renderItem={(participant) => (
             <>
               <List.Item
@@ -205,13 +218,9 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
                     ? [
                         <Popconfirm
                           title="Remove participant?"
-                          onConfirm={() =>
-                            removeParticipant(participant._id)
-                          }
+                          onConfirm={() => removeParticipant(participant._id)}
                         >
-                          <Button danger>
-                            Remove
-                          </Button>
+                          <Button danger>Remove</Button>
                         </Popconfirm>,
                       ]
                     : []
@@ -244,16 +253,14 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
               display: "flex",
               justifyContent: "flex-end",
               gap: 16,
-              marginTop: 32,
+              // marginTop: 32,
+              marginTop: "auto",
+              paddingTop: 16,
+              borderTop: "1px solid #f0f0f0",
             }}
           >
-            <Popconfirm
-              title="Delete group?"
-              onConfirm={deleteGroupChat}
-            >
-              <Button shape="round" >
-                Delete Group
-              </Button>
+            <Popconfirm title="Delete group?" onConfirm={deleteGroupChat}>
+              <Button shape="round">Delete Group</Button>
             </Popconfirm>
 
             {!addingParticipant ? (
@@ -267,26 +274,26 @@ const GroupChatDetailsModal = ({ open, onClose, chatId, onGroupDelete, onPartici
               </Button>
             ) : (
               <Space.Compact>
-               <Select
-  mode="multiple"
-  placeholder="Select users"
-  value={participantsToBeAdded}
-  onChange={setParticipantsToBeAdded}
-  options={users
-    .filter(
-      (u) =>
-        !groupDetails?.participants.some(
-          (p) => p._id === u._id
-        )
-    )
-    .map((u) => ({
-      label: u.username,
-      value: u._id,
-    }))}
-  style={{ minWidth: 250 }}
-  showSearch
-  optionFilterProp="label"
-/>
+                <Select
+                  mode="multiple"
+                  placeholder="Select users"
+                  value={participantsToBeAdded}
+                  onChange={setParticipantsToBeAdded}
+                  options={users
+                    .filter(
+                      (u) =>
+                        !groupDetails?.participants.some(
+                          (p) => p._id === u._id,
+                        ),
+                    )
+                    .map((u) => ({
+                      label: u.username,
+                      value: u._id,
+                    }))}
+                  style={{ minWidth: 250 }}
+                  showSearch
+                  optionFilterProp="label"
+                />
 
                 <Button type="primary" onClick={addParticipant}>
                   Add

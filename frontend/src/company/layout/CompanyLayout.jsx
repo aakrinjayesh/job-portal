@@ -245,8 +245,8 @@ const CompanyLayout = ({ children }) => {
     if (key === "findjob") {
       sessionStorage.removeItem("isReturning");
       sessionStorage.removeItem("findJobSortOrder_returning");
-      sessionStorage.removeItem("savedFilters"); // ✅ add this
-      sessionStorage.removeItem("filterOpen");
+      // sessionStorage.removeItem("savedFilters"); // ✅ add this
+      // sessionStorage.removeItem("filterOpen");
     }
 
     if (key === "contact") {
