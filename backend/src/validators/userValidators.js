@@ -9,7 +9,7 @@ const googleAuthValidator = z.object({
 const OtpGenerateValidator = z.object({
   email: z.string().email({ message: "Not a valid email address" }),
   role: z.string(),
-  name: z.string().optional(),
+  name: z.string(),
 });
 
 const OtpValidator = z.object({
