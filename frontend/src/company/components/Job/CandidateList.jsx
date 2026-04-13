@@ -1870,7 +1870,7 @@ const CandidateList = () => {
                   showSizeChanger: false,
 
                   // ❌ remove default options
-                  pageSizeOptions: [],
+                  // pageSizeOptions: [],
 
                   onChange: (p, ps) => {
                     setPage(p);

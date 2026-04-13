@@ -105,26 +105,93 @@ const GroupChatDetailsModal = ({
     );
   };
 
+  // const addParticipant = async () => {
+  //   if (participantsToBeAdded.length === 0)
+  //     return messageApi.error("Please select participants");
+
+  //   await requestHandler(
+  //     async () => await addParticipantToGroup(chatId, participantsToBeAdded),
+  //     null,
+  //     (res) => {
+  //       setGroupDetails({
+  //         ...groupDetails,
+  //         participants: res.data.participants,
+  //       });
+  //       onParticipantsUpdate?.(res.data.participants);
+  //       setAddingParticipant(false);
+  //       setParticipantsToBeAdded([]);
+  //       messageApi.success("Participants added");
+  //     },
+  //   );
+  // };
+
+  // const addParticipant = async () => {
+  //   if (!participantsToBeAdded || participantsToBeAdded.length === 0) {
+  //     return messageApi.error("Please select participants");
+  //   }
+
+  //   try {
+  //     for (let id of participantsToBeAdded) {
+  //       await requestHandler(
+  //         async () => await addParticipantToGroup(chatId, id),
+  //         null,
+  //       );
+  //     }
+
+  //     fetchGroupInformation();
+
+  //     const count = participantsToBeAdded.length;
+
+  //     setAddingParticipant(false);
+  //     setParticipantsToBeAdded([]);
+
+  //     messageApi.success(
+  //       count === 1 ? "Participant added" : "Participants added",
+  //     );
+  //   } catch (error) {
+  //     messageApi.error("Failed to add participants");
+  //   }
+  // };
   const addParticipant = async () => {
-    if (participantsToBeAdded.length === 0)
+    if (!participantsToBeAdded || participantsToBeAdded.length === 0)
       return messageApi.error("Please select participants");
 
-    await requestHandler(
-      async () => await addParticipantToGroup(chatId, participantsToBeAdded),
-      null,
-      (res) => {
+    try {
+      let lastResponse = null;
+
+      // 🔥 Loop but keep your requestHandler
+      for (let id of participantsToBeAdded) {
+        await requestHandler(
+          async () => await addParticipantToGroup(chatId, id),
+          null,
+          (res) => {
+            lastResponse = res; // store latest response
+          },
+        );
+      }
+
+      // ✅ Update UI using last response (same as your old logic)
+      if (lastResponse?.data) {
         setGroupDetails({
           ...groupDetails,
-          participants: res.data.participants,
+          participants: lastResponse.data.participants,
         });
-        onParticipantsUpdate?.(res.data.participants);
-        setAddingParticipant(false);
-        setParticipantsToBeAdded([]);
-        messageApi.success("Participants added");
-      },
-    );
-  };
 
+        onParticipantsUpdate?.(lastResponse.data.participants);
+      }
+
+      const count = participantsToBeAdded.length;
+
+      setAddingParticipant(false);
+      setParticipantsToBeAdded([]);
+
+      messageApi.success(
+        count === 1 ? "Participant added" : "Participants added",
+      );
+    } catch (error) {
+      messageApi.error("Failed to add participants");
+    }
+  };
   const fetchGroupInformation = async () => {
     requestHandler(
       async () => await getGroupInfo(chatId),
@@ -139,7 +206,8 @@ const GroupChatDetailsModal = ({
   const handleClose = () => {
     setRenamingGroup(false);
     setAddingParticipant(false);
-    setParticipantsToBeAdded("");
+    // setParticipantsToBeAdded("");
+    setParticipantsToBeAdded([]);
     onClose();
   };
 

@@ -273,6 +273,27 @@ const CompanyPreview = ({ data }) => (
         </Paragraph>
       </Card>
     )}
+    {data.partnerTier && (
+      <Card
+        size="small"
+        title={<span style={{ fontSize: 13 }}>Partner Tier</span>}
+        style={{ marginBottom: 8, borderRadius: 8 }}
+        styles={{ body: { padding: "10px 14px" } }}
+      >
+        <Tag color="purple">{data.partnerTier}</Tag>
+      </Card>
+    )}
+
+    {data.partnerType && (
+      <Card
+        size="small"
+        title={<span style={{ fontSize: 13 }}>Partner Type</span>}
+        style={{ marginBottom: 8, borderRadius: 8 }}
+        styles={{ body: { padding: "10px 14px" } }}
+      >
+        <Tag color="green">{data.partnerType}</Tag>
+      </Card>
+    )}
 
     {data.specialties?.length > 0 && (
       <Card
@@ -365,6 +386,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
   const [certifications, setCertifications] = useState([]);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [partnerTier, setPartnerTier] = useState("");
+  const [partnerType, setPartnerType] = useState("");
 
   const [formValues, setFormValues] = useState({});
 
@@ -384,6 +407,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
     locations,
     clouds, // ✅ ADD
     certifications,
+    partnerTier,
+    partnerType,
   };
 
   // ── load profile data ──
@@ -415,6 +440,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             setLocations(companyProfile.locations || []);
             setClouds(companyProfile.clouds || []);
             setCertifications(companyProfile.certifications || []);
+            setPartnerTier(companyProfile?.partnerTier || "");
+            setPartnerType(companyProfile?.partnerType || "");
           }
 
           const fields = {
@@ -519,6 +546,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         coverImage: coverImageUrl,
         clouds,
         certifications,
+        partnerTier, // ✅ ADD
+        partnerType,
         socialLinks: {
           linkedin: values.linkedin || null,
           twitter: values.twitter || null,
@@ -865,6 +894,55 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             placeholder="e.g. Salesforce Administrator, Platform Developer I"
           />
         </Form.Item>
+      </Card>
+      <Card title="Partner Details" style={{ marginBottom: 20 }}>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item label="Partner Tier">
+              <Select
+                value={partnerTier}
+                onChange={(v) => {
+                  setPartnerTier(v);
+                  setIsDirty(true);
+                }}
+                placeholder="Select tier"
+              >
+                <Option value="Base Partner">Base Partner</Option>
+                <Option value="Ridge Partner">Ridge Partner</Option>
+                <Option value="Crest Partner">Crest Partner</Option>
+                <Option value="Summit Partner">Summit Partner</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item label="Partner Type">
+              <Select
+                value={partnerType}
+                onChange={(v) => {
+                  setPartnerType(v);
+                  setIsDirty(true);
+                }}
+                placeholder="Select type"
+              >
+                <Option value="Consulting Partner">Consulting Partner</Option>
+                <Option value="Implementation Partner">
+                  Implementation Partner
+                </Option>
+                <Option value="System Integrator">
+                  System Integrator Partner
+                </Option>
+                <Option value="Managed Services Provider">
+                  Managed Services Provider Partner
+                </Option>
+                <Option value="ISV (Product Partner)">
+                  ISV (Product Partner)
+                </Option>
+                <Option value="Reseller Partner">Reseller Partner</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
       </Card>
 
       {/* ════════ 5. SOCIAL LINKS ════════ */}

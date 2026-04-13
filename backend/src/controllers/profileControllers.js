@@ -402,6 +402,8 @@ const getCompanyProfileDetails = async (req, res) => {
         coverImage: companyProfile?.coverImage || null,
         clouds: companyProfile?.clouds || [],
         certifications: companyProfile?.certifications || [],
+        partnerTier: companyProfile?.partnerTier || null, // ✅ ADD
+        partnerType: companyProfile?.partnerType || null,
         socialLinks: companyProfile?.socialLinks || null,
         slug: companyProfile?.slug || null,
       },
@@ -588,6 +590,10 @@ const updateCompanyProfile = async (req, res) => {
       logoUrl,
       coverImage,
       socialLinks,
+      clouds, // ✅ ADD THIS
+      certifications,
+      partnerTier,
+      partnerType,
     } = payload;
 
     const baseSlug = companyName
@@ -643,6 +649,10 @@ const updateCompanyProfile = async (req, res) => {
         logoUrl,
         coverImage,
         socialLinks,
+        clouds, // ✅ ADD THIS
+        certifications,
+        partnerTier,
+        partnerType,
       };
 
       await tx.companyProfile.upsert({

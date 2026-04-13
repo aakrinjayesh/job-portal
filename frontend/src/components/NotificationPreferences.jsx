@@ -26,41 +26,62 @@ export default function NotificationPreferences() {
       .finally(() => setLoading(false));
   }, []);
 
+  // const update = async (patch) => {
+  //   const next = { ...prefs, ...patch };
+  //   setPrefs(next);
+  //   setSaving(true);
+  //   try {
+  //     await UpdateNotificationPreferences(patch);
+
+  //     if (patch.notificationsEnabled !== undefined) {
+  //       if (patch.notificationsEnabled) {
+  //         const type = (
+  //           patch.notificationType || prefs.notificationType
+  //         ).toLowerCase();
+  //         message.success(
+  //           `${type.charAt(0).toUpperCase() + type.slice(1)} notifications enabled`,
+  //         );
+  //       } else {
+  //         message.success("Notifications turned OFF");
+  //       }
+  //     } else if (patch.notificationType) {
+  //       message.success(
+  //         `${patch.notificationType === "DAILY" ? "Daily" : "Weekly"} notifications enabled`,
+  //       );
+  //     }
+  //   } catch {
+  //     message.error("Failed to save preferences");
+  //     setPrefs(prefs); // revert
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
   const update = async (patch) => {
     const next = { ...prefs, ...patch };
     setPrefs(next);
     setSaving(true);
+
     try {
       await UpdateNotificationPreferences(patch);
-      // message.success("Preferences saved");
-      // if (patch.notificationsEnabled !== undefined) {
-      //   message.success(
-      //     patch.notificationsEnabled
-      //       ? "Notifications enabled successfully"
-      //       : "Notifications disabled successfully",
-      //   );
-      // } else if (patch.notificationType) {
-      //   message.success("Notification frequency updated");
-      // }
+
+      // ✅ Toggle ON / OFF messages
       if (patch.notificationsEnabled !== undefined) {
-        if (patch.notificationsEnabled) {
-          const type = (
-            patch.notificationType || prefs.notificationType
-          ).toLowerCase();
-          message.success(
-            `${type.charAt(0).toUpperCase() + type.slice(1)} notifications enabled`,
-          );
-        } else {
-          message.success("Notifications turned OFF");
-        }
-      } else if (patch.notificationType) {
+        message.success(
+          patch.notificationsEnabled
+            ? "Notifications turned ON"
+            : "Notifications turned OFF",
+        );
+      }
+
+      // ✅ Frequency change message
+      else if (patch.notificationType) {
         message.success(
           `${patch.notificationType === "DAILY" ? "Daily" : "Weekly"} notifications enabled`,
         );
       }
     } catch {
       message.error("Failed to save preferences");
-      setPrefs(prefs); // revert
+      setPrefs(prefs);
     } finally {
       setSaving(false);
     }
@@ -120,33 +141,6 @@ export default function NotificationPreferences() {
           onChange={(checked) => update({ notificationsEnabled: checked })}
         />
       </div>
-      {/* Reminder toggle */}
-      {/* <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "14px 0",
-          borderBottom: "1px solid #f0f0f0",
-        }}
-      >
-        <div>
-          <Text strong style={{ fontSize: 14 }}>
-            Reminder emails
-          </Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            Receive reminders before scheduled activities
-          </Text>
-        </div>
-
-        <Switch
-          checked={prefs.reminderNotificationsEnabled}
-          onChange={(checked) =>
-            update({ reminderNotificationsEnabled: checked })
-          }
-        />
-      </div> */}
 
       {/* Frequency selector — only visible when enabled */}
       {prefs.notificationsEnabled && (

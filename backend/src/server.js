@@ -32,6 +32,7 @@ import SupportRoutes from "./Routes/supportRoutes.js";
 import { startLicenseReminderCron } from "./cron/licenseReminderCron.js";
 import { startJobNotificationCron } from "./cron/jobNotificationCron.js";
 import AdminRoutes from "./admin.js";
+import companyRouter from "./Routes/companyRoutes.js";
 
 dotenv.config();
 
@@ -74,6 +75,7 @@ app.use("/organization", OrganizationRoutes);
 // app.use(authenticateToken, featureLimitMiddleware); // there are few api with no authentication look
 
 app.use("/admin", AdminRoutes);
+app.use("/api/companies", companyRouter);
 
 const PORT = process.env.PORT;
 

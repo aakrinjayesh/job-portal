@@ -35,6 +35,18 @@ import {
 import { GetPublicCompanyProfileDetails } from "../company/api/api";
 import { Modal } from "antd";
 
+import summitLogo from "../assets/summit.png";
+import crestLogo from "../assets/crest.jpg";
+import ridgeLogo from "../assets/ridge.png";
+import baseLogo from "../assets/base.png";
+
+import consultingLogo from "../assets/consulting.png";
+import implementationLogo from "../assets/implementation.png";
+import systemLogo from "../assets/system.png";
+import managedLogo from "../assets/managed.png";
+import isvLogo from "../assets/isv.png";
+import resellerLogo from "../assets/reseller.png";
+
 const { Text, Paragraph } = Typography;
 
 const timeAgo = (iso) => {
@@ -46,12 +58,28 @@ const timeAgo = (iso) => {
   return `${Math.floor(d / 30)}mo ago`;
 };
 
+const partnerTierLogos = {
+  "Summit Partner": summitLogo,
+  "Crest Partner": crestLogo,
+  "Ridge Partner": ridgeLogo,
+  "Base Partner": baseLogo,
+};
+
+const partnerTypeLogos = {
+  "Consulting Partner": consultingLogo,
+  "Implementation Partner": implementationLogo,
+  "System Integrator": systemLogo,
+  "Managed Services Provider": managedLogo,
+  "ISV (Product Partner)": isvLogo,
+  "Reseller Partner": resellerLogo,
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB: ABOUT
 // ─────────────────────────────────────────────────────────────────────────────
 const AboutTab = ({ company }) => {
   const details = [
-    { icon: <BuildOutlined />, label: "Industry", value: company.industry },
+    // { icon: <BuildOutlined />, label: "Industry", value: company.industry },
     {
       icon: <TeamOutlined />,
       label: "Company size",
@@ -84,6 +112,7 @@ const AboutTab = ({ company }) => {
             {company.description || "No description provided."}
           </Paragraph>
         </Card>
+        {/* Partner Details */}
 
         {/* Specialties */}
         {company.specialties?.length > 0 && (
@@ -96,6 +125,42 @@ const AboutTab = ({ company }) => {
                   style={{ borderRadius: 4, fontSize: 13, padding: "2px 10px" }}
                 >
                   {s}
+                </Tag>
+              ))}
+            </div>
+          </Card>
+        )}
+        {/* Clouds */}
+        {company.clouds?.length > 0 && (
+          <Card title="Clouds" size="small" style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {company.clouds.map((cloud) => (
+                <Tag
+                  key={cloud}
+                  color="purple"
+                  style={{ borderRadius: 4, fontSize: 13, padding: "2px 10px" }}
+                >
+                  {cloud}
+                </Tag>
+              ))}
+            </div>
+          </Card>
+        )}
+        {/* Certifications */}
+        {company.certifications?.length > 0 && (
+          <Card
+            title="Certifications"
+            size="small"
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {company.certifications.map((cert) => (
+                <Tag
+                  key={cert}
+                  color="green"
+                  style={{ borderRadius: 4, fontSize: 13, padding: "2px 10px" }}
+                >
+                  {cert}
                 </Tag>
               ))}
             </div>
@@ -683,12 +748,11 @@ ${url}
               )}
             </div>
 
-            {/* Action button top-right */}
+            {/* Buttons row — top right */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
-                alignItems: "center",
                 gap: 12,
                 paddingTop: 12,
                 marginBottom: 8,
@@ -704,17 +768,6 @@ ${url}
                   Visit website
                 </Button>
               )}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
-                gap: 12,
-                paddingTop: 12,
-                marginBottom: 8,
-              }}
-            >
               <Button
                 icon={<ShareAltOutlined />}
                 style={{ borderRadius: 999, fontWeight: 600 }}
@@ -724,66 +777,113 @@ ${url}
               </Button>
             </div>
 
-            {/* Name + tagline + meta — sits below the 80px logo */}
-            <div style={{ paddingTop: 8 }}>
-              <div
-                style={{
-                  fontSize: 22,
-                  fontWeight: 700,
-                  color: "#111827",
-                  lineHeight: 1.3,
-                }}
-              >
-                {company.name}
-              </div>
-              {company.tagline && (
-                <div style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>
-                  {company.tagline}
+            {/* Name + meta LEFT, logos RIGHT */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                paddingTop: 48,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: "#111827",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {company.name}
                 </div>
-              )}
+                {company.tagline && (
+                  <div style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>
+                    {company.tagline}
+                  </div>
+                )}
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 16,
+                    marginTop: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  {company.headquarters && (
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      <EnvironmentOutlined style={{ marginRight: 5 }} />
+                      {company.headquarters}
+                    </Text>
+                  )}
+                  {company.companySize && (
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      <TeamOutlined style={{ marginRight: 5 }} />
+                      {company.companySize} employees
+                    </Text>
+                  )}
+                  {jobs.length > 0 && (
+                    <a
+                      onClick={() => setActiveTab("jobs")}
+                      style={{
+                        fontSize: 13,
+                        color: "#1677ff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {jobs.length} open job{jobs.length !== 1 ? "s" : ""}
+                    </a>
+                  )}
+                </div>
+              </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 16,
-                  marginTop: 10,
-                  alignItems: "center",
-                }}
-              >
-                {company.industry && (
-                  <Text type="secondary" style={{ fontSize: 13 }}>
-                    <BuildOutlined style={{ marginRight: 5 }} />
-                    {company.industry}
-                  </Text>
-                )}
-                {company.headquarters && (
-                  <Text type="secondary" style={{ fontSize: 13 }}>
-                    <EnvironmentOutlined style={{ marginRight: 5 }} />
-                    {company.headquarters}
-                  </Text>
-                )}
-                {company.companySize && (
-                  <Text type="secondary" style={{ fontSize: 13 }}>
-                    <TeamOutlined style={{ marginRight: 5 }} />
-                    {company.companySize} employees
-                  </Text>
-                )}
-                {jobs.length > 0 && (
-                  <a
-                    onClick={() => setActiveTab("jobs")}
-                    style={{
-                      fontSize: 13,
-                      color: "#1677ff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {jobs.length} open job{jobs.length !== 1 ? "s" : ""}
-                  </a>
-                )}
+              {/* Partner logos — right side */}
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                {company.partnerTier &&
+                  partnerTierLogos[company.partnerTier] && (
+                    <div
+                      style={{
+                        background: "#EEEDFE",
+                        border: "0.5px solid #AFA9EC",
+                        borderRadius: 8,
+                        padding: "6px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <img
+                        src={partnerTierLogos[company.partnerTier]}
+                        alt={company.partnerTier}
+                        style={{ width: 56, height: 56, objectFit: "contain" }}
+                      />
+                    </div>
+                  )}
+                {company.partnerType &&
+                  partnerTypeLogos[company.partnerType] && (
+                    <div
+                      style={{
+                        background: "#EAF3DE",
+                        border: "0.5px solid #C0DD97",
+                        borderRadius: 8,
+                        padding: "6px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <img
+                        src={partnerTypeLogos[company.partnerType]}
+                        alt={company.partnerType}
+                        style={{ width: 56, height: 56, objectFit: "contain" }}
+                      />
+                    </div>
+                  )}
               </div>
             </div>
           </div>
+          {/* </div> */}
 
           {/* Tabs — flush to card bottom */}
           <div style={{ borderTop: "1px solid #f0f0f0", padding: "0 24px" }}>

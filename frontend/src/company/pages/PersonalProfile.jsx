@@ -147,10 +147,14 @@ const PersonalProfile = ({ onSaveSuccess }) => {
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 20px" }}>
       {contextHolder}
 
-      <Form form={form} layout="vertical" onValuesChange={() => setIsDirty(true)}>
+      <Form
+        form={form}
+        layout="vertical"
+        onValuesChange={() => setIsDirty(true)}
+      >
         {/* ════════ 1. PERSONAL INFO ════════ */}
         <Card title="Personal Information" style={{ marginBottom: 20 }}>
-          <Form.Item label="Profile Picture">
+          {/* <Form.Item label="Profile Picture">
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <Avatar size={68} src={profileImageUrl} icon={<UserOutlined />} />
               <Upload
@@ -168,7 +172,7 @@ const PersonalProfile = ({ onSaveSuccess }) => {
             </div>
           </Form.Item>
 
-          <Divider style={{ margin: "12px 0 20px" }} />
+          <Divider style={{ margin: "12px 0 20px" }} /> */}
 
           <Row gutter={16}>
             <Col span={12}>

@@ -49,7 +49,7 @@ import LicenseExpiredAlert from "./components/alert/LicenseExpiredAlert";
 import SalesforceBenchPage from "./pages/SalesforceBenchPage";
 import CompanyProfilePopup from "./components/alert/CompanyProfilePopup";
 import PublicCompanyProfile from "./pages/PublicCompanyProfile";
-
+import FindCompanies from "./company/pages/FindCompanies";
 // import AppliedCandidatesByJob from "./company/pages/AppliedCandidatesByJob";
 
 function App() {
@@ -408,6 +408,14 @@ function App() {
           element={
             <CompanyLayout>
               <CompanySettingsPage />
+            </CompanyLayout>
+          }
+        />
+        <Route
+          path="/company/companies"
+          element={
+            <CompanyLayout>
+              <FindCompanies />
             </CompanyLayout>
           }
         />

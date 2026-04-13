@@ -110,6 +110,8 @@ model CompanyProfile {
   coverImage     String?
   clouds         String[] @default([])
   certifications String[] @default([])
+  partnerTier    String? // Crest, Summit, Ridge
+  partnerType    String? // Consulting, ISV, Reseller
   headquarters   String
   locations      String[]
   specialties    String[] @default([])

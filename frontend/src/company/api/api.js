@@ -979,7 +979,12 @@ export async function GetCandidatesFitScore(jobId) {
   }
 }
 
-export async function validatePromoCode({ code, planTier, quantity, billingCycle }) {
+export async function validatePromoCode({
+  code,
+  planTier,
+  quantity,
+  billingCycle,
+}) {
   const res = await axiosInstance.post("/billing/promo/validate", {
     code,
     planTier,
@@ -987,4 +992,31 @@ export async function validatePromoCode({ code, planTier, quantity, billingCycle
     billingCycle,
   });
   return res.data;
+}
+
+// ================= COMPANY =================
+// ================= COMPANY =================
+
+// ✅ Get Companies List
+export async function GetCompaniesList(signal) {
+  try {
+    const response = await axiosInstance.get("/api/companies/list", {
+      signal,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching companies list:", error);
+    throw error;
+  }
+}
+
+// ✅ Get Company Details
+export async function GetCompanyDetails(slug) {
+  try {
+    const response = await axiosInstance.get(`/api/companies/public/${slug}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching company details:", error);
+    throw error;
+  }
 }

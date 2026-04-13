@@ -79,6 +79,7 @@ const CompanyLayout = ({ children }) => {
     savedjobs: ["/company/jobs/saved"],
     appliedcandidatesbyjob: ["/company/appliedcandidatesbyjob"],
     bench: ["/company/bench"],
+    findcompanies: ["/company/companies"],
     findbench: ["/company/candidate/find"],
     savedcandidates: ["/company/bench/saved"],
     chat: ["/company/chat"],
@@ -186,6 +187,7 @@ const CompanyLayout = ({ children }) => {
       if (highlight) return highlight;
       return "companyprofile";
     }
+    if (path.startsWith("/company/companies")) return "findcompanies";
 
     if (path.startsWith("/company/renew")) return "renew";
 
@@ -304,6 +306,7 @@ const CompanyLayout = ({ children }) => {
       settings: "Settings",
       companyprofile: "Company Profile",
       renew: "Renew Subscription",
+      findcompanies: "Find Companies",
     };
 
     return pageTitleMap[selectedKey] || "Dashboard";
@@ -512,6 +515,11 @@ const CompanyLayout = ({ children }) => {
                     },
 
                     { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
+                    {
+                      key: "findcompanies",
+                      icon: <SearchOutlined />,
+                      label: "Find Companies",
+                    },
                     {
                       key: "candidates-group",
                       icon: <TeamOutlined />,
