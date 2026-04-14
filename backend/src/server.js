@@ -31,6 +31,7 @@ import seoRoute from "./Routes/seoRoutes.js";
 import SupportRoutes from "./Routes/supportRoutes.js";
 import { startLicenseReminderCron } from "./cron/licenseReminderCron.js";
 import { startJobNotificationCron } from "./cron/jobNotificationCron.js";
+import { startAdminStatsCron } from "./cron/adminReportCron.js";
 import AdminRoutes from "./admin.js";
 import companyRouter from "./Routes/companyRoutes.js";
 
@@ -86,4 +87,5 @@ app.listen(PORT || "3001", () => {
   );
   startLicenseReminderCron();
   startJobNotificationCron();
+  startAdminStatsCron();
 });
