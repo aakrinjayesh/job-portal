@@ -35,16 +35,16 @@ import {
 import { GetPublicCompanyProfileDetails } from "../company/api/api";
 import { Modal } from "antd";
 
-import summitLogo from "../assets/summit.png";
-import crestLogo from "../assets/crest.jpg";
-import ridgeLogo from "../assets/ridge.png";
+import summitLogo from "../assets/newsummitpartner.png";
+import crestLogo from "../assets/newsalesforcecrestpartner.png";
+import ridgeLogo from "../assets/newsalesforceridgepartner.png";
 import baseLogo from "../assets/base.png";
 
-import consultingLogo from "../assets/consulting.png";
+import consultingLogo from "../assets/salesforceconsultingpartner.png";
 import implementationLogo from "../assets/implementation.png";
 import systemLogo from "../assets/system.png";
-import managedLogo from "../assets/managed.png";
-import isvLogo from "../assets/isv.png";
+import managedLogo from "../assets/newsalesforcemanagedproviderservicepartner.png";
+import isvLogo from "../assets/newisvpartner.png";
 import resellerLogo from "../assets/reseller.png";
 
 const { Text, Paragraph } = Typography;

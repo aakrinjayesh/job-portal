@@ -130,9 +130,13 @@ const ApplyBenchJob = ({ jobId, hasQuestions, jobStatus }) => {
   const applyRowSelection = {
     selectedRowKeys: applySelectedKeys,
     onChange: (newKeys) => {
+      if (aiLoading || applyLoading) return;
       setApplySelectedKeys(newKeys);
     },
     preserveSelectedRowKeys: true,
+    getCheckboxProps: () => ({
+      disabled: aiLoading || applyLoading, // 🔒 visually disables + prevents interaction
+    }),
   };
 
   // ── Core submit ────────────────────────────────────────────────────────────

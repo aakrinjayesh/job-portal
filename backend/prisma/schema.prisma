@@ -17,6 +17,7 @@ datasource db {
 model Organization {
   id        String   @id @default(uuid())
   name      String
+  domain    String?  @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -45,6 +46,7 @@ model Organization {
   taskTemplates     TaskTemplate[]
   candidateTaskList CandidateTaskList[]
   candidateTasks    CandidateTask[]
+  users             Users[]
 }
 
 model OrganizationMember {
@@ -103,7 +105,7 @@ model CompanyProfile {
   tagline        String?
   description    String?
   website        String
-  industry       String
+  // industry       String
   companySize    String
   foundedYear    Int
   logoUrl        String?
@@ -162,6 +164,8 @@ model Users {
   aiTokenUsages       AITokenUsage[]
   promoCodes          PromoCode[]         @relation("AdminCreatedPromoCodes")
   promoUsages         PromoCodeUsage[]
+  organizationId      String? // 🔥 fast lookup
+  organization        Organization?       @relation(fields: [organizationId], references: [id])
 }
 
 model UserSession {

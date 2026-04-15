@@ -116,6 +116,7 @@ const RecruiterJobList = () => {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [companyLogo, setCompanyLogo] = useState("");
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // ── SCREENING QUESTIONS STATE ──────────────────────────
   const [screeningQuestions, setScreeningQuestions] = useState([]);
@@ -890,6 +891,30 @@ const RecruiterJobList = () => {
     }
     return "Not Disclosed";
   };
+
+  const SectionLabel = ({ children }) => (
+    <p
+      style={{
+        fontSize: 12,
+        fontWeight: 500,
+        textTransform: "uppercase",
+        letterSpacing: "0.5px",
+        color: "#9ca3af",
+        margin: "0 0 10px",
+      }}
+    >
+      {children}
+    </p>
+  );
+
+  const Field = ({ label, children }) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <span style={{ fontSize: 12, color: "#9ca3af" }}>{label}</span>
+      <span style={{ fontSize: 14 }}>{children}</span>
+    </div>
+  );
+
+  const Divider = () => <div style={{ borderTop: "0.5px solid #e5e7eb" }} />;
 
   return (
     <>
@@ -2371,244 +2396,7 @@ const RecruiterJobList = () => {
               )}
 
               {/* ── STEP 4: Screening Questions ── */}
-              {/* {currentStep === 4 && (
-                <div>
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 14, color: "#6B7280" }}>
-                      Add screening questions candidates must answer before
-                      applying. Questions marked required must be answered to
-                      submit.
-                    </div>
-                  </div>
 
-                  {screeningQuestions.length === 0 ? (
-                    <div
-                      style={{
-                        border: "1px dashed #D1D5DB",
-                        borderRadius: 10,
-                        padding: "32px 20px",
-                        textAlign: "center",
-                        color: "#9CA3AF",
-                        marginBottom: 16,
-                      }}
-                    >
-                      <div style={{ fontSize: 14, marginBottom: 8 }}>
-                        No questions added yet
-                      </div>
-                      <div style={{ fontSize: 12 }}>
-                        Click "Add Question" to start building your screening
-                        form
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                        marginBottom: 16,
-                      }}
-                    >
-                      {screeningQuestions.map((q, index) => (
-                        <div
-                          key={q.id}
-                          style={{
-                            border: "1px solid #E5E7EB",
-                            borderRadius: 10,
-                            padding: "16px",
-                            background: "#FAFAFA",
-                            position: "relative",
-                          }}
-                        >
-                          
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              marginBottom: 12,
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: "#374151",
-                              }}
-                            >
-                              Question {index + 1}
-                            </div>
-                            <div
-                              onClick={() => removeQuestion(q.id)}
-                              style={{
-                                cursor: "pointer",
-                                color: "#EF4444",
-                                fontSize: 13,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                            >
-                              <DeleteOutlined /> Remove
-                            </div>
-                          </div>
-
-                        
-                          <div style={{ marginBottom: 10 }}>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                color: "#6B7280",
-                                marginBottom: 4,
-                              }}
-                            >
-                              Question Text{" "}
-                              <span style={{ color: "#EF4444" }}>*</span>
-                            </div>
-                            <Input
-                              value={q.question}
-                              onChange={(e) =>
-                                updateQuestion(q.id, "question", e.target.value)
-                              }
-                              placeholder="e.g. What is your current CTC?"
-                              maxLength={300}
-                              status={q.question.trim() === "" ? "error" : ""}
-                            />
-                            {q.question.trim() === "" && (
-                              <div
-                                style={{
-                                  color: "#EF4444",
-                                  fontSize: 11,
-                                  marginTop: 2,
-                                }}
-                              >
-                                Question text is required
-                              </div>
-                            )}
-                          </div>
-
-                         
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 12,
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <div style={{ flex: 1 }}>
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  color: "#6B7280",
-                                  marginBottom: 4,
-                                }}
-                              >
-                                Answer Type
-                              </div>
-                              <Select
-                                value={q.type}
-                                onChange={(val) => {
-                                  updateQuestion(q.id, "type", val);
-                                  if (val !== "SELECT") {
-                                    updateQuestion(q.id, "options", []);
-                                  }
-                                }}
-                                style={{ width: "100%" }}
-                                options={QUESTION_TYPE_OPTIONS}
-                              />
-                            </div>
-
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                            >
-                              <div style={{ fontSize: 12, color: "#6B7280" }}>
-                                Required
-                              </div>
-                              <Switch
-                                checked={q.required}
-                                onChange={(val) =>
-                                  updateQuestion(q.id, "required", val)
-                                }
-                                size="small"
-                              />
-                            </div>
-                          </div>
-
-                          
-                          {q.type === "SELECT" && (
-                            <div style={{ marginTop: 12 }}>
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  color: "#6B7280",
-                                  marginBottom: 4,
-                                }}
-                              >
-                                Options{" "}
-                                <span style={{ color: "#9CA3AF" }}>
-                                  (press Enter to add each option)
-                                </span>
-                              </div>
-                              <Select
-                                mode="tags"
-                                value={q.options}
-                                onChange={(val) =>
-                                  updateQuestion(q.id, "options", val)
-                                }
-                                placeholder="Type an option and press Enter"
-                                style={{ width: "100%" }}
-                                tokenSeparators={[","]}
-                                status={q.options.length < 2 ? "warning" : ""}
-                              />
-                              {q.options.length < 2 && (
-                                <div
-                                  style={{
-                                    color: "#D97706",
-                                    fontSize: 11,
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  Add at least 2 options
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                
-                  <Button
-                    type="dashed"
-                    icon={<PlusOutlined />}
-                    onClick={addQuestion}
-                    style={{ width: "100%", borderRadius: 8, height: 40 }}
-                    disabled={screeningQuestions.length >= 10}
-                  >
-                    Add Question
-                    {screeningQuestions.length >= 10 && " (max 10)"}
-                  </Button>
-
-                  {screeningQuestions.length > 0 && (
-                    <div
-                      style={{
-                        marginTop: 10,
-                        fontSize: 12,
-                        color: "#9CA3AF",
-                        textAlign: "right",
-                      }}
-                    >
-                      {screeningQuestions.length} / 10 questions added
-                    </div>
-                  )}
-                </div>
-              )} */}
               {currentStep === 4 && (
                 <ScreeningQuestionsStep
                   screeningQuestions={screeningQuestions}
@@ -2621,7 +2409,7 @@ const RecruiterJobList = () => {
         </div>
 
         {/* ── STEP FOOTER ── */}
-        <div
+        {/* <div
           style={{
             display: "flex",
             justifyContent: "flex-end",
@@ -2655,11 +2443,66 @@ const RecruiterJobList = () => {
               Next
             </Button>
           )}
+          
 
           {currentStep === STEPS.length - 1 && (
             <Button type="primary" loading={postLoading} onClick={handleOk}>
               {isEditing ? "Update" : "Create"}
             </Button>
+          )}
+        </div> */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 12,
+            marginTop: 24,
+          }}
+        >
+          {/* BACK */}
+          {currentStep > 0 && (
+            <Button onClick={() => setCurrentStep((prev) => prev - 1)}>
+              Back
+            </Button>
+          )}
+
+          {/* NEXT */}
+          {currentStep < STEPS.length - 1 && (
+            <Button
+              type="primary"
+              onClick={async () => {
+                if (currentStep === 4) {
+                  setCurrentStep((prev) => prev + 1);
+                  return;
+                }
+                try {
+                  await form.validateFields(STEPS[currentStep].fields);
+                  setCurrentStep((prev) => prev + 1);
+                } catch (err) {}
+              }}
+            >
+              Next
+            </Button>
+          )}
+
+          {/* ✅ PREVIEW ONLY IN LAST STEP */}
+          {currentStep === STEPS.length - 1 && (
+            <>
+              <Button
+                onClick={async () => {
+                  try {
+                    await form.validateFields();
+                    setIsPreviewOpen(true);
+                  } catch (err) {}
+                }}
+              >
+                Preview
+              </Button>
+
+              <Button type="primary" loading={postLoading} onClick={handleOk}>
+                {isEditing ? "Update" : "Create"}
+              </Button>
+            </>
           )}
         </div>
       </Modal>
@@ -2746,38 +2589,6 @@ const RecruiterJobList = () => {
                 />
               </Form.Item>
 
-              {/* <Form.Item
-                label="Experience (Years)"
-                name="experience"
-                validateTrigger="onChange"
-                rules={[
-                  { required: true, message: "Experience is required" },
-                  {
-                    validator: (_, value) => {
-                      if (!value) return Promise.resolve();
-                      if (/[^0-9.]/.test(value)) {
-                        return Promise.reject(
-                          new Error("Only numbers are allowed"),
-                        );
-                      }
-                      if (!/^[0-9]{1,2}(\.[0-9]{1,2})?$/.test(value)) {
-                        return Promise.reject(
-                          new Error(
-                            "Maximum 2 digits allowed with up to 2 decimal places",
-                          ),
-                        );
-                      }
-                      return Promise.resolve();
-                    },
-                  },
-                ]}
-              >
-                <Input
-                  placeholder="Eg 3, 10, 5.5"
-                  inputMode="decimal"
-                  maxLength={5}
-                />
-              </Form.Item> */}
               <Checkbox
                 checked={aiIsExperienceRange}
                 onChange={(e) => {
@@ -2973,6 +2784,226 @@ const RecruiterJobList = () => {
                 </Button>
               </div>
             </Form>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        open={isPreviewOpen}
+        onCancel={() => setIsPreviewOpen(false)}
+        footer={null}
+        maskClosable={false}
+        width={700}
+        title={null}
+        styles={{ body: { padding: 0 } }}
+      >
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {/* ── Header ── */}
+          <div
+            style={{
+              padding: "20px 24px 16px",
+              borderBottom: "0.5px solid #e5e7eb",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#9ca3af",
+                  margin: "0 0 4px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Job preview
+              </p>
+              <h2 style={{ fontSize: 20, fontWeight: 500, margin: "0 0 4px" }}>
+                {form.getFieldValue("role")}
+              </h2>
+              <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>
+                {form.getFieldValue("companyName")}
+              </p>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
+                marginTop: 4,
+              }}
+            >
+              {form.getFieldValue("employmentType") && (
+                <Tag color="blue">{form.getFieldValue("employmentType")}</Tag>
+              )}
+              {form.getFieldValue("jobType") && (
+                <Tag color="green">{form.getFieldValue("jobType")}</Tag>
+              )}
+              {form.getFieldValue("experienceLevel") && (
+                <Tag>{form.getFieldValue("experienceLevel")}</Tag>
+              )}
+            </div>
+          </div>
+
+          {/* ── Scrollable body ── */}
+          <div
+            style={{
+              padding: "20px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              maxHeight: 500,
+              overflowY: "auto",
+            }}
+          >
+            {/* Description */}
+            <div>
+              <SectionLabel>Description</SectionLabel>
+              <p style={{ fontSize: 14, lineHeight: 1.6, margin: "0 0 10px" }}>
+                {form.getFieldValue("description")}
+              </p>
+              <p
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: "#6b7280",
+                  margin: "0 0 6px",
+                }}
+              >
+                Responsibilities
+              </p>
+              <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+                {form.getFieldValue("responsibilities")}
+              </p>
+            </div>
+
+            <Divider />
+
+            {/* Job details grid */}
+            <div>
+              <SectionLabel>Job details</SectionLabel>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "10px 20px",
+                }}
+              >
+                <Field label="Experience">
+                  {(() => {
+                    const exp = form.getFieldValue("experience");
+                    if (!exp) return "—";
+                    return exp.min && exp.max
+                      ? `${exp.min}–${exp.max} ${exp.type}`
+                      : `${exp.number} ${exp.type}`;
+                  })()}
+                </Field>
+                <Field label="Employment Type">
+                  {form.getFieldValue("employmentType") || "—"}
+                </Field>
+                <Field label="Experience level">
+                  {form.getFieldValue("experienceLevel") || "—"}
+                </Field>
+                <Field label="Job type">
+                  {form.getFieldValue("jobType") || "—"}
+                </Field>
+                <Field label="Location">
+                  {form.getFieldValue("location")?.toString() || "—"}
+                </Field>
+                <Field label="Salary">
+                  {(() => {
+                    const sal = form.getFieldValue("salary");
+                    if (!sal) return "Not disclosed";
+                    return sal.min && sal.max ? `${sal.min} – ${sal.max}` : sal;
+                  })()}
+                </Field>
+                <Field label="Application deadline">
+                  {form
+                    .getFieldValue("applicationDeadline")
+                    ?.format?.("DD MMM YYYY") || "—"}
+                </Field>
+                <Field label="Application limit">
+                  {form.getFieldValue("ApplicationLimit") || "No limit"}
+                </Field>
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Skills & Clouds */}
+            <div>
+              <SectionLabel>Skills & Clouds</SectionLabel>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginBottom: 8,
+                }}
+              >
+                {(form.getFieldValue("skills") || []).map((s) => (
+                  <Tag key={s}>{s}</Tag>
+                ))}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(form.getFieldValue("clouds") || []).map((c) => (
+                  <Tag key={c} color="blue">
+                    {c}
+                  </Tag>
+                ))}
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Certifications */}
+            {(form.getFieldValue("certifications") || []).length > 0 && (
+              <div>
+                <SectionLabel>Certifications</SectionLabel>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {(form.getFieldValue("certifications") || []).map((c) => (
+                    <Tag key={c} color="gold">
+                      {c}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Divider />
+
+            {/* Screening questions */}
+            <div>
+              <SectionLabel>Screening questions</SectionLabel>
+              {screeningQuestions.length === 0 ? (
+                <p style={{ fontSize: 14, color: "#9ca3af" }}>
+                  No questions added
+                </p>
+              ) : (
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  {screeningQuestions.map((q, i) => (
+                    <div
+                      key={q.id}
+                      style={{
+                        background: "#f9fafb",
+                        borderRadius: 8,
+                        padding: "10px 14px",
+                        border: "0.5px solid #e5e7eb",
+                      }}
+                    >
+                      <p style={{ fontSize: 14, margin: "0 0 4px" }}>
+                        {i + 1}. {q.question}
+                      </p>
+                      <Tag style={{ fontSize: 11 }}>{q.type}</Tag>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Modal>

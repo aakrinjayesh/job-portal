@@ -59,7 +59,7 @@ function HideProfileSection() {
         return trimmed.includes("@") ? trimmed.split("@")[1] : trimmed;
       });
       await UpdateCandidateDomains({ hiddenDomains: domains });
-      message.success("Company emails saved successfully");
+      message.success("Domain saved successfully");
     } catch (error) {
       console.error(error);
       message.error("Failed to save");

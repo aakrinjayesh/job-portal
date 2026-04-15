@@ -4,10 +4,11 @@ import { getPeriodBounds } from "../utils/getPeriodBounds.js";
 const FEATURE_MAP = [
   {
     match: (path, method) =>
-      method === "POST" && path === "/vendor/apply-candidate",
+      method === "POST" && path.includes("/apply-candidate"),
     feature: "APPLY_BENCH_TO_JOB",
     usesAI: true,
   },
+
   {
     match: (path, method) =>
       method === "GET" && /^\/candidates\/[^/]+$/.test(path),
@@ -19,8 +20,9 @@ const FEATURE_MAP = [
     feature: "JOB_POST_CREATION",
     usesAI: false,
   },
+
   {
-    match: (path, method) => method === "POST" && path === "/upload",
+    match: (path, method) => method === "POST" && path.includes("/upload"),
     feature: "RESUME_EXTRACTION",
     usesAI: true,
   },
@@ -51,6 +53,7 @@ export const featureLimitMiddleware = async (req, res, next) => {
   try {
     if (!req.user?.organizationId) return next();
 
+    console.log("METHOD:", req.method);
     console.log("path:", req.path);
     const route = FEATURE_MAP.find((r) => r.match(req.path, req.method));
     console.log("route in feature Middleware matched", route);
@@ -162,7 +165,30 @@ export const featureLimitMiddleware = async (req, res, next) => {
       }
 
       // ─── AI Routes (no increment here) ───────────────────────
+      // if (usesAI) {
+      //   if (
+      //     limit.maxAllowed !== -1 &&
+      //     record.currentUsage >= limit.maxAllowed
+      //   ) {
+      //     return res.status(403).json({
+      //       status: "error",
+      //       code: "LIMIT_EXCEEDED",
+      //       message: `${feature} ${limit.period.toLowerCase()} limit exceeded`,
+      //       metadata: {
+      //         feature,
+      //         period: limit.period,
+      //         maxAllowed: limit.maxAllowed,
+      //         currentUsage: record.currentUsage,
+      //         licenseId: license.id,
+      //         planId: license.planId,
+      //       },
+      //     });
+      //   }
+
+      //   continue;
+      // }
       if (usesAI) {
+        // 1. Check limit
         if (
           limit.maxAllowed !== -1 &&
           record.currentUsage >= limit.maxAllowed
@@ -171,16 +197,16 @@ export const featureLimitMiddleware = async (req, res, next) => {
             status: "error",
             code: "LIMIT_EXCEEDED",
             message: `${feature} ${limit.period.toLowerCase()} limit exceeded`,
-            metadata: {
-              feature,
-              period: limit.period,
-              maxAllowed: limit.maxAllowed,
-              currentUsage: record.currentUsage,
-              licenseId: license.id,
-              planId: license.planId,
-            },
           });
         }
+
+        // 2. ✅ ADD THIS (MOST IMPORTANT FIX)
+        await prisma.usageRecord.update({
+          where: { id: record.id },
+          data: {
+            currentUsage: { increment: 1 },
+          },
+        });
 
         continue;
       }

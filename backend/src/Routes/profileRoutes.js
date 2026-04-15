@@ -20,6 +20,7 @@ import {
 
 import multer from "multer";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
+import { featureLimitMiddleware } from "../Middleware/featureLimitMiddleware.js";
 
 const userRouter = express.Router();
 
@@ -51,6 +52,7 @@ userRouter.post(
   "/upload",
   authenticateToken,
   upload.single("file"),
+  featureLimitMiddleware,
   UploadResume,
 );
 
@@ -98,7 +100,15 @@ userRouter.patch(
 
 userRouter.get("/public/company/:slug", getPublicCompanyProfile);
 
-userRouter.get("/profile/notifications", authenticateToken, getNotificationPreferences);
-userRouter.patch("/profile/notifications", authenticateToken, updateNotificationPreferences);
+userRouter.get(
+  "/profile/notifications",
+  authenticateToken,
+  getNotificationPreferences,
+);
+userRouter.patch(
+  "/profile/notifications",
+  authenticateToken,
+  updateNotificationPreferences,
+);
 
 export default userRouter;

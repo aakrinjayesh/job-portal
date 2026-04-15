@@ -71,6 +71,11 @@ VendorRoutes.get(
   getCandidateDetails,
 );
 
-VendorRoutes.post("/apply-candidate", authenticateToken, vendorApplyCandidate);
+VendorRoutes.post(
+  "/apply-candidate",
+  authenticateToken,
+  featureLimitMiddleware,
+  vendorApplyCandidate,
+);
 
 export default VendorRoutes;

@@ -131,6 +131,329 @@ const userOtpValidator = async (req, res) => {
   }
 };
 
+// const setPassword = async (req, res) => {
+//   const { email: em, password, role, token } = req.body;
+
+//   const email = em.toLowerCase().trim();
+
+//   if (!email || !password || !role) {
+//     return res.status(400).json({
+//       status: "error",
+//       message: "Email, password, and role are required",
+//     });
+//   }
+
+//   let invite = null;
+//   let externalUserId = null;
+
+//   try {
+//     /* 1️⃣ VALIDATE INVITE */
+//     if (token) {
+//       invite = await prisma.organizationInvite.findUnique({
+//         where: { token },
+//       });
+
+//       if (!invite)
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invalid or already used invite",
+//         });
+
+//       if (invite.expiresAt < new Date())
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite has expired",
+//         });
+
+//       if (invite.email.toLowerCase() !== email)
+//         return res.status(400).json({
+//           status: "error",
+//           message: "Invite data mismatch",
+//         });
+//     }
+
+//     /* 2️⃣ FIND USER */
+//     const user = await prisma.users.findUnique({ where: { email } });
+
+//     if (!user)
+//       return res.status(404).json({
+//         status: "error",
+//         message: "User not found. Please complete OTP verification first.",
+//       });
+
+//     if (user.role !== role)
+//       return res.status(400).json({
+//         status: "error",
+//         message: "Invalid role for this user",
+//       });
+
+//     /* 3️⃣ HASH PASSWORD */
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     /* 4️⃣ OPTIONAL EXTERNAL CHAT */
+//     try {
+//       if (external_backend_url) {
+//         const payload = {
+//           email,
+//           username: email.split("@")[0].toLowerCase(),
+//           password,
+//         };
+
+//         const registerResponse = await axios.post(
+//           `${external_backend_url}/api/v1/users/register`,
+//           payload,
+//           { headers: { "Content-Type": "application/json" }, timeout: 3000 },
+//         );
+
+//         externalUserId = registerResponse?.data?.data?.user?._id || null;
+
+//         if (externalUserId) {
+//           console.log("✅ External chat registration successful");
+//         }
+//       }
+//     } catch (err) {
+//       console.warn(
+//         "⚠️ External chat registration failed — continuing without chat:",
+//         err.message,
+//       );
+//       // Silent fail — DO NOT RETURN ERROR
+//     }
+
+//     /* 5️⃣ MAIN TRANSACTION */
+//     const result = await prisma.$transaction(
+//       async (tx) => {
+//         const updatedUser = await tx.users.update({
+//           where: { email },
+//           data: {
+//             password: hashedPassword,
+//             emailverified: true,
+//             ...(externalUserId && { chatuserid: externalUserId }),
+//           },
+//         });
+
+//         /* 🔹 INVITE FLOW */
+//         if (invite) {
+//           if (!invite.seatId || !invite.licenseId) {
+//             throw new Error("Invite missing seat or license");
+//           }
+
+//           const seat = await tx.licenseSeat.findUnique({
+//             where: { id: invite.seatId },
+//           });
+
+//           const license = await tx.license.findUnique({
+//             where: { id: invite.licenseId },
+//           });
+
+//           if (
+//             !seat ||
+//             seat.assignedToId !== null ||
+//             !license ||
+//             license.seatId !== seat.id || // 🔥 ensure correct mapping
+//             !license.isActive ||
+//             license.validUntil < new Date() ||
+//             license.assignedToId !== null
+//           ) {
+//             throw new Error("The selected seat/license is no longer available");
+//           }
+
+//           const newMember = await tx.organizationMember.create({
+//             data: {
+//               userId: updatedUser.id,
+//               organizationId: invite.organizationId,
+//               role: invite.role,
+//               permissions: invite.permissions,
+//             },
+//           });
+
+//           // Assign seat
+//           await tx.licenseSeat.update({
+//             where: { id: seat.id },
+//             data: { assignedToId: newMember.id },
+//           });
+
+//           // 🔥 Assign EXACT license (FIX)
+//           await tx.license.update({
+//             where: { id: license.id },
+//             data: { assignedToId: newMember.id },
+//           });
+
+//           await tx.organizationInvite.delete({
+//             where: { id: invite.id },
+//           });
+//         }
+//         /* 🔹 NORMAL COMPANY FLOW */
+//         if (!invite && role === "company") {
+//           const existingMembership = await tx.organizationMember.findFirst({
+//             where: { userId: updatedUser.id },
+//           });
+
+//           if (!existingMembership) {
+//             // Extract domain for auto-join logic
+//             const domain = email.split("@")[1].toLowerCase();
+
+//             const domainMember = await tx.organizationMember.findFirst({
+//               where: {
+//                 user: {
+//                   role: "company",
+//                   email: { endsWith: `@${domain}`, mode: "insensitive" },
+//                 },
+//               },
+//               include: { user: true },
+//             });
+
+//             if (domainMember) {
+//               /* JOIN EXISTING ORG */
+//               const newMember = await tx.organizationMember.create({
+//                 data: {
+//                   userId: updatedUser.id,
+//                   organizationId: domainMember.organizationId,
+//                 },
+//               });
+
+//               await tx.users.update({
+//                 where: { id: updatedUser.id },
+//                 data: {
+//                   companyName: domainMember.user?.companyName || null,
+//                 },
+//               });
+//               const orgSubscription =
+//                 await tx.organizationSubscription.findFirst({
+//                   where: { organizationId: domainMember.organizationId },
+//                 });
+
+//               if (orgSubscription) {
+//                 const basicPlan = await tx.subscriptionPlan.findFirst({
+//                   where: { tier: "BASIC" },
+//                 });
+
+//                 if (basicPlan) {
+//                   const seat = await tx.licenseSeat.create({
+//                     data: {
+//                       subscriptionId: orgSubscription.id,
+//                       assignedToId: newMember.id,
+//                     },
+//                   });
+
+//                   await tx.license.create({
+//                     data: {
+//                       subscriptionId: orgSubscription.id,
+//                       planId: basicPlan.id,
+//                       seatId: seat.id,
+//                       assignedToId: newMember.id,
+//                       validUntil: new Date(
+//                         new Date().setMonth(new Date().getMonth() + 1),
+//                       ),
+//                       isActive: true,
+//                     },
+//                   });
+//                 }
+//               }
+//             } else {
+//               /* CREATE NEW ORG */
+//               const org = await tx.organization.create({
+//                 data: {
+//                   name: `${email.split("@")[1].split(".")[0]}'s Organization`,
+//                 },
+//               });
+
+//               const subscription = await tx.organizationSubscription.create({
+//                 data: {
+//                   organizationId: org.id,
+//                   status: "ACTIVE",
+//                   billingCycle: "MONTHLY",
+//                   autoRenew: true,
+//                   currentPeriodStart: new Date(),
+//                   currentPeriodEnd: new Date(
+//                     new Date().setMonth(new Date().getMonth() + 1),
+//                   ),
+//                   nextBillingDate: new Date(
+//                     new Date().setMonth(new Date().getMonth() + 1),
+//                   ),
+//                 },
+//               });
+
+//               const member = await tx.organizationMember.create({
+//                 data: {
+//                   userId: updatedUser.id,
+//                   organizationId: org.id,
+//                 },
+//               });
+
+//               const basicPlan = await tx.subscriptionPlan.findFirst({
+//                 where: { tier: "BASIC" },
+//               });
+
+//               if (!basicPlan) {
+//                 return res.status(500).json({
+//                   status: "error",
+//                   message: "Basic Plan is not Defined In DB",
+//                 });
+//               }
+
+//               const seat = await tx.licenseSeat.create({
+//                 data: {
+//                   subscriptionId: subscription.id,
+//                   assignedToId: member.id,
+//                 },
+//               });
+
+//               await tx.license.create({
+//                 data: {
+//                   subscriptionId: subscription.id,
+//                   planId: basicPlan.id,
+//                   seatId: seat.id,
+//                   assignedToId: member.id,
+//                   validUntil: new Date(
+//                     new Date().setMonth(new Date().getMonth() + 1),
+//                   ),
+//                   isActive: true,
+//                 },
+//               });
+//             }
+//           }
+//         }
+
+//         return updatedUser;
+//       },
+//       { timeout: 15000 },
+//     );
+
+//     /* ✅ SEND EMAIL HERE */
+//     try {
+//       await sendEmail({
+//         to: email,
+//         subject: "Welcome to ForceHead",
+//         html: getWelcomePasswordEmailTemplate({
+//           name: result.name,
+//           role: result.role,
+//         }),
+//       });
+//     } catch (err) {
+//       console.warn("Email failed:", err.message);
+//     }
+
+//     /* ─────────────────────────────
+//        6️⃣ SUCCESS RESPONSE
+//     ───────────────────────────── */
+//     return res.status(200).json({
+//       status: "success",
+//       message: invite
+//         ? "Password set, organization joined & license assigned successfully"
+//         : "Password set & organization created successfully",
+//       chatIntegrated: !!externalUserId, // tells frontend if chat is active
+//     });
+//   } catch (error) {
+//     console.error("Error in setPassword:", error.message);
+//     console.log("error stack", error.stack);
+//     handleError(error, req, res);
+//     return res.status(500).json({
+//       status: "error",
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// };
+
 const setPassword = async (req, res) => {
   const { email: em, password, role, token } = req.body;
 
@@ -350,16 +673,33 @@ const setPassword = async (req, res) => {
                 }
               }
             } else {
-              /* CREATE NEW ORG */
-              const org = await tx.organization.create({
-                data: {
-                  name: `${email.split("@")[1].split(".")[0]}'s Organization`,
-                },
+              /* CREATE NEW ORG (or join existing by domain) */
+              const domain = email.split("@")[1].toLowerCase();
+
+              // 🔍 Check if an org with this domain already exists
+              const existingOrgByDomain = await tx.organization.findUnique({
+                where: { domain },
               });
 
+              // ✅ Use existing org id or create a fresh one
+              let orgId;
+
+              if (existingOrgByDomain) {
+                orgId = existingOrgByDomain.id;
+              } else {
+                const newOrg = await tx.organization.create({
+                  data: {
+                    name: `${domain.split(".")[0]}'s Organization`,
+                    domain, // ✅ persist domain for future lookups
+                  },
+                });
+                orgId = newOrg.id;
+              }
+
+              // Everything below is identical regardless of new or existing org
               const subscription = await tx.organizationSubscription.create({
                 data: {
-                  organizationId: org.id,
+                  organizationId: orgId,
                   status: "ACTIVE",
                   billingCycle: "MONTHLY",
                   autoRenew: true,
@@ -376,7 +716,7 @@ const setPassword = async (req, res) => {
               const member = await tx.organizationMember.create({
                 data: {
                   userId: updatedUser.id,
-                  organizationId: org.id,
+                  organizationId: orgId,
                 },
               });
 

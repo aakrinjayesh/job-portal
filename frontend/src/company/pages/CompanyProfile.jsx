@@ -946,34 +946,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
       </Card>
 
       {/* ════════ 5. SOCIAL LINKS ════════ */}
+
       <Card title="Social Links" style={{ marginBottom: 20 }}>
-        {/* <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item
-              label="LinkedIn"
-              name="linkedin"
-              rules={[
-                {
-                  pattern: /^https:\/\/.+$/,
-                  message:
-                    "Only HTTPS links are allowed (must start with https://)",
-                },
-              ]}
-            >
-              <Input placeholder="https://linkedin.com/company/…" />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item label="Twitter / X" name="twitter">
-              <Input placeholder="https://twitter.com/…" />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item label="Instagram" name="instagram">
-              <Input placeholder="https://instagram.com/…" />
-            </Form.Item>
-          </Col>
-        </Row> */}
         <Row gutter={16}>
           <Col span={8}>
             <Form.Item
@@ -981,8 +955,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
               name="linkedin"
               rules={[
                 {
-                  pattern: /^https:\/\/.+$/,
-                  message: "Please enter a valid URL (include https://)",
+                  pattern: /^https:\/\/(www\.)?linkedin\.com\/.+$/,
+                  message: "Please enter valid LinkedIn link",
                 },
               ]}
             >
@@ -996,8 +970,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
               name="twitter"
               rules={[
                 {
-                  pattern: /^https:\/\/.+$/,
-                  message: "Please enter a valid URL (include https://)",
+                  pattern: /^https:\/\/(www\.)?(twitter\.com|x\.com)\/.+$/,
+                  message: "Please enter valid Twitter link",
                 },
               ]}
             >
@@ -1011,8 +985,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
               name="instagram"
               rules={[
                 {
-                  pattern: /^https:\/\/.+$/,
-                  message: "Please enter a valid URL (include https://)",
+                  pattern: /^https:\/\/(www\.)?instagram\.com\/.+$/,
+                  message: "Please enter valid Instagram link",
                 },
               ]}
             >

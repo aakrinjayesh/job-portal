@@ -634,23 +634,48 @@ const updateCompanyProfile = async (req, res) => {
       }
 
       // — company profile upsert —
+      // const companyData = {
+      //   name: companyName,
+      //   tagline,
+      //   description,
+      //   website,
+      //   // industry,
+      //   industry: industry || "Not Specified",
+      //   companySize,
+      //   foundedYear,
+      //   headquarters,
+      //   locations,
+      //   specialties,
+      //   logoUrl,
+      //   coverImage,
+      //   socialLinks,
+      //   clouds, // ✅ ADD THIS
+      //   certifications,
+      //   partnerTier,
+      //   partnerType,
+      // };
       const companyData = {
-        name: companyName,
+        name: companyName || "Company",
         tagline,
         description,
-        website,
-        // industry,
+        website: website || "https://example.com",
+
+        // ✅ FIX (very important)
         industry: industry || "Not Specified",
-        companySize,
-        foundedYear,
-        headquarters,
-        locations,
-        specialties,
+        companySize: companySize || "1-10",
+        foundedYear: foundedYear || 2024,
+        headquarters: headquarters || "Unknown",
+
+        locations: locations?.length ? locations : ["India"],
+        specialties: specialties || [],
+
         logoUrl,
         coverImage,
-        socialLinks,
-        clouds, // ✅ ADD THIS
-        certifications,
+        socialLinks: socialLinks || {},
+
+        clouds: clouds || [],
+        certifications: certifications || [],
+
         partnerTier,
         partnerType,
       };
