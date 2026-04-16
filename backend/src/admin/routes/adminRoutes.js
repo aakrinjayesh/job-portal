@@ -6,7 +6,12 @@ import {
   executeQuery, getAllOrganizations,
   getOrganizationById,
   deleteOrganization,
-  removeMember
+  removeMember,
+  getPlanLimits,
+  upsertPlanLimit,
+  bulkUpsertPlanLimits,
+  deletePlanLimit,
+  updatePlanPricing, 
 } from "../../admin/controllers/adminController.js";
 import { verifyAdminToken } from "../../admin/middleware/adminMiddleware.js";
 // import { generateQueryFromPrompt } from "../controllers/adminQueryController.js";
@@ -26,6 +31,16 @@ Adminrouter.get("/organizations/:id", verifyAdminToken, getOrganizationById);
 Adminrouter.delete("/organizations/:id", verifyAdminToken, deleteOrganization);
 // router.patch("/organizations/:id/subscription", verifyAdminToken, updateSubscriptionStatus);
 Adminrouter.delete("/organizations/members/:memberId", verifyAdminToken, removeMember);
+
+// ── Plan Limits ───────────────────────────────────
+Adminrouter.get("/plan-limits", verifyAdminToken, getPlanLimits);          // all plans + their limits
+Adminrouter.post("/plan-limits", verifyAdminToken, upsertPlanLimit);       // create or update one limit
+Adminrouter.post("/plan-limits/bulk", verifyAdminToken, bulkUpsertPlanLimits); // update many at once
+Adminrouter.delete("/plan-limits/:id", verifyAdminToken, deletePlanLimit); // remove one limit
+
+// ── Plan Pricing ──────────────────────────────────
+Adminrouter.patch("/plans/:planId/pricing", verifyAdminToken, updatePlanPricing);
+
 
 
 // Protected — add verifyAdminToken to any admin-only route

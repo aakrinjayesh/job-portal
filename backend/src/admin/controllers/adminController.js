@@ -363,7 +363,179 @@ const getOrganizationById = async (req, res) => {
   }
 };
 
+// 📋 Get all plan limits (grouped by plan)
+const getPlanLimits = async (req, res) => {
+  try {
+    const plans = await prisma.subscriptionPlan.findMany({
+      include: {
+        limits: true,
+      },
+      orderBy: { monthlyPrice: "asc" },
+    });
 
+    return res.status(200).json({ status: "success", plans });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+// ✏️ Upsert a plan limit (create or update)
+const upsertPlanLimit = async (req, res) => {
+  try {
+    const { planId, feature, period, maxAllowed, planName } = req.body;
+
+    if (!planId || !feature || !period || maxAllowed === undefined) {
+      return res.status(400).json({
+        status: "error",
+        message: "planId, feature, period, and maxAllowed are required",
+      });
+    }
+
+    // Verify plan exists
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      return res.status(404).json({ status: "error", message: "Plan not found" });
+    }
+
+    const limit = await prisma.planLimit.upsert({
+      where: { planId_feature_period: { planId, feature, period } },
+      update: { maxAllowed: parseInt(maxAllowed) },
+      create: {
+        planId,
+        planName: planName || plan.name,
+        feature,
+        period,
+        maxAllowed: parseInt(maxAllowed),
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Plan limit saved successfully",
+      limit,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+// ✏️ Bulk upsert limits for a single plan
+const bulkUpsertPlanLimits = async (req, res) => {
+  try {
+    const { planId, limits } = req.body;
+    // limits: [{ feature, period, maxAllowed }]
+
+    if (!planId || !Array.isArray(limits) || limits.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "planId and limits[] are required",
+      });
+    }
+
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      return res.status(404).json({ status: "error", message: "Plan not found" });
+    }
+
+    const results = await prisma.$transaction(
+      limits.map(({ feature, period, maxAllowed }) =>
+        prisma.planLimit.upsert({
+          where: { planId_feature_period: { planId, feature, period } },
+          update: { maxAllowed: parseInt(maxAllowed) },
+          create: {
+            planId,
+            planName: plan.name,
+            feature,
+            period,
+            maxAllowed: parseInt(maxAllowed),
+          },
+        })
+      )
+    );
+
+    return res.status(200).json({
+      status: "success",
+      message: `${results.length} limits updated`,
+      limits: results,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+// ❌ Delete a specific plan limit
+const deletePlanLimit = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.planLimit.delete({ where: { id } });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Plan limit deleted",
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+// ✏️ Update plan pricing (monthlyPrice and/or yearlyPrice)
+const updatePlanPricing = async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const { monthlyPrice, yearlyPrice } = req.body;
+
+    if (monthlyPrice === undefined && yearlyPrice === undefined) {
+      return res.status(400).json({
+        status: "error",
+        message: "Provide at least one of monthlyPrice or yearlyPrice",
+      });
+    }
+
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      return res.status(404).json({ status: "error", message: "Plan not found" });
+    }
+
+    // Only PROFESSIONAL and ORGANIZATION are editable from admin UI
+    const EDITABLE_TIERS = ["PROFESSIONAL", "ORGANIZATION"];
+    if (!EDITABLE_TIERS.includes(plan.tier)) {
+      return res.status(403).json({
+        status: "error",
+        message: `Pricing for ${plan.tier} cannot be edited`,
+      });
+    }
+
+    const data = {};
+    if (monthlyPrice !== undefined) {
+      const mo = parseInt(monthlyPrice);
+      if (isNaN(mo) || mo < 0) {
+        return res.status(400).json({ status: "error", message: "monthlyPrice must be a non-negative integer" });
+      }
+      data.monthlyPrice = mo;
+    }
+    if (yearlyPrice !== undefined) {
+      const yr = parseInt(yearlyPrice);
+      if (isNaN(yr) || yr < 0) {
+        return res.status(400).json({ status: "error", message: "yearlyPrice must be a non-negative integer" });
+      }
+      data.yearlyPrice = yr;
+    }
+
+    const updated = await prisma.subscriptionPlan.update({
+      where: { id: planId },
+      data,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Plan pricing updated successfully",
+      plan: updated,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
 
 export { adminLogin, 
   getAdminStats, 
@@ -371,5 +543,10 @@ export { adminLogin,
   getAllOrganizations,
   getOrganizationById,
   deleteOrganization,
-  removeMember
+  removeMember,
+   getPlanLimits,
+  upsertPlanLimit,
+  bulkUpsertPlanLimits,
+  deletePlanLimit,
+  updatePlanPricing,
 };
