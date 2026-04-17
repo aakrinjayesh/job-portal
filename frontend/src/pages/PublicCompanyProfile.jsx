@@ -713,14 +713,35 @@ ${url}
           bodyStyle={{ padding: 0 }}
         >
           {/* Cover / banner */}
-          <div
+          {/* <div
             style={{
               height: 180,
               background: company.coverImage
                 ? `url(${company.coverImage}) center/cover no-repeat`
                 : "linear-gradient(135deg, #e6f4ff 0%, #bae0ff 60%, #91caff 100%)",
             }}
-          />
+          /> */}
+          <div style={{ height: 180, overflow: "hidden" }}>
+            {company.coverImage ? (
+              <img
+                src={company.coverImage}
+                alt="cover"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  height: "100%",
+                  background:
+                    "linear-gradient(135deg, #e6f4ff 0%, #bae0ff 60%, #91caff 100%)",
+                }}
+              />
+            )}
+          </div>
 
           {/* Logo + info row */}
           <div style={{ padding: "0 24px 20px", position: "relative" }}>
@@ -733,9 +754,18 @@ ${url}
                 height: 80,
                 borderRadius: 8,
                 border: "3px solid #fff",
-                background: company.logoUrl
-                  ? `url(${company.logoUrl}) center/cover no-repeat`
-                  : "#fff",
+                // background: company.logoUrl
+                //   ? `url(${company.logoUrl}) center/cover no-repeat`
+                //   : "#fff",
+                backgroundImage: company.logoUrl
+                  ? `url("${company.logoUrl}")`
+                  : undefined,
+
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+
+                backgroundColor: !company.logoUrl ? "#fff" : undefined,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                 display: "flex",
                 alignItems: "center",

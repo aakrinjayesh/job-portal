@@ -47,12 +47,31 @@ JobRouters.post(
   authenticateToken,
   getJobList,
 );
-JobRouters.get(
-  "/job/:jobId",
-  // validateInput(getJobDeatilsValidator),
-  authenticateToken,
-  getJobDetails,
-);
+// JobRouters.get(
+//   "/job/:jobId",
+//   // validateInput(getJobDeatilsValidator),
+//   authenticateToken,
+//   getJobDetails,
+// );
+JobRouters.get("/job/:jobId", async (req, res, next) => {
+  const userAgent = req.headers["user-agent"] || "";
+
+  // 🔥 Detect bots (WhatsApp, LinkedIn, Slack, etc.)
+  const isBot =
+    userAgent.includes("WhatsApp") ||
+    userAgent.includes("LinkedIn") ||
+    userAgent.includes("Slack") ||
+    userAgent.includes("Discord") ||
+    userAgent.includes("Twitter") ||
+    userAgent.includes("facebookexternalhit");
+
+  if (isBot) {
+    return getJobMetaPage(req, res);
+  }
+
+  // 👤 Normal user → go to existing API
+  return getJobDetails(req, res, next);
+});
 
 // User job application routes
 JobRouters.post(

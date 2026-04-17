@@ -392,7 +392,7 @@ const getCompanyProfileDetails = async (req, res) => {
         tagline: companyProfile?.tagline || null,
         description: companyProfile?.description || null,
         website: companyProfile?.website || null,
-        industry: companyProfile?.industry || null,
+        // industry: companyProfile?.industry || null,
         companySize: companyProfile?.companySize || null,
         foundedYear: companyProfile?.foundedYear || null,
         headquarters: companyProfile?.headquarters || null,
@@ -581,7 +581,7 @@ const updateCompanyProfile = async (req, res) => {
       tagline,
       description,
       website,
-      industry,
+      // industry,
       companySize,
       foundedYear,
       headquarters,
@@ -661,7 +661,7 @@ const updateCompanyProfile = async (req, res) => {
         website: website || "https://example.com",
 
         // ✅ FIX (very important)
-        industry: industry || "Not Specified",
+        // industry: industry || "Not Specified",
         companySize: companySize || "1-10",
         foundedYear: foundedYear || 2024,
         headquarters: headquarters || "Unknown",

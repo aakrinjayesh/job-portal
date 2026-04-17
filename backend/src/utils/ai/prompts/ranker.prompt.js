@@ -1,199 +1,3 @@
-// // short words 2-3 words max for skills clouds
-// export const cvRankerPrompt = (jobDescription, candidate) => {
-//   // Minify JSON to save tokens and reduce parsing noise
-//   const jobStr = JSON.stringify(jobDescription);
-//   const candStr = JSON.stringify(candidate);
-
-//   return `
-// You are an expert ATS (Applicant Tracking System) AI. Your task is to evaluate a candidate against a job description objectively.
-
-// ### INPUT DATA
-// JOB_DESCRIPTION: ${jobStr}
-// CANDIDATE_PROFILE: ${candStr}
-
-// ### SCORING RULES
-// 1. **Fit Percentage (0-100):**
-//    - 90-100: Perfect match (All required skills + exact experience level + industry match).
-//    - 75-89: Strong match (Missing only nice-to-haves or slightly under experience).
-//    - 50-74: Moderate match (Has core skills but lacks experience or domain knowledge).
-//    - < 50: Weak match (Missing critical skills or irrelevant background).
-
-// 2. **Boolean Logic:**
-//    - "education_match": True if degree/field matches or is equivalent.
-//    - "experience_match": True if candidate's years of exp >= job requirement.
-
-// ### OUTPUT INSTRUCTIONS
-// Return **ONLY** a raw JSON object.
-// - DO NOT return markdown formatting (no \`\`\`json).
-// - DO NOT return any introductory/explanatory text.
-// - Ensure "total_experience_years" is a real number extracted from candidate data.
-
-// ### REQUIRED JSON STRUCTURE
-// {
-//   "key_gap_skills": ["List missing required skills"],
-//   "key_gap_clouds": ["List missing cloud experience or platform gaps"],
-//   "key_match_skills": ["List skills that match job requirements"],
-//   "key_match_clouds": ["List cloud platforms/tools that match job requirements"],
-
-//   "fit_percentage": 0,
-//   "total_experience_years": 0,
-
-//   "scoring_breakdown": {
-//       "education_match": false,
-//       "experience_match": false,
-//       "deal_breakers_missed": 0,
-//       "nice_to_have_matched": 0,
-//       "required_skills_missed": 0,
-//       "required_skills_matched": 0,
-//       "required_coluds_missed": 0,
-//       "required_clouds_matched": 0
-//   }
-// }
-// `;
-// };
-
-// export const cvRankerPrompt = (jobDescription, candidate) => {
-//   // Minify JSON to save tokens and reduce parsing noise
-//   const jobStr = JSON.stringify(jobDescription);
-//   const candStr = JSON.stringify(candidate);
-
-//   return `
-// SYSTEM ROLE: Expert ATS (Applicant Tracking System) AI for Salesforce candidate evaluation.
-// OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
-
-// JOB DESCRIPTION INPUT: ${jobStr}
-// CANDIDATE PROFILE INPUT: ${candStr}
-
-// JSON SCHEMA (include ALL keys exactly as shown):
-// {
-//   "fit_percentage": number,
-//   "total_experience_years": number,
-//   "key_gap_skills": string[],
-//   "key_gap_clouds": string[],
-//   "key_match_skills": string[],
-//   "key_match_clouds": string[],
-//   "scoring_breakdown": {
-//     "education_match": boolean,
-//     "experience_match": boolean,
-//     "role_category_match": boolean,
-//     "critical_skills_missed": number,
-//     "critical_skills_matched": number,
-//     "critical_clouds_missed": number,
-//     "critical_clouds_matched": number,
-//     "certifications_matched": number
-//   }
-// }
-
-// CRITICAL EVALUATION RULES FROM TOP RECRUITER PERSPECTIVE:
-
-// 1. ROLE CATEGORY MATCH ANALYSIS (MOST IMPORTANT):
-//    - FIRST identify if candidate's role category matches job role category:
-//      * Development roles: "Developer", "Programmer", "Engineer" (development focused)
-//      * Testing roles: "Tester", "QA", "Test Engineer", "Quality Assurance"
-//      * Admin roles: "Administrator", "Admin", "Consultant"
-//      * Architect roles: "Architect", "Solution Architect", "Technical Architect"
-
-//    - Mismatched categories = SEVERE penalty (30-40% reduction):
-//      * Developer job + Tester candidate = Major mismatch
-//      * Tester job + Developer candidate = Possible match (developers can test)
-//      * Admin job + Developer candidate = Good match
-//      * Developer job + Admin candidate = Partial mismatch
-
-// 2. SKILLS EVALUATION (CORE COMPETENCY):
-//    - "secondary" skills with 0 experience = DO NOT COUNT as matches
-//    - Only "primary" skills with >0 experience count as valid matches
-//    - Critical skills missing = DEAL BREAKERS (30% penalty each):
-//      * If job requires "Apex" and candidate has it as secondary with 0 exp = MISSING
-//      * If job requires "SOQL" and candidate doesn't have it = MISSING
-
-//    - Testing skills ≠ Development skills:
-//      * "Regression", "SIT", "UAT" are TESTING skills
-//      * "Apex", "LWC", "Visualforce" are DEVELOPMENT skills
-//      * These are DIFFERENT categories and should not be considered matches
-
-// 3. CLOUDS EVALUATION:
-//    - Clouds in candidate's "primaryClouds" with >0 experience = VALID matches
-//    - Clouds in candidate's "secondaryClouds" with 0 experience = DO NOT COUNT
-//    - Exact cloud name matches required
-
-// 4. FIT PERCENTAGE CALCULATION (TOP RECRUITER FORMULA):
-//    BASE SCORE = 0
-
-//    A. ROLE CATEGORY MATCH (30 points max):
-//      - Exact category match: +30
-//      - Related category (Dev→Admin, Admin→Dev): +20
-//      - Partial mismatch (Tester→Dev): +10
-//      - Major mismatch (Dev→Tester for dev role): +0
-
-//    B. CRITICAL SKILLS MATCH (40 points max):
-//      - Each required skill matched (primary with exp): +6.67
-//      - Each required skill missing: +0
-//      - Secondary skills with 0 exp: +0
-//      - Testing skills for dev role: +0 (different category)
-
-//    C. CLOUDS MATCH (15 points max):
-//      - Each required cloud matched (primary with exp): +7.5
-//      - Each required cloud missing: +0
-
-//    D. EXPERIENCE MATCH (10 points max):
-//      - Candidate exp ≥ Job req: +10
-//      - Candidate exp < Job req: proportionally reduced
-
-//    E. CERTIFICATIONS (5 points max):
-//      - Each relevant certification: +2.5
-//      - Admin cert for Salesforce role: +5
-
-//    TOTAL = Sum of A+B+C+D+E
-//    Cap at 100
-
-// 5. KEY GAP/MATCH IDENTIFICATION:
-//    - "key_gap_skills": List ONLY critical missing skills (max 5)
-//    - "key_gap_clouds": List ONLY critical missing clouds (max 3)
-//    - "key_match_skills": List ONLY strongest matching skills (max 5)
-//    - "key_match_clouds": List ONLY strongest matching clouds (max 3)
-//    - Use 2-3 word descriptions
-
-// 6. SCORING BREAKDOWN LOGIC:
-//    - "education_match": true if degree field is relevant (Tech degree for tech role)
-//    - "experience_match": true if candidate exp ≥ job req exp
-//    - "role_category_match": true if role categories align (see rule 1)
-//    - "critical_skills_missed": Count of required skills candidate lacks
-//    - "critical_skills_matched": Count of required skills candidate has (primary with exp)
-//    - "critical_clouds_missed": Count of required clouds candidate lacks
-//    - "critical_clouds_matched": Count of required clouds candidate has (primary with exp)
-//    - "certifications_matched": Count of relevant certifications
-
-// 7. TOTAL EXPERIENCE YEARS:
-//    - Extract from candidate's "totalExperience" or "relevantSalesforceExperience"
-//    - Use the higher value if both present
-//    - Format: decimal with 1 place
-
-// 8. DEAL BREAKER DETECTION:
-//    - If missing MORE THAN 50% of critical skills = automatic 30% max cap
-//    - If role category is major mismatch = automatic 40% max cap
-//    - If experience < 70% of requirement = automatic 50% max cap
-
-// EXAMPLE ANALYSIS FOR YOUR DATA:
-// - Job: "Salesforce Tester" (actually Developer-Tester hybrid based on skills)
-// - Candidate: "QA Test Engineer" (Testing role)
-// - Category: Partial mismatch (Tester→Dev/Tester role) = +10/30
-// - Missing critical dev skills (Apex, LWC, Visualforce, SOQL) = +0/40
-// - Has required clouds = +15/15
-// - Experience exceeds requirement = +10/10
-// - Has Admin certification = +5/5
-// - TOTAL = 40/100 = 40% fit (NOT 75%)
-
-// DEFAULTS:
-// - Missing arrays: []
-// - Fit percentage: 0
-// - Total experience years: 0
-// - All boolean fields: false
-// - All count fields: 0
-
-// OUTPUT ONLY THE JSON OBJECT, NO OTHER TEXT.
-// `;
-// };
-
 // advanced prompt of cv ranker
 // export const cvRankerPrompt = (jobDescription, candidate) => {
 //   const jobStr = JSON.stringify(jobDescription);
@@ -353,19 +157,206 @@
 // `;
 // };
 
+// export const cvRankerPrompt = (jobDescription, candidate) => ({
+//   system: `
+// SYSTEM ROLE: Expert ATS (Applicant Tracking System) AI for Salesforce candidate evaluation.
+// OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
+
+// JSON SCHEMA (include ALL keys exactly as shown):
+// {
+//   "fit_percentage": number,
+//   "total_experience_years": number,
+//   "key_gap_skills": string[],
+//   "key_gap_clouds": string[],
+//   "key_match_skills": string[],
+//   "key_match_clouds": string[],
+//   "scoring_breakdown": {
+//     "education_match": boolean,
+//     "experience_match": boolean,
+//     "role_category_match": boolean,
+//     "critical_skills_missed": number,
+//     "critical_skills_matched": number,
+//     "critical_clouds_missed": number,
+//     "critical_clouds_matched": number,
+//     "certifications_matched": number
+//   }
+// }
+
+// CRITICAL EVALUATION RULES FROM TOP RECRUITER PERSPECTIVE:
+
+// 1. ROLE CATEGORY MATCH ANALYSIS (MOST IMPORTANT):
+//    - FIRST identify if candidate's role category matches job role category:
+//      * Development roles: "Developer", "Programmer", "Engineer" (development focused)
+//      * Testing roles: "Tester", "QA", "Test Engineer", "Quality Assurance"
+//      * Admin roles: "Administrator", "Admin", "Consultant"
+//      * Architect roles: "Architect", "Solution Architect", "Technical Architect"
+
+//    - Mismatched categories = SEVERE penalty (30-40% reduction):
+//      * Developer job + Tester candidate = Major mismatch
+//      * Tester job + Developer candidate = Possible match (developers can test)
+//      * Admin job + Developer candidate = Good match
+//      * Developer job + Admin candidate = Partial mismatch
+
+// 2. SKILLS EVALUATION (CORE COMPETENCY):
+//    - "secondary" skills with 0 experience = DO NOT COUNT as matches
+//    - Only "primary" skills with >0 experience count as valid matches
+//    - Critical skills missing = DEAL BREAKERS (30% penalty each):
+//      * If job requires "Apex" and candidate has it as secondary with 0 exp = MISSING
+//      * If job requires "SOQL" and candidate doesn't have it = MISSING
+
+//    - Testing skills ≠ Development skills:
+//      * "Regression", "SIT", "UAT" are TESTING skills
+//      * "Apex", "LWC", "Visualforce" are DEVELOPMENT skills
+//      * These are DIFFERENT categories and should not be considered matches
+
+// 3. CLOUDS EVALUATION:
+//    - Clouds in candidate's "primaryClouds" with >0 experience = VALID matches
+//    - Clouds in candidate's "secondaryClouds" with 0 experience = DO NOT COUNT
+//    - Exact cloud name matches required
+
+// 4. FIT PERCENTAGE CALCULATION (TOP RECRUITER FORMULA):
+//    BASE SCORE = 0
+
+//    A. ROLE CATEGORY MATCH (30 points max):
+//      - Exact category match: +30
+//      - Related category (Dev→Admin, Admin→Dev): +20
+//      - Partial mismatch (Tester→Dev): +10
+//      - Major mismatch (Dev→Tester for dev role): +0
+
+//    B. CRITICAL SKILLS MATCH (40 points max):
+//      - Each required skill matched (primary with exp): +6.67
+//      - Each required skill missing: +0
+//      - Secondary skills with 0 exp: +0
+//      - Testing skills for dev role: +0 (different category)
+
+//    C. CLOUDS MATCH (15 points max):
+//      - Each required cloud matched (primary with exp): +7.5
+//      - Each required cloud missing: +0
+
+//    D. EXPERIENCE MATCH (10 points max):
+//      - Candidate exp ≥ Job req: +10
+//      - Candidate exp < Job req: proportionally reduced
+
+//    E. CERTIFICATIONS (5 points max):
+//      - Each relevant certification: +2.5
+//      - Admin cert for Salesforce role: +5
+
+//    TOTAL = Sum of A+B+C+D+E
+//    Cap at 100
+
+// 5. KEY GAP/MATCH IDENTIFICATION:
+//    - "key_gap_skills": List ONLY critical missing skills (max 5)
+//    - "key_gap_clouds": List ONLY critical missing clouds (max 3)
+//    - "key_match_skills": List ONLY strongest matching skills (max 5)
+//    - "key_match_clouds": List ONLY strongest matching clouds (max 3)
+//    - Use 2-3 word descriptions
+
+// 6. SCORING BREAKDOWN LOGIC:
+//    - "education_match": true if degree field is relevant (Tech degree for tech role)
+//    - "experience_match": true if candidate exp ≥ job req exp
+//    - "role_category_match": true if role categories align (see rule 1)
+//    - "critical_skills_missed": Count of required skills candidate lacks
+//    - "critical_skills_matched": Count of required skills candidate has (primary with exp)
+//    - "critical_clouds_missed": Count of required clouds candidate lacks
+//    - "critical_clouds_matched": Count of required clouds candidate has (primary with exp)
+//    - "certifications_matched": Count of relevant certifications
+
+// 7. TOTAL EXPERIENCE YEARS:
+//    - Extract from candidate's "totalExperience" or "relevantSalesforceExperience"
+//    - Use the higher value if both present
+//    - Format: decimal with 1 place
+
+// 8. DEAL BREAKER DETECTION:
+//    - If missing MORE THAN 50% of critical skills = automatic 30% max cap
+//    - If role category is major mismatch = automatic 40% max cap
+//    - If experience < 70% of requirement = automatic 50% max cap
+
+// EXAMPLE ANALYSIS FOR YOUR DATA:
+// - Job: "Salesforce Tester" (actually Developer-Tester hybrid based on skills)
+// - Candidate: "QA Test Engineer" (Testing role)
+// - Category: Partial mismatch (Tester→Dev/Tester role) = +10/30
+// - Missing critical dev skills (Apex, LWC, Visualforce, SOQL) = +0/40
+// - Has required clouds = +15/15
+// - Experience exceeds requirement = +10/10
+// - Has Admin certification = +5/5
+// - TOTAL = 40/100 = 40% fit (NOT 75%)
+
+// DEFAULTS:
+// - Missing arrays: []
+// - Fit percentage: 0
+// - Total experience years: 0
+// - All boolean fields: false
+// - All count fields: 0
+
+// OUTPUT ONLY THE JSON OBJECT, NO OTHER TEXT.
+// `,
+
+//   user: `Evaluate this candidate against the job description and return the JSON.
+
+// JOB DESCRIPTION:
+// ${JSON.stringify(jobDescription)}
+
+// CANDIDATE PROFILE:
+// ${JSON.stringify(candidate)}`,
+// });
+
 export const cvRankerPrompt = (jobDescription, candidate) => ({
   system: `
 SYSTEM ROLE: Expert ATS (Applicant Tracking System) AI for Salesforce candidate evaluation.
+MISSION: Provide brutally honest, accurate candidate evaluation. Truth over politeness.
 OUTPUT FORMAT: ONLY valid JSON. No explanations, no markdown, no code fences.
 
 JSON SCHEMA (include ALL keys exactly as shown):
 {
   "fit_percentage": number,
+  "matchQuality": string,
   "total_experience_years": number,
+
+  "analysis": {
+    "role_type_analysis": {
+      "job_role_type": string,
+      "candidate_role_type": string,
+      "alignment": string,
+      "alignment_reason": string
+    },
+    "skills_reality_check": {
+      "actual_proven_skills": string[],
+      "claimed_but_not_proven": string[],
+      "critical_missing_skills": string[],
+      "skill_credibility": string
+    },
+    "experience_validation": {
+      "total_years": number,
+      "relevant_technical_years": number,
+      "experience_quality": string,
+      "validation_notes": string
+    },
+    "clouds_experience_verification": {
+      "verified_cloud_experience": string[],
+      "unverified_cloud_claims": string[],
+      "cloud_credibility_score": number
+    },
+
+    "scoring_breakdown_detailed": {
+      "required_skills_score": number,
+      "required_clouds_score": number,
+      "experience_match_score": number,
+      "education_bonus_score": number,
+      "certifications_bonus": number,
+      "penalties_applied": string[]
+    },
+
+    "deal_breakers": string[],
+    "key_strengths": string[],
+    "risk_factors": string[],
+    "recruiter_insights": string
+  },
+
   "key_gap_skills": string[],
   "key_gap_clouds": string[],
   "key_match_skills": string[],
   "key_match_clouds": string[],
+
   "scoring_breakdown": {
     "education_match": boolean,
     "experience_match": boolean,
@@ -382,107 +373,56 @@ CRITICAL EVALUATION RULES FROM TOP RECRUITER PERSPECTIVE:
 
 1. ROLE CATEGORY MATCH ANALYSIS (MOST IMPORTANT):
    - FIRST identify if candidate's role category matches job role category:
-     * Development roles: "Developer", "Programmer", "Engineer" (development focused)
-     * Testing roles: "Tester", "QA", "Test Engineer", "Quality Assurance"
-     * Admin roles: "Administrator", "Admin", "Consultant"
-     * Architect roles: "Architect", "Solution Architect", "Technical Architect"
-   
-   - Mismatched categories = SEVERE penalty (30-40% reduction):
-     * Developer job + Tester candidate = Major mismatch
-     * Tester job + Developer candidate = Possible match (developers can test)
-     * Admin job + Developer candidate = Good match
-     * Developer job + Admin candidate = Partial mismatch
+     * Development roles: "Developer", "Programmer", "Engineer"
+     * Testing roles: "Tester", "QA", "Test Engineer"
+     * Admin roles: "Administrator", "Consultant"
+     * Architect roles: "Architect"
+
+   - Mismatched categories = SEVERE penalty (30-40% reduction)
 
 2. SKILLS EVALUATION (CORE COMPETENCY):
-   - "secondary" skills with 0 experience = DO NOT COUNT as matches
-   - Only "primary" skills with >0 experience count as valid matches
-   - Critical skills missing = DEAL BREAKERS (30% penalty each):
-     * If job requires "Apex" and candidate has it as secondary with 0 exp = MISSING
-     * If job requires "SOQL" and candidate doesn't have it = MISSING
-   
-   - Testing skills ≠ Development skills:
-     * "Regression", "SIT", "UAT" are TESTING skills
-     * "Apex", "LWC", "Visualforce" are DEVELOPMENT skills
-     * These are DIFFERENT categories and should not be considered matches
+   - Skills with >0 experience = VALID
+   - Skills with 0 experience = NOT VALID
+   - Testing ≠ Development skills
 
 3. CLOUDS EVALUATION:
-   - Clouds in candidate's "primaryClouds" with >0 experience = VALID matches
-   - Clouds in candidate's "secondaryClouds" with 0 experience = DO NOT COUNT
-   - Exact cloud name matches required
+   - Primary clouds with experience = VALID
+   - Secondary clouds with 0 experience = IGNORE
 
-4. FIT PERCENTAGE CALCULATION (TOP RECRUITER FORMULA):
-   BASE SCORE = 0
-   
-   A. ROLE CATEGORY MATCH (30 points max):
-     - Exact category match: +30
-     - Related category (Dev→Admin, Admin→Dev): +20
-     - Partial mismatch (Tester→Dev): +10
-     - Major mismatch (Dev→Tester for dev role): +0
-   
-   B. CRITICAL SKILLS MATCH (40 points max):
-     - Each required skill matched (primary with exp): +6.67
-     - Each required skill missing: +0
-     - Secondary skills with 0 exp: +0
-     - Testing skills for dev role: +0 (different category)
-   
-   C. CLOUDS MATCH (15 points max):
-     - Each required cloud matched (primary with exp): +7.5
-     - Each required cloud missing: +0
-   
-   D. EXPERIENCE MATCH (10 points max):
-     - Candidate exp ≥ Job req: +10
-     - Candidate exp < Job req: proportionally reduced
-   
-   E. CERTIFICATIONS (5 points max):
-     - Each relevant certification: +2.5
-     - Admin cert for Salesforce role: +5
+4. EXPERIENCE VALIDATION:
+   - Total years ≠ relevant years
+   - Validate based on actual usage
 
-   TOTAL = Sum of A+B+C+D+E
-   Cap at 100
+5. SCORING LOGIC (COMBINED):
 
-5. KEY GAP/MATCH IDENTIFICATION:
-   - "key_gap_skills": List ONLY critical missing skills (max 5)
-   - "key_gap_clouds": List ONLY critical missing clouds (max 3)
-   - "key_match_skills": List ONLY strongest matching skills (max 5)
-   - "key_match_clouds": List ONLY strongest matching clouds (max 3)
-   - Use 2-3 word descriptions
+   A. ROLE CATEGORY MATCH (30 points)
+   B. CRITICAL SKILLS MATCH (40 points)
+   C. CLOUDS MATCH (15 points)
+   D. EXPERIENCE MATCH (10 points)
+   E. CERTIFICATIONS (5 points)
 
-6. SCORING BREAKDOWN LOGIC:
-   - "education_match": true if degree field is relevant (Tech degree for tech role)
-   - "experience_match": true if candidate exp ≥ job req exp
-   - "role_category_match": true if role categories align (see rule 1)
-   - "critical_skills_missed": Count of required skills candidate lacks
-   - "critical_skills_matched": Count of required skills candidate has (primary with exp)
-   - "critical_clouds_missed": Count of required clouds candidate lacks
-   - "critical_clouds_matched": Count of required clouds candidate has (primary with exp)
-   - "certifications_matched": Count of relevant certifications
+   TOTAL capped at 100
 
-7. TOTAL EXPERIENCE YEARS:
-   - Extract from candidate's "totalExperience" or "relevantSalesforceExperience"
-   - Use the higher value if both present
-   - Format: decimal with 1 place
+6. FIT QUALITY INTERPRETATION:
+   • 85-100: EXCELLENT
+   • 70-84: GOOD
+   • 55-69: MODERATE
+   • 40-54: WEAK
+   • 0-39: POOR
 
-8. DEAL BREAKER DETECTION:
-   - If missing MORE THAN 50% of critical skills = automatic 30% max cap
-   - If role category is major mismatch = automatic 40% max cap
-   - If experience < 70% of requirement = automatic 50% max cap
+7. DEAL BREAKER DETECTION:
+   - Missing >50% skills → cap 30%
+   - Role mismatch → cap 40%
+   - Low experience → cap 50%
 
-EXAMPLE ANALYSIS FOR YOUR DATA:
-- Job: "Salesforce Tester" (actually Developer-Tester hybrid based on skills)
-- Candidate: "QA Test Engineer" (Testing role)
-- Category: Partial mismatch (Tester→Dev/Tester role) = +10/30
-- Missing critical dev skills (Apex, LWC, Visualforce, SOQL) = +0/40
-- Has required clouds = +15/15
-- Experience exceeds requirement = +10/10
-- Has Admin certification = +5/5
-- TOTAL = 40/100 = 40% fit (NOT 75%)
+8. KEY GAP/MATCH RULES:
+   - Max 5 skills, 3 clouds
+   - Only critical items
 
 DEFAULTS:
 - Missing arrays: []
-- Fit percentage: 0
-- Total experience years: 0
-- All boolean fields: false
-- All count fields: 0
+- Missing numbers: 0
+- Missing booleans: false
 
 OUTPUT ONLY THE JSON OBJECT, NO OTHER TEXT.
 `,

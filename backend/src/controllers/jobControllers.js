@@ -2200,6 +2200,59 @@ const getCandidatesWithFitScore = async (req, res) => {
   }
 };
 
+const getJobMetaPage = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job || job.isDeleted) {
+      return res.status(404).send("Job not found");
+    }
+
+    const title = `${job.companyName} hiring ${job.role}${
+      job.location ? ` in ${job.location}` : ""
+    }`;
+
+    const description = `${job.companyName} is hiring ${job.role}${
+      job.location ? ` in ${job.location}` : ""
+    }. Apply now on ForceHead.`;
+
+    const image =
+      job.companyLogo || "https://www.forcehead.com/forceheadlogo.png";
+
+    const jobUrl = `https://www.forcehead.com/job/${job.id}`;
+
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title}</title>
+
+          <meta property="og:type" content="article" />
+          <meta property="og:title" content="${title}" />
+          <meta property="og:description" content="${description}" />
+          <meta property="og:image" content="${image}" />
+          <meta property="og:url" content="${jobUrl}" />
+          <meta property="og:site_name" content="ForceHead" />
+
+          <meta name="twitter:card" content="summary_large_image" />
+
+          <script>
+            window.location.href = "/company/job/${job.id}";
+          </script>
+        </head>
+        <body></body>
+      </html>
+    `);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+};
+
 export {
   userApplyJob,
   userAllApplyedJobs,
@@ -2220,4 +2273,5 @@ export {
   getJobQuestions,
   bulkFitScore,
   getCandidatesWithFitScore,
+  getJobMetaPage,
 };

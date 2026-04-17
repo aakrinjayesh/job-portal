@@ -125,12 +125,29 @@ const CompanyPreview = ({ data }) => (
       styles={{ body: { padding: 0 } }}
     >
       {/* Cover */}
-      <div
+      {/* <div
         style={{
           height: 90,
           background: data.coverImage
             ? `url(${data.coverImage}) center/cover no-repeat`
             : "linear-gradient(135deg, #e6f4ff 0%, #bae0ff 60%, #91caff 100%)",
+        }}
+      /> */}
+      {/* Cover */}
+      <div
+        style={{
+          height: 140, // 🔥 increased height (important)
+
+          backgroundImage: data.coverImage
+            ? `url("${data.coverImage}")`
+            : undefined,
+
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
+          // fallback gradient
+          backgroundColor: !data.coverImage ? "#e6f4ff" : undefined,
         }}
       />
 
@@ -208,12 +225,12 @@ const CompanyPreview = ({ data }) => (
               alignItems: "center",
             }}
           >
-            {data.industry && (
+            {/* {data.industry && (
               <Text type="secondary" style={{ fontSize: 11 }}>
                 <BuildOutlined style={{ marginRight: 3 }} />
                 {data.industry}
               </Text>
-            )}
+            )} */}
             {data.headquarters && (
               <Text type="secondary" style={{ fontSize: 11 }}>
                 <EnvironmentOutlined style={{ marginRight: 3 }} />
@@ -398,7 +415,7 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
     tagline: formValues.tagline || "",
     description: formValues.description || "",
     website: formValues.website || "",
-    industry: formValues.industry || "",
+    // industry: formValues.industry || "",
     companySize: formValues.companySize || "",
     headquarters: formValues.headquarters || "",
     logoUrl,
@@ -456,7 +473,7 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
             tagline: companyProfile?.tagline || "",
             description: companyProfile?.description || "",
             website: companyProfile?.website || "",
-            industry: companyProfile?.industry || undefined,
+            // industry: companyProfile?.industry || undefined,
             companySize: companyProfile?.companySize || undefined,
             foundedYear: companyProfile?.foundedYear || undefined,
             headquarters: companyProfile?.headquarters || "",
@@ -536,7 +553,7 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
         tagline: values.tagline,
         description: values.description,
         website: values.website,
-        industry: values.industry,
+        // industry: values.industry,
         companySize: values.companySize,
         foundedYear: values.foundedYear,
         headquarters: values.headquarters,
