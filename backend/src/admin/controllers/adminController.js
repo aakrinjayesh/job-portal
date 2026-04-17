@@ -184,7 +184,7 @@ const getAllOrganizations = async (req, res) => {
             select: {
               logoUrl: true,
               website: true,
-              industry: true,
+              // industry: true,
               companySize: true,
               headquarters: true,
             },
@@ -271,14 +271,18 @@ const getOrganizationById = async (req, res) => {
                 },
               },
             },
-            invoices: {
-               periodStart: "desc",
-              take: 5,
-            },
-            payments: {
-              orderBy: { createdAt: "desc" },
-              take: 5,
-            },
+           invoices: {
+  orderBy: {
+    periodStart: "desc",   // ✅ correct
+  },
+  take: 5,
+},
+          payments: {
+  orderBy: {
+    id: "desc" // fallback sorting
+  },
+  take: 5
+}
           },
         },
         invites: {
@@ -537,6 +541,134 @@ const updatePlanPricing = async (req, res) => {
   }
 };
 
+// 💼 Admin: Post a job on behalf of an organization
+const adminPostJob = async (req, res) => {
+  try {
+    const {
+      // Admin provides these explicitly
+      organizationId,
+      postedById,       // optional: which org member to attribute the job to
+      // Job fields (same as postJob)
+      role,
+      description,
+      employmentType,
+      experience,
+      experienceLevel,
+      tenure,
+      location,
+      skills,
+      clouds,
+      salary,
+      companyName,
+      responsibilities,
+      certifications,
+      jobType,
+      applicationDeadline,
+      ApplicationLimit,
+      companyLogo,
+      applicantSource,
+      questions = [],
+    } = req.body;
+
+    // 1️⃣ Validate required fields
+    if (!organizationId) {
+      return res.status(400).json({
+        status: "error",
+        message: "organizationId is required",
+      });
+    }
+
+    // 2️⃣ Verify organization exists
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+    });
+    if (!org) {
+      return res.status(404).json({
+        status: "error",
+        message: "Organization not found",
+      });
+    }
+
+    // 3️⃣ Normalize tenure (same logic as postJob)
+    let normalizedTenure = null;
+    if (["PartTime", "Contract", "Freelancer"].includes(employmentType)) {
+      const tenureNumber = tenure?.number;
+      if (!tenureNumber) {
+        return res.status(400).json({
+          status: "error",
+          message: "Tenure is required for Part Time / Contract jobs",
+        });
+      }
+      normalizedTenure = {
+        number: String(tenureNumber),
+        type: tenure?.type || "month",
+      };
+    }
+
+    // 4️⃣ Normalize applicant source
+    const validSources = ["Candidate", "Company", "Both"];
+    const normalizedSource = validSources.includes(applicantSource)
+      ? applicantSource
+      : "Both";
+
+    // 5️⃣ Create job
+    const job = await prisma.job.create({
+      data: {
+        role,
+        description,
+        employmentType,
+        experience,
+        experienceLevel,
+        location,
+        tenure: normalizedTenure,
+        skills:           skills          || [],
+        clouds:           clouds          || [],
+        salary,
+        companyName,
+        responsibilities,
+        certifications:   certifications  || [],
+        jobType,
+        applicationDeadline,
+        ApplicationLimit,
+        companyLogo,
+        applicantSource:  normalizedSource,
+        postedById:       postedById      || null,
+        organizationId,
+      },
+    });
+
+    // 6️⃣ Insert screening questions (same logic as postJob)
+    if (Array.isArray(questions) && questions.length > 0) {
+      const questionData = questions
+        .filter(q => q?.question && q.question.trim() !== "")
+        .map((q, index) => ({
+          jobId:    job.id,
+          question: q.question.trim(),
+          type:     q.type     || "TEXT",
+          options:  Array.isArray(q.options) ? q.options : [],
+          required: q.required ?? true,
+          order:    q.order    ?? index,
+        }));
+
+      if (questionData.length > 0) {
+        await prisma.jobApplicationQuestion.createMany({ data: questionData });
+      }
+    }
+
+    return res.status(201).json({
+      status: "success",
+      message: "Job posted successfully by admin",
+      job,
+    });
+  } catch (error) {
+    console.error("adminPostJob error:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: error.message || "Internal server error",
+    });
+  }
+};
+
 export { adminLogin, 
   getAdminStats, 
   executeQuery,
@@ -549,4 +681,5 @@ export { adminLogin,
   bulkUpsertPlanLimits,
   deletePlanLimit,
   updatePlanPricing,
+  adminPostJob,
 };

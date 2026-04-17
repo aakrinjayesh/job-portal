@@ -12,6 +12,7 @@ import {
   bulkUpsertPlanLimits,
   deletePlanLimit,
   updatePlanPricing, 
+  adminPostJob
 } from "../../admin/controllers/adminController.js";
 import { verifyAdminToken } from "../../admin/middleware/adminMiddleware.js";
 // import { generateQueryFromPrompt } from "../controllers/adminQueryController.js";
@@ -40,6 +41,9 @@ Adminrouter.delete("/plan-limits/:id", verifyAdminToken, deletePlanLimit); // re
 
 // ── Plan Pricing ──────────────────────────────────
 Adminrouter.patch("/plans/:planId/pricing", verifyAdminToken, updatePlanPricing);
+
+// ── Jobs ──────────────────────────────────────────
+Adminrouter.post("/jobs", verifyAdminToken, adminPostJob);
 
 
 

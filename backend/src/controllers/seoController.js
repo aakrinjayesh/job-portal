@@ -118,66 +118,102 @@ const getJobSEOMeta = async (req, res) => {
   }
 };
 
+// ─── Sitemap ────────────────────────────────────────────────────────────────
+
 const sitemap = async (req, res) => {
   try {
     const baseUrl = process.env.FRONTEND_URL;
+    const now = new Date().toISOString();
 
-    // ✅ Fetch only public jobs
+    // ── 1. Fetch all public jobs ──────────────────────────────────────────
     const jobs = await prisma.job.findMany({
-      where: {
-        isDeleted: false,
-        status: "Open", // adjust based on your schema
-      },
-      select: {
-        id: true,
-        updatedAt: true,
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
+      where: { isDeleted: false, status: "Open" },
+      select: { id: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
     });
 
-    // Static pages
-    const staticUrls = `
-      <url>
-        <loc>${baseUrl}/</loc>
-        <changefreq>weekly</changefreq>
-        <priority>1.0</priority>
-      </url>
+    // ── 2. Static pages ───────────────────────────────────────────────────
+    // These are your MOST IMPORTANT pages for sitelinks in Google
+    const staticPages = [
+  // ── Core public pages (Google picks these for sitelinks)
+  {
+    loc: "/",
+    changefreq: "daily",
+    priority: "1.0",
+    lastmod: now,
+  },
+  {
+    loc: "/salesforce-vendor-marketplace",
+    changefreq: "weekly",
+    priority: "0.9",
+    lastmod: now,
+  },
+  {
+    loc: "/salesforce-bench-resources",
+    changefreq: "weekly",
+    priority: "0.9",
+    lastmod: now,
+  },
 
-      <url>
-        <loc>${baseUrl}/terms-and-conditions</loc>
-        <changefreq>yearly</changefreq>
-        <priority>0.3</priority>
-      </url>
+  // ── Auth pages (Google shows these as sitelinks — see D-ID's "Login")
+  {
+    loc: "/login",
+    changefreq: "yearly",
+    priority: "0.7",
+  },
+  {
+    loc: "/signup",
+    changefreq: "yearly",
+    priority: "0.7",
+  },
 
-      <url>
-        <loc>${baseUrl}/contact</loc>
-        <changefreq>yearly</changefreq>
-        <priority>0.3</priority>
-      </url>
-    `;
+  // ── Info pages
+  {
+    loc: "/contact",
+    changefreq: "yearly",
+    priority: "0.5",
+  },
+  {
+    loc: "/terms-and-conditions",
+    changefreq: "yearly",
+    priority: "0.3",
+  },
+];
 
-    // Dynamic job URLs
-    const jobUrls = jobs
-      .map((job) => {
-        return `
-          <url>
-            <loc>${baseUrl}/job/${job.id}</loc>
-            <lastmod>${job.updatedAt.toISOString()}</lastmod>
-            <changefreq>daily</changefreq>
-            <priority>0.8</priority>
-          </url>
-        `;
-      })
+    const staticUrlsXml = staticPages
+      .map(
+        (page) => `
+  <url>
+    <loc>${baseUrl}${page.loc}</loc>
+    ${page.lastmod ? `<lastmod>${page.lastmod}</lastmod>` : ""}
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`
+      )
       .join("");
 
+    // ── 3. Dynamic job URLs ───────────────────────────────────────────────
+    const jobUrlsXml = jobs
+      .map(
+        (job) => `
+  <url>
+    <loc>${baseUrl}/job/${job.id}</loc>
+    <lastmod>${job.updatedAt.toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`
+      )
+      .join("");
+
+    // ── 4. Build final XML ────────────────────────────────────────────────
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-      <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-        ${staticUrls}
-        ${jobUrls}
-      </urlset>
-    `;
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+${staticUrlsXml}
+${jobUrlsXml}
+</urlset>`;
 
     res.header("Content-Type", "application/xml");
     res.status(200).send(xml);
