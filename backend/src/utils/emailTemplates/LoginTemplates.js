@@ -221,8 +221,7 @@ export const getCandidateOtpEmailTemplate = (name, otp) =>
         An administrator has created an account for you on <strong>ForceHead</strong>. 
         Your account details are below — click the button to set your password and get started.
       </p>
-      <p>The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform
-An intelligent vendor platform to manage jobs, candidates, and bench resources for Salesforce roles and projects.</p>
+      <p>We'd like to invite your company to ForceHead — The World’s First Salesforce-to-Salesforce Vendor Collaboration Platform,where Salesforce businesses connect and grow together. From posting roles to sharing bench resources, everything you need to scale your Salesforce team is in one place.</p>
 
       <!-- Account Details Box -->
       <div style="
