@@ -126,17 +126,18 @@ const RolePickerScreen = ({ onSelect, navigate }) => {
   ];
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#fff",
-        padding: 24,
-      }}
-    >
+ <div
+  style={{
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#fff",
+    padding: "40px 24px",   // ← single padding property, no conflict
+    gap: 0,
+  }}
+>
       <img
         src={logo}
         alt="ForceHead"
@@ -213,7 +214,7 @@ const RolePickerScreen = ({ onSelect, navigate }) => {
         ))}
       </div>
 
-      <Button
+    <Button
         type="primary"
         size="large"
         disabled={!picked}
@@ -223,23 +224,14 @@ const RolePickerScreen = ({ onSelect, navigate }) => {
         Continue
       </Button>
 
-      <Text>
-        Don't have an account?{" "}
-        <Button
-          type="link"
-          style={{ padding: 0 }}
-          onClick={() => {
-            if (!picked) {
-              message.warning("Please select an account type first");
-              return;
-            }
-            navigate("/signup", { state: { role: picked } });
-          }}
-        >
-          Create Account
-        </Button>
-      </Text>
-    </div>
+   
+    
+    
+
+
+
+
+    </div> 
   );
 };
 
@@ -456,7 +448,28 @@ const LoginPage = () => {
                 >
                   Create account
                 </Button>
+         
               </div>
+                       {/* ✅ Contact & Support - next line */}
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 8,
+    fontSize: 14,
+  }}
+>
+  <Text style={{ color: "#6B7280" }}>Need help?</Text>
+  <Button
+    type="link"
+    style={{ padding: 0, fontSize: 14 }}
+    onClick={() => window.open("/contact", "_blank")}
+  >
+    Contact & Support
+  </Button>
+</div>
               {/* GOOGLE AUTH – ONLY FOR CANDIDATE */}
               {activeTab === "candidate" && (
                 <>
