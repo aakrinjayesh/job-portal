@@ -338,7 +338,7 @@ const getUserByEmail = async (req, res) => {
                 companyProfile: {
                   select: {
                     slug: true,
-                    industry: true,
+                    // industry: true,
                     companySize: true,
                     website: true,
                     headquarters: true,
