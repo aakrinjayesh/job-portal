@@ -253,6 +253,7 @@ model UserProfile {
   organization        Organization?       @relation(fields: [organizationId], references: [id])
   candidateActivities Activity[]          @relation("CandidateActivities")
   candidateTaskList   CandidateTaskList[]
+  interviewSessions   InterviewSession[]
 }
 
 model Skills {
@@ -354,6 +355,7 @@ model Job {
   candidateTaskList CandidateTaskList[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  interviewSessions InterviewSession[]
 }
 
 enum ApplicantSource {
@@ -395,6 +397,8 @@ model JobApplication {
 
   // ── SCREENING ANSWERS ──
   answers JobApplicationAnswer[]
+
+  interviewSessions InterviewSession[]
 
   @@unique([jobId, candidateProfileId])
   @@index([userId])
@@ -1171,4 +1175,111 @@ model PromoCodeUsage {
   @@unique([promoCodeId, userId]) // One use per user per code
   @@index([promoCodeId])
   @@index([userId])
+}
+
+//  AI - Agent Interview
+
+model InterviewSession {
+  id          String  @id @default(uuid())
+  candidateId String
+  jobId       String?
+
+  status InterviewStatus @default(ACTIVE)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  summary      String? // final summary
+  overallScore Float? // final score
+
+  audioUrl String? // S3
+  videoUrl String? // S3
+
+  candidate UserProfile @relation(fields: [candidateId], references: [id])
+  job       Job?        @relation(fields: [jobId], references: [id])
+
+  answers          InterviewAnswer[]
+  proctoringEvents ProctoringEvent[]
+  metrics          InterviewMetric?
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  jobApplication   JobApplication? @relation(fields: [jobApplicationId], references: [id])
+  jobApplicationId String?
+  interviewScore   InterviewScore?
+}
+
+enum InterviewStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+model InterviewAnswer {
+  id        String @id @default(uuid())
+  sessionId String
+
+  question String
+  answer   String
+
+  transcript String?
+
+  duration Int? // seconds
+
+  score Float? // optional per question
+
+  createdAt DateTime @default(now())
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model ProctoringEvent {
+  id        String @id @default(uuid())
+  sessionId String
+
+  type      ProctorEventType
+  metadata  Json?
+  timestamp DateTime         @default(now())
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+enum ProctorEventType {
+  TAB_SWITCH
+  LOOKING_AWAY
+  NO_FACE
+  MULTIPLE_FACES
+}
+
+model InterviewMetric {
+  id        String @id @default(uuid())
+  sessionId String @unique
+
+  wpm           Float?
+  fillerWords   Int?
+  pauseDuration Float?
+
+  plagiarismScore Float?
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model InterviewScore {
+  id        String @id @default(uuid())
+  sessionId String @unique
+
+  technicalScore     Float?
+  communicationScore Float?
+  overallScore       Float?
+
+  strengths  String[]
+  weaknesses String[]
+
+  recommendation String?
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
