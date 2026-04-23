@@ -3,6 +3,7 @@ import {
   createPromoCode,
   listPromoCodes,
   togglePromoCode,
+  editPromoCode,
 } from "../../admin/controllers/promoController.js";
 import { verifyAdminToken } from "../middleware/adminMiddleware.js";
 
@@ -12,5 +13,6 @@ const AdminPromoRoute = express.Router();
 AdminPromoRoute.post("/promo/create", verifyAdminToken, createPromoCode);
 AdminPromoRoute.get("/promo/list", verifyAdminToken, listPromoCodes);
 AdminPromoRoute.patch("/promo/:id/toggle", verifyAdminToken, togglePromoCode);
+AdminPromoRoute.patch("/promo/:id", verifyAdminToken, editPromoCode);
 
 export default AdminPromoRoute;

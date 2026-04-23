@@ -129,6 +129,45 @@ export const togglePromoCode = async (req, res) => {
   }
 };
 
+export const editPromoCode = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      discountType, discountValue, applicablePlans,
+      validFrom, validTo, maxTotalUsages, code,
+    } = req.body;
+
+    const promo = await prisma.promoCode.findUnique({ where: { id } });
+    if (!promo) return res.status(404).json({ status: "error", message: "Promo code not found" });
+
+    if (discountType === "PERCENTAGE" && discountValue > 100)
+      return res.status(400).json({ status: "error", message: "Percentage cannot exceed 100" });
+
+    if (code && code !== promo.code) {
+      const existing = await prisma.promoCode.findUnique({ where: { code } });
+      if (existing) return res.status(409).json({ status: "error", message: "Promo code already exists" });
+    }
+
+    const updated = await prisma.promoCode.update({
+      where: { id },
+      data: {
+        ...(code && { code: code.trim().toUpperCase() }),
+        ...(discountType && { discountType }),
+        ...(discountValue && { discountValue }),
+        ...(applicablePlans && { applicablePlans }),
+        ...(validFrom && { validFrom: new Date(validFrom) }),
+        ...(validTo && { validTo: new Date(validTo) }),
+        ...(maxTotalUsages !== undefined && { maxTotalUsages: maxTotalUsages ?? -1 }),
+      },
+    });
+
+    return res.status(200).json({ status: "success", data: updated });
+  } catch (error) {
+    console.error("editPromoCode error:", error.message);
+    return res.status(500).json({ status: "error", message: "Server error" });
+  }
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /billing/promo/validate
 // Preview-only — does NOT record usage.
