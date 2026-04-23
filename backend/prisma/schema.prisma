@@ -241,6 +241,14 @@ model UserProfile {
   linkedInUrl  String?
   trailheadUrl String?
 
+  trailheadBadges         Json?
+  trailheadCertifications Json?
+  trailheadStats          Json?
+
+  trailheadPoints      Int?
+  trailheadBadgesCount Int?
+  trailheadTrailsCount Int?
+
   isVerified      Boolean   @default(false)
   verificationOtp String?
   otpExpiry       DateTime?
