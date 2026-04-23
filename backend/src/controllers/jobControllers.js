@@ -1026,7 +1026,7 @@ const getJobList = async (req, res) => {
         isDeleted: false,
         status: "Open", // 🔥 add this
         // 🚨 THIS LINE IS IMPORTANT
-        ...(role === "company" ? { postedById: { not: userId } } : {}),
+        ...(role === "company" ? { organizationId: { not: organizationId } } : {}),
 
         // ✅ Correct PascalCase enum filter
         ...applicantSourceFilter,
