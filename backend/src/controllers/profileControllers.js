@@ -12,6 +12,7 @@ import { logger } from "../utils/logger.js";
 import mammoth from "mammoth";
 import { uploadToCloudinary } from "../utils/Storage.js";
 import { generateSlug } from "../utils/slugify.js";
+import fetchTrailheadData from "../utils/fetchTrailheadData.js";
 
 // for uploading pdf and extracting all the details from it for both vendor and candidate
 
@@ -180,6 +181,9 @@ const updateProfiledetails = async (req, res) => {
       education = [],
       linkedInUrl = null,
       trailheadUrl = null,
+      trailheadBadges = [],
+      trailheadCertifications = [],
+      trailheadStats = null,
       title,
       summary = null,
       status,
@@ -210,6 +214,9 @@ const updateProfiledetails = async (req, res) => {
         workExperience,
         linkedInUrl,
         trailheadUrl,
+        trailheadBadges,
+        trailheadCertifications,
+        trailheadStats,
         education,
         currentLocation,
         title,
@@ -241,6 +248,9 @@ const updateProfiledetails = async (req, res) => {
         currentLocation,
         linkedInUrl,
         trailheadUrl,
+        trailheadBadges,
+        trailheadCertifications,
+        trailheadStats,
         title,
         summary,
         chatuserid: user.chatuserid,
@@ -906,6 +916,23 @@ const updateNotificationPreferences = async (req, res) => {
     return res.status(500).json({ status: "error", message: error.message });
   }
 };
+const fetchTrailheadProfile = async (req, res) => {
+  try {
+    const { slug } = req.body;
+
+    const data = await fetchTrailheadData(slug);
+
+    res.json({
+      status: "success",
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch Trailhead data",
+    });
+  }
+};
 
 export {
   UploadResume,
@@ -921,4 +948,5 @@ export {
   updateCandidateStatusProfile,
   getNotificationPreferences,
   updateNotificationPreferences,
+  fetchTrailheadProfile,
 };

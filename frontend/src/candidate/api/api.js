@@ -558,3 +558,13 @@ export async function UpdateNotificationPreferences(payload) {
   const response = await axiosInstance.patch("/profile/notifications", payload);
   return response.data;
 }
+
+export async function FetchTrailheadProfile(payload) {
+  try {
+    const response = await axiosInstance.post("/profile/trailhead", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching trailhead:", error);
+    throw error;
+  }
+}

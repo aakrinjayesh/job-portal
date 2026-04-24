@@ -41,6 +41,7 @@ import {
   uploadProfilePicture,
   ToggleCandidateStatus,
 } from "../api/api";
+import { FetchTrailheadProfile } from "../api/api";
 import GenerateResume from "../components/UserProfile/GenerateResume";
 import ReusableSelect from "../components/UserProfile/ReusableSelect";
 import SkillManagerCard from "../components/UserProfile/SkillManagerCard";
@@ -83,6 +84,16 @@ const UpdateUserProfile = ({
   const [isCandidate, setIsCandidate] = useState(false);
   const [isActive, setIsActive] = useState();
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
+  const [isFormChanged, setIsFormChanged] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [trailheadData, setTrailheadData] = useState({
+    badges: [],
+    certifications: [],
+    profileStats: null,
+  });
+
+  const [trailheadLoading, setTrailheadLoading] = useState(false);
 
   const role = localStorage.getItem("role");
   const isCompany = role === "company";
@@ -352,6 +363,10 @@ const UpdateUserProfile = ({
           secondaryClouds: secClouds,
         });
         setIsProfileLoaded(true);
+        if (role === "candidate" && !Reciviedrole) {
+          setIsSubmitted(true);
+          setIsFormChanged(false);
+        }
       }
     } catch (error) {
       console.error("Error fetching profile data:", error);
@@ -732,6 +747,9 @@ const UpdateUserProfile = ({
           String(values?.relevantSalesforceExperience) || null,
         linkedInUrl: values?.linkedInUrl || null,
         trailheadUrl: values?.trailheadUrl || null,
+        trailheadBadges: trailheadData.badges,
+        trailheadCertifications: trailheadData.certifications,
+        trailheadStats: trailheadData.profileStats,
         preferredLocation: values?.preferredLocation || [],
         currentLocation: values?.currentLocation || null,
         preferredJobType: values?.preferredJobType || [],
@@ -776,6 +794,10 @@ const UpdateUserProfile = ({
       const response = await profiledata(payload);
 
       if (response?.status === "success") {
+        if (role === "candidate" && !Reciviedrole) {
+          setIsSubmitted(true);
+          setIsFormChanged(false);
+        }
         const currentRole = localStorage.getItem("role");
 
         if (currentRole === "candidate") {
@@ -833,6 +855,38 @@ const UpdateUserProfile = ({
       </Collapse.Panel>
     </Collapse>
   );
+  const extractSlug = (url) => {
+    const match = url.match(/trailblazer\/([A-Za-z0-9._-]+)/);
+    return match ? match[1] : null;
+  };
+  const handleTrailheadFetch = async (url) => {
+    try {
+      setTrailheadLoading(true);
+
+      const slug = extractSlug(url);
+      if (!slug) {
+        message.error("Invalid Trailhead URL");
+        return;
+      }
+
+      const res = await FetchTrailheadProfile({ slug });
+
+      const data = res?.data;
+
+      setTrailheadData({
+        badges: data?.badges || [],
+        certifications: data?.certifications || [],
+        profileStats: data?.profileStats || null,
+      });
+
+      message.success("Trailhead data loaded!");
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to fetch Trailhead data");
+    } finally {
+      setTrailheadLoading(false);
+    }
+  };
 
   return (
     <div
@@ -964,11 +1018,23 @@ const UpdateUserProfile = ({
             style={{ marginTop: 20 }}
             headStyle={{ padding: "0 12px" }}
           >
+            {/* <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              onFinishFailed={onFinishFailed}
+            > */}
             <Form
               form={form}
               layout="vertical"
               onFinish={onFinish}
               onFinishFailed={onFinishFailed}
+              onValuesChange={() => {
+                if (role === "candidate" && !Reciviedrole) {
+                  setIsFormChanged(true);
+                  setIsSubmitted(false);
+                }
+              }}
             >
               <div>
                 <Collapse
@@ -2078,7 +2144,7 @@ const UpdateUserProfile = ({
                         )}
                       </Col>
 
-                      <Col xs={24} sm={8}>
+                      {/* <Col xs={24} sm={8}>
                         {!isCandidate ? (
                           <Form.Item
                             label="Trailhead URL"
@@ -2097,6 +2163,7 @@ const UpdateUserProfile = ({
                           >
                             <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
                           </Form.Item>
+                          
                         ) : (
                           <Form.Item
                             label="Trailhead URL"
@@ -2112,6 +2179,194 @@ const UpdateUserProfile = ({
                           >
                             <Input placeholder="https://www.salesforce.com/trailblazer/yourprofile" />
                           </Form.Item>
+                         
+                        )}
+                      </Col> */}
+                      <Col xs={24} sm={24}>
+                        {/* 🔹 Trailhead Input (with condition) */}
+                        {!isCandidate ? (
+                          <Form.Item
+                            label="Trailhead URL"
+                            name="trailheadUrl"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Trailhead URL is required",
+                              },
+                              {
+                                pattern:
+                                  /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
+                                message: "Please enter a valid Trailhead URL",
+                              },
+                            ]}
+                          >
+                            <Input
+                              placeholder="https://www.salesforce.com/trailblazer/yourprofile"
+                              onBlur={(e) =>
+                                handleTrailheadFetch(e.target.value)
+                              }
+                            />
+                          </Form.Item>
+                        ) : (
+                          <Form.Item
+                            label="Trailhead URL"
+                            name="trailheadUrl"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Trailhead URL is required",
+                              },
+                              {
+                                pattern:
+                                  /^https:\/\/(www\.)?salesforce\.com\/trailblazer\/[A-Za-z0-9._-]+\/?$/,
+                                message: "Please enter a valid Trailhead URL",
+                              },
+                            ]}
+                          >
+                            <Input
+                              placeholder="https://www.salesforce.com/trailblazer/yourprofile"
+                              onBlur={(e) =>
+                                handleTrailheadFetch(e.target.value)
+                              }
+                            />
+                          </Form.Item>
+                        )}
+
+                        {/* 🔥 LOADING */}
+                        {trailheadLoading && (
+                          <p style={{ marginTop: 10 }}>
+                            Loading Trailhead data...
+                          </p>
+                        )}
+
+                        {trailheadData.profileStats && (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "16px",
+                              background: "#f9fafb",
+                              borderRadius: 10,
+                              marginTop: 10,
+                              border: "1px solid #e5e7eb",
+                            }}
+                          >
+                            <div style={{ textAlign: "center", flex: 1 }}>
+                              <div style={{ fontSize: 22, fontWeight: 700 }}>
+                                {trailheadData.profileStats.earnedBadgesCount}
+                              </div>
+                              <div>Badges</div>
+                            </div>
+
+                            <div style={{ textAlign: "center", flex: 1 }}>
+                              <div style={{ fontSize: 22, fontWeight: 700 }}>
+                                {trailheadData.profileStats.earnedPointsSum}
+                              </div>
+                              <div>Points</div>
+                            </div>
+
+                            <div style={{ textAlign: "center", flex: 1 }}>
+                              <div style={{ fontSize: 22, fontWeight: 700 }}>
+                                {trailheadData.profileStats.completedTrailCount}
+                              </div>
+                              <div>Trails</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 🔵 BADGES */}
+                        {trailheadData.badges?.length > 0 && (
+                          <div style={{ marginTop: 15 }}>
+                            <h4>Badges</h4>
+
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "repeat(auto-fill, minmax(140px, 1fr))",
+                                gap: 12,
+                              }}
+                            >
+                              {trailheadData.badges.map((badge, index) => (
+                                <div
+                                  key={index}
+                                  style={{
+                                    border: "1px solid #e5e7eb",
+                                    padding: 10,
+                                    borderRadius: 8,
+                                    textAlign: "center",
+                                    background: "#fff",
+                                  }}
+                                >
+                                  <img src={badge.award.icon} width={40} />
+                                  <div style={{ fontSize: 12, marginTop: 6 }}>
+                                    {badge.award.title}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 🟢 CERTIFICATIONS */}
+                        {trailheadData.certifications?.length > 0 && (
+                          <div style={{ marginTop: 20 }}>
+                            <h4>Certifications</h4>
+
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "repeat(auto-fill, minmax(220px, 1fr))",
+                                gap: 12,
+                              }}
+                            >
+                              {trailheadData.certifications.map(
+                                (cert, index) => (
+                                  <div
+                                    key={index}
+                                    style={{
+                                      border: "1px solid #e5e7eb",
+                                      padding: 12,
+                                      borderRadius: 8,
+                                      background: "#fff",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 10,
+                                    }}
+                                  >
+                                    <img src={cert.logoUrl} width={45} />
+
+                                    <div>
+                                      <div
+                                        style={{
+                                          fontSize: 13,
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {cert.title}
+                                      </div>
+                                      <div
+                                        style={{ fontSize: 11, color: "#666" }}
+                                      >
+                                        {cert.product}
+                                      </div>
+                                      {cert.status?.title && (
+                                        <div
+                                          style={{
+                                            fontSize: 10,
+                                            color: "green",
+                                          }}
+                                        >
+                                          {cert.status.title}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          </div>
                         )}
                       </Col>
                     </Row>
@@ -2416,12 +2671,27 @@ const UpdateUserProfile = ({
                     gap: "12px",
                   }}
                 >
+                  {/* <Button
+                    type="primary"
+                    htmlType="submit"
+                    size="large"
+                    style={{ width: "150px" }}
+                    loading={submitLoading}
+                  >
+                    {isEditMode ? "Update" : "Submit"}
+                  </Button> */}
                   <Button
                     type="primary"
                     htmlType="submit"
                     size="large"
                     style={{ width: "150px" }}
                     loading={submitLoading}
+                    disabled={
+                      role === "candidate" &&
+                      !Reciviedrole &&
+                      isSubmitted &&
+                      !isFormChanged
+                    }
                   >
                     {isEditMode ? "Update" : "Submit"}
                   </Button>

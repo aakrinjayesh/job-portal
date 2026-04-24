@@ -14,6 +14,16 @@ import {
 import { applyCandidateFilters } from "../utils/applyFilters.js";
 import { canCreate, canDelete, canEdit } from "../utils/permission.js";
 import { handleError } from "../utils/handleError.js";
+import fetchTrailheadData from "../utils/fetchTrailheadData.js";
+
+function extractSlug(url) {
+  try {
+    const parts = url.split("/");
+    return parts[parts.length - 1];
+  } catch {
+    return null;
+  }
+}
 
 const getVendorCandidates = async (req, res) => {
   try {
@@ -73,6 +83,19 @@ const createVendorCandidate = async (req, res) => {
     }
 
     const data = req.body;
+    let trailheadData = null;
+
+    if (data.trailheadUrl) {
+      const slug = extractSlug(data.trailheadUrl);
+
+      if (slug) {
+        try {
+          trailheadData = await fetchTrailheadData(slug);
+        } catch (err) {
+          console.error("Trailhead fetch failed:", err.message);
+        }
+      }
+    }
 
     const newCandidate = await prisma.userProfile.create({
       data: {
@@ -100,7 +123,18 @@ const createVendorCandidate = async (req, res) => {
         workExperience: data.workExperience || [],
         education: data.education || [],
         linkedInUrl: data.linkedInUrl,
+        // trailheadUrl: data.trailheadUrl,
         trailheadUrl: data.trailheadUrl,
+
+        trailheadBadges: trailheadData?.badges || [],
+        trailheadCertifications: trailheadData?.certifications || [],
+        trailheadStats: trailheadData?.profileStats || null,
+
+        trailheadPoints: trailheadData?.profileStats?.earnedPointsSum || 0,
+        trailheadBadgesCount:
+          trailheadData?.profileStats?.earnedBadgesCount || 0,
+        trailheadTrailsCount:
+          trailheadData?.profileStats?.completedTrailCount || 0,
         profilePicture: data.profilePicture,
         // chatuserid: user.chatuserid,
         chatuserid: userAuth.chatuserid,
@@ -146,6 +180,28 @@ const updateVendorCandidate = async (req, res) => {
     }
 
     const { id, ...data } = req.body;
+    if (data.trailheadUrl) {
+      const slug = extractSlug(data.trailheadUrl);
+
+      if (slug) {
+        try {
+          const trailheadData = await fetchTrailheadData(slug);
+
+          data.trailheadBadges = trailheadData?.badges || [];
+          data.trailheadCertifications = trailheadData?.certifications || [];
+          data.trailheadStats = trailheadData?.profileStats || null;
+
+          data.trailheadPoints =
+            trailheadData?.profileStats?.earnedPointsSum || 0;
+          data.trailheadBadgesCount =
+            trailheadData?.profileStats?.earnedBadgesCount || 0;
+          data.trailheadTrailsCount =
+            trailheadData?.profileStats?.completedTrailCount || 0;
+        } catch (err) {
+          console.error("Trailhead update fetch failed:", err.message);
+        }
+      }
+    }
 
     const existingCandidate = await prisma.userProfile.findFirst({
       where: {

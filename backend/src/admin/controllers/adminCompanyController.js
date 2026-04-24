@@ -166,6 +166,59 @@ export const uploadCompaniesMiddleware = upload.single("file");
 //   }
 // };
 
+const getValue = (obj, possibleKeys) => {
+  for (const key of possibleKeys) {
+    if (obj[key] !== undefined && obj[key] !== null) {
+      return obj[key];
+    }
+  }
+  return null;
+};
+
+const normalizeRow = (item) => {
+  const splitToArray = (val) =>
+    typeof val === "string"
+      ? val
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : Array.isArray(val)
+        ? val
+        : [];
+
+  return {
+    name: getValue(item, ["name", "Name"]),
+    slug: getValue(item, ["slug", "Slug"]),
+    tagline: getValue(item, ["tagline", "Tagline"]),
+    description: getValue(item, ["description", "Description"]),
+    website: getValue(item, ["website", "Website"]),
+
+    emailDomain: String(
+      getValue(item, ["emailDomain", "Email Domain", "Domain"]) || "",
+    )
+      .toLowerCase()
+      .trim(),
+
+    industry: getValue(item, ["industry", "Industry"]),
+    companySize: getValue(item, ["companySize", "Company Size"]),
+    foundedYear:
+      Number(getValue(item, ["foundedYear", "Founded Year"])) || null,
+
+    headquarters: getValue(item, ["headquarters", "Headquarters"]),
+
+    locations: splitToArray(getValue(item, ["locations", "Locations"])),
+    clouds: splitToArray(getValue(item, ["clouds", "Clouds"])),
+    certifications: splitToArray(
+      getValue(item, ["certifications", "Certifications"]),
+    ),
+    specialties: splitToArray(getValue(item, ["specialties", "Specialties"])),
+
+    partnerTier: getValue(item, ["partnerTier", "Partner Tier"]),
+    partnerType: getValue(item, ["partnerType", "Partner Type"]),
+
+    appExchangeUrl: getValue(item, ["appExchangeUrl", "AppExchange URL"]),
+  };
+};
 // 🔥 BULK JSON + EXCEL UPLOAD
 export const uploadCompaniesFromJson = async (req, res) => {
   try {
@@ -202,6 +255,7 @@ export const uploadCompaniesFromJson = async (req, res) => {
         message: "Only JSON or Excel files are allowed",
       });
     }
+    jsonData = jsonData.map(normalizeRow);
 
     // 🔹 VALIDATE ARRAY
     if (!Array.isArray(jsonData)) {

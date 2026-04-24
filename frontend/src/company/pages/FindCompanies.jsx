@@ -1038,10 +1038,13 @@ const styles = {
     flexDirection: "column",
     position: "relative",
   },
+  // cardHovered: {
+  //   borderColor: "#85B7EB",
+  //   // boxShadow: "0 6px 24px rgba(55,138,221,0.10)",
+  //   transform: "translateY(-2px)",
+  // },
   cardHovered: {
-    borderColor: "#85B7EB",
-    boxShadow: "0 6px 24px rgba(55,138,221,0.10)",
-    transform: "translateY(-2px)",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
   },
   cardAccent: {
     height: 3,

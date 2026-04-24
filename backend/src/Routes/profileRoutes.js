@@ -16,6 +16,7 @@ import {
   updateCandidateStatusProfile,
   getNotificationPreferences,
   updateNotificationPreferences,
+  fetchTrailheadProfile,
 } from "../controllers/profileControllers.js";
 
 import multer from "multer";
@@ -110,5 +111,7 @@ userRouter.patch(
   authenticateToken,
   updateNotificationPreferences,
 );
+
+userRouter.post("/profile/trailhead", authenticateToken, fetchTrailheadProfile);
 
 export default userRouter;
