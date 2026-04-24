@@ -12,13 +12,13 @@ import NotificationPreferences from "../../components/NotificationPreferences";
 const { Text } = Typography;
 
 const SECTIONS = [
-  // { key: "billing", label: "Billing & Plan", icon: <CreditCardOutlined /> },
+  { key: "billing", label: "Billing & Plan", icon: <CreditCardOutlined /> },
   { key: "usage", label: "Usage", icon: <BarChartOutlined /> },
   { key: "notifications", label: "Notifications", icon: <BellOutlined /> },
 ];
 
 export default function CompanySettings() {
-  const [activeSection, setActiveSection] = useState("usage");
+  const [activeSection, setActiveSection] = useState("billing");
 
   return (
     <div

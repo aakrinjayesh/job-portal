@@ -171,10 +171,11 @@ const runLicenseReminderJob = async () => {
               html: getRenewalReminderEmailTemplate({
                 name: admin.user.name || "Admin",
                 orgName: subscription.organization.name,
-                expiryDate: earliestExpiry.toLocaleDateString(),
+                expiryDate: earliestExpiry.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
                 licenseCount,
                 daysText,
                 renewUrl: `${FRONTEND_URL}/company/renew`,
+                isExpired: diffDays <= 0,
               }),
             });
 

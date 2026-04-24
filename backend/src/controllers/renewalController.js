@@ -2,12 +2,13 @@ import prisma from "../config/prisma.js";
 import { razorpay } from "../config/razorpay.js";
 import crypto from "crypto";
 import { logger } from "../utils/logger.js";
+import { handleError } from "../utils/handleError.js";
 
 const GST_RATE = 0.18;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /billing/renew
-// Returns current license info + plan pricing for the renewal page
+// Returns seat info + plan pricing for the renewal page
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const getRenewalInfo = async (req, res) => {
@@ -17,22 +18,27 @@ export const getRenewalInfo = async (req, res) => {
     const subscription = await prisma.organizationSubscription.findUnique({
       where: { organizationId },
       include: {
-        licenses: {
+        seats: {
           where: {
-            isActive: true,
-            plan: {
-              tier: { not: "BASIC" }, // ✅ Exclude free tier at DB level
+            licenses: {
+              some: {
+                isActive: true,
+                plan: { tier: { not: "BASIC" } },
+              },
             },
           },
           include: {
-            plan: true,
+            licenses: {
+              where: { isActive: true, validUntil: { gte: new Date() } },
+              orderBy: { validUntil: "desc" },
+              include: { plan: true },
+            },
             assignedTo: {
               include: {
                 user: { select: { name: true, email: true } },
               },
             },
           },
-          orderBy: [{ assignedToId: "desc" }, { validUntil: "asc" }],
         },
       },
     });
@@ -44,9 +50,11 @@ export const getRenewalInfo = async (req, res) => {
       });
     }
 
-    const activeLicenses = subscription.licenses;
+    const renewableSeats = subscription.seats.filter(
+      (s) => s.licenses.length > 0,
+    );
 
-    if (activeLicenses.length === 0) {
+    if (renewableSeats.length === 0) {
       return res.status(404).json({
         status: "error",
         message: "No active licenses found",
@@ -56,29 +64,31 @@ export const getRenewalInfo = async (req, res) => {
     return res.status(200).json({
       status: "success",
       data: {
-        currentLicenseCount: activeLicenses.length,
+        currentLicenseCount: renewableSeats.length,
 
-        licenses: activeLicenses.map((l) => ({
-          id: l.id,
-          validUntil: l.validUntil,
+        licenses: renewableSeats.map((seat) => {
+          const license = seat.licenses[0];
+          return {
+            seatId: seat.id,
+            validUntil: license.validUntil,
 
-          // ✅ PLAN INSIDE LICENSE
-          plan: {
-            id: l.plan.id,
-            name: l.plan.name,
-            tier: l.plan.tier,
-            monthlyPrice: l.plan.monthlyPrice,
-            yearlyPrice: l.plan.yearlyPrice,
-          },
+            plan: {
+              id: license.plan.id,
+              name: license.plan.name,
+              tier: license.plan.tier,
+              monthlyPrice: license.plan.monthlyPrice,
+              yearlyPrice: license.plan.yearlyPrice,
+            },
 
-          assignedTo: l.assignedTo
-            ? {
-                id: l.assignedTo.id,
-                name: l.assignedTo.user?.name,
-                email: l.assignedTo.user?.email,
-              }
-            : null,
-        })),
+            assignedTo: seat.assignedTo
+              ? {
+                  id: seat.assignedTo.id,
+                  name: seat.assignedTo.user?.name,
+                  email: seat.assignedTo.user?.email,
+                }
+              : null,
+          };
+        }),
 
         billingCycle: subscription.billingCycle,
         currentPeriodEnd: subscription.currentPeriodEnd,
@@ -86,6 +96,7 @@ export const getRenewalInfo = async (req, res) => {
     });
   } catch (error) {
     logger.error("getRenewalInfo error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to get renewal info",
@@ -97,13 +108,13 @@ export const getRenewalInfo = async (req, res) => {
 export const createRenewalOrder = async (req, res) => {
   try {
     const { organizationId } = req.user;
-    const { licenseIds, billingCycle, country } = req.body;
+    const { seatIds, billingCycle, country } = req.body;
 
     // ── Validate inputs ──────────────────────────────────────────────────────
-    if (!Array.isArray(licenseIds) || licenseIds.length === 0) {
+    if (!Array.isArray(seatIds) || seatIds.length === 0) {
       return res.status(400).json({
         status: "error",
-        message: "licenseIds must be a non-empty array",
+        message: "seatIds must be a non-empty array",
       });
     }
 
@@ -127,48 +138,57 @@ export const createRenewalOrder = async (req, res) => {
       });
     }
 
-    // ── Validate licenses belong to this subscription ────────────────────────
-    const licenses = await prisma.license.findMany({
+    // ── Validate seats belong to this subscription and have active non-BASIC licenses
+    const seats = await prisma.licenseSeat.findMany({
       where: {
-        id: { in: licenseIds },
+        id: { in: seatIds },
         subscriptionId: subscription.id,
-        isActive: true,
-        plan: { tier: { not: "BASIC" } },
       },
-      include: { plan: true },
+      include: {
+        licenses: {
+          where: { isActive: true, validUntil: { gte: new Date() } },
+          orderBy: { validUntil: "desc" },
+          include: { plan: true },
+        },
+      },
     });
 
-    if (licenses.length === 0) {
+    const renewableSeats = seats.filter(
+      (s) => s.licenses.length > 0 && s.licenses[0].plan.tier !== "BASIC",
+    );
+
+    if (renewableSeats.length === 0) {
       return res.status(400).json({
         status: "error",
-        message: "No valid active licenses found for the provided IDs",
+        message: "No valid active seats found for the provided IDs",
       });
     }
 
-    if (licenses.length !== licenseIds.length) {
+    if (renewableSeats.length !== seatIds.length) {
       return res.status(400).json({
         status: "error",
         message:
-          "Some licenseIds are invalid, inactive, or do not belong to your subscription",
+          "Some seatIds are invalid, inactive, or do not belong to your subscription",
       });
     }
 
-    // ── Detect country (same as createInvoice) ───────────────────────────────
+    // ── Detect country ───────────────────────────────────────────────────────
     const address = await prisma.address.findUnique({
       where: { organizationId },
     });
     const detectedCountry = address?.country || country || "IN";
 
-    // ── Calculate totals per license's own plan ──────────────────────────────
-    const subtotal = licenses.reduce((sum, l) => {
+    // ── Calculate totals per seat's active license plan ──────────────────────
+    const subtotal = renewableSeats.reduce((sum, seat) => {
+      const license = seat.licenses[0];
       const unitPrice =
         rawBillingCycle === "MONTHLY"
-          ? l.plan.monthlyPrice
-          : l.plan.yearlyPrice;
+          ? license.plan.monthlyPrice
+          : license.plan.yearlyPrice;
       return sum + unitPrice;
     }, 0);
 
-    const tax = detectedCountry === "IN" ? Math.round(subtotal * 0.18) : 0;
+    const tax = detectedCountry === "IN" ? Math.round(subtotal * GST_RATE) : 0;
     const total = subtotal + tax;
 
     // ── Period calculation ───────────────────────────────────────────────────
@@ -185,14 +205,14 @@ export const createRenewalOrder = async (req, res) => {
         invoiceNumber: `RNW-${Date.now()}`,
         status: "PENDING",
         billingCycle: rawBillingCycle,
-        planTier: licenses[0].plan.tier, // dominant tier for invoice record
+        planTier: renewableSeats[0].licenses[0].plan.tier,
         subtotal,
         tax,
         total,
-        quantity: licenses.length,
+        quantity: renewableSeats.length,
         periodStart: now,
         periodEnd,
-        dueDate: new Date(Date.now() + 7 * 86400000), // same as createInvoice
+        dueDate: new Date(Date.now() + 7 * 86400000),
       },
     });
 
@@ -204,7 +224,7 @@ export const createRenewalOrder = async (req, res) => {
       notes: {
         invoiceId: invoice.id,
         subscriptionId: subscription.id,
-        licenseIds: licenseIds.join(","),
+        seatIds: seatIds.join(","),
         type: "RENEWAL",
       },
     });
@@ -219,6 +239,7 @@ export const createRenewalOrder = async (req, res) => {
     });
   } catch (error) {
     logger.error("createRenewalOrder error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Failed to create renewal order",
@@ -268,16 +289,14 @@ export const verifyRenewalPayment = async (req, res) => {
       });
     }
 
-    // ── 3. Get licenseIds from Razorpay order notes ──────────────────────────
+    // ── 3. Get seatIds from Razorpay order notes ──────────────────────────────
     const razorpayOrder = await razorpay.orders.fetch(razorpay_order_id);
-    const licenseIds = razorpayOrder.notes?.licenseIds
-      ?.split(",")
-      .filter(Boolean);
+    const seatIds = razorpayOrder.notes?.seatIds?.split(",").filter(Boolean);
 
-    if (!licenseIds || licenseIds.length === 0) {
+    if (!seatIds || seatIds.length === 0) {
       return res.status(400).json({
         status: "error",
-        message: "Could not determine licenses to renew from order",
+        message: "Could not determine seats to renew from order",
       });
     }
 
@@ -293,29 +312,33 @@ export const verifyRenewalPayment = async (req, res) => {
       });
     }
 
-    // ── 5. Fetch the licenses to renew ───────────────────────────────────────
-    const licenses = await prisma.license.findMany({
+    // ── 5. Fetch seats with their active licenses ─────────────────────────────
+    const seats = await prisma.licenseSeat.findMany({
       where: {
-        id: { in: licenseIds },
+        id: { in: seatIds },
         subscriptionId: subscription.id,
+      },
+      include: {
+        licenses: { where: { isActive: true }, orderBy: { validUntil: "desc" } },
       },
     });
 
-    if (licenses.length === 0) {
+    if (seats.length === 0) {
       return res.status(400).json({
         status: "error",
-        message: "No licenses found to renew",
+        message: "No seats found to renew",
       });
     }
 
     const now = new Date();
 
-    const licenseUpdates = licenses.map((l) => {
-      const isExpired = l.validUntil <= now; // true if already past expiry
+    // ── 6. Compute new validity per seat ─────────────────────────────────────
+    const seatRenewals = seats.map((seat) => {
+      const oldLicense = seat.licenses[0];
 
-      const newValidFrom = isExpired
-        ? now // paid late → start fresh from today
-        : l.validUntil; // paid early → continue from existing expiry (no gap)
+      const isExpired = oldLicense ? oldLicense.validUntil <= now : true;
+
+      const newValidFrom = isExpired ? now : oldLicense.validUntil;
 
       const newValidUntil =
         invoice.billingCycle === "MONTHLY"
@@ -328,16 +351,17 @@ export const verifyRenewalPayment = async (req, res) => {
               ),
             );
 
-      return { id: l.id, newValidFrom, newValidUntil };
+      return { seat, oldLicense, newValidFrom, newValidUntil, isExpired };
     });
 
-    // ── 7. Latest validUntil across all renewed licenses (for subscription sync)
-    const latestValidUntil = licenseUpdates.reduce(
-      (latest, l) => (l.newValidUntil > latest ? l.newValidUntil : latest),
-      licenseUpdates[0].newValidUntil,
+    // ── 7. Latest validUntil across renewed seats (for subscription sync) ─────
+    const latestValidUntil = seatRenewals.reduce(
+      (latest, { newValidUntil }) =>
+        newValidUntil > latest ? newValidUntil : latest,
+      seatRenewals[0].newValidUntil,
     );
 
-    // ── 8. Transaction ───────────────────────────────────────────────────────
+    // ── 8. Transaction ────────────────────────────────────────────────────────
     await prisma.$transaction(async (tx) => {
       // Mark invoice PAID
       await tx.invoice.update({
@@ -346,7 +370,7 @@ export const verifyRenewalPayment = async (req, res) => {
       });
 
       // Create payment record
-      await tx.payment.create({
+      const payment = await tx.payment.create({
         data: {
           subscriptionId: subscription.id,
           invoiceId: invoice.id,
@@ -359,19 +383,50 @@ export const verifyRenewalPayment = async (req, res) => {
         },
       });
 
-      // Update each license individually (different dates per license)
-      for (const { id, newValidFrom, newValidUntil } of licenseUpdates) {
-        await tx.license.update({
-          where: { id },
-          data: {
-            validFrom: newValidFrom,
-            validUntil: newValidUntil,
-            isActive: true,
-          },
-        });
+      // For each seat: handle chained vs expired renewal
+      for (const {
+        seat,
+        oldLicense,
+        newValidFrom,
+        newValidUntil,
+        isExpired,
+      } of seatRenewals) {
+        if (isExpired && oldLicense) {
+          await tx.license.update({
+            where: { id: oldLicense.id },
+            data: { isActive: false },
+          });
+          await tx.license.create({
+            data: {
+              subscriptionId: subscription.id,
+              planId: oldLicense.planId,
+              seatId: seat.id,
+              assignedToId: seat.assignedToId,
+              paymentId: payment.id,
+              purchasedById: seat.assignedToId,
+              validFrom: newValidFrom,
+              validUntil: newValidUntil,
+              isActive: true,
+            },
+          });
+        } else {
+          await tx.license.create({
+            data: {
+              subscriptionId: subscription.id,
+              planId: oldLicense?.planId,
+              seatId: seat.id,
+              assignedToId: seat.assignedToId,
+              paymentId: payment.id,
+              purchasedById: seat.assignedToId,
+              validFrom: newValidFrom,
+              validUntil: newValidUntil,
+              isActive: false,
+            },
+          });
+        }
       }
 
-      // Sync subscription period to the latest renewed license
+      // Sync subscription period to latest renewed seat
       await tx.organizationSubscription.update({
         where: { id: subscription.id },
         data: {
@@ -390,6 +445,7 @@ export const verifyRenewalPayment = async (req, res) => {
     });
   } catch (error) {
     logger.error("verifyRenewalPayment error:", error.message);
+    handleError(error, req, res);
     return res.status(500).json({
       status: "error",
       message: "Payment verification failed",

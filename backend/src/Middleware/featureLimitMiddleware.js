@@ -1,6 +1,40 @@
 import prisma from "../config/prisma.js";
 import { getPeriodBounds } from "../utils/getPeriodBounds.js";
 
+// Activates a queued (chained) license for a member if their current license
+// has expired and a pending one is ready to start.
+async function activatePendingLicense(memberId, seatId) {
+  const now = new Date();
+
+  const pending = await prisma.license.findFirst({
+    where: {
+      seatId,
+      isActive: false,
+      validFrom: { lte: now },
+      validUntil: { gte: now },
+    },
+    orderBy: { validFrom: "asc" },
+    include: { plan: true },
+  });
+
+  if (!pending) return null;
+
+  // Deactivate any currently active license on this seat
+  await prisma.license.updateMany({
+    where: { seatId, isActive: true },
+    data: { isActive: false },
+  });
+
+  // Activate the pending license and assign it to the member
+  const activated = await prisma.license.update({
+    where: { id: pending.id },
+    data: { isActive: true, assignedToId: memberId },
+    include: { plan: true },
+  });
+
+  return activated;
+}
+
 const FEATURE_MAP = [
   {
     match: (path, method) =>
@@ -81,11 +115,27 @@ export const featureLimitMiddleware = async (req, res, next) => {
       where: {
         assignedToId: member.id,
         isActive: true,
+        validUntil: { gte: new Date() },
       },
+      orderBy: { validUntil: "desc" },
       include: {
         plan: true,
       },
     });
+
+    if (!license) {
+      // Check for a queued (chained renewal) license whose period just started
+      const seat = await prisma.licenseSeat.findFirst({
+        where: { assignedToId: member.id },
+        select: { id: true },
+      });
+      if (seat) {
+        const activated = await activatePendingLicense(member.id, seat.id);
+        if (activated) {
+          license = activated;
+        }
+      }
+    }
 
     if (!license) {
       return res.status(403).json({

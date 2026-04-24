@@ -66,7 +66,7 @@ export default function RenewalPage() {
           setData(res.data);
           setBillingCycle(res.data.billingCycle?.toLowerCase() || "monthly");
           // Default: all licenses selected
-          setSelectedIds(new Set(res.data.licenses.map((l) => l.id)));
+          setSelectedIds(new Set(res.data.licenses.map((l) => l.seatId)));
         }
       } catch (err) {
         const msg = err?.response?.data?.message || "";
@@ -100,7 +100,7 @@ export default function RenewalPage() {
 
   // Only selected licenses contribute to the total
   const selectedLicenses = data
-    ? data.licenses.filter((l) => selectedIds.has(l.id))
+    ? data.licenses.filter((l) => selectedIds.has(l.seatId))
     : [];
 
   const subtotal = selectedLicenses.reduce(
@@ -154,7 +154,7 @@ export default function RenewalPage() {
     setPaying(true);
     try {
       const order = await createRenewalOrder({
-        licenseIds: [...selectedIds],
+        seatIds: [...selectedIds],
         billingCycle,
         country,
       });
@@ -310,14 +310,14 @@ export default function RenewalPage() {
               {/* License rows */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {sortedLicenses.map((license) => {
-                  const checked = selectedIds.has(license.id);
+                  const checked = selectedIds.has(license.seatId);
                   const price = getLicensePrice(license);
                   const isFree = price === 0;
 
                   return (
                     <div
-                      key={license.id}
-                      onClick={() => toggleLicense(license.id)}
+                      key={license.seatId}
+                      onClick={() => toggleLicense(license.seatId)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -334,7 +334,7 @@ export default function RenewalPage() {
                       {/* Checkbox */}
                       <Checkbox
                         checked={checked}
-                        onChange={() => toggleLicense(license.id)}
+                        onChange={() => toggleLicense(license.seatId)}
                         onClick={(e) => e.stopPropagation()}
                       />
 
@@ -548,7 +548,7 @@ export default function RenewalPage() {
                     const price = getLicensePrice(license);
                     return (
                       <div
-                        key={license.id}
+                        key={license.seatId}
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
