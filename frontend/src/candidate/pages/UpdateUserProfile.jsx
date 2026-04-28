@@ -887,6 +887,12 @@ const UpdateUserProfile = ({
       setTrailheadLoading(false);
     }
   };
+  const certificatesCount = trailheadData.certifications?.length || 0;
+
+  const badgesCount =
+    trailheadData.profileStats?.earnedBadgesCount ||
+    trailheadData.badges?.length ||
+    0;
 
   return (
     <div
@@ -2275,99 +2281,108 @@ const UpdateUserProfile = ({
                         )}
 
                         {/* 🔵 BADGES */}
-                        {trailheadData.badges?.length > 0 && (
-                          <div style={{ marginTop: 15 }}>
-                            <h4>Badges</h4>
-
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                  "repeat(auto-fill, minmax(140px, 1fr))",
-                                gap: 12,
-                              }}
-                            >
-                              {trailheadData.badges.map((badge, index) => (
-                                <div
-                                  key={index}
-                                  style={{
-                                    border: "1px solid #e5e7eb",
-                                    padding: 10,
-                                    borderRadius: 8,
-                                    textAlign: "center",
-                                    background: "#fff",
-                                  }}
-                                >
-                                  <img src={badge.award.icon} width={40} />
-                                  <div style={{ fontSize: 12, marginTop: 6 }}>
-                                    {badge.award.title}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 🟢 CERTIFICATIONS */}
-                        {trailheadData.certifications?.length > 0 && (
-                          <div style={{ marginTop: 20 }}>
-                            <h4>Certifications</h4>
-
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                  "repeat(auto-fill, minmax(220px, 1fr))",
-                                gap: 12,
-                              }}
-                            >
-                              {trailheadData.certifications.map(
-                                (cert, index) => (
+                        <div style={{ marginTop: 20 }}>
+                          <h3 style={{ fontWeight: "600" }}>
+                            Badges ({badgesCount})
+                          </h3>
+                          {trailheadData.badges?.length > 0 && (
+                            <div style={{ marginTop: 15 }}>
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns:
+                                    "repeat(auto-fill, minmax(140px, 1fr))",
+                                  gap: 12,
+                                }}
+                              >
+                                {trailheadData.badges.map((badge, index) => (
                                   <div
                                     key={index}
                                     style={{
                                       border: "1px solid #e5e7eb",
-                                      padding: 12,
+                                      padding: 10,
                                       borderRadius: 8,
+                                      textAlign: "center",
                                       background: "#fff",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 10,
                                     }}
                                   >
-                                    <img src={cert.logoUrl} width={45} />
-
-                                    <div>
-                                      <div
-                                        style={{
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        {cert.title}
-                                      </div>
-                                      <div
-                                        style={{ fontSize: 11, color: "#666" }}
-                                      >
-                                        {cert.product}
-                                      </div>
-                                      {cert.status?.title && (
-                                        <div
-                                          style={{
-                                            fontSize: 10,
-                                            color: "green",
-                                          }}
-                                        >
-                                          {cert.status.title}
-                                        </div>
-                                      )}
+                                    <img src={badge.award.icon} width={40} />
+                                    <div style={{ fontSize: 12, marginTop: 6 }}>
+                                      {badge.award.title}
                                     </div>
                                   </div>
-                                ),
-                              )}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
+
+                        {/* 🟢 CERTIFICATIONS */}
+                        <div style={{ marginTop: 20 }}>
+                          <h3 style={{ fontWeight: "600" }}>
+                            Certifications ({certificatesCount})
+                          </h3>
+                          {trailheadData.certifications?.length > 0 && (
+                            <div style={{ marginTop: 20 }}>
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns:
+                                    "repeat(auto-fill, minmax(220px, 1fr))",
+                                  gap: 12,
+                                }}
+                              >
+                                {trailheadData.certifications.map(
+                                  (cert, index) => (
+                                    <div
+                                      key={index}
+                                      style={{
+                                        border: "1px solid #e5e7eb",
+                                        padding: 12,
+                                        borderRadius: 8,
+                                        background: "#fff",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                      }}
+                                    >
+                                      <img src={cert.logoUrl} width={45} />
+
+                                      <div>
+                                        <div
+                                          style={{
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          {cert.title}
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: 11,
+                                            color: "#666",
+                                          }}
+                                        >
+                                          {cert.product}
+                                        </div>
+                                        {cert.status?.title && (
+                                          <div
+                                            style={{
+                                              fontSize: 10,
+                                              color: "green",
+                                            }}
+                                          >
+                                            {cert.status.title}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </Col>
                     </Row>
                   </Collapse.Panel>

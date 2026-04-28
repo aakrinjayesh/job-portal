@@ -152,7 +152,8 @@ function HideProfileSection() {
                         .filter(Boolean)
                         .map((d) => d.toLowerCase().trim());
                       await UpdateCandidateDomains({ hiddenDomains: domains });
-                      message.success("Domain removed successfully");
+                      // message.success("Domain removed successfully");
+                      message.error("Domain removed successfully");
                     }}
                     style={{ color: "red", fontSize: 16, cursor: "pointer" }}
                   />

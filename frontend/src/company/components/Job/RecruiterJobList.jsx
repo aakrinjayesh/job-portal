@@ -1263,7 +1263,7 @@ const RecruiterJobList = () => {
                     <div
                       style={{
                         display: "flex",
-                        gap: 2,
+                        gap: 12,
                         color: "#666",
                         fontSize: 13,
                         overflow: "hidden",
@@ -1292,10 +1292,14 @@ const RecruiterJobList = () => {
                       <span>
                         {/* <UserOutlined /> {job.experience?.number}{" "}
                         {job.experience?.type} */}
-                        <UserOutlined />
+                        {/* <UserOutlined />
                         {job.experience?.min && job.experience?.max
                           ? `${job.experience.min}-${job.experience.max} ${job.experience.type}`
-                          : `${job.experience?.number} ${job.experience?.type}`}
+                          : `${job.experience?.number} ${job.experience?.type}`} */}
+                        <UserOutlined />
+                        {job.experience?.min && job.experience?.max
+                          ? `${job.experience.min}-${job.experience.max} ${job.experience.type || "year"}`
+                          : `${job.experience?.number} ${job.experience?.type || "year"}`}
                       </span>
                       <Divider type="vertical" />
                       <span>

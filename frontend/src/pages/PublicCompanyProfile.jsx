@@ -48,6 +48,25 @@ import isvLogo from "../assets/newisvpartner.png";
 import resellerLogo from "../assets/reseller.png";
 
 const { Text, Paragraph } = Typography;
+const normalizeTier = (tier) => {
+  if (!tier) return "";
+  return tier.toLowerCase().replace(" partner", "").trim();
+};
+
+const normalizeType = (type) => {
+  if (!type) return "";
+
+  const t = type.toLowerCase();
+
+  if (t.includes("consult")) return "Consulting Partner";
+  if (t.includes("implementation")) return "Implementation Partner";
+  if (t.includes("system")) return "System Integrator";
+  if (t.includes("managed")) return "Managed Services Provider";
+  if (t.includes("isv")) return "ISV (Product Partner)";
+  if (t.includes("reseller")) return "Reseller Partner";
+
+  return type;
+};
 
 const timeAgo = (iso) => {
   const d = Math.floor((Date.now() - new Date(iso)) / 86400000);
@@ -58,11 +77,17 @@ const timeAgo = (iso) => {
   return `${Math.floor(d / 30)}mo ago`;
 };
 
+// const partnerTierLogos = {
+//   "Summit Partner": summitLogo,
+//   "Crest Partner": crestLogo,
+//   "Ridge Partner": ridgeLogo,
+//   "Base Partner": baseLogo,
+// };
 const partnerTierLogos = {
-  "Summit Partner": summitLogo,
-  "Crest Partner": crestLogo,
-  "Ridge Partner": ridgeLogo,
-  "Base Partner": baseLogo,
+  summit: summitLogo,
+  crest: crestLogo,
+  ridge: ridgeLogo,
+  base: baseLogo,
 };
 
 const partnerTypeLogos = {
@@ -703,6 +728,8 @@ ${url}
 
     setActiveTab(key);
   };
+  const tierKey = normalizeTier(company.partnerTier);
+  const typeKey = normalizeType(company.partnerType);
 
   return (
     <div style={{ background: "#f4f5f7", minHeight: "100vh" }}>
@@ -870,46 +897,52 @@ ${url}
 
               {/* Partner logos — right side */}
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                {company.partnerTier &&
-                  partnerTierLogos[company.partnerTier] && (
-                    <div
-                      style={{
-                        background: "#EEEDFE",
-                        border: "0.5px solid #AFA9EC",
-                        borderRadius: 8,
-                        padding: "6px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <img
-                        src={partnerTierLogos[company.partnerTier]}
-                        alt={company.partnerTier}
-                        style={{ width: 56, height: 56, objectFit: "contain" }}
-                      />
-                    </div>
-                  )}
-                {company.partnerType &&
-                  partnerTypeLogos[company.partnerType] && (
-                    <div
-                      style={{
-                        background: "#EAF3DE",
-                        border: "0.5px solid #C0DD97",
-                        borderRadius: 8,
-                        padding: "6px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <img
-                        src={partnerTypeLogos[company.partnerType]}
-                        alt={company.partnerType}
-                        style={{ width: 56, height: 56, objectFit: "contain" }}
-                      />
-                    </div>
-                  )}
+                {/* {company.partnerTier &&
+                  partnerTierLogos[company.partnerTier] && ( */}
+                {tierKey && partnerTierLogos[tierKey] && (
+                  <div
+                    style={{
+                      background: "#EEEDFE",
+                      border: "0.5px solid #AFA9EC",
+                      borderRadius: 8,
+                      padding: "6px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <img
+                      // src={partnerTierLogos[company.partnerTier]}
+                      // alt={company.partnerTier}
+                      src={partnerTierLogos[tierKey]}
+                      alt={tierKey}
+                      style={{ width: 56, height: 56, objectFit: "contain" }}
+                    />
+                  </div>
+                )}
+                {/* {company.partnerType &&
+                  partnerTypeLogos[company.partnerType] && ( */}
+                {typeKey && partnerTypeLogos[typeKey] && (
+                  <div
+                    style={{
+                      background: "#EAF3DE",
+                      border: "0.5px solid #C0DD97",
+                      borderRadius: 8,
+                      padding: "6px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <img
+                      // src={partnerTypeLogos[company.partnerType]}
+                      // alt={company.partnerType}
+                      src={partnerTypeLogos[typeKey]}
+                      alt={typeKey}
+                      style={{ width: 56, height: 56, objectFit: "contain" }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

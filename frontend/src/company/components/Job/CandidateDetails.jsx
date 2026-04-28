@@ -861,6 +861,163 @@ const CandidateDetails = ({
               />
 
               <Divider />
+              <Collapse
+                bordered={false}
+                defaultActiveKey={["trailhead"]}
+                items={[
+                  {
+                    key: "trailhead",
+                    label: (
+                      <Title level={4} style={{ margin: 0 }}>
+                        Trailhead
+                      </Title>
+                    ),
+                    children: (
+                      <>
+                        <Divider style={{ marginTop: 2, marginBottom: 12 }} />
+
+                        {profile.trailheadStats && (
+                          <div
+                            style={{
+                              background: "#F9FAFB",
+                              borderRadius: 12,
+                              padding: 20,
+                              marginBottom: 20,
+                            }}
+                          >
+                            <Row justify="space-around">
+                              <Col>
+                                <div style={{ textAlign: "center" }}>
+                                  <div
+                                    style={{ fontSize: 20, fontWeight: 600 }}
+                                  >
+                                    {profile.trailheadStats
+                                      ?.earnedBadgesCount || 0}
+                                  </div>
+                                  <div style={{ fontSize: 12 }}>Badges</div>
+                                </div>
+                              </Col>
+
+                              <Col>
+                                <div style={{ textAlign: "center" }}>
+                                  <div
+                                    style={{ fontSize: 20, fontWeight: 600 }}
+                                  >
+                                    {profile.trailheadStats?.earnedPointsSum ||
+                                      0}
+                                  </div>
+                                  <div style={{ fontSize: 12 }}>Points</div>
+                                </div>
+                              </Col>
+
+                              <Col>
+                                <div style={{ textAlign: "center" }}>
+                                  <div
+                                    style={{ fontSize: 20, fontWeight: 600 }}
+                                  >
+                                    {profile.trailheadStats
+                                      ?.completedTrailCount || 0}
+                                  </div>
+                                  <div style={{ fontSize: 12 }}>Trails</div>
+                                </div>
+                              </Col>
+                            </Row>
+                          </div>
+                        )}
+
+                        {profile.trailheadBadges?.length > 0 && (
+                          <>
+                            <Text
+                              strong
+                              style={{ display: "block", marginBottom: 12 }}
+                            >
+                              Badges (
+                              {profile.trailheadStats?.earnedBadgesCount || 0})
+                            </Text>
+
+                            <Row gutter={[16, 16]}>
+                              {profile.trailheadBadges.map((badge) => (
+                                <Col xs={12} sm={8} md={6} key={badge.id}>
+                                  <div
+                                    style={{
+                                      background: "#fff",
+                                      border: "1px solid #EDEDED",
+                                      borderRadius: 10,
+                                      padding: 12,
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    <img
+                                      src={badge.award?.icon}
+                                      alt={badge.award?.title}
+                                      style={{ width: 50, height: 50 }}
+                                    />
+
+                                    <div style={{ marginTop: 8, fontSize: 12 }}>
+                                      {badge.award?.title}
+                                    </div>
+                                  </div>
+                                </Col>
+                              ))}
+                            </Row>
+                          </>
+                        )}
+
+                        {profile.trailheadCertifications?.length > 0 && (
+                          <>
+                            <Divider />
+
+                            <Text
+                              strong
+                              style={{ display: "block", marginBottom: 12 }}
+                            >
+                              Certifications (
+                              {profile.trailheadCertifications.length})
+                            </Text>
+
+                            <Space wrap>
+                              {profile.trailheadCertifications.map(
+                                (cert, i) => (
+                                  <div
+                                    key={i}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 8,
+                                      border: "1px solid #EDEDED",
+                                      padding: "6px 10px",
+                                      borderRadius: 8,
+                                      background: "#fff",
+                                    }}
+                                  >
+                                    {/* LOGO */}
+                                    <img
+                                      src={cert.icon || cert.logoUrl}
+                                      alt={cert.title}
+                                      style={{
+                                        width: 50,
+                                        height: 50,
+                                        objectFit: "contain",
+                                      }}
+                                    />
+
+                                    {/* TITLE */}
+                                    <span style={{ fontSize: 12 }}>
+                                      {cert.title}
+                                    </span>
+                                  </div>
+                                ),
+                              )}
+                            </Space>
+                          </>
+                        )}
+                      </>
+                    ),
+                  },
+                ]}
+              />
+
+              <Divider />
 
               <Collapse
                 bordered={false}

@@ -27,6 +27,7 @@ import {
   UnsaveCandidate,
   GetUserLicenseTier,
 } from "../../api/api";
+import FitScoreDetailsModal from "./FitScoreDetailsModal";
 
 const CandidateList = () => {
   const location = useLocation();
@@ -64,6 +65,9 @@ const CandidateList = () => {
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [activityCandidate, setActivityCandidate] = useState(null);
   const [activityTab, setActivityTab] = useState("NOTE");
+
+  const [fitScoreModalOpen, setFitScoreModalOpen] = useState(false);
+  const [selectedFitScore, setSelectedFitScore] = useState(null);
 
   // 🆕 SCREENING ANSWERS MODAL STATE
   const [answersModalOpen, setAnswersModalOpen] = useState(false);
@@ -1387,6 +1391,20 @@ const CandidateList = () => {
                     : "🤖 Generate Fit Score"}
                 </div>
 
+                {/* Show ONLY if fit score exists */}
+                {record?.matchScore != null && (
+                  <div
+                    style={{ cursor: "pointer", padding: "6px 10px" }}
+                    onClick={() => {
+                      setActionPopoverId(null);
+                      setSelectedFitScore(record);
+                      setFitScoreModalOpen(true);
+                    }}
+                  >
+                    📊 View Fit Score Details
+                  </div>
+                )}
+
                 <div
                   style={{ cursor: "pointer", padding: "6px 10px" }}
                   onClick={() => openActivityOnly("NOTE")}
@@ -1846,43 +1864,18 @@ const CandidateList = () => {
                 dataSource={filteredCandidates}
                 rowKey={(record) => record.applicationId}
                 bordered
-                // scroll={{ x: "max-content" }}
                 scroll={{ x: "max-content", y: "calc(100vh - 280px)" }}
-                // pagination={{
-                //   current: page,
-                //   pageSize,
-
-                //   total,
-                //   showSizeChanger: true,
-
-                //   onChange: (p, ps) => {
-                //     setPage(p);
-                //     setPageSize(ps);
-                //     sessionStorage.setItem("candidateListPage", p);
-                //     sessionStorage.setItem("candidateListPageSize", ps);
-                //   },
-                // }}
                 pagination={{
                   current: page,
-                  pageSize,
+                  pageSize: pageSize,
                   total: filteredCandidates.length,
-
-                  showSizeChanger: false,
-
-                  // ❌ remove default options
-                  // pageSizeOptions: [],
-
+                  showSizeChanger: true,
                   onChange: (p, ps) => {
                     setPage(p);
                     setPageSize(ps);
                     sessionStorage.setItem("candidateListPage", p);
                     sessionStorage.setItem("candidateListPageSize", ps);
                   },
-
-                  // 🔥 THIS IS THE FIX
-                  showSizeChanger: true,
-                  // sizeChangerRender: renderSizeChanger, // ✅ ADD THIS
-                  pageSize: pageSize,
                   onShowSizeChange: (current, size) => {
                     setPageSize(size);
                     sessionStorage.setItem("candidateListPageSize", size);
@@ -2081,6 +2074,11 @@ const CandidateList = () => {
               />
             )}
           </Modal>
+          <FitScoreDetailsModal
+            open={fitScoreModalOpen}
+            onClose={() => setFitScoreModalOpen(false)}
+            data={selectedFitScore}
+          />
         </>
       )}
     </div>
