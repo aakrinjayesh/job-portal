@@ -107,14 +107,14 @@ model CompanyProfile {
   website        String
   // industry       String
   companySize    String
-  foundedYear    Int
+  foundedYear    Int?
   logoUrl        String?
   coverImage     String?
   clouds         String[] @default([])
   certifications String[] @default([])
   partnerTier    String? // Crest, Summit, Ridge
   partnerType    String? // Consulting, ISV, Reseller
-  headquarters   String
+  headquarters   String?
   locations      String[]
   specialties    String[] @default([])
   socialLinks    Json?
