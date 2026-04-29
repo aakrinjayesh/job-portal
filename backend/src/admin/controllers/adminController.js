@@ -294,10 +294,24 @@ const getOrganizationById = async (req, res) => {
             expiresAt: true,
           },
         },
-        _count: {
-          select: {
+        jobs: {
+      where: { isDeleted: false },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        role: true,
+        employmentType: true,
+        jobType: true,
+        status: true,
+        salary: true,
+        location: true,
+        createdAt: true,
+        _count: { select: {  applications: true, } },
+      },
+    },
+       _count: {
+  select: {
             jobs: true,
-            jobApplications: true,
             members: true,
             invites: true,
           },
