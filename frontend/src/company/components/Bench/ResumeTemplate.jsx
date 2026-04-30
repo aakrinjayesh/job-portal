@@ -952,6 +952,729 @@
 
 // export default ResumeTemplate;
 
+// import React, { forwardRef } from "react";
+
+// const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
+//   if (!candidate) return null;
+
+//   const {
+//     name,
+//     title,
+//     email,
+//     phoneNumber,
+//     currentLocation,
+//     preferredLocation,
+//     preferredJobType,
+//     summary,
+//     rateCardPerHour,
+//     linkedInUrl,
+//     portfolioLink,
+//     trailheadUrl,
+//     skillsJson,
+//     primaryClouds,
+//     secondaryClouds,
+//     certifications,
+//     workExperience,
+//     education,
+//     totalExperience,
+//     relevantSalesforceExperience,
+//     joiningPeriod,
+//     trailheadStats,
+//     trailheadPoints,
+//     trailheadBadgesCount,
+//     trailheadTrailsCount,
+//   } = candidate;
+
+//   const isVendor = !!candidate.vendorId;
+//   const displayEmail = isVendor ? candidate.vendor?.email || email : email;
+//   const displayPhone = isVendor
+//     ? candidate.vendor?.phoneNumber || phoneNumber
+//     : phoneNumber;
+
+//   const primarySkills = skillsJson?.filter((s) => s.level === "primary") || [];
+//   const secondarySkills =
+//     skillsJson?.filter((s) => s.level === "secondary") || [];
+
+//   const rankTitle = trailheadStats?.rank?.title || null;
+//   const agentblazerStatus = trailheadStats?.learnerStatusLevels?.find(
+//     (l) => l.statusName === "Agentblazer",
+//   );
+
+//   return (
+//     <div ref={ref}>
+//       <style>{`
+//         * {
+//           box-sizing: border-box;
+//           margin: 0;
+//           padding: 0;
+//         }
+
+//         body {
+//           font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
+//           color: #1a1a1a;
+//           line-height: 1.5;
+//           font-size: 13px;
+//         }
+
+//         @page {
+//           size: A4;
+//           margin: 18mm 15mm 18mm 15mm;
+//         }
+
+//         @media print {
+//           html, body {
+//             width: 210mm;
+//           }
+//           .no-print {
+//             display: none !important;
+//           }
+//           .page-break {
+//             page-break-before: always;
+//           }
+//         }
+
+//         /* ===== CONTAINER ===== */
+//         .ats-resume {
+//           max-width: 780px;
+//           margin: 0 auto;
+//           background: #ffffff;
+//           padding: 32px 36px;
+//           font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
+//           color: #1a1a1a;
+//         }
+
+//         /* ===== HEADER ===== */
+//         .ats-header {
+//           margin-bottom: 14px;
+//           padding-bottom: 12px;
+//           border-bottom: 2px solid #1a1a1a;
+//         }
+
+//         .ats-name {
+//           font-size: 26px;
+//           font-weight: 700;
+//           letter-spacing: 0.5px;
+//           color: #1a1a1a;
+//           margin-bottom: 4px;
+//         }
+
+//         .ats-title {
+//           font-size: 14px;
+//           font-weight: 400;
+//           color: #444;
+//           margin-bottom: 8px;
+//         }
+
+//         .ats-contact {
+//           display: flex;
+//           flex-wrap: wrap;
+//           gap: 4px 0;
+//           font-size: 12px;
+//           color: #333;
+//         }
+
+//         .ats-contact-item {
+//           margin-right: 18px;
+//           white-space: nowrap;
+//         }
+
+//         .ats-contact-item a {
+//           color: #1a4fbd;
+//           text-decoration: none;
+//         }
+
+//         /* ===== SECTION ===== */
+//         .ats-section {
+//           margin-bottom: 16px;
+//         }
+
+//         .ats-section-title {
+//           font-size: 13px;
+//           font-weight: 700;
+//           text-transform: uppercase;
+//           letter-spacing: 1px;
+//           color: #1a1a1a;
+//           border-bottom: 1px solid #1a1a1a;
+//           padding-bottom: 3px;
+//           margin-bottom: 8px;
+//         }
+
+//         /* ===== SUMMARY ===== */
+//         .ats-summary {
+//           font-size: 13px;
+//           line-height: 1.7;
+//           color: #1a1a1a;
+//           text-align: justify;
+//         }
+
+//         /* ===== KEY INFO GRID ===== */
+//         .ats-info-grid {
+//           display: grid;
+//           grid-template-columns: repeat(3, 1fr);
+//           gap: 6px 16px;
+//         }
+
+//         .ats-info-item {
+//           font-size: 12px;
+//         }
+
+//         .ats-info-label {
+//           font-weight: 700;
+//           color: #444;
+//           text-transform: uppercase;
+//           font-size: 10px;
+//           letter-spacing: 0.4px;
+//           display: block;
+//           margin-bottom: 1px;
+//         }
+
+//         .ats-info-value {
+//           color: #1a1a1a;
+//           font-size: 13px;
+//         }
+
+//         /* ===== SKILLS ===== */
+//         .ats-skills-block {
+//           margin-bottom: 6px;
+//         }
+
+//         .ats-skills-label {
+//           font-size: 11px;
+//           font-weight: 700;
+//           color: #555;
+//           text-transform: uppercase;
+//           letter-spacing: 0.3px;
+//           margin-bottom: 4px;
+//         }
+
+//         .ats-skills-list {
+//           font-size: 13px;
+//           color: #1a1a1a;
+//           line-height: 1.6;
+//         }
+
+//         /* ===== CERTIFICATIONS ===== */
+//         .ats-cert-list {
+//           list-style: disc;
+//           padding-left: 18px;
+//           font-size: 13px;
+//           color: #1a1a1a;
+//           line-height: 1.7;
+//         }
+
+//         /* ===== EXPERIENCE ===== */
+//         .ats-exp-item {
+//           margin-bottom: 14px;
+//           page-break-inside: avoid;
+//         }
+
+//         .ats-exp-item:last-child {
+//           margin-bottom: 0;
+//         }
+
+//         .ats-exp-header {
+//           display: flex;
+//           justify-content: space-between;
+//           align-items: flex-start;
+//           flex-wrap: wrap;
+//           gap: 4px;
+//           margin-bottom: 2px;
+//         }
+
+//         .ats-exp-role {
+//           font-size: 14px;
+//           font-weight: 700;
+//           color: #1a1a1a;
+//         }
+
+//         .ats-exp-duration {
+//           font-size: 12px;
+//           color: #555;
+//           font-style: italic;
+//           white-space: nowrap;
+//         }
+
+//         .ats-exp-company {
+//           font-size: 13px;
+//           color: #333;
+//           margin-bottom: 6px;
+//         }
+
+//         /* ===== PROJECTS ===== */
+//         .ats-project {
+//           margin-top: 8px;
+//           padding-left: 12px;
+//           border-left: 2px solid #ccc;
+//         }
+
+//         .ats-project-name {
+//           font-size: 13px;
+//           font-weight: 700;
+//           color: #1a1a1a;
+//           margin-bottom: 4px;
+//         }
+
+//         .ats-project-detail {
+//           font-size: 12px;
+//           color: #333;
+//           line-height: 1.6;
+//           margin-bottom: 3px;
+//         }
+
+//         .ats-project-detail strong {
+//           color: #1a1a1a;
+//           font-weight: 700;
+//         }
+
+//         .ats-project-roles {
+//           white-space: pre-wrap;
+//           font-size: 12px;
+//           line-height: 1.6;
+//           color: #333;
+//           margin-top: 2px;
+//         }
+
+//         /* ===== EDUCATION ===== */
+//         .ats-edu-item {
+//           margin-bottom: 10px;
+//           page-break-inside: avoid;
+//         }
+
+//         .ats-edu-item:last-child {
+//           margin-bottom: 0;
+//         }
+
+//         .ats-edu-header {
+//           display: flex;
+//           justify-content: space-between;
+//           align-items: flex-start;
+//           flex-wrap: wrap;
+//           gap: 4px;
+//         }
+
+//         .ats-edu-degree {
+//           font-size: 13px;
+//           font-weight: 700;
+//           color: #1a1a1a;
+//         }
+
+//         .ats-edu-duration {
+//           font-size: 12px;
+//           color: #555;
+//           font-style: italic;
+//         }
+
+//         .ats-edu-institute {
+//           font-size: 12px;
+//           color: #444;
+//           margin-top: 2px;
+//         }
+
+//         /* ===== TRAILHEAD ===== */
+//         .ats-trailhead-stats {
+//           font-size: 13px;
+//           color: #1a1a1a;
+//           line-height: 1.7;
+//         }
+
+//         .ats-trailhead-stat-row {
+//           display: flex;
+//           flex-wrap: wrap;
+//           gap: 4px 0;
+//         }
+
+//         .ats-trailhead-stat-item {
+//           margin-right: 20px;
+//           white-space: nowrap;
+//         }
+
+//         .ats-trailhead-stat-item strong {
+//           font-weight: 700;
+//         }
+
+//         /* ===== LINKS ===== */
+//         .ats-links {
+//           display: flex;
+//           flex-wrap: wrap;
+//           gap: 6px 0;
+//           font-size: 13px;
+//         }
+
+//         .ats-links a {
+//           color: #1a4fbd;
+//           text-decoration: none;
+//           margin-right: 20px;
+//         }
+
+//         /* ===== RESPONSIVE ===== */
+//         @media screen and (max-width: 600px) {
+//           .ats-resume {
+//             padding: 20px 16px;
+//           }
+//           .ats-name {
+//             font-size: 22px;
+//           }
+//           .ats-info-grid {
+//             grid-template-columns: repeat(2, 1fr);
+//           }
+//           .ats-exp-header {
+//             flex-direction: column;
+//           }
+//         }
+//       `}</style>
+
+//       <div className="ats-resume">
+//         {/* ===== HEADER ===== */}
+//         <div className="ats-header">
+//           <div className="ats-name">{name}</div>
+//           <div className="ats-title">
+//             {title}
+//             {primarySkills.length > 0 &&
+//               " | " + primarySkills.map((s) => s.name).join(" | ")}
+//           </div>
+//           <div className="ats-contact">
+//             {displayEmail && (
+//               <span className="ats-contact-item">{displayEmail}</span>
+//             )}
+//             {displayPhone && (
+//               <span className="ats-contact-item">+91 {displayPhone}</span>
+//             )}
+//             {currentLocation && (
+//               <span className="ats-contact-item">{currentLocation}, India</span>
+//             )}
+//             {linkedInUrl && (
+//               <span className="ats-contact-item">
+//                 <a href={linkedInUrl} target="_blank" rel="noopener noreferrer">
+//                   LinkedIn
+//                 </a>
+//               </span>
+//             )}
+//             {trailheadUrl && (
+//               <span className="ats-contact-item">
+//                 <a
+//                   href={trailheadUrl}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                 >
+//                   Trailhead
+//                 </a>
+//               </span>
+//             )}
+//             {portfolioLink && (
+//               <span className="ats-contact-item">
+//                 <a
+//                   href={portfolioLink}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                 >
+//                   Portfolio
+//                 </a>
+//               </span>
+//             )}
+//           </div>
+//         </div>
+
+//         {/* ===== PROFESSIONAL SUMMARY ===== */}
+//         <div className="ats-section">
+//           <div className="ats-section-title">Professional Summary</div>
+//           <p className="ats-summary">
+//             {summary && summary.trim() !== "Professional Summary"
+//               ? summary.trim()
+//               : `Salesforce ${title || "Professional"} with ${
+//                   totalExperience || "N/A"
+//                 } years of total IT experience and ${
+//                   relevantSalesforceExperience || "N/A"
+//                 } years of dedicated Salesforce platform expertise. ${
+//                   primarySkills.length > 0
+//                     ? `Proficient in ${primarySkills
+//                         .map((s) => s.name)
+//                         .join(", ")}.`
+//                     : ""
+//                 } ${
+//                   primaryClouds?.length > 0
+//                     ? `Experienced with ${primaryClouds
+//                         .map((c) => c.name)
+//                         .join(", ")}.`
+//                     : ""
+//                 } ${
+//                   certifications?.length > 0
+//                     ? `Holds ${certifications.join(", ")} certifications.`
+//                     : ""
+//                 } ${
+//                   trailheadPoints
+//                     ? `Trailhead ${rankTitle || "Ranger"} with ${trailheadPoints.toLocaleString()} points and ${trailheadBadgesCount} badges.`
+//                     : ""
+//                 } Available to join within ${joiningPeriod || "N/A"}.`}
+//           </p>
+//         </div>
+
+//         {/* ===== KEY INFORMATION ===== */}
+//         <div className="ats-section">
+//           <div className="ats-section-title">Key Information</div>
+//           <div className="ats-info-grid">
+//             <div className="ats-info-item">
+//               <span className="ats-info-label">Total Experience</span>
+//               <span className="ats-info-value">
+//                 {totalExperience ? `${totalExperience} years` : "N/A"}
+//               </span>
+//             </div>
+//             <div className="ats-info-item">
+//               <span className="ats-info-label">Salesforce Experience</span>
+//               <span className="ats-info-value">
+//                 {relevantSalesforceExperience
+//                   ? `${relevantSalesforceExperience} years`
+//                   : "N/A"}
+//               </span>
+//             </div>
+//             <div className="ats-info-item">
+//               <span className="ats-info-label">Notice Period</span>
+//               <span className="ats-info-value">{joiningPeriod || "N/A"}</span>
+//             </div>
+//             <div className="ats-info-item">
+//               <span className="ats-info-label">Current Location</span>
+//               <span className="ats-info-value">{currentLocation || "N/A"}</span>
+//             </div>
+//             <div className="ats-info-item">
+//               <span className="ats-info-label">Preferred Location</span>
+//               <span className="ats-info-value">
+//                 {preferredLocation?.join(", ") || "N/A"}
+//               </span>
+//             </div>
+//             <div className="ats-info-item">
+//               <span className="ats-info-label">Rate</span>
+//               <span className="ats-info-value">
+//                 {rateCardPerHour
+//                   ? `${rateCardPerHour.currency || "INR"} ${Number(
+//                       rateCardPerHour.value,
+//                     ).toLocaleString("en-IN")}/Month`
+//                   : "N/A"}
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* ===== TECHNICAL SKILLS ===== */}
+//         {(primarySkills.length > 0 || secondarySkills.length > 0) && (
+//           <div className="ats-section">
+//             <div className="ats-section-title">Technical Skills</div>
+
+//             {primarySkills.length > 0 && (
+//               <div className="ats-skills-block">
+//                 <div className="ats-skills-label">Primary Skills</div>
+//                 <div className="ats-skills-list">
+//                   {primarySkills.map((s) => s.name).join(" • ")}
+//                 </div>
+//               </div>
+//             )}
+
+//             {secondarySkills.length > 0 && (
+//               <div className="ats-skills-block">
+//                 <div className="ats-skills-label">Secondary Skills</div>
+//                 <div className="ats-skills-list">
+//                   {secondarySkills.map((s) => s.name).join(" • ")}
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+//         )}
+
+//         {/* ===== SALESFORCE CLOUDS ===== */}
+//         {(primaryClouds?.length > 0 || secondaryClouds?.length > 0) && (
+//           <div className="ats-section">
+//             <div className="ats-section-title">Salesforce Clouds</div>
+
+//             {primaryClouds?.length > 0 && (
+//               <div className="ats-skills-block">
+//                 <div className="ats-skills-label">Primary Clouds</div>
+//                 <div className="ats-skills-list">
+//                   {primaryClouds.map((c) => c.name).join(" • ")}
+//                 </div>
+//               </div>
+//             )}
+
+//             {secondaryClouds?.length > 0 && (
+//               <div className="ats-skills-block">
+//                 <div className="ats-skills-label">Secondary Clouds</div>
+//                 <div className="ats-skills-list">
+//                   {secondaryClouds.map((c) => c.name).join(" • ")}
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+//         )}
+
+//         {/* ===== CERTIFICATIONS ===== */}
+//         {certifications?.length > 0 && (
+//           <div className="ats-section">
+//             <div className="ats-section-title">Certifications</div>
+//             <ul className="ats-cert-list">
+//               {certifications.map((cert, i) => (
+//                 <li key={i}>{cert}</li>
+//               ))}
+//             </ul>
+//           </div>
+//         )}
+
+//         {/* ===== WORK EXPERIENCE ===== */}
+//         {workExperience?.length > 0 && (
+//           <div className="ats-section">
+//             <div className="ats-section-title">Work Experience</div>
+//             {workExperience.map((exp, i) => (
+//               <div key={i} className="ats-exp-item">
+//                 <div className="ats-exp-header">
+//                   <div className="ats-exp-role">{exp.role}</div>
+//                   <div className="ats-exp-duration">
+//                     {exp.startDate} – {exp.endDate || "Present"}
+//                   </div>
+//                 </div>
+//                 <div className="ats-exp-company">{exp.payrollCompanyName}</div>
+
+//                 {exp.projects?.map((proj, j) => (
+//                   <div key={j} className="ats-project">
+//                     <div className="ats-project-name">
+//                       Project: {proj.projectName}
+//                     </div>
+
+//                     {proj.projectDescription && (
+//                       <div className="ats-project-detail">
+//                         <strong>Description:</strong> {proj.projectDescription}
+//                       </div>
+//                     )}
+
+//                     {proj.rolesAndResponsibilities && (
+//                       <div className="ats-project-detail">
+//                         <strong>Roles & Responsibilities:</strong>
+//                         <div className="ats-project-roles">
+//                           {proj.rolesAndResponsibilities}
+//                         </div>
+//                       </div>
+//                     )}
+
+//                     {proj.skillsUsed?.length > 0 && (
+//                       <div className="ats-project-detail">
+//                         <strong>Skills Used:</strong>{" "}
+//                         {proj.skillsUsed.join(", ")}
+//                       </div>
+//                     )}
+
+//                     {proj.cloudUsed && (
+//                       <div className="ats-project-detail">
+//                         <strong>Clouds:</strong>{" "}
+//                         {Array.isArray(proj.cloudUsed)
+//                           ? proj.cloudUsed
+//                               .map((c) => (typeof c === "object" ? c.name : c))
+//                               .join(", ")
+//                           : typeof proj.cloudUsed === "object"
+//                             ? proj.cloudUsed.name
+//                             : proj.cloudUsed}
+//                       </div>
+//                     )}
+//                   </div>
+//                 ))}
+//               </div>
+//             ))}
+//           </div>
+//         )}
+
+//         {/* ===== EDUCATION ===== */}
+//         {education?.length > 0 && (
+//           <div className="ats-section">
+//             <div className="ats-section-title">Education</div>
+//             {education.map((edu, i) => (
+//               <div key={i} className="ats-edu-item">
+//                 <div className="ats-edu-header">
+//                   <div className="ats-edu-degree">{edu.name}</div>
+//                   <div className="ats-edu-duration">
+//                     {edu.fromYear} – {edu.toYear}
+//                   </div>
+//                 </div>
+//                 <div className="ats-edu-institute">{edu.educationType}</div>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+
+//         {/* ===== TRAILHEAD STATS ===== */}
+//         {(trailheadPoints || trailheadBadgesCount || trailheadTrailsCount) && (
+//           <div className="ats-section">
+//             <div className="ats-section-title">Salesforce Trailhead</div>
+//             <div className="ats-trailhead-stats">
+//               <div className="ats-trailhead-stat-row">
+//                 {rankTitle && (
+//                   <span className="ats-trailhead-stat-item">
+//                     <strong>Rank:</strong> {rankTitle}
+//                   </span>
+//                 )}
+//                 {trailheadPoints > 0 && (
+//                   <span className="ats-trailhead-stat-item">
+//                     <strong>Points:</strong>{" "}
+//                     {Number(trailheadPoints).toLocaleString("en-IN")}
+//                   </span>
+//                 )}
+//                 {trailheadBadgesCount > 0 && (
+//                   <span className="ats-trailhead-stat-item">
+//                     <strong>Badges:</strong> {trailheadBadgesCount}
+//                   </span>
+//                 )}
+//                 {trailheadTrailsCount > 0 && (
+//                   <span className="ats-trailhead-stat-item">
+//                     <strong>Trails Completed:</strong> {trailheadTrailsCount}
+//                   </span>
+//                 )}
+//                 {agentblazerStatus && (
+//                   <span className="ats-trailhead-stat-item">
+//                     <strong>Agentblazer Status:</strong>{" "}
+//                     {agentblazerStatus.title} (Level {agentblazerStatus.level})
+//                   </span>
+//                 )}
+//               </div>
+//               {trailheadUrl && (
+//                 <div style={{ marginTop: 4 }}>
+//                   <a
+//                     href={trailheadUrl}
+//                     target="_blank"
+//                     rel="noopener noreferrer"
+//                     style={{ color: "#1a4fbd", fontSize: 12 }}
+//                   >
+//                     {trailheadUrl}
+//                   </a>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         )}
+
+//         {/* ===== LINKS ===== */}
+//         {(linkedInUrl || portfolioLink) && (
+//           <div className="ats-section">
+//             <div className="ats-section-title">Online Presence</div>
+//             <div className="ats-links">
+//               {linkedInUrl && (
+//                 <a href={linkedInUrl} target="_blank" rel="noopener noreferrer">
+//                   LinkedIn: {linkedInUrl}
+//                 </a>
+//               )}
+//               {portfolioLink && (
+//                 <a
+//                   href={portfolioLink}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                 >
+//                   Portfolio: {portfolioLink}
+//                 </a>
+//               )}
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// });
+
+// ATSResumeTemplate.displayName = "ATSResumeTemplate";
+
+// export default ATSResumeTemplate;
+
 import React, { forwardRef } from "react";
 
 const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
@@ -1003,22 +1726,17 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
   return (
     <div ref={ref}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
         * {
           box-sizing: border-box;
           margin: 0;
           padding: 0;
         }
 
-        body {
-          font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
-          color: #1a1a1a;
-          line-height: 1.5;
-          font-size: 13px;
-        }
-
         @page {
           size: A4;
-          margin: 18mm 15mm 18mm 15mm;
+          margin: 15mm 14mm 15mm 14mm;
         }
 
         @media print {
@@ -1031,87 +1749,145 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
           .page-break {
             page-break-before: always;
           }
+          .ats-resume {
+            box-shadow: none !important;
+            border: none !important;
+          }
         }
 
-        /* ===== CONTAINER ===== */
+        /* ===== ROOT ===== */
         .ats-resume {
-          max-width: 780px;
+          max-width: 800px;
           margin: 0 auto;
           background: #ffffff;
-          padding: 32px 36px;
-          font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
-          color: #1a1a1a;
+          font-family: 'Source Sans 3', 'Segoe UI', Tahoma, Geneva, sans-serif;
+          color: #1c1c1e;
+          line-height: 1.55;
+          font-size: 13px;
+          padding: 40px 44px 40px 44px;
+          position: relative;
+        }
+
+        /* ===== LEFT ACCENT BAR ===== */
+        .ats-resume::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 5px;
+          height: 100%;
+          background: linear-gradient(180deg, #0a2463 0%, #1e5fa8 50%, #0a2463 100%);
+          border-radius: 0;
         }
 
         /* ===== HEADER ===== */
         .ats-header {
-          margin-bottom: 14px;
-          padding-bottom: 12px;
-          border-bottom: 2px solid #1a1a1a;
+          padding-left: 18px;
+          margin-bottom: 22px;
+          padding-bottom: 18px;
+          border-bottom: 2px solid #e8edf5;
+          position: relative;
         }
 
         .ats-name {
-          font-size: 26px;
+          font-family: 'Bitter', Georgia, 'Times New Roman', serif;
+          font-size: 30px;
           font-weight: 700;
-          letter-spacing: 0.5px;
-          color: #1a1a1a;
+          letter-spacing: -0.3px;
+          color: #0a2463;
+          line-height: 1.15;
           margin-bottom: 4px;
         }
 
         .ats-title {
           font-size: 14px;
-          font-weight: 400;
-          color: #444;
-          margin-bottom: 8px;
+          font-weight: 500;
+          color: #1e5fa8;
+          margin-bottom: 12px;
+          letter-spacing: 0.2px;
+          line-height: 1.5;
         }
 
         .ats-contact {
           display: flex;
           flex-wrap: wrap;
-          gap: 4px 0;
+          gap: 0;
           font-size: 12px;
-          color: #333;
+          color: #4a5568;
         }
 
         .ats-contact-item {
-          margin-right: 18px;
+          margin-right: 0;
+          padding-right: 14px;
+          padding-left: 0;
           white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          line-height: 1.8;
+        }
+
+        .ats-contact-item + .ats-contact-item {
+          padding-left: 14px;
+          border-left: 1px solid #cbd5e0;
         }
 
         .ats-contact-item a {
-          color: #1a4fbd;
+          color: #1e5fa8;
           text-decoration: none;
+          font-weight: 500;
+        }
+
+        .ats-contact-item a:hover {
+          text-decoration: underline;
         }
 
         /* ===== SECTION ===== */
         .ats-section {
-          margin-bottom: 16px;
+          margin-bottom: 18px;
+          padding-left: 18px;
         }
 
         .ats-section-title {
-          font-size: 13px;
+          font-family: 'Bitter', Georgia, serif;
+          font-size: 11.5px;
           font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          color: #1a1a1a;
-          border-bottom: 1px solid #1a1a1a;
-          padding-bottom: 3px;
-          margin-bottom: 8px;
+          letter-spacing: 1.8px;
+          color: #0a2463;
+          padding-bottom: 5px;
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .ats-section-title::after {
+          content: '';
+          flex: 1;
+          height: 1.5px;
+          background: linear-gradient(90deg, #1e5fa8 0%, #e8edf5 100%);
+          border-radius: 1px;
         }
 
         /* ===== SUMMARY ===== */
         .ats-summary {
           font-size: 13px;
-          line-height: 1.7;
-          color: #1a1a1a;
+          line-height: 1.75;
+          color: #2d3748;
           text-align: justify;
+          font-weight: 400;
         }
 
         /* ===== KEY INFO GRID ===== */
         .ats-info-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 6px 16px;
+          gap: 10px 20px;
+          background: #f7f9fc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 14px 18px;
         }
 
         .ats-info-item {
@@ -1120,51 +1896,92 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
 
         .ats-info-label {
           font-weight: 700;
-          color: #444;
+          color: #718096;
           text-transform: uppercase;
-          font-size: 10px;
-          letter-spacing: 0.4px;
+          font-size: 9.5px;
+          letter-spacing: 0.7px;
           display: block;
-          margin-bottom: 1px;
+          margin-bottom: 2px;
         }
 
         .ats-info-value {
-          color: #1a1a1a;
-          font-size: 13px;
+          color: #1c1c1e;
+          font-size: 12.5px;
+          font-weight: 500;
         }
 
         /* ===== SKILLS ===== */
         .ats-skills-block {
-          margin-bottom: 6px;
+          margin-bottom: 8px;
+        }
+
+        .ats-skills-block:last-child {
+          margin-bottom: 0;
         }
 
         .ats-skills-label {
-          font-size: 11px;
+          font-size: 10.5px;
           font-weight: 700;
-          color: #555;
+          color: #1e5fa8;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
-          margin-bottom: 4px;
+          letter-spacing: 0.5px;
+          margin-bottom: 5px;
         }
 
         .ats-skills-list {
-          font-size: 13px;
-          color: #1a1a1a;
-          line-height: 1.6;
+          font-size: 12.5px;
+          color: #2d3748;
+          line-height: 1.7;
+          font-weight: 400;
+        }
+
+        .ats-skill-tag {
+          display: inline-block;
+          background: #eef2fa;
+          color: #0a2463;
+          border: 1px solid #c8d6ef;
+          border-radius: 3px;
+          padding: 1px 8px;
+          margin: 2px 3px 2px 0;
+          font-size: 12px;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .ats-skill-tag.secondary {
+          background: #f5f7fa;
+          color: #4a5568;
+          border-color: #dde3ec;
+          font-weight: 400;
         }
 
         /* ===== CERTIFICATIONS ===== */
-        .ats-cert-list {
-          list-style: disc;
-          padding-left: 18px;
-          font-size: 13px;
-          color: #1a1a1a;
-          line-height: 1.7;
+        .ats-cert-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 5px 20px;
+        }
+
+        .ats-cert-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 7px;
+          font-size: 12.5px;
+          color: #2d3748;
+          line-height: 1.5;
+        }
+
+        .ats-cert-item::before {
+          content: '✦';
+          color: #1e5fa8;
+          font-size: 8px;
+          flex-shrink: 0;
+          margin-top: 3px;
         }
 
         /* ===== EXPERIENCE ===== */
         .ats-exp-item {
-          margin-bottom: 14px;
+          margin-bottom: 16px;
           page-break-inside: avoid;
         }
 
@@ -1184,53 +2001,69 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
         .ats-exp-role {
           font-size: 14px;
           font-weight: 700;
-          color: #1a1a1a;
+          color: #0a2463;
+          font-family: 'Bitter', Georgia, serif;
         }
 
         .ats-exp-duration {
-          font-size: 12px;
-          color: #555;
+          font-size: 11.5px;
+          color: #718096;
           font-style: italic;
           white-space: nowrap;
+          background: #f7f9fc;
+          border: 1px solid #e2e8f0;
+          border-radius: 3px;
+          padding: 1px 8px;
+          font-style: normal;
+          font-weight: 500;
         }
 
         .ats-exp-company {
-          font-size: 13px;
-          color: #333;
-          margin-bottom: 6px;
+          font-size: 12.5px;
+          color: #1e5fa8;
+          margin-bottom: 8px;
+          font-weight: 600;
         }
 
         /* ===== PROJECTS ===== */
         .ats-project {
-          margin-top: 8px;
-          padding-left: 12px;
-          border-left: 2px solid #ccc;
+          margin-top: 10px;
+          padding: 10px 14px;
+          background: #f9fafb;
+          border: 1px solid #e8edf5;
+          border-left: 3px solid #1e5fa8;
+          border-radius: 0 4px 4px 0;
+          page-break-inside: avoid;
         }
 
         .ats-project-name {
           font-size: 13px;
           font-weight: 700;
-          color: #1a1a1a;
-          margin-bottom: 4px;
+          color: #0a2463;
+          margin-bottom: 6px;
         }
 
         .ats-project-detail {
           font-size: 12px;
-          color: #333;
-          line-height: 1.6;
-          margin-bottom: 3px;
+          color: #4a5568;
+          line-height: 1.65;
+          margin-bottom: 4px;
+        }
+
+        .ats-project-detail:last-child {
+          margin-bottom: 0;
         }
 
         .ats-project-detail strong {
-          color: #1a1a1a;
+          color: #2d3748;
           font-weight: 700;
         }
 
         .ats-project-roles {
           white-space: pre-wrap;
           font-size: 12px;
-          line-height: 1.6;
-          color: #333;
+          line-height: 1.65;
+          color: #4a5568;
           margin-top: 2px;
         }
 
@@ -1238,6 +2071,9 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
         .ats-edu-item {
           margin-bottom: 10px;
           page-break-inside: avoid;
+          padding: 8px 12px;
+          border-left: 3px solid #e2e8f0;
+          background: #fafbfd;
         }
 
         .ats-edu-item:last-child {
@@ -1255,41 +2091,54 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
         .ats-edu-degree {
           font-size: 13px;
           font-weight: 700;
-          color: #1a1a1a;
+          color: #1c1c1e;
         }
 
         .ats-edu-duration {
-          font-size: 12px;
-          color: #555;
+          font-size: 11.5px;
+          color: #718096;
           font-style: italic;
         }
 
         .ats-edu-institute {
           font-size: 12px;
-          color: #444;
+          color: #4a5568;
           margin-top: 2px;
+          font-weight: 500;
         }
 
         /* ===== TRAILHEAD ===== */
-        .ats-trailhead-stats {
-          font-size: 13px;
-          color: #1a1a1a;
-          line-height: 1.7;
+        .ats-trailhead-card {
+          background: linear-gradient(135deg, #f0f5ff 0%, #e8f0fe 100%);
+          border: 1px solid #c8d6ef;
+          border-radius: 6px;
+          padding: 14px 18px;
         }
 
         .ats-trailhead-stat-row {
           display: flex;
           flex-wrap: wrap;
-          gap: 4px 0;
+          gap: 0;
+          margin-bottom: 6px;
         }
 
         .ats-trailhead-stat-item {
-          margin-right: 20px;
+          font-size: 12.5px;
+          color: #2d3748;
+          padding-right: 18px;
+          margin-right: 0;
           white-space: nowrap;
+          line-height: 1.8;
+        }
+
+        .ats-trailhead-stat-item + .ats-trailhead-stat-item {
+          padding-left: 18px;
+          border-left: 1px solid #a0b4d6;
         }
 
         .ats-trailhead-stat-item strong {
           font-weight: 700;
+          color: #0a2463;
         }
 
         /* ===== LINKS ===== */
@@ -1297,28 +2146,47 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
           display: flex;
           flex-wrap: wrap;
           gap: 6px 0;
-          font-size: 13px;
+          font-size: 12.5px;
         }
 
         .ats-links a {
-          color: #1a4fbd;
+          color: #1e5fa8;
           text-decoration: none;
           margin-right: 20px;
+          font-weight: 500;
+        }
+
+        .ats-links a:hover {
+          text-decoration: underline;
+        }
+
+        /* ===== DIVIDER BETWEEN EXP ITEMS ===== */
+        .ats-exp-divider {
+          border: none;
+          border-top: 1px dashed #e2e8f0;
+          margin: 14px 0;
         }
 
         /* ===== RESPONSIVE ===== */
         @media screen and (max-width: 600px) {
           .ats-resume {
-            padding: 20px 16px;
+            padding: 24px 20px 24px 24px;
           }
           .ats-name {
-            font-size: 22px;
+            font-size: 24px;
           }
           .ats-info-grid {
             grid-template-columns: repeat(2, 1fr);
           }
+          .ats-cert-grid {
+            grid-template-columns: 1fr;
+          }
           .ats-exp-header {
             flex-direction: column;
+          }
+          .ats-contact-item + .ats-contact-item {
+            border-left: none;
+            padding-left: 0;
           }
         }
       `}</style>
@@ -1330,7 +2198,7 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
           <div className="ats-title">
             {title}
             {primarySkills.length > 0 &&
-              " | " + primarySkills.map((s) => s.name).join(" | ")}
+              " · " + primarySkills.map((s) => s.name).join(" · ")}
           </div>
           <div className="ats-contact">
             {displayEmail && (
@@ -1386,15 +2254,11 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
                   relevantSalesforceExperience || "N/A"
                 } years of dedicated Salesforce platform expertise. ${
                   primarySkills.length > 0
-                    ? `Proficient in ${primarySkills
-                        .map((s) => s.name)
-                        .join(", ")}.`
+                    ? `Proficient in ${primarySkills.map((s) => s.name).join(", ")}.`
                     : ""
                 } ${
                   primaryClouds?.length > 0
-                    ? `Experienced with ${primaryClouds
-                        .map((c) => c.name)
-                        .join(", ")}.`
+                    ? `Experienced with ${primaryClouds.map((c) => c.name).join(", ")}.`
                     : ""
                 } ${
                   certifications?.length > 0
@@ -1461,8 +2325,12 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
             {primarySkills.length > 0 && (
               <div className="ats-skills-block">
                 <div className="ats-skills-label">Primary Skills</div>
-                <div className="ats-skills-list">
-                  {primarySkills.map((s) => s.name).join(" • ")}
+                <div>
+                  {primarySkills.map((s, i) => (
+                    <span key={i} className="ats-skill-tag">
+                      {s.name}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -1470,8 +2338,12 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
             {secondarySkills.length > 0 && (
               <div className="ats-skills-block">
                 <div className="ats-skills-label">Secondary Skills</div>
-                <div className="ats-skills-list">
-                  {secondarySkills.map((s) => s.name).join(" • ")}
+                <div>
+                  {secondarySkills.map((s, i) => (
+                    <span key={i} className="ats-skill-tag secondary">
+                      {s.name}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -1486,8 +2358,12 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
             {primaryClouds?.length > 0 && (
               <div className="ats-skills-block">
                 <div className="ats-skills-label">Primary Clouds</div>
-                <div className="ats-skills-list">
-                  {primaryClouds.map((c) => c.name).join(" • ")}
+                <div>
+                  {primaryClouds.map((c, i) => (
+                    <span key={i} className="ats-skill-tag">
+                      {c.name}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -1495,8 +2371,12 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
             {secondaryClouds?.length > 0 && (
               <div className="ats-skills-block">
                 <div className="ats-skills-label">Secondary Clouds</div>
-                <div className="ats-skills-list">
-                  {secondaryClouds.map((c) => c.name).join(" • ")}
+                <div>
+                  {secondaryClouds.map((c, i) => (
+                    <span key={i} className="ats-skill-tag secondary">
+                      {c.name}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -1507,11 +2387,13 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
         {certifications?.length > 0 && (
           <div className="ats-section">
             <div className="ats-section-title">Certifications</div>
-            <ul className="ats-cert-list">
+            <div className="ats-cert-grid">
               {certifications.map((cert, i) => (
-                <li key={i}>{cert}</li>
+                <div key={i} className="ats-cert-item">
+                  {cert}
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
@@ -1520,57 +2402,65 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
           <div className="ats-section">
             <div className="ats-section-title">Work Experience</div>
             {workExperience.map((exp, i) => (
-              <div key={i} className="ats-exp-item">
-                <div className="ats-exp-header">
-                  <div className="ats-exp-role">{exp.role}</div>
-                  <div className="ats-exp-duration">
-                    {exp.startDate} – {exp.endDate || "Present"}
-                  </div>
-                </div>
-                <div className="ats-exp-company">{exp.payrollCompanyName}</div>
-
-                {exp.projects?.map((proj, j) => (
-                  <div key={j} className="ats-project">
-                    <div className="ats-project-name">
-                      Project: {proj.projectName}
+              <div key={i}>
+                {i > 0 && <hr className="ats-exp-divider" />}
+                <div className="ats-exp-item">
+                  <div className="ats-exp-header">
+                    <div className="ats-exp-role">{exp.role}</div>
+                    <div className="ats-exp-duration">
+                      {exp.startDate} – {exp.endDate || "Present"}
                     </div>
-
-                    {proj.projectDescription && (
-                      <div className="ats-project-detail">
-                        <strong>Description:</strong> {proj.projectDescription}
-                      </div>
-                    )}
-
-                    {proj.rolesAndResponsibilities && (
-                      <div className="ats-project-detail">
-                        <strong>Roles & Responsibilities:</strong>
-                        <div className="ats-project-roles">
-                          {proj.rolesAndResponsibilities}
-                        </div>
-                      </div>
-                    )}
-
-                    {proj.skillsUsed?.length > 0 && (
-                      <div className="ats-project-detail">
-                        <strong>Skills Used:</strong>{" "}
-                        {proj.skillsUsed.join(", ")}
-                      </div>
-                    )}
-
-                    {proj.cloudUsed && (
-                      <div className="ats-project-detail">
-                        <strong>Clouds:</strong>{" "}
-                        {Array.isArray(proj.cloudUsed)
-                          ? proj.cloudUsed
-                              .map((c) => (typeof c === "object" ? c.name : c))
-                              .join(", ")
-                          : typeof proj.cloudUsed === "object"
-                            ? proj.cloudUsed.name
-                            : proj.cloudUsed}
-                      </div>
-                    )}
                   </div>
-                ))}
+                  <div className="ats-exp-company">
+                    {exp.payrollCompanyName}
+                  </div>
+
+                  {exp.projects?.map((proj, j) => (
+                    <div key={j} className="ats-project">
+                      <div className="ats-project-name">
+                        Project: {proj.projectName}
+                      </div>
+
+                      {proj.projectDescription && (
+                        <div className="ats-project-detail">
+                          <strong>Description:</strong>{" "}
+                          {proj.projectDescription}
+                        </div>
+                      )}
+
+                      {proj.rolesAndResponsibilities && (
+                        <div className="ats-project-detail">
+                          <strong>Roles &amp; Responsibilities:</strong>
+                          <div className="ats-project-roles">
+                            {proj.rolesAndResponsibilities}
+                          </div>
+                        </div>
+                      )}
+
+                      {proj.skillsUsed?.length > 0 && (
+                        <div className="ats-project-detail">
+                          <strong>Skills Used:</strong>{" "}
+                          {proj.skillsUsed.join(", ")}
+                        </div>
+                      )}
+
+                      {proj.cloudUsed && (
+                        <div className="ats-project-detail">
+                          <strong>Clouds:</strong>{" "}
+                          {Array.isArray(proj.cloudUsed)
+                            ? proj.cloudUsed
+                                .map((c) =>
+                                  typeof c === "object" ? c.name : c,
+                                )
+                                .join(", ")
+                            : typeof proj.cloudUsed === "object"
+                              ? proj.cloudUsed.name
+                              : proj.cloudUsed}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -1598,7 +2488,7 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
         {(trailheadPoints || trailheadBadgesCount || trailheadTrailsCount) && (
           <div className="ats-section">
             <div className="ats-section-title">Salesforce Trailhead</div>
-            <div className="ats-trailhead-stats">
+            <div className="ats-trailhead-card">
               <div className="ats-trailhead-stat-row">
                 {rankTitle && (
                   <span className="ats-trailhead-stat-item">
@@ -1623,18 +2513,18 @@ const ATSResumeTemplate = forwardRef(({ candidate }, ref) => {
                 )}
                 {agentblazerStatus && (
                   <span className="ats-trailhead-stat-item">
-                    <strong>Agentblazer Status:</strong>{" "}
-                    {agentblazerStatus.title} (Level {agentblazerStatus.level})
+                    <strong>Agentblazer:</strong> {agentblazerStatus.title}{" "}
+                    (Level {agentblazerStatus.level})
                   </span>
                 )}
               </div>
               {trailheadUrl && (
-                <div style={{ marginTop: 4 }}>
+                <div style={{ marginTop: 6 }}>
                   <a
                     href={trailheadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: "#1a4fbd", fontSize: 12 }}
+                    style={{ color: "#1e5fa8", fontSize: 12, fontWeight: 500 }}
                   >
                     {trailheadUrl}
                   </a>

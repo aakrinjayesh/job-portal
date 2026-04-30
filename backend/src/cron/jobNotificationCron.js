@@ -29,7 +29,10 @@ const sendJobEmails = async ({ jobs, users, getTemplate, label }) => {
           sent++;
           await new Promise((r) => setTimeout(r, 100)); // avoid rate limits
         } catch (err) {
-          console.error(`❌ Failed to send ${label} email to ${user.email}:`, err.message);
+          console.error(
+            `❌ Failed to send ${label} email to ${user.email}:`,
+            err.message,
+          );
         }
       }),
     );
@@ -47,8 +50,18 @@ const runDailyJobNotifications = async () => {
     const end = dayjs().subtract(1, "day").endOf("day").toDate();
 
     const jobs = await prisma.job.findMany({
-      where: { createdAt: { gte: start, lte: end }, isDeleted: false, status: "Open" },
-      select: { id: true, role: true, companyName: true, location: true, salary: true },
+      where: {
+        createdAt: { gte: start, lte: end },
+        isDeleted: false,
+        status: "Open",
+      },
+      select: {
+        id: true,
+        role: true,
+        companyName: true,
+        location: true,
+        salary: true,
+      },
     });
 
     if (!jobs.length) {
@@ -67,7 +80,9 @@ const runDailyJobNotifications = async () => {
       getTemplate: getDailyJobsTemplate,
       label: "DAILY",
     });
-    console.log(`📅 Daily cron DONE: ${sent}/${users.length} emails sent for ${jobs.length} jobs`);
+    console.log(
+      `📅 Daily cron DONE: ${sent}/${users.length} emails sent for ${jobs.length} jobs`,
+    );
   } catch (err) {
     console.error("💥 Daily job cron error:", err.message);
   }
@@ -83,8 +98,18 @@ const runWeeklyJobNotifications = async () => {
     const end = dayjs().endOf("day").toDate();
 
     const jobs = await prisma.job.findMany({
-      where: { createdAt: { gte: start, lte: end }, isDeleted: false, status: "Open" },
-      select: { id: true, role: true, companyName: true, location: true, salary: true },
+      where: {
+        createdAt: { gte: start, lte: end },
+        isDeleted: false,
+        status: "Open",
+      },
+      select: {
+        id: true,
+        role: true,
+        companyName: true,
+        location: true,
+        salary: true,
+      },
     });
 
     if (!jobs.length) {
@@ -103,7 +128,9 @@ const runWeeklyJobNotifications = async () => {
       getTemplate: getWeeklyJobsTemplate,
       label: "WEEKLY",
     });
-    console.log(`📆 Weekly cron DONE: ${sent}/${users.length} emails sent for ${jobs.length} jobs`);
+    console.log(
+      `📆 Weekly cron DONE: ${sent}/${users.length} emails sent for ${jobs.length} jobs`,
+    );
   } catch (err) {
     console.error("💥 Weekly job cron error:", err.message);
   }
@@ -113,15 +140,17 @@ const runWeeklyJobNotifications = async () => {
 // SCHEDULER
 // ─────────────────────────────────────────────────────────────────────────────
 export const startJobNotificationCron = () => {
-  // Daily at 9 AM IST
-  cron.schedule("0 9 * * *", runDailyJobNotifications, {
+  // Daily at 10 AM IST
+  cron.schedule("0 10 * * *", runDailyJobNotifications, {
     timezone: "Asia/Kolkata",
   });
 
-  // Weekly every Friday at 9 AM IST
-  cron.schedule("0 9 * * 5", runWeeklyJobNotifications, {
+  // Weekly every Friday at 10 AM IST
+  cron.schedule("0 10 * * 5", runWeeklyJobNotifications, {
     timezone: "Asia/Kolkata",
   });
 
-  console.log("🕒 Job notification crons registered: daily 9 AM & weekly Friday 9 AM IST");
+  console.log(
+    "🕒 Job notification crons registered: daily 10 AM & weekly Friday 10 AM IST",
+  );
 };
