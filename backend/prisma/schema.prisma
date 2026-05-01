@@ -165,19 +165,25 @@ model Users {
   promoUsages         PromoCodeUsage[]
   organizationId      String? // 🔥 fast lookup
   organization        Organization?       @relation(fields: [organizationId], references: [id])
-   followersCount Int @default(0)
-  followingCount Int @default(0)
-  following Follow[] @relation("Following")
-followers Follow[] @relation("Followers")
+  followersCount      Int                 @default(0)
+  followingCount      Int                 @default(0)
+  following           Follow[]            @relation("Following")
+  followers           Follow[]            @relation("Followers")
 
-posts Post[]
-postLikes PostLike[]
-postComments PostComment[]
+  posts        Post[]
+  postLikes    PostLike[]
+  postComments PostComment[]
 
-notificationsReceived Notification[] @relation("UserNotifications")
-notificationsTriggered Notification[] @relation("ActorNotifications")
+  notificationsReceived  Notification[] @relation("UserNotifications")
+  notificationsTriggered Notification[] @relation("ActorNotifications")
 
-feed Feed[]
+  feed           Feed[]
+  // Add inside Users model
+  createdCourses NewCourse[]         @relation("UserCreatedCourses")
+  enrollments    CourseEnrollment[]  @relation("UserEnrollments")
+  certificates   CourseCertificate[] @relation("UserCertificates")
+  courseCart     CourseCart?         @relation("UserCourseCart")
+  courseWishlist CourseWishlist?     @relation("UserCourseWishlist")
 }
 
 model UserSession {
@@ -1254,12 +1260,12 @@ model InterviewScore {
 model Follow {
   id String @id @default(uuid())
 
-  followerId String
+  followerId  String
   followingId String
 
   createdAt DateTime @default(now())
 
-  follower Users @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  follower  Users @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
   following Users @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
@@ -1271,23 +1277,23 @@ model Post {
   id String @id @default(uuid())
 
   authorId String
-  content String?
+  content  String?
 
   mediaUrls String[] @default([])
-  feeds Feed[]
+  feeds     Feed[]
 
-  likesCount Int @default(0)
+  likesCount    Int @default(0)
   commentsCount Int @default(0)
 
-  likes PostLike[]
-comments PostComment[]
+  likes    PostLike[]
+  comments PostComment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   visibility PostVisibility @default(PUBLIC)
-isDeleted Boolean @default(false)
-deletedAt DateTime?
+  isDeleted  Boolean        @default(false)
+  deletedAt  DateTime?
 
   author Users @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -1307,7 +1313,7 @@ model PostLike {
 
   createdAt DateTime @default(now())
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
@@ -1318,8 +1324,8 @@ model PostLike {
 model PostComment {
   id String @id @default(uuid())
 
-  postId String
-  userId String
+  postId  String
+  userId  String
   content String
 
   parentId String?
@@ -1327,9 +1333,9 @@ model PostComment {
   createdAt DateTime @default(now())
 
   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  parent PostComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  parent  PostComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies PostComment[] @relation("CommentReplies")
 
   @@index([postId])
@@ -1344,8 +1350,8 @@ model Feed {
 
   createdAt DateTime @default(now())
 
-   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId, createdAt])
@@ -1354,17 +1360,17 @@ model Feed {
 model Notification {
   id String @id @default(uuid())
 
-  userId String
-  actorId String
+  userId   String
+  actorId  String
   entityId String?
 
-  type SocialNotificationType
-  isRead Boolean @default(false)
+  type   SocialNotificationType
+  isRead Boolean                @default(false)
 
   createdAt DateTime @default(now())
 
-  user Users @relation("UserNotifications", fields:[userId], references:[id], onDelete:Cascade)
-  actor Users @relation("ActorNotifications", fields:[actorId], references:[id], onDelete:Cascade)
+  user  Users @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor Users @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
 }
@@ -1375,4 +1381,298 @@ enum SocialNotificationType {
   COMMENT
 }
 
+// ─────────────────────────────────────────────
+// COURSE SYSTEM — FULL SCHEMA
+// ─────────────────────────────────────────────
 
+enum CourseLectureType {
+  VIDEO
+  TEXT
+}
+
+enum CourseAccessDuration {
+  LIFETIME
+  ONE_MONTH
+  THREE_MONTHS
+  SIX_MONTHS
+  ONE_YEAR
+}
+
+enum AssessmentQuestionType {
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  TRUE_FALSE
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  DELETED
+}
+
+model NewCourse {
+  id           String  @id @default(uuid())
+  title        String
+  description  String?
+  slug         String  @unique
+  thumbnailUrl String? // S3 URL
+
+  creatorId   String
+  creatorRole Role // snapshot: candidate | company | admin
+
+  // access settings
+  isFree         Boolean              @default(true)
+  hasPreview     Boolean              @default(false)
+  price          Int                  @default(0) // in paise/cents, 0 if free
+  accessDuration CourseAccessDuration @default(LIFETIME)
+
+  // certificate settings
+  hasCertificate          Boolean @default(false)
+  certificateValidityDays Int? // null = lifetime
+
+  // status
+  status    CourseStatus @default(DRAFT)
+  isDeleted Boolean      @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator       Users                @relation("UserCreatedCourses", fields: [creatorId], references: [id], onDelete: Cascade)
+  sections      CourseSection[]
+  assessment    CourseAssessment?
+  enrollments   CourseEnrollment[]
+  certificates  CourseCertificate[]
+  cartItems     CourseCartItem[]
+  wishlistItems CourseWishlistItem[]
+
+  @@index([creatorId])
+  @@index([slug])
+  @@index([status, isDeleted])
+}
+
+// ─────────────────────────────────────────────
+// SECTIONS & LECTURES
+// ─────────────────────────────────────────────
+
+model CourseSection {
+  id       String @id @default(uuid())
+  courseId String
+  title    String
+  order    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course   NewCourse       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lectures CourseLecture[]
+
+  @@index([courseId])
+}
+
+model CourseLecture {
+  id        String            @id @default(uuid())
+  sectionId String
+  title     String
+  type      CourseLectureType @default(VIDEO)
+
+  contentUrl      String? // S3 URL
+  durationSeconds Int?
+
+  isPreview Boolean @default(false)
+  order     Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  section  CourseSection     @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progress LectureProgress[]
+
+  @@index([sectionId])
+}
+
+// ─────────────────────────────────────────────
+// ASSESSMENT
+// ─────────────────────────────────────────────
+
+model CourseAssessment {
+  id       String @id @default(uuid())
+  courseId String @unique
+  title    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    NewCourse            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions AssessmentQuestion[]
+  attempts  AssessmentAttempt[]
+}
+
+model AssessmentQuestion {
+  id            String                 @id @default(uuid())
+  assessmentId  String
+  question      String
+  type          AssessmentQuestionType @default(SINGLE_CHOICE)
+  options       String[]
+  correctAnswer String[]
+
+  order Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessment CourseAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+}
+
+// ─────────────────────────────────────────────
+// CART
+// ─────────────────────────────────────────────
+
+model CourseCart {
+  id     String @id @default(uuid())
+  userId String @unique // one cart per user
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  Users            @relation("UserCourseCart", fields: [userId], references: [id], onDelete: Cascade)
+  items CourseCartItem[]
+}
+
+model CourseCartItem {
+  id       String @id @default(uuid())
+  cartId   String
+  courseId String
+
+  addedAt DateTime @default(now())
+
+  cart   CourseCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  course NewCourse  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, courseId]) // no duplicate courses in same cart
+  @@index([cartId])
+  @@index([courseId])
+}
+
+// ─────────────────────────────────────────────
+// WISHLIST
+// ─────────────────────────────────────────────
+
+model CourseWishlist {
+  id     String @id @default(uuid())
+  userId String @unique // one wishlist per user
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  Users                @relation("UserCourseWishlist", fields: [userId], references: [id], onDelete: Cascade)
+  items CourseWishlistItem[]
+}
+
+model CourseWishlistItem {
+  id         String @id @default(uuid())
+  wishlistId String
+  courseId   String
+
+  addedAt DateTime @default(now())
+
+  wishlist CourseWishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  course   NewCourse      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, courseId]) // no duplicate courses in wishlist
+  @@index([wishlistId])
+  @@index([courseId])
+}
+
+// ─────────────────────────────────────────────
+// ENROLLMENT
+// ─────────────────────────────────────────────
+
+model CourseEnrollment {
+  id       String @id @default(uuid())
+  courseId String
+  userId   String
+
+  enrolledAt      DateTime  @default(now())
+  accessExpiresAt DateTime? // null = lifetime
+  isActive        Boolean   @default(true)
+  completedAt     DateTime?
+
+  course      NewCourse           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user        Users               @relation("UserEnrollments", fields: [userId], references: [id], onDelete: Cascade)
+  progress    LectureProgress[]
+  attempts    AssessmentAttempt[]
+  certificate CourseCertificate?
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// PROGRESS
+// ─────────────────────────────────────────────
+
+model LectureProgress {
+  id           String @id @default(uuid())
+  enrollmentId String
+  lectureId    String
+
+  isCompleted    Boolean   @default(false)
+  watchedSeconds Int       @default(0)
+  completedAt    DateTime?
+
+  enrollment CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lecture    CourseLecture    @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lectureId])
+  @@index([enrollmentId])
+  @@index([lectureId])
+}
+
+// ─────────────────────────────────────────────
+// ASSESSMENT ATTEMPTS
+// ─────────────────────────────────────────────
+
+model AssessmentAttempt {
+  id           String @id @default(uuid())
+  enrollmentId String
+  assessmentId String
+
+  score         Int // percentage 0-100
+  isPassed      Boolean @default(false) // true only when score = 100
+  attemptNumber Int
+
+  attemptedAt DateTime @default(now())
+
+  enrollment CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  assessment CourseAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId])
+  @@index([assessmentId])
+}
+
+// ─────────────────────────────────────────────
+// CERTIFICATE
+// ─────────────────────────────────────────────
+
+model CourseCertificate {
+  id           String @id @default(uuid())
+  enrollmentId String @unique
+  userId       String
+  courseId     String
+
+  certificateUrl String? // S3 URL of generated PDF
+
+  issuedAt  DateTime  @default(now())
+  expiresAt DateTime? // null = lifetime
+
+  enrollment CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  user       Users            @relation("UserCertificates", fields: [userId], references: [id], onDelete: Cascade)
+  course     NewCourse        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([courseId])
+}
