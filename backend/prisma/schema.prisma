@@ -12,6 +12,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model Organization {
@@ -151,8 +152,6 @@ model Users {
   JobApplications              JobApplication[] @relation("UserAsCandidate")
   AppliedJobs                  JobApplication[] @relation("AppliedByUser")
   SavedJobs                    SavedJob[]
-  courses                      Course[]
-  reviews                      Review[]
   dashboards                   Dashboard[]
 
   recruiterActivities Activity[]          @relation("RecruiterActivities")
@@ -530,59 +529,6 @@ model State {
   code      String?
   countryId String
   country   Country @relation(fields: [countryId], references: [id])
-}
-
-model Course {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  price       Float    @default(0)
-  currency    String?
-  createdAt   DateTime @default(now())
-  userId      String
-  courseType  String?
-  instructor  Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  classes     Class[]
-  url         String?
-  reviews     Review[]
-
-  @@index([userId])
-}
-
-model Class {
-  id          String   @id @default(uuid())
-  fileName    String
-  url         String
-  type        String
-  title       String
-  description String?
-  size        Int?
-  duration    Int?
-  metaData    Json?
-  createdAt   DateTime @default(now())
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id])
-
-  @@index([courseId])
-}
-
-model Review {
-  id      String @id @default(uuid())
-  rating  Float
-  comment String
-
-  userId   String
-  courseId String
-
-  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, courseId])
-  @@index([courseId])
-  @@index([userId])
 }
 
 enum DatasetType {
