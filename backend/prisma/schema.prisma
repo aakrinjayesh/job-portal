@@ -165,6 +165,19 @@ model Users {
   promoUsages         PromoCodeUsage[]
   organizationId      String? // 🔥 fast lookup
   organization        Organization?       @relation(fields: [organizationId], references: [id])
+   followersCount Int @default(0)
+  followingCount Int @default(0)
+  following Follow[] @relation("Following")
+followers Follow[] @relation("Followers")
+
+posts Post[]
+postLikes PostLike[]
+postComments PostComment[]
+
+notificationsReceived Notification[] @relation("UserNotifications")
+notificationsTriggered Notification[] @relation("ActorNotifications")
+
+feed Feed[]
 }
 
 model UserSession {
@@ -1237,3 +1250,129 @@ model InterviewScore {
 
   session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
+
+model Follow {
+  id String @id @default(uuid())
+
+  followerId String
+  followingId String
+
+  createdAt DateTime @default(now())
+
+  follower Users @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following Users @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Post {
+  id String @id @default(uuid())
+
+  authorId String
+  content String?
+
+  mediaUrls String[] @default([])
+  feeds Feed[]
+
+  likesCount Int @default(0)
+  commentsCount Int @default(0)
+
+  likes PostLike[]
+comments PostComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  visibility PostVisibility @default(PUBLIC)
+isDeleted Boolean @default(false)
+deletedAt DateTime?
+
+  author Users @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, createdAt])
+}
+
+enum PostVisibility {
+  PUBLIC
+  CONNECTIONS
+}
+
+model PostLike {
+  id String @id @default(uuid())
+
+  postId String
+  userId String
+
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostComment {
+  id String @id @default(uuid())
+
+  postId String
+  userId String
+  content String
+
+  parentId String?
+
+  createdAt DateTime @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  parent PostComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies PostComment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model Feed {
+  id String @id @default(uuid())
+
+  userId String
+  postId String
+
+  createdAt DateTime @default(now())
+
+   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, createdAt])
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  userId String
+  actorId String
+  entityId String?
+
+  type SocialNotificationType
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user Users @relation("UserNotifications", fields:[userId], references:[id], onDelete:Cascade)
+  actor Users @relation("ActorNotifications", fields:[actorId], references:[id], onDelete:Cascade)
+
+  @@index([userId, isRead])
+}
+
+enum SocialNotificationType {
+  FOLLOW
+  LIKE
+  COMMENT
+}
+
+
