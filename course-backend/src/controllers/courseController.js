@@ -1,13 +1,11 @@
 import prisma from "../config/prisma.js";
 
 export const getAllCourses = async (_req, res) => {
-  const courses = await prisma.newCourse.findMany({
-    where: { isDeleted: false },
-    include: {
-      sections: { include: { lectures: true }, orderBy: { order: "asc" } },
-    },
-  });
-
+  // const courses = await prisma.newCourse.findMany({
+  //   where: { isDeleted: false },
+  //   include: { sections: { include: { lectures: true }, orderBy: { order: "asc" } } },
+  // });
+  const courses = await prisma.skills.findMany();
   res.json(courses);
 };
 

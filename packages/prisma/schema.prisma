@@ -1641,9 +1641,9 @@ model AssessmentAttempt {
   enrollmentId String
   assessmentId String
 
-  score         Int // percentage 0-100
+  score         Int? // percentage 0-100
   isPassed      Boolean @default(false) // true only when score = 100
-  attemptNumber Int
+  attemptNumber Int?
 
   attemptedAt DateTime @default(now())
 
