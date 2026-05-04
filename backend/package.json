@@ -7,7 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon ./src/server.js",
-    "start": "node ./src/server.js"
+    "start": "node ./src/server.js",
+    "migrate": "prisma migrate dev --schema=../packages/prisma/schema.prisma",
+    "generate": "prisma generate --schema=../packages/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",

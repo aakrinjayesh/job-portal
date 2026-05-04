@@ -79,6 +79,7 @@ app.use("/admin", AdminRoutes);
 app.use("/api/companies", companyRouter);
 
 const PORT = process.env.PORT;
+console.log("port", PORT);
 
 app.listen(PORT || "3001", () => {
   // console.log(`server Started at http://localhost:${PORT}`);

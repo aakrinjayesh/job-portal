@@ -1,0 +1,7 @@
+{
+  "name": "@job-portal/prisma",
+  "version": "1.0.0",
+  "description": "Shared Prisma schema for the job-portal monorepo",
+  "private": true,
+  "license": "ISC"
+}
