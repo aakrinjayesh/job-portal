@@ -1,1 +1,5 @@
 node_modules
+.env
+course-backend/.env
+social-backend/.env
+packages/prisma/.env

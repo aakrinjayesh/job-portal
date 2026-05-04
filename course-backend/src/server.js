@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { authenticateToken } from "./Middleware/authMiddleware.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import classRoutes from "./routes/classRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
@@ -11,6 +12,7 @@ const app = express();
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*", credentials: true }));
 app.use(express.json());
+app.use(authenticateToken);
 
 app.get("/health", (_req, res) =>
   res.json({ status: "ok", service: "course-backend" }),
