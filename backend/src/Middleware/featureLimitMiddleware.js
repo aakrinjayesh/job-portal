@@ -111,11 +111,10 @@ export const featureLimitMiddleware = async (req, res, next) => {
     }
 
     // ─── 2. Get license ────────────────────────────────────────
-    const license = await prisma.license.findFirst({
+    let license = await prisma.license.findFirst({
       where: {
         assignedToId: member.id,
         isActive: true,
-        validUntil: { gte: new Date() },
       },
       orderBy: { validUntil: "desc" },
       include: {
@@ -123,16 +122,26 @@ export const featureLimitMiddleware = async (req, res, next) => {
       },
     });
 
-    if (!license) {
-      // Check for a queued (chained renewal) license whose period just started
+    const isExpired = license && license.validUntil < new Date();
+
+    if (!license || isExpired) {
       const seat = await prisma.licenseSeat.findFirst({
         where: { assignedToId: member.id },
         select: { id: true },
       });
       if (seat) {
-        const activated = await activatePendingLicense(member.id, seat.id);
-        if (activated) {
-          license = activated;
+        const now = new Date();
+        const pending = await prisma.license.findFirst({
+          where: {
+            seatId: seat.id,
+            isActive: false,
+            validFrom: { lte: now },
+            validUntil: { gte: now },
+          },
+        });
+        if (pending) {
+          const activated = await activatePendingLicense(member.id, seat.id);
+          if (activated) license = activated;
         }
       }
     }

@@ -33,12 +33,12 @@ export const getOrganizationMembers = async (req, res) => {
             licenses: {
               where: {
                 isActive: true,
-                validFrom: {
-                  lte: new Date(), // ✅ already started
-                },
-                validUntil: {
-                  gte: new Date(), // ✅ not expired
-                },
+                // validFrom: {
+                //   lte: new Date(), // ✅ already started
+                // },
+                // validUntil: {
+                //   gte: new Date(), // ✅ not expired
+                // },
               },
               orderBy: {
                 validUntil: "desc", // ✅ latest valid license

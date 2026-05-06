@@ -19,8 +19,8 @@ const getFeatureUsage = async (req, res) => {
     where: {
       assignedToId: member.id,
       isActive: true,
-      validFrom: { lte: new Date() },
-      validUntil: { gte: new Date() },
+      // validFrom: { lte: new Date() },
+      // validUntil: { gte: new Date() },
     },
     orderBy: { validUntil: "desc" },
     include: {
