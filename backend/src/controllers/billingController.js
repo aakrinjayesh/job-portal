@@ -516,7 +516,10 @@ const assignLicense = async (req, res) => {
           },
         },
         include: {
-          licenses: { where: { isActive: true, validUntil: { gte: new Date() } }, orderBy: { validUntil: "desc" } },
+          licenses: {
+            where: { isActive: true, validUntil: { gte: new Date() } },
+            orderBy: { validUntil: "desc" },
+          },
         },
       });
       if (!targetSeat) {
@@ -536,7 +539,10 @@ const assignLicense = async (req, res) => {
           },
         },
         include: {
-          licenses: { where: { isActive: true, validUntil: { gte: new Date() } }, orderBy: { validUntil: "desc" } },
+          licenses: {
+            where: { isActive: true, validUntil: { gte: new Date() } },
+            orderBy: { validUntil: "desc" },
+          },
         },
         orderBy: { createdAt: "asc" },
       });
@@ -625,7 +631,10 @@ const getOrgLicenses = async (req, res) => {
       },
       include: {
         licenses: {
-          where: { isActive: true, validUntil: { gte: new Date() } },
+          where: {
+            isActive: true,
+            // validUntil: { gte: new Date() }
+          },
           orderBy: { validUntil: "desc" },
           include: { plan: { select: { tier: true, name: true } } },
         },
