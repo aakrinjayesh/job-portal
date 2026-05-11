@@ -48,6 +48,11 @@ model Organization {
   candidateTaskList CandidateTaskList[]
   candidateTasks    CandidateTask[]
   users             Users[]
+
+  posts Post[]
+  postLikes PostLike[]
+  postComments PostComment[]
+  
 }
 
 model OrganizationMember {
@@ -121,6 +126,9 @@ model CompanyProfile {
   socialLinks    Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  followers Follow[]
+  followersCount Int             @default(0)
 
   organizationId String       @unique
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -1260,24 +1268,35 @@ model InterviewScore {
 model Follow {
   id String @id @default(uuid())
 
-  followerId  String
-  followingId String
+  followerId String
+
+  // 👇 ONLY ONE should exist
+  followingUserId    String?
+  followingCompanyId String?
 
   createdAt DateTime @default(now())
 
-  follower  Users @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
-  following Users @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+  follower Users @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
 
-  @@unique([followerId, followingId])
+  followingUser Users? @relation("Followers", fields: [followingUserId], references: [id], onDelete: Cascade)
+
+  followingCompany CompanyProfile? @relation(fields: [followingCompanyId], references: [id], onDelete: Cascade)
+
   @@index([followerId])
-  @@index([followingId])
+  @@index([followingUserId])
+  @@index([followingCompanyId])
+
+  @@unique([followerId, followingUserId])
+  @@unique([followerId, followingCompanyId])
 }
 
 model Post {
   id String @id @default(uuid())
 
   authorId String
-  content  String?
+  organizationId String?
+  
+  content  String
 
   mediaUrls String[] @default([])
   feeds     Feed[]
@@ -1296,6 +1315,7 @@ model Post {
   deletedAt  DateTime?
 
   author Users @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([authorId, createdAt])
 }
@@ -1310,11 +1330,13 @@ model PostLike {
 
   postId String
   userId String
+   organizationId String?
 
   createdAt DateTime @default(now())
 
   post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@index([postId])
@@ -1326,6 +1348,8 @@ model PostComment {
 
   postId  String
   userId  String
+  organizationId String?
+
   content String
 
   parentId String?
@@ -1334,6 +1358,7 @@ model PostComment {
 
   user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   parent  PostComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies PostComment[] @relation("CommentReplies")
