@@ -12,6 +12,7 @@ import {
 } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GenerateOtp, ValidateOtp, CheckUserExist } from "../candidate/api/api";
+import { trackEvent } from "../utils/analytics";
 import logo from "../assets/forceheadlogo.png";
 import jobroleImg from "../assets/jobrole.png";
 import groupImg from "../assets/Group.png";
@@ -72,6 +73,7 @@ const Signup = () => {
       });
 
       if (response.status === "success") {
+        trackEvent({ category: "Auth", action: "Signup OTP Verified", label: role });
         messageApi.success("OTP verified successfully!");
         navigate("/createpassword", {
           state: { email: values.email, role, redirect: redirectPath },
@@ -123,6 +125,7 @@ const Signup = () => {
     });
 
     if (res.status === "success") {
+      trackEvent({ category: "Auth", action: "Signup OTP Sent", label: role });
       messageApi.success("OTP sent to your email");
       setOtpSent(true);
       setTimer(60);

@@ -42,6 +42,7 @@ import PublicJobRedirect from "./pages/PublicJobRedirect";
 import SettingsRedirect from "./pages/SettingsRedirect";
 import LimitExceededAlert from "./components/alert/LimitExceededAlert";
 import { subscribeToLimit, unsubscribeFromLimit } from "./utils/limitEventBus";
+import { trackPageView } from "./utils/analytics";
 import { useState, useRef } from "react";
 import HomePage from "./pages/HomePage";
 import VendorMarketplacePage from "./pages/VendorMarketplacePage";
@@ -59,6 +60,10 @@ function App() {
   const [limitData, setLimitData] = useState(null);
   const [showCompanyPopup, setShowCompanyPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
+
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (location.pathname === "/login") return;

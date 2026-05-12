@@ -7,6 +7,7 @@ import {
   updateProfiledetails,
   getUserProfileDetails,
   uploadProfilePicture,
+  uploadCompanyImage,
   getCountriesWithStates,
   getCompanyProfileDetails,
   toggleCandidateStatus,
@@ -79,6 +80,14 @@ userRouter.post(
   authenticateToken,
   upload.single("file"),
   uploadProfilePicture,
+);
+
+// Company logo / cover image upload
+userRouter.post(
+  "/profile/company/upload-image",
+  authenticateToken,
+  upload.single("file"),
+  uploadCompanyImage,
 );
 
 // company routes purely

@@ -30,8 +30,8 @@ import {
 import {
   GetUserProfileDetails,
   UpdateCompanyProfile,
+  uploadCompanyImage,
 } from "../../company/api/api";
-import { uploadProfilePicture } from "../../candidate/api/api";
 import Address from "../components/Profile/Address";
 
 const { Text, Paragraph } = Typography;
@@ -510,7 +510,8 @@ const CompanyProfile = ({ onSaveSuccess, compact = false }) => {
       setU(true);
       const fd = new FormData();
       fd.append("file", file);
-      const res = await uploadProfilePicture(fd);
+      fd.append("type", type);
+      const res = await uploadCompanyImage(fd);
       if (res?.url) {
         if (type === "logo") setLogoUrl(res.url);
         if (type === "cover") setCoverImageUrl(res.url);

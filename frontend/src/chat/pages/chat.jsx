@@ -42,6 +42,7 @@ import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import { getChatObjectMetadata, requestHandler } from "../utils";
 import { useLocation } from "react-router-dom";
+import { trackEvent } from "../../utils/analytics";
 
 const { Sider, Content } = Layout;
 const { Text } = Typography;
@@ -374,6 +375,9 @@ const Chat = () => {
       try {
         const chatResponse = await createUserChat(candidate.profile.chatuserid);
         const chat = chatResponse?.data;
+        if (chat) {
+          trackEvent({ category: "Chat", action: "Conversation Started" });
+        }
         if (chat?.message) {
           alertMessage.success(chat.message);
         }

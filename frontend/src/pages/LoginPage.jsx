@@ -14,6 +14,7 @@ import {
 import GoogleAuthButton from "../components/Login/GoogleAuthButton";
 import { login as LoginApi, GetUserProfile } from "../candidate/api/api";
 import { useAuth } from "../chat/context/AuthContext";
+import { trackEvent, setAnalyticsUser } from "../utils/analytics";
 
 import personImg from "../assets/companyperson.webp";
 import logo from "../assets/forceheadlogo.png";
@@ -308,6 +309,8 @@ const LoginPage = () => {
         );
 
         login(res?.chatmeatadata?.user, res?.chatmeatadata?.accessToken);
+        trackEvent({ category: "Auth", action: "Login Success", label: "JWT Login" });
+        setAnalyticsUser(res?.user?.id, res?.user?.role);
         messageApi.success("Logged in successfully!");
 
         const rolePrefix =
@@ -332,6 +335,7 @@ const LoginPage = () => {
           );
         }
       } else {
+        trackEvent({ category: "Auth", action: "Login Failed", label: role });
         messageApi.error(res.message || "Login Failed!");
       }
     } catch (error) {

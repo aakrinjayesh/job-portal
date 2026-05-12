@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Typography, message, Row, Col } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SetPassword, ResetPasswords } from "../candidate/api/api";
+import { trackEvent } from "../utils/analytics";
 import cloudImage from "../assets/Fill-1.png";
 import logo from "../assets/forceheadlogo.png";
 import personImg from "../assets/companyperson.webp";
@@ -71,6 +72,9 @@ const CreatePassword = () => {
       }
 
       if (res.status === "success") {
+        if (stateType !== "forgotpage") {
+          trackEvent({ category: "Auth", action: "Signup Success", label: role });
+        }
         messageApi.success("Password set successfully!");
         navigate("/login", { state: { role, redirect: redirectPath } });
       } else {
