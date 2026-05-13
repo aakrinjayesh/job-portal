@@ -51,6 +51,7 @@ import "./UpdateUserProfile.css";
 import { useRef } from "react";
 import html2pdf from "html2pdf.js";
 import ResumeTemplate from "../../company/components/Bench/ResumeTemplate";
+import { trackEvent } from "../../utils/analytics";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -531,6 +532,7 @@ const UpdateUserProfile = ({
           extracted?.workExperience || form.getFieldValue("workExperience"),
       });
 
+      trackEvent({ category: "Candidate", action: "Resume Upload" });
       messageAPI.success("Resume details extracted successfully!");
       setIsProfileLoaded(true);
     } catch (error) {

@@ -38,12 +38,12 @@ const s3 = new S3Client({
   },
 });
 
-export const uploadToCloudinary = async (file) => {
+export const uploadToCloudinary = async (file, folder = "profile") => {
   try {
     const fileBuffer = file.buffer;
     const fileName = file.originalname;
     const mimeType = file.mimetype;
-    const uniqueFileName = `profile/${uuidv4()}-${fileName}`;
+    const uniqueFileName = `${folder}/${uuidv4()}-${fileName}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,

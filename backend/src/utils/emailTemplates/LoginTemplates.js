@@ -90,129 +90,129 @@ export const getCandidateOtpEmailTemplate = (name, otp) =>
     `,
   });
 
-  // Admin created acoount sending mail
-  // export const getAdminCreatedAccountEmailTemplate = ({ name, username, password, role }) =>
-  // baseTemplate({
-  //   title: "Your Account Has Been Created 🎉",
-  //   body: `
-  //     <p style="font-size:16px;">Hi <strong>${name || "there"}</strong>,</p>
-  //     <p style="font-size:14px; line-height:1.6;">
-  //       An administrator has created an account for you on <strong>ForceHead</strong>. 
-  //       You can log in right away using the credentials below.
-  //     </p>
+// Admin created acoount sending mail
+// export const getAdminCreatedAccountEmailTemplate = ({ name, username, password, role }) =>
+// baseTemplate({
+//   title: "Your Account Has Been Created 🎉",
+//   body: `
+//     <p style="font-size:16px;">Hi <strong>${name || "there"}</strong>,</p>
+//     <p style="font-size:14px; line-height:1.6;">
+//       An administrator has created an account for you on <strong>ForceHead</strong>.
+//       You can log in right away using the credentials below.
+//     </p>
 
-  //     <!-- Credentials Box -->
-  //     <div style="
-  //       background:#f8fafc;
-  //       border:1px solid #e2e8f0;
-  //       border-radius:10px;
-  //       padding:20px 24px;
-  //       margin:28px 0;
-  //     ">
-  //       <p style="
-  //         font-size:11px;
-  //         font-weight:600;
-  //         letter-spacing:0.1em;
-  //         text-transform:uppercase;
-  //         color:#94a3b8;
-  //         margin:0 0 16px;
-  //       ">Your Login Credentials</p>
+//     <!-- Credentials Box -->
+//     <div style="
+//       background:#f8fafc;
+//       border:1px solid #e2e8f0;
+//       border-radius:10px;
+//       padding:20px 24px;
+//       margin:28px 0;
+//     ">
+//       <p style="
+//         font-size:11px;
+//         font-weight:600;
+//         letter-spacing:0.1em;
+//         text-transform:uppercase;
+//         color:#94a3b8;
+//         margin:0 0 16px;
+//       ">Your Login Credentials</p>
 
-  //       <table style="width:100%; border-collapse:collapse; font-size:14px;">
-  //         <tr>
-  //           <td style="padding:10px 0; border-bottom:1px solid #f1f5f9; color:#64748b; width:110px;">Username</td>
-  //           <td style="padding:10px 0; border-bottom:1px solid #f1f5f9;">
-  //             <strong style="
-  //               font-family:monospace;
-  //               font-size:15px;
-  //               color:#1e3a8a;
-  //               background:#eff6ff;
-  //               padding:3px 10px;
-  //               border-radius:5px;
-  //               display:inline-block;
-  //             ">${username}</strong>
-  //           </td>
-  //         </tr>
-  //         <tr>
-  //           <td style="padding:10px 0; color:#64748b;">Password</td>
-  //           <td style="padding:10px 0;">
-  //             <strong style="
-  //               font-family:monospace;
-  //               font-size:15px;
-  //               color:#1e3a8a;
-  //               background:#eff6ff;
-  //               padding:3px 10px;
-  //               border-radius:5px;
-  //               display:inline-block;
-  //             ">${password}</strong>
-  //           </td>
-  //         </tr>
-  //       </table>
-  //     </div>
+//       <table style="width:100%; border-collapse:collapse; font-size:14px;">
+//         <tr>
+//           <td style="padding:10px 0; border-bottom:1px solid #f1f5f9; color:#64748b; width:110px;">Username</td>
+//           <td style="padding:10px 0; border-bottom:1px solid #f1f5f9;">
+//             <strong style="
+//               font-family:monospace;
+//               font-size:15px;
+//               color:#1e3a8a;
+//               background:#eff6ff;
+//               padding:3px 10px;
+//               border-radius:5px;
+//               display:inline-block;
+//             ">${username}</strong>
+//           </td>
+//         </tr>
+//         <tr>
+//           <td style="padding:10px 0; color:#64748b;">Password</td>
+//           <td style="padding:10px 0;">
+//             <strong style="
+//               font-family:monospace;
+//               font-size:15px;
+//               color:#1e3a8a;
+//               background:#eff6ff;
+//               padding:3px 10px;
+//               border-radius:5px;
+//               display:inline-block;
+//             ">${password}</strong>
+//           </td>
+//         </tr>
+//       </table>
+//     </div>
 
-  //     <!-- Role Badge -->
-  //     <div style="text-align:center; margin:0 0 28px;">
-  //       <span style="
-  //         font-size:13px;
-  //         font-weight:600;
-  //         background:#eff6ff;
-  //         color:#1e40af;
-  //         padding:8px 20px;
-  //         border-radius:20px;
-  //         display:inline-block;
-  //         letter-spacing:0.02em;
-  //       ">Role: ${role === "vendor" ? "Company" : role || "User"}</span>
-  //     </div>
+//     <!-- Role Badge -->
+//     <div style="text-align:center; margin:0 0 28px;">
+//       <span style="
+//         font-size:13px;
+//         font-weight:600;
+//         background:#eff6ff;
+//         color:#1e40af;
+//         padding:8px 20px;
+//         border-radius:20px;
+//         display:inline-block;
+//         letter-spacing:0.02em;
+//       ">Role: ${role === "vendor" ? "Company" : role || "User"}</span>
+//     </div>
 
-  //     <!-- Security Notice -->
-  //     <div style="
-  //       background:#fffbeb;
-  //       border-left:4px solid #f59e0b;
-  //       border-radius:0 8px 8px 0;
-  //       padding:12px 16px;
-  //       margin-bottom:28px;
-  //       font-size:13px;
-  //       color:#92400e;
-  //       line-height:1.6;
-  //     ">
-  //       <strong>⚠ Security Notice:</strong> For your protection, please change your password 
-  //       after your first login. Do not share your credentials with anyone.
-  //     </div>
+//     <!-- Security Notice -->
+//     <div style="
+//       background:#fffbeb;
+//       border-left:4px solid #f59e0b;
+//       border-radius:0 8px 8px 0;
+//       padding:12px 16px;
+//       margin-bottom:28px;
+//       font-size:13px;
+//       color:#92400e;
+//       line-height:1.6;
+//     ">
+//       <strong>⚠ Security Notice:</strong> For your protection, please change your password
+//       after your first login. Do not share your credentials with anyone.
+//     </div>
 
-  //      <!-- Forgot Password tip -->
-  //     <p style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:28px;">
-  //       Want to change your password? Use the 
-  //       <a href="https://www.forcehead.com/forgotpassword" style="color:#1e40af; text-decoration:none; font-weight:600;">
-  //         Forgot Password
-  //       </a> 
-  //       option on the login page.
-  //     </p>
+//      <!-- Forgot Password tip -->
+//     <p style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:28px;">
+//       Want to change your password? Use the
+//       <a href="https://www.forcehead.com/forgotpassword" style="color:#1e40af; text-decoration:none; font-weight:600;">
+//         Forgot Password
+//       </a>
+//       option on the login page.
+//     </p>
 
-  //     <!-- Login CTA -->
-  //     <div style="text-align:center; margin:28px 0;">
-  //       <a href="https://www.forcehead.com/" style="
-  //         display:inline-block;
-  //         background:#1e40af;
-  //         color:#ffffff;
-  //         font-size:14px;
-  //         font-weight:600;
-  //         padding:13px 32px;
-  //         border-radius:8px;
-  //         text-decoration:none;
-  //         letter-spacing:0.02em;
-  //       ">Log In to ForceHead →</a>
-  //     </div>
+//     <!-- Login CTA -->
+//     <div style="text-align:center; margin:28px 0;">
+//       <a href="https://www.forcehead.com/" style="
+//         display:inline-block;
+//         background:#1e40af;
+//         color:#ffffff;
+//         font-size:14px;
+//         font-weight:600;
+//         padding:13px 32px;
+//         border-radius:8px;
+//         text-decoration:none;
+//         letter-spacing:0.02em;
+//       ">Log In to ForceHead →</a>
+//     </div>
 
-  //     <p style="font-size:13px; color:#6b7280; line-height:1.6;">
-  //       If you did not expect this email or believe this account was created in error, 
-  //       please contact our support team immediately.
-  //     </p>
+//     <p style="font-size:13px; color:#6b7280; line-height:1.6;">
+//       If you did not expect this email or believe this account was created in error,
+//       please contact our support team immediately.
+//     </p>
 
-  //     <p style="margin-top:28px; font-size:14px;">— <strong>ForceHead Team</strong></p>
-  //   `,
-  // });
+//     <p style="margin-top:28px; font-size:14px;">— <strong>ForceHead Team</strong></p>
+//   `,
+// });
 
- export const getAdminCreateUserWelcomeEmailTemplate = ({ name, email, role }) =>
+export const getAdminCreateUserWelcomeEmailTemplate = ({ name, email, role }) =>
   baseTemplate({
     title: "Your Account Has Been Created 🎉",
     body: `
@@ -290,7 +290,7 @@ export const getCandidateOtpEmailTemplate = (name, otp) =>
 
       <!-- Set Password CTA -->
       <div style="text-align:center; margin:28px 0;">
-        <a href="http://localhost:5174/createpassword?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}" style="
+        <a href="https://forcehead.com/createpassword?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}" style="
           display:inline-block;
           background:#1e40af;
           color:#ffffff;

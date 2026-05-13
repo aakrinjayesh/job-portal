@@ -37,6 +37,7 @@ import {
   validatePromoCode,
 } from "../company/api/api";
 import { loadRazorpay } from "../utils/loadRazorpay";
+import { trackEvent } from "../utils/analytics";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -177,6 +178,10 @@ export default function PricingPage() {
   const [confirmModal, setConfirmModal] = useState({ open: false, plan: null });
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState(null);
+
+  useEffect(() => {
+    trackEvent({ category: "Subscription", action: "Pricing Viewed" });
+  }, []);
 
   /* ===================== FETCH PLANS ===================== */
 
@@ -369,6 +374,7 @@ export default function PricingPage() {
             invoiceId: invoice.invoiceId,
           });
 
+          trackEvent({ category: "Subscription", action: "Payment Success", label: plan.name });
           messageApi.success("Payment successful 🎉");
 
           setTimeout(() => {

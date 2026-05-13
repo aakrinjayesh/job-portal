@@ -25,6 +25,7 @@ import { Helmet } from "react-helmet-async";
 import { useJobSEO } from "../../../utils/useJobSEO";
 import useScreeningQuestions from "../../../utils/Usescreeningquestions";
 import ScreeningQuestionsModal from "../Job/ScreeningQuestionsModal";
+import { trackEvent } from "../../../utils/analytics";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -120,6 +121,12 @@ const JobDetails = ({ mode, isPublic }) => {
     }
   };
 
+  useEffect(() => {
+    if (isPublic && job?.id) {
+      trackEvent({ category: "Jobs", action: "Public Job View", label: job.id });
+    }
+  }, [isPublic, job?.id]);
+
   const handleSaveToggle = async () => {
     if (!job) return;
 
@@ -183,6 +190,7 @@ const JobDetails = ({ mode, isPublic }) => {
       const resp = await ApplyJob({ jobId: id, answers });
       if (resp?.status === "success") {
         setIsApplied(true);
+        trackEvent({ category: "Jobs", action: "Apply Job", label: id });
         screening.closeModal(false); // close modal after success
         messageApi.success(resp?.message || "Successfully applied");
       }

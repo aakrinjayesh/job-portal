@@ -7,6 +7,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { GetUserProfile, GoogleAuth } from "../../candidate/api/api";
 import { useAuth } from "../../chat/context/AuthContext";
+import { trackEvent, setAnalyticsUser } from "../../utils/analytics";
 
 const GoogleAuthButton = ({ userType, messageAPI }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -63,6 +64,8 @@ const GoogleAuthButton = ({ userType, messageAPI }) => {
           login(resp.chatmetadata.user, resp.chatmetadata.accessToken);
         }
 
+        trackEvent({ category: "Auth", action: "Login Success", label: "Google OAuth" });
+        setAnalyticsUser(resp?.user?.id, resp?.user?.role);
         navigate("/candidate/profile");
       }
     } catch (error) {

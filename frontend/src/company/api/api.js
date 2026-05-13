@@ -1010,6 +1010,22 @@ export async function GetCompaniesList(signal) {
   }
 }
 
+export async function uploadCompanyImage(formData) {
+  try {
+    const response = await axiosInstance.post(
+      "/profile/company/upload-image",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading company image:", error);
+    throw error;
+  }
+}
+
 // ✅ Get Company Details
 export async function GetCompanyDetails(slug) {
   try {

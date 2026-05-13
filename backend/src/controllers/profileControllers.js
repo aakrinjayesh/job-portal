@@ -29,7 +29,7 @@ const UploadResume = async (req, res) => {
     const { buffer, mimetype, originalname, size } = req.file;
 
     // 🔥 Upload resume to S3
-    const uploadedFile = await uploadToCloudinary(req.file);
+    const uploadedFile = await uploadToCloudinary(req.file, "profile/resume");
 
     if (!uploadedFile || !uploadedFile.url) {
       return res.status(500).json({
@@ -322,7 +322,7 @@ const uploadProfilePicture = async (req, res) => {
     }
 
     // 🔥 Upload file object (not just buffer)
-    const uploadedFile = await uploadToCloudinary(req.file);
+    const uploadedFile = await uploadToCloudinary(req.file, "profile/profile-picture");
     // const uploadedFile = await uploadToCloudinary(req.file.buffer);
     // const uploadedFile = await uploadToCloudinary(req.file.path);
 
@@ -934,6 +934,30 @@ const fetchTrailheadProfile = async (req, res) => {
   }
 };
 
+const uploadCompanyImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: "error", message: "No file uploaded" });
+    }
+
+    const { type } = req.body;
+    if (!["logo", "cover"].includes(type)) {
+      return res.status(400).json({ status: "error", message: "type must be 'logo' or 'cover'" });
+    }
+
+    const uploadedFile = await uploadToCloudinary(req.file, "profile/company-profiles");
+
+    if (!uploadedFile?.url) {
+      return res.status(500).json({ status: "error", message: "Upload failed" });
+    }
+
+    return res.status(200).json({ status: "success", url: uploadedFile.url });
+  } catch (error) {
+    logger.error("uploadCompanyImage error:", error.message);
+    handleError(error, req, res);
+  }
+};
+
 export {
   UploadResume,
   updateProfiledetails,
@@ -942,6 +966,7 @@ export {
   getUserProfileDetails,
   getCountriesWithStates,
   uploadProfilePicture,
+  uploadCompanyImage,
   getPublicCompanyProfile,
   getCompanyProfileDetails,
   toggleCandidateStatus,
