@@ -15,6 +15,7 @@ import {
   DashboardOutlined,
   FileTextOutlined,
   AppstoreOutlined,
+  ShareAltOutlined,
   SearchOutlined,
   SaveFilled,
   TeamOutlined,
@@ -84,6 +85,7 @@ const CompanyLayout = ({ children }) => {
     savedcandidates: ["/company/bench/saved"],
     chat: ["/company/chat"],
     profile: ["/company/profile"],
+    networking: ["/networking"],
     pricing: ["/company/pricing"],
     settings: ["/company/settings"],
     contact: ["/contact"],
@@ -122,6 +124,10 @@ const CompanyLayout = ({ children }) => {
     // ✅ Find Jobs
     if (path.startsWith("/company/job/find")) {
       return "findjob";
+    }
+
+     if (path.startsWith("/networking")) {
+      return "networking";
     }
 
     // ✅ Saved Jobs
@@ -303,6 +309,7 @@ const CompanyLayout = ({ children }) => {
       findbench: "Find Candidate",
       savedcandidates: "Saved Candidates",
       chat: "Chats",
+      networking: "Networking",
       profile: "Profile",
       pricing: "Pricing",
       settings: "Settings",
@@ -516,6 +523,11 @@ const CompanyLayout = ({ children }) => {
                       icon: <AppstoreOutlined />,
                       label: "My Activity",
                     },
+                      {
+                          key: "networking",
+                          icon: <ShareAltOutlined />,
+                          label: "Networking",
+                        },
 
                     { key: "bench", icon: <TeamOutlined />, label: "My Bench" },
                     {

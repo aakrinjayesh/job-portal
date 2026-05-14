@@ -832,6 +832,14 @@ ${url}
               >
                 Share Company
               </Button>
+               <Button
+               type="primary"
+                // icon={<ShareAltOutlined />}
+                style={{ borderRadius: 999, fontWeight: 600 }}
+                onClick={handleShare}
+              >
+                Follow
+              </Button>
             </div>
 
             {/* Name + meta LEFT, logos RIGHT */}

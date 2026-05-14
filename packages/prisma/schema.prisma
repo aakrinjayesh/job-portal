@@ -1294,27 +1294,26 @@ model Post {
 
   authorId       String
   organizationId String?
+  content        String
+  mediaUrls      String[] @default([])
+  repostOfId     String?  
 
-  content String
-
-  mediaUrls String[] @default([])
-  feeds     Feed[]
-
+  feeds          Feed[]
   likesCount    Int @default(0)
   commentsCount Int @default(0)
+  likes         PostLike[]
+  comments      PostComment[]
 
-  likes    PostLike[]
-  comments PostComment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
   visibility PostVisibility @default(PUBLIC)
   isDeleted  Boolean        @default(false)
   deletedAt  DateTime?
 
   author       Users         @relation(fields: [authorId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  repostOf     Post?         @relation("Reposts", fields: [repostOfId], references: [id])
+  reposts      Post[]        @relation("Reposts")
 
   @@index([authorId, createdAt])
 }
