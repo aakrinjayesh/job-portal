@@ -718,7 +718,7 @@ const vendorApplyCandidate = async (req, res) => {
       where: { id: jobId, isDeleted: false },
       include: {
         postedBy: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true,emailNotificationDisabled: true },
         },
         _count: {
           select: { applications: true },
@@ -1256,7 +1256,8 @@ const processInBackground = async ({
     });
   }
 
-  if (job.postedBy?.email) {
+  if (job.postedBy?.email &&
+  !job.emailNotificationDisabled) {
     try {
       await sendEmail({
         to: job.postedBy.email,

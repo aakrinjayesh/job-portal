@@ -95,6 +95,7 @@ const CompanyLayout = ({ children }) => {
     ],
     companyprofile: ["/company/public/"],
     renew: ["/company/renew"],
+    courses: ["/company/courses"],
   };
 
   const handleLogout = async () => {
@@ -190,6 +191,7 @@ const CompanyLayout = ({ children }) => {
     if (path.startsWith("/company/companies")) return "findcompanies";
 
     if (path.startsWith("/company/renew")) return "renew";
+    if (path.startsWith("/company/courses")) return "courses";
 
     return "dashboard";
   }, [location.pathname, location.state]);
@@ -307,6 +309,7 @@ const CompanyLayout = ({ children }) => {
       companyprofile: "Company Profile",
       renew: "Renew Subscription",
       findcompanies: "Find Companies",
+      courses: "Courses",
     };
 
     return pageTitleMap[selectedKey] || "Dashboard";
@@ -519,6 +522,11 @@ const CompanyLayout = ({ children }) => {
                       key: "findcompanies",
                       icon: <SearchOutlined />,
                       label: "Find Companies",
+                    },
+                    {
+                      key: "courses",
+                      icon: <AppstoreOutlined />,
+                      label: "Courses",
                     },
                     {
                       key: "candidates-group",

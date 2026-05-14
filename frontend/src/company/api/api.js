@@ -1036,3 +1036,55 @@ export async function GetCompanyDetails(slug) {
     throw error;
   }
 }
+
+// ✅ Create AI Interview Session for a candidate
+export async function CreateInterviewSession(payload) {
+  try {
+    const response = await axiosInstance.post(
+      "http://127.0.0.1:8000/sessions",
+      payload,
+      { headers: { "Content-Type": "application/json" } },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating interview session:", error);
+    throw error;
+  }
+}
+
+export async function GetCompanyInterviewDashboard() {
+  const response = await axiosInstance.get("/api/sessions/company/dashboard");
+  return response.data;
+}
+
+export async function GetCompanySessionDetail(sessionId) {
+  const response = await axiosInstance.get(
+    `/api/sessions/company/${sessionId}`,
+  );
+  return response.data;
+}
+
+export const enableNotification = async (jobId) => {
+  try {
+    const response = await axiosInstance.patch(
+      `/company/enable-notification/${jobId}`,
+    );
+
+    return response.data;
+  } catch (err) {
+    console.error("Failed to enable notification", err);
+    throw err;
+  }
+};
+// ✅ Get disabled notification jobs for the organization
+export async function getDisabledNotificationJobs() {
+  try {
+    const response = await axiosInstance.get(
+      "/company/disabled-notification-jobs",
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error in getDisabledNotificationJobs:", error);
+    throw error;
+  }
+}

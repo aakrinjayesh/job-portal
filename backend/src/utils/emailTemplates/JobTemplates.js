@@ -1,8 +1,8 @@
 import { baseTemplate } from "./BaseTemplate.js";
 
 // ── 1. Recruiter notified when a candidate applies ────────────────────────────
-export const getNewApplicationRecruiterEmailTemplate = ({ job, user }) =>
-  baseTemplate({
+export const getNewApplicationRecruiterEmailTemplate = ({ job, user }) => {
+  return baseTemplate({
     title: "New Job Application Received! 🎉",
     subtitle: `${job.role} at ${job.companyName}`,
     body: `
@@ -32,9 +32,23 @@ export const getNewApplicationRecruiterEmailTemplate = ({ job, user }) =>
           👁️ View Full Application Details
         </a>
       </div>
+      <div style="margin-top:25px; text-align:center;">
+  <a
+    href="${process.env.BACKEND_URL}/disable-notification/${job.id}"
+    style="
+      color:#dc2626;
+      font-size:13px;
+      text-decoration:none;
+      font-weight:600;
+    "
+  >
+    Disable notifications for this job
+  </a>
+</div>
       <p style="color:#666; font-size:14px; margin-top:20px;">📎 Please find the detailed resume attached to this email.</p>
     `,
   });
+};
 
 // ── 2. Candidate confirmation after applying ──────────────────────────────────
 export const getApplicationConfirmationCandidateEmailTemplate = ({

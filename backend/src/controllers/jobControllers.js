@@ -406,7 +406,7 @@ const processCandidateApplicationInBackground = async ({
     }
 
     /* ───────── SEND RECRUITER EMAIL ───────── */
-    if (job.postedBy?.email) {
+    if (job.postedBy?.email && !job.emailNotificationDisabled) {
       try {
         await sendEmail({
           to: job.postedBy.email,
@@ -1026,7 +1026,9 @@ const getJobList = async (req, res) => {
         isDeleted: false,
         status: "Open", // 🔥 add this
         // 🚨 THIS LINE IS IMPORTANT
-        ...(role === "company" ? { organizationId: { not: organizationId } } : {}),
+        ...(role === "company"
+          ? { organizationId: { not: organizationId } }
+          : {}),
 
         // ✅ Correct PascalCase enum filter
         ...applicantSourceFilter,
@@ -2252,6 +2254,82 @@ const getJobMetaPage = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+const disableJobNotification = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    await prisma.job.update({
+      where: {
+        id: jobId,
+      },
+      data: {
+        emailNotificationDisabled: true,
+      },
+    });
+
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/company/notification-disabled`,
+    );
+  } catch (error) {
+    console.error(error);
+
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/company/notification-disabled`,
+    );
+  }
+};
+const getDisabledNotificationJobs = async (req, res) => {
+  try {
+    const { organizationId } = req.user;
+
+    const jobs = await prisma.job.findMany({
+      where: {
+        organizationId,
+        emailNotificationDisabled: true,
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+        role: true,
+        companyName: true,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: jobs,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+const enableJobNotification = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    await prisma.job.update({
+      where: {
+        id: jobId,
+      },
+      data: {
+        emailNotificationDisabled: false,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Notification enabled",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 export {
   userApplyJob,
@@ -2274,4 +2352,7 @@ export {
   bulkFitScore,
   getCandidatesWithFitScore,
   getJobMetaPage,
+  disableJobNotification,
+  getDisabledNotificationJobs,
+  enableJobNotification,
 };

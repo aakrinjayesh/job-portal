@@ -19,6 +19,9 @@ import {
   getJobQuestions,
   bulkFitScore,
   getCandidatesWithFitScore,
+  disableJobNotification,
+  getDisabledNotificationJobs,
+  enableJobNotification,
 } from "../controllers/jobControllers.js";
 import { validateInput } from "../Middleware/inputValidator.js";
 import { authenticateToken } from "../Middleware/authMiddleware.js";
@@ -162,6 +165,20 @@ JobRouters.post(
   authenticateToken,
   ensureCompanyMember,
   saveCandidateRating,
+);
+JobRouters.get("/disable-notification/:jobId", disableJobNotification);
+JobRouters.get(
+  "/company/disabled-notification-jobs",
+  authenticateToken,
+  ensureCompanyMember,
+  getDisabledNotificationJobs,
+);
+
+JobRouters.patch(
+  "/company/enable-notification/:jobId",
+  authenticateToken,
+  ensureCompanyMember,
+  enableJobNotification,
 );
 
 export default JobRouters;

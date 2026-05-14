@@ -102,6 +102,7 @@ const MainLayout = ({ children }) => {
     settings: ["/candidate/settings"],
     profile: ["/candidate/profile"],
     contact: ["/contact"],
+    courses: ["/candidate/courses"],
   };
 
   /* 🎯 Active menu */
@@ -177,6 +178,7 @@ const MainLayout = ({ children }) => {
     settings: "Settings",
     profile: "Profile",
     contactsupport: "Contact & Support",
+    courses: "Courses",
   };
 
   const pageTitle = pageTitleMap[selectedKey] || "Find Jobs";
@@ -219,6 +221,7 @@ const MainLayout = ({ children }) => {
             label: "Applied Jobs",
           },
           { key: "chat", icon: <WhatsAppOutlined />, label: "Chat" },
+          { key: "courses", icon: <FileTextOutlined />, label: "Courses" },
         ]}
       />
 
@@ -428,6 +431,7 @@ const MainLayout = ({ children }) => {
                 label: "Applied Jobs",
               },
               { key: "chat", icon: <WhatsAppOutlined />, label: "Chat" },
+              { key: "courses", icon: <FileTextOutlined />, label: "Courses" },
             ]}
           />
 

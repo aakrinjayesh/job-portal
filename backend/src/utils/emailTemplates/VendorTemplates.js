@@ -1,7 +1,11 @@
 import { baseTemplate } from "./BaseTemplate.js";
 
 // ── 1. Vendor confirmation after submitting candidates ────────────────────────
-export const getVendorApplicationConfirmationEmailTemplate = ({ job, vendor, appliedCandidates }) =>
+export const getVendorApplicationConfirmationEmailTemplate = ({
+  job,
+  vendor,
+  appliedCandidates,
+}) =>
   baseTemplate({
     title: "Application Submitted Successfully! ✅",
     subtitle: `${job.role} at ${job.companyName}`,
@@ -29,8 +33,14 @@ export const getVendorApplicationConfirmationEmailTemplate = ({ job, vendor, app
   });
 
 // ── 2. Recruiter notified when vendor submits candidates ──────────────────────
-export const getVendorApplicationRecruiterEmailTemplate = ({ job, processedCandidates, aiAllowed }) =>
-  baseTemplate({
+export const getVendorApplicationRecruiterEmailTemplate = ({
+  job,
+  processedCandidates,
+  aiAllowed,
+}) => {
+  const disableUrl = `${process.env.BACKEND_URL}/disable-notification/${job.id}`;
+
+  return baseTemplate({
     title: "New Applications Received 🎉",
     subtitle: `${job.role} at ${job.companyName}`,
     body: `
@@ -46,27 +56,53 @@ export const getVendorApplicationRecruiterEmailTemplate = ({ job, processedCandi
         <p><strong>Total Candidates Submitted:</strong> ${processedCandidates.length}</p>
         <p><strong>AI Ranking:</strong> ${aiAllowed ? "Enabled" : "Disabled"}</p>
       </div>
-      ${job.skills?.length ? `
+      ${
+        job.skills?.length
+          ? `
       <div style="background:#f8faff; border:1px solid #e0e7ff; border-radius:10px; padding:15px; margin-bottom:15px;">
         <h3 style="color:#1e3a8a; margin-top:0;">Required Skills</h3>
         <p style="color:#555;">${job.skills.join(", ")}</p>
-      </div>` : ""}
-      ${job.clouds?.length ? `
+      </div>`
+          : ""
+      }
+      ${
+        job.clouds?.length
+          ? `
       <div style="background:#f8faff; border:1px solid #e0e7ff; border-radius:10px; padding:15px; margin-bottom:15px;">
         <h3 style="color:#1e3a8a; margin-top:0;">Required Clouds</h3>
         <p style="color:#555;">${job.clouds.join(", ")}</p>
-      </div>` : ""}
+      </div>`
+          : ""
+      }
       <div style="background:#ffffff; border:1px solid #e0e7ff; border-radius:10px; padding:20px; margin-top:20px;">
         <h3 style="color:#1e3a8a; margin-top:0;">Submitted Candidates</h3>
-        ${processedCandidates.map((c) => `
+        ${processedCandidates
+          .map(
+            (c) => `
         <div style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid #eee;">
           <div style="font-size:16px; margin-bottom:6px;"><strong>${c.candidateName}</strong></div>
           <a href="${process.env.FRONTEND_URL}/company/candidate/${c.profile.id}"
              style="display:inline-block; padding:8px 14px; background:linear-gradient(135deg, #1e3a8a, #2563eb); color:#ffffff; text-decoration:none; border-radius:6px; font-size:14px;">
             View Full Candidate Details
           </a>
-        </div>`).join("")}
+        </div>`,
+          )
+          .join("")}
       </div>
       <p style="color:#666; font-size:14px; margin-top:25px;">Click on any candidate to view complete profile details including experience, certifications, work history and skills.</p>
+      <div style="margin-top:25px; text-align:center;">
+  <a
+    href="${disableUrl}"
+    style="
+      color:#dc2626;
+      font-size:13px;
+      text-decoration:none;
+      font-weight:600;
+    "
+  >
+    Disable notifications for this job
+  </a>
+</div>
     `,
   });
+};

@@ -798,8 +798,20 @@ const CandidateList = () => {
     }
 
     // 👉 STEP 2: GENERATE MODE
-    if (!selectedCandidates.length) {
-      messageAPI.warning("No candidates selected.");
+    // if (!selectedCandidates.length) {
+    //   messageAPI.warning("No candidates selected.");
+    //   return;
+    // }
+    if (isSelectionMode && selectedCandidates.length === 0) {
+      // 🔁 Re-select remaining candidates
+      const noScoreCandidates = candidates.filter((c) => c.matchScore == null);
+
+      const keys = noScoreCandidates.map((c) => c.applicationId);
+
+      setSelectedRowKeys(keys);
+      setSelectedCandidates(noScoreCandidates);
+
+      messageAPI.info("Candidates re-selected");
       return;
     }
 
@@ -1655,8 +1667,13 @@ const CandidateList = () => {
                 ? "🔒 Upgrade Plan"
                 : bulkGenerating
                   ? "⏳ Generating..."
-                  : isSelectionMode
-                    ? "⚡ Generate Fit Score"
+                  : // : isSelectionMode
+                    //   ? "⚡ Generate Fit Score"
+                    //   : "🤖 Bulk Fit Score"
+                    isSelectionMode
+                    ? selectedCandidates.length > 0
+                      ? "⚡ Generate Fit Score"
+                      : "🤖 Bulk Fit Score"
                     : "🤖 Bulk Fit Score"}
             </span>
           </div>

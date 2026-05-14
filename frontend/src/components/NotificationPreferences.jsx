@@ -1,21 +1,46 @@
 import { useEffect, useState } from "react";
-import { Card, Switch, Radio, Typography, Space, message, Spin } from "antd";
+import {
+  Card,
+  Switch,
+  Radio,
+  Typography,
+  Space,
+  message,
+  Spin,
+  Button,
+} from "antd";
+
 import { BellOutlined } from "@ant-design/icons";
 import {
   GetNotificationPreferences,
   UpdateNotificationPreferences,
 } from "../candidate/api/api";
+import {
+  getDisabledNotificationJobs,
+  enableNotification,
+} from "../company/api/api";
 
 const { Title, Text } = Typography;
 
 export default function NotificationPreferences() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [disabledJobs, setDisabledJobs] = useState([]);
   const [prefs, setPrefs] = useState({
     notificationsEnabled: true,
     notificationType: "WEEKLY",
     // reminderNotificationsEnabled: true,
   });
+
+  const fetchDisabledJobs = async () => {
+    try {
+      const res = await getDisabledNotificationJobs();
+
+      setDisabledJobs(res.data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   useEffect(() => {
     GetNotificationPreferences()
@@ -24,6 +49,7 @@ export default function NotificationPreferences() {
       })
       .catch(() => message.error("Failed to load notification preferences"))
       .finally(() => setLoading(false));
+    fetchDisabledJobs();
   }, []);
 
   // const update = async (patch) => {
@@ -65,12 +91,19 @@ export default function NotificationPreferences() {
       await UpdateNotificationPreferences(patch);
 
       // ✅ Toggle ON / OFF messages
+      // if (patch.notificationsEnabled !== undefined) {
+      //   message.success(
+      //     patch.notificationsEnabled
+      //       ? "Notifications turned ON"
+      //       : "Notifications turned OFF",
+      //   );
+      // }
       if (patch.notificationsEnabled !== undefined) {
-        message.success(
-          patch.notificationsEnabled
-            ? "Notifications turned ON"
-            : "Notifications turned OFF",
-        );
+        if (patch.notificationsEnabled) {
+          message.success("Notifications turned ON ");
+        } else {
+          message.error("Notifications turned OFF ");
+        }
       }
 
       // ✅ Frequency change message
@@ -178,6 +211,54 @@ export default function NotificationPreferences() {
           </Radio.Group>
         </div>
       )}
+      <div style={{ marginTop: 30 }}>
+        <Text strong style={{ fontSize: 16 }}>
+          Disabled Job Notifications
+        </Text>
+
+        {disabledJobs.length === 0 ? (
+          <p style={{ marginTop: 10 }}>No disabled jobs</p>
+        ) : (
+          disabledJobs.map((job) => (
+            <div
+              key={job.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: 16,
+                paddingBottom: 12,
+                borderBottom: "1px solid #f0f0f0",
+              }}
+            >
+              <div>
+                <Text strong>{job.role}</Text>
+                <br />
+                <Text type="secondary">{job.companyName}</Text>
+              </div>
+
+              <Button
+                type="primary"
+                onClick={async () => {
+                  try {
+                    await enableNotification(job.id);
+
+                    message.success("Notification enabled");
+
+                    fetchDisabledJobs();
+                  } catch (err) {
+                    console.log(err);
+
+                    message.error("Failed to enable notification");
+                  }
+                }}
+              >
+                Enable
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
     </Card>
   );
 }

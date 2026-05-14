@@ -38,7 +38,7 @@ import companyRouter from "./Routes/companyRoutes.js";
 dotenv.config();
 
 const app = express();
-
+console.log("cors", process.env.CORS_ORIGIN);
 const allowedOrigins = process.env.CORS_ORIGIN.split(",");
 
 console.log("allowed Domains", allowedOrigins || null);

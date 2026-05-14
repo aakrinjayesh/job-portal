@@ -1,18 +1,47 @@
-import { Router } from "express";
+import express from "express";
+import { authenticate } from "../Middleware/authMiddleware.js";
 import {
-  getClassesByCourse,
-  getClassById,
-  createClass,
-  updateClass,
-  deleteClass,
+  // Enrollment
+  enrollCourse,
+  getMyEnrollments,
+  getEnrollmentStatus,
+  // Progress
+  updateLectureProgress,
+  getCourseProgress,
+  // Cart
+  getCart,
+  addToCart,
+  removeFromCart,
+  clearCart,
+  // Wishlist
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
 } from "../controllers/classController.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get("/course/:courseId", getClassesByCourse);
-router.get("/:id", getClassById);
-router.post("/", createClass);
-router.put("/:id", updateClass);
-router.delete("/:id", deleteClass);
+// All class routes require authentication
+router.use(authenticate);
+
+// ── Enrollment ────────────────────────────────────────────
+router.post("/enroll/:courseId", enrollCourse);
+router.get("/my-courses", getMyEnrollments);
+router.get("/enrollment/:courseId", getEnrollmentStatus);
+
+// ── Progress ──────────────────────────────────────────────
+router.post("/progress", updateLectureProgress);
+router.get("/progress/:courseId", getCourseProgress);
+
+// ── Cart ──────────────────────────────────────────────────
+router.get("/cart", getCart);
+router.post("/cart/add", addToCart);
+router.delete("/cart/clear", clearCart);
+router.delete("/cart/:courseId", removeFromCart);
+
+// ── Wishlist ──────────────────────────────────────────────
+router.get("/wishlist", getWishlist);
+router.post("/wishlist/add", addToWishlist);
+router.delete("/wishlist/:courseId", removeFromWishlist);
 
 export default router;
