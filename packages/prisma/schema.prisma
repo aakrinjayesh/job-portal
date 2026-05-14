@@ -49,10 +49,9 @@ model Organization {
   candidateTasks    CandidateTask[]
   users             Users[]
 
-  posts Post[]
-  postLikes PostLike[]
+  posts        Post[]
+  postLikes    PostLike[]
   postComments PostComment[]
-  
 }
 
 model OrganizationMember {
@@ -127,8 +126,8 @@ model CompanyProfile {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  followers Follow[]
-  followersCount Int             @default(0)
+  followers      Follow[]
+  followersCount Int      @default(0)
 
   organizationId String       @unique
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -383,13 +382,14 @@ model Job {
   // ── SCREENING QUESTIONS ──
   questions JobApplicationQuestion[]
 
-  organizationId    String?
-  organization      Organization?       @relation(fields: [organizationId], references: [id])
-  activity          Activity[]
-  candidateTaskList CandidateTaskList[]
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  interviewSessions InterviewSession[]
+  organizationId            String?
+  organization              Organization?       @relation(fields: [organizationId], references: [id])
+  activity                  Activity[]
+  candidateTaskList         CandidateTaskList[]
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  interviewSessions         InterviewSession[]
+  emailNotificationDisabled Boolean             @default(false)
 }
 
 enum ApplicantSource {
@@ -1282,21 +1282,20 @@ model Follow {
 
   followingCompany CompanyProfile? @relation(fields: [followingCompanyId], references: [id], onDelete: Cascade)
 
+  @@unique([followerId, followingUserId])
+  @@unique([followerId, followingCompanyId])
   @@index([followerId])
   @@index([followingUserId])
   @@index([followingCompanyId])
-
-  @@unique([followerId, followingUserId])
-  @@unique([followerId, followingCompanyId])
 }
 
 model Post {
   id String @id @default(uuid())
 
-  authorId String
+  authorId       String
   organizationId String?
-  
-  content  String
+
+  content String
 
   mediaUrls String[] @default([])
   feeds     Feed[]
@@ -1314,7 +1313,7 @@ model Post {
   isDeleted  Boolean        @default(false)
   deletedAt  DateTime?
 
-  author Users @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author       Users         @relation(fields: [authorId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([authorId, createdAt])
@@ -1328,14 +1327,14 @@ enum PostVisibility {
 model PostLike {
   id String @id @default(uuid())
 
-  postId String
-  userId String
-   organizationId String?
+  postId         String
+  userId         String
+  organizationId String?
 
   createdAt DateTime @default(now())
 
-  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user         Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
@@ -1346,8 +1345,8 @@ model PostLike {
 model PostComment {
   id String @id @default(uuid())
 
-  postId  String
-  userId  String
+  postId         String
+  userId         String
   organizationId String?
 
   content String
@@ -1356,8 +1355,8 @@ model PostComment {
 
   createdAt DateTime @default(now())
 
-  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user         Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   parent  PostComment?  @relation("CommentReplies", fields: [parentId], references: [id])
@@ -1436,11 +1435,16 @@ enum CourseStatus {
 }
 
 model NewCourse {
-  id           String  @id @default(uuid())
-  title        String
-  description  String?
-  slug         String  @unique
-  thumbnailUrl String? // S3 URL
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+
+  prerequisities   String?
+  whatYouWillLearn String?
+  syllabus         String?
+  courseLevel      String?
+  slug             String  @unique
+  thumbnailUrl     String? // S3 URL
 
   creatorId   String
   creatorRole Role // snapshot: candidate | company | admin
