@@ -188,6 +188,7 @@ import {
   RemoveFromWishlist,
   AddToCart,
   RemoveFromCart,
+  DeleteCourse,
 } from "../api/courseApi.js";
 import CourseCard from "../components/CourseCard.jsx";
 
@@ -1070,6 +1071,16 @@ const InstructorDashboard = () => {
     load();
   }, []);
 
+  const handleDeleteCourse = async (courseId) => {
+    try {
+      await DeleteCourse(courseId);
+      setCourses((prev) => prev.filter((c) => c.id !== courseId));
+      message.success("Course deleted successfully");
+    } catch {
+      message.error("Failed to delete course");
+    }
+  };
+
   const publishedCount = courses.filter((c) => c.status === "PUBLISHED").length;
   const draftCount = courses.filter((c) => c.status === "DRAFT").length;
   const totalEnrollments = courses.reduce(
@@ -1399,6 +1410,7 @@ const InstructorDashboard = () => {
                       key={course.id}
                       course={course}
                       mode="instructor"
+                      onDelete={handleDeleteCourse}
                     />
                   ))}
                 </div>
